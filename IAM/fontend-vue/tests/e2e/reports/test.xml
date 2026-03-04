@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites errors="1"
+            failures="0"
+            tests="0">
+
+  <testsuite name="test"
+    errors="1" failures="0" hostname="" id="" package="test" skipped="1"
+    tests="0" time="0.000" timestamp="">
+  
+
+  
+    <system-err>
+        Error: An error occurred while retrieving a new session: &#34;session not created: This version of ChromeDriver only supports Chrome version 119&#34;
+       at HttpRequest.emit (node:events:519:28)
+       at HttpResponse.emit (node:events:519:28)
+       at IncomingMessage.emit (node:events:531:35)
+       at endReadableNT (node:internal/streams/readable:1696:12)
+       at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+    </system-err>
+  
+
+    
+    <error message="An error occurred while retrieving a new session: &#34;session not created: This version of ChromeDriver only supports Chrome version 119&#34;"><![CDATA[
+      Error: An error occurred while retrieving a new session: &#34;session not created: This version of ChromeDriver only supports Chrome version 119&#34;
+    at JsonWireProtocol.handleSessionCreateError (/Users/git-mfu/stack/template/fontend-vue/node_modules/nightwatch/lib/transport/transport.js:110:15)
+    at HttpRequest.&lt;anonymous&gt; (/Users/git-mfu/stack/template/fontend-vue/node_modules/nightwatch/lib/transport/transport.js:175:16)
+    at HttpRequest.emit (node:events:519:28)
+    at HttpResponse.&lt;anonymous&gt; (/Users/git-mfu/stack/template/fontend-vue/node_modules/nightwatch/lib/http/request.js:143:19)
+    at HttpResponse.emit (node:events:519:28)
+    at IncomingMessage.&lt;anonymous&gt; (/Users/git-mfu/stack/template/fontend-vue/node_modules/nightwatch/lib/http/response.js:58:14)
+    at IncomingMessage.emit (node:events:531:35)
+    at endReadableNT (node:internal/streams/readable:1696:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+      ]]></error>  
+
+  
+    
+    <testcase
+      name="CoreUI Vue e2e tests" classname="test">
+      <skipped />
+    </testcase>
+    
+  
+  </testsuite>
+</testsuites>
