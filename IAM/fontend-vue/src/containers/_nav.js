@@ -66,6 +66,22 @@ export default [{
     },
     {
       _name: 'CSidebarNavDropdown',
+      name: 'Training',
+      route: '/training',
+      icon: 'cil-library',
+      items: [
+        {
+          name: 'Training Requests',
+          to: '/training/requests'
+        },
+        {
+          name: 'Training Records',
+          to: '/training/records'
+        }
+      ]
+    },
+    {
+      _name: 'CSidebarNavDropdown',
       name: 'Permission',
       route: '/security/permissions',
       icon: 'cil-lock-locked',

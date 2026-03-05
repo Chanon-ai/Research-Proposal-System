@@ -94,6 +94,8 @@ const SettingGroup = () => import('@/projects/views/setting/Group')
 const SettingMessageAuthen = () => import('@/projects/views/setting/MessageAuthen')
 const SettingMessageStatus = () => import('@/projects/views/setting/Status')
 const AccountManagement = () => import('@/projects/views/accounts/Management')
+const TrainingRequests = () => import('@/projects/views/training/Requests')
+const TrainingRecords = () => import('@/projects/views/training/Records')
 
 
 //
@@ -201,6 +203,18 @@ const router = new Router({
           path: 'accounts/management',
           name: 'Account Management',
           component: AccountManagement
+        },
+        {
+          path: 'training/requests',
+          name: 'Training Requests',
+          meta: { permission: { path: '/training/requests', action: 'view' } },
+          component: TrainingRequests
+        },
+        {
+          path: 'training/records',
+          name: 'Training Records',
+          meta: { permission: { path: '/training/requests', action: 'view' } },
+          component: TrainingRecords
         },
         {
           path: 'tables',
