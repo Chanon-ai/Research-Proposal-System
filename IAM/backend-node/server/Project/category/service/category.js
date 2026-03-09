@@ -35,6 +35,7 @@ exports.onCreate = async function (request, response) {
 
 exports.onUpdate = async function (request, response) {
     try {
+
         let query = {};
         query._id = new mongo.ObjectId(request.body._id);
         const payload = Object.assign({}, request.body);

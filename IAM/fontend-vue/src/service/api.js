@@ -3,7 +3,7 @@ import store from '@/store/store'
 import router from '@/router/index'
 const instance = axios.create();
 
-instance.defaults.baseURL = process.env.VUE_APP_API_BASE_URL || 'http://127.0.0.1:8084';
+instance.defaults.baseURL = process.env.VUE_APP_API_BASE_URL || 'http://127.0.0.1:8081';
 
 instance.defaults.headers = {
   "Content-Type": "application/json",
