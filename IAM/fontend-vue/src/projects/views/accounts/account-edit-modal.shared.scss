@@ -1,0 +1,285 @@
+@import "@/projects/styles/shared-modal-shell.scss";
+
+.account-edit-modal {
+  /* Theme tokens: update these values to recolor the modal in one place */
+  --account-shell-border: #dfe6ee;
+  --account-surface: #ffffff;
+  --account-surface-soft: #f8fafc;
+  --account-surface-soft-2: #f4f7fb;
+  --account-border: #e2e8f0;
+  --account-border-strong: #d3dce7;
+  --account-text: #243447;
+  --account-text-soft: #5f6f86;
+  --account-text-muted: #7b8798;
+  --account-hero-from: #5f0f12;
+  --account-hero-mid: #8c1515;
+  --account-hero-to: #c7662d;
+  --account-hero-copy: rgba(255, 244, 232, 0.9);
+  --account-hero-kicker: rgba(255, 228, 198, 0.78);
+  --account-shadow: rgba(36, 52, 71, 0.18);
+  --account-shadow-soft: rgba(60, 75, 100, 0.05);
+  --account-accent: #7b1719;
+  --account-accent-hover: #611214;
+  --account-accent-soft: #f6e6dd;
+  --account-neutral-bg: #eef2f6;
+  --account-neutral-border: #d9e1ea;
+  --account-neutral-text: #566579;
+  --account-avatar-from: #7b1719;
+  --account-avatar-to: #d79243;
+
+  @include project-modal-shell(
+    &,
+    ".account-modal__header",
+    ".account-modal__hero",
+    radial-gradient(circle at top right, rgba(215, 146, 67, 0.16), transparent 24%),
+    linear-gradient(180deg, var(--account-surface) 0%, #fbfcfe 100%),
+    var(--account-hero-from),
+    var(--account-hero-mid),
+    var(--account-hero-to)
+  );
+
+  .account-modal__kicker {
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--account-hero-kicker);
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .h4,
+  .account-modal__hero .h4 {
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    font-size: 1.28rem;
+  }
+
+  .text-muted,
+  .account-modal__hero .text-muted {
+    color: var(--account-hero-copy) !important;
+    max-width: 28rem;
+    margin-bottom: 0;
+    font-size: 0.78rem;
+  }
+
+  .account-modal__section {
+    border: 1px solid var(--account-border);
+    border-radius: 1rem;
+    box-shadow: 0 6px 18px var(--account-shadow-soft);
+    position: relative;
+    overflow: visible;
+    background: var(--account-surface);
+  }
+
+  .account-section-body--compact {
+    padding: 0.95rem 0.95rem 0.5rem;
+  }
+
+  ::v-deep .account-section-body--compact .row {
+    margin-bottom: 0.05rem;
+  }
+
+  ::v-deep .account-section-body--compact .form-group {
+    margin-bottom: 0.7rem;
+  }
+
+  ::v-deep .account-section-body--compact .form-group > label,
+  ::v-deep .account-section-body--compact label {
+    font-size: 0.72rem;
+  }
+
+  ::v-deep .account-section-body--compact .form-control {
+    min-height: 38px;
+    font-size: 0.82rem;
+  }
+
+  ::v-deep .account-modal__section .form-group > label,
+  ::v-deep .account-modal__section label {
+    color: var(--account-text-soft);
+  }
+
+  ::v-deep .account-modal__section .form-control,
+  ::v-deep .account-modal__section input {
+    color: var(--account-text);
+  }
+
+  .floating-section__label {
+    position: absolute;
+    top: 0;
+    left: 1rem;
+    transform: translateY(-50%);
+    background: var(--account-surface);
+    padding: 0 0.45rem;
+    color: var(--account-text-soft);
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.1;
+  }
+
+  .account-modal__btn {
+    min-width: 118px;
+    border-radius: 999px;
+    font-weight: 700;
+    box-shadow: none !important;
+    transition: transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+    font-size: 0.8rem;
+  }
+
+  .account-modal__btn.btn-light {
+    background: var(--account-neutral-bg);
+    border-color: var(--account-neutral-border);
+    color: var(--account-neutral-text);
+  }
+
+  .account-modal__btn.btn-light:hover,
+  .account-modal__btn.btn-light:focus {
+    background: #e2e8ef;
+    border-color: #cfd8e3;
+    color: var(--account-text);
+    transform: translateY(-1px);
+  }
+
+  .account-modal__btn.btn-success {
+    background: var(--account-accent);
+    border-color: var(--account-accent);
+    color: #fff;
+  }
+
+  .account-modal__btn.btn-success:hover,
+  .account-modal__btn.btn-success:focus {
+    background: var(--account-accent-hover);
+    border-color: var(--account-accent-hover);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .account-modal__footer {
+    margin: 0 -1.2rem -1.1rem;
+    padding: 0.9rem 1.2rem 1.1rem;
+    border-top: 1px solid var(--account-border);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, var(--account-surface-soft) 100%);
+    border-radius: 0 0 1.5rem 1.5rem;
+  }
+
+  .account-modal__btn-small {
+    min-width: 120px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+
+  .account-image-panel {
+    display: flex;
+    align-items: center;
+    padding: 0.9rem 0 1.2rem;
+    border-radius: 1rem;
+  }
+
+  .account-image-panel--top {
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .account-image-preview-wrap {
+    position: relative;
+  }
+
+  .account-image-preview {
+    width: 96px;
+    height: 96px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--account-surface-soft-2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 96px;
+    box-shadow: 0 10px 24px rgba(36, 52, 71, 0.12);
+  }
+
+  .account-image-preview--hero {
+    width: 116px;
+    height: 116px;
+    border-radius: 999px;
+    flex-basis: 116px;
+    box-shadow:
+      0 14px 28px rgba(36, 52, 71, 0.12),
+      0 0 0 8px rgba(244, 247, 251, 0.9);
+  }
+
+  .account-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .account-image-fallback {
+    width: 100%;
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--account-avatar-from), var(--account-avatar-to));
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .account-image-upload {
+    position: absolute;
+    right: 0;
+    bottom: 0.2rem;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: 0;
+    border-radius: 999px;
+    padding: 0;
+    font-size: 0.84rem;
+    font-weight: 700;
+    background: var(--account-accent);
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(36, 52, 71, 0.26);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .account-image-upload:hover,
+  .account-image-upload:focus {
+    background: var(--account-accent-hover);
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 767px) {
+    ::v-deep .modal-body {
+      padding: 0.9rem 0.9rem 0.9rem;
+    }
+
+    .account-modal__header {
+      margin: -0.9rem -0.9rem 0.75rem !important;
+    }
+
+    .account-modal__hero {
+      border-radius: 1.25rem 1.25rem 0 0;
+      padding: 1rem 0.9rem 0.9rem;
+    }
+
+    .account-modal__footer {
+      margin: 0 -0.9rem -0.9rem;
+      padding: 0.8rem 0.9rem 0.9rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .account-modal__btn {
+      flex: 1 1 calc(50% - 0.4rem);
+      min-width: 0;
+    }
+
+    .account-section-body--compact {
+      padding: 0.85rem 0.85rem 0.45rem;
+    }
+  }
+}
