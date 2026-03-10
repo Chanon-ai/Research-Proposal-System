@@ -81,6 +81,7 @@ export function mapPermission (item) {
     edit: !!(item && item.edit),
     delete: !!(item && item.delete),
     action: !!(item && item.action),
+    owner: !!(item && item.owner),
     logs: !!(item && item.logs)
   }
 }

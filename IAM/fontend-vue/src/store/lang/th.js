@@ -1,4 +1,4 @@
-const en = {
+const th = {
 
     campus : "ชื่อสถาบันอุดมศึกษา",
     faculty: "สำนักวิชา",
@@ -15,5 +15,4 @@ const en = {
 
     description : "รายละเอียด"
 }
-export default en
-
+export default th

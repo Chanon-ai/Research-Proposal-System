@@ -4,6 +4,7 @@ import { setItem, getItem, removeItem } from '@/utils/db';
 import router from "../../../router/index.js";
 
 const TRUSTED_DEVICE_ID_KEY = 'trusted-device-id-v1';
+const X_ACCESS_TOKEN_STORAGE_KEY = 'x-access-token';
 
 function getOrCreateDeviceId() {
     if (typeof window === 'undefined' || !window.localStorage) {
@@ -17,6 +18,25 @@ function getOrCreateDeviceId() {
     var id = 'dev-' + Date.now() + '-' + randomPart;
     window.localStorage.setItem(TRUSTED_DEVICE_ID_KEY, id);
     return id;
+}
+
+function getTokenFromLocalStorage() {
+    if (typeof window === 'undefined' || !window.localStorage) {
+        return '';
+    }
+    const raw = window.localStorage.getItem(X_ACCESS_TOKEN_STORAGE_KEY);
+    return raw && String(raw).trim() ? String(raw).trim() : '';
+}
+
+function setTokenToLocalStorage(token) {
+    if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+    }
+    if (token && String(token).trim()) {
+        window.localStorage.setItem(X_ACCESS_TOKEN_STORAGE_KEY, String(token).trim());
+    } else {
+        window.localStorage.removeItem(X_ACCESS_TOKEN_STORAGE_KEY);
+    }
 }
 
 
@@ -65,8 +85,15 @@ const ServerModule = {
         async bootstrapSession({ commit }) {
             try {
                 const objs = await getItem('objs');
-                if (objs && objs.xAccessToken) {
-                    store.commit('set', ['XAccessToken', objs.xAccessToken]);
+                const tokenFromDb = objs && objs.xAccessToken ? String(objs.xAccessToken).trim() : '';
+                const tokenFromLocal = getTokenFromLocalStorage();
+                const token = tokenFromDb || tokenFromLocal;
+                if (token) {
+                    store.commit('set', ['XAccessToken', token]);
+                    setTokenToLocalStorage(token);
+                    if (!tokenFromDb) {
+                        await setItem('objs', { xAccessToken: token });
+                    }
                     commit('authenticated', { isAuthen: true, isOAuth: true });
                     commit('isSignIn', false);
                     try {
@@ -76,6 +103,7 @@ const ServerModule = {
                     } catch (err) {
                         removeItem('objs');
                         store.commit('set', ['XAccessToken', '']);
+                        setTokenToLocalStorage('');
                         commit('authenticated', { isAuthen: false, isOAuth: false });
                         commit('profile', null);
                         commit('isSignIn', true);
@@ -143,6 +171,7 @@ const ServerModule = {
                 if (!token) {
                     throw new Error('missing_token');
                 }
+                setTokenToLocalStorage(token);
                 const require2FA = !(objs && objs.require2FA === false);
 
                 store.commit('set', ['XAccessToken', token]);
@@ -154,6 +183,7 @@ const ServerModule = {
 
                 if (!require2FA) {
                     await setItem('objs', { xAccessToken: token });
+                    setTokenToLocalStorage(token);
                     const meRes = await Service.authenticated('me', {}, {});
                     const me = meRes && meRes.data ? meRes.data.data : null;
                     commit('profile', me);
@@ -171,6 +201,7 @@ const ServerModule = {
                     await dispatch('twofa', {});
                 } catch (err) {
                     store.commit('set', ['XAccessToken', '']);
+                    setTokenToLocalStorage('');
                     commit('pendingToken', '');
                     commit('authenticated', { isAuthen: false, isOAuth: false });
                     commit('profile', null);
@@ -217,6 +248,7 @@ const ServerModule = {
                 throw new Error('missing_pending_token');
             }
             await setItem('objs', { xAccessToken: state.pendingToken });
+            setTokenToLocalStorage(state.pendingToken);
             const meRes = await Service.authenticated('me', {}, {});
             const me = meRes && meRes.data ? meRes.data.data : null;
 
@@ -251,6 +283,7 @@ const ServerModule = {
         signOut({commit}, data) {
             removeItem('objs')
             store.commit('set', ['XAccessToken', '']);
+            setTokenToLocalStorage('');
             commit('authenticated', { isAuthen: false, isOAuth: false });
             commit('profile', null);
             commit('isSignIn', true);

@@ -7,7 +7,7 @@
     :show-add="false"
     :small="true"
     :items-per-page="20"
-    :scoped-slot-names="['source', 'all', 'view', 'edit', 'delete', 'action', 'logs']"
+    :scoped-slot-names="['source', 'all', 'view', 'edit', 'delete', 'action', 'owner', 'logs']"
   >
     <template #header-actions>
       <slot name="header-actions" />
@@ -51,6 +51,12 @@
     <template #action="{ item }">
       <td class="text-center">
         <CSwitch class="mb-0 d-inline-block" variant="3d" color="success" :checked="item.action" @update:checked="(val) => $emit('toggle', item, 'action', val)" />
+      </td>
+    </template>
+
+    <template #owner="{ item }">
+      <td class="text-center">
+        <CSwitch class="mb-0 d-inline-block" variant="3d" color="dark" :checked="item.owner" @update:checked="(val) => $emit('toggle', item, 'owner', val)" />
       </td>
     </template>
 

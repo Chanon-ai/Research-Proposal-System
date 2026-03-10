@@ -62,6 +62,7 @@ export default {
         { key: 'edit', label: 'Edit', _style: 'width: 100px; text-align: center;' },
         { key: 'delete', label: 'Delete', _style: 'width: 100px; text-align: center;' },
         { key: 'action', label: 'Action', _style: 'width: 100px; text-align: center;' },
+        { key: 'owner', label: 'Owner', _style: 'width: 100px; text-align: center;' },
         { key: 'logs', label: 'Logs', _style: 'width: 100px; text-align: center;' }
       ],
       lastUpdatedAt: null,
@@ -120,6 +121,7 @@ export default {
             edit: !!current.edit,
             delete: !!current.delete,
             action: !!current.action,
+            owner: !!current.owner,
             logs: !!current.logs,
             group: getTextByLanguage(group.title, this.currentLang) || group.name,
             menu: getTextByLanguage(menu.title, this.currentLang) || menu.name,
@@ -171,6 +173,7 @@ export default {
         edit: !!row.edit,
         delete: !!row.delete,
         action: !!row.action,
+        owner: !!row.owner,
         logs: !!row.logs
       }
 
@@ -184,6 +187,7 @@ export default {
           edit: false,
           delete: false,
           action: false,
+          owner: false,
           logs: false
         })
       }
@@ -194,10 +198,11 @@ export default {
         working.edit = checked
         working.delete = checked
         working.action = checked
+        working.owner = checked
         working.logs = checked
       } else {
         working[key] = checked
-        working.all = working.view && working.edit && working.delete && working.action && working.logs
+        working.all = working.view && working.edit && working.delete && working.action && working.owner && working.logs
       }
 
       try {

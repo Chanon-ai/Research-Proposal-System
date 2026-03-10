@@ -171,7 +171,7 @@ const router = new Router({
         {
           path: 'security/permissions/matrix',
           name: '3. Permission Matrix',
-          meta: { permission: { path: '/security/permission', action: 'edit' } },
+          meta: { permission: { path: '/security/permission', action: 'view' } },
           component: PermissionMatrix
         },
         {
@@ -635,6 +635,43 @@ function buildPermissionCandidates(to, permissionMeta) {
   return Array.from(candidates)
 }
 
+function normalizeRoleToken(value) {
+  return String(value || '').trim().toLowerCase()
+}
+
+function isOwnerProfile(profile) {
+  if (!profile || typeof profile !== 'object') return false
+
+  const tokens = new Set()
+  const pushRole = (role) => {
+    if (!role) return
+    if (typeof role === 'string') {
+      tokens.add(normalizeRoleToken(role))
+      return
+    }
+    if (typeof role === 'object') {
+      ;[
+        role.name,
+        role.title,
+        role.code,
+        role.key,
+        role.slug,
+        role.role,
+        role.roleName
+      ].forEach(item => {
+        if (item) tokens.add(normalizeRoleToken(item))
+      })
+    }
+  }
+
+  pushRole(profile.role)
+  pushRole(profile.roleName)
+  pushRole(profile.type)
+  if (Array.isArray(profile.roles)) profile.roles.forEach(pushRole)
+
+  return tokens.has('owner')
+}
+
 router.beforeEach(async (to, from, next) => {
   try {
     await store.dispatch('auth/bootstrapSession')
@@ -656,7 +693,9 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const permissionMeta = to.meta && to.meta.permission
-  if (permissionMeta && hasToken && isAuthenticated) {
+  const profile = store.getters['auth/profile'] || null
+  const isOwner = isOwnerProfile(profile)
+  if (permissionMeta && hasToken && isAuthenticated && !isOwner) {
     if (!store.getters['security/loaded']) {
       try {
         await store.dispatch('security/fetchMyPermissions')

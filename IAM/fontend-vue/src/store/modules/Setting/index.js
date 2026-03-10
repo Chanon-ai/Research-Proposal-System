@@ -1,4 +1,28 @@
 import Service from '@/service/api'
+import i18n from '@/i18n'
+
+const LANG_STORAGE_KEY = 'app-lang'
+const SUPPORTED_LANGS = ['en', 'th']
+
+function normalizeLang (value) {
+  const normalized = String(value || '').trim().toLowerCase().split(/-|_/)[0]
+  return SUPPORTED_LANGS.includes(normalized) ? normalized : 'th'
+}
+
+function readStoredLang () {
+  if (typeof window === 'undefined' || !window.localStorage) return ''
+  return window.localStorage.getItem(LANG_STORAGE_KEY) || ''
+}
+
+function persistLang (lang) {
+  if (typeof window === 'undefined' || !window.localStorage) return
+  window.localStorage.setItem(LANG_STORAGE_KEY, lang)
+}
+
+const initialLang = normalizeLang(readStoredLang() || (i18n && i18n.locale) || 'th')
+if (i18n && i18n.locale !== initialLang) {
+  i18n.locale = initialLang
+}
 
 function normalizeLangArray (value) {
   if (Array.isArray(value)) {
@@ -674,11 +698,16 @@ const settingVerification = {
 const module = {
   namespaced: true,
   state: {
-    lang: 'en'
+    lang: initialLang
   },
   mutations: {
     lang (state, obj) {
-      state.lang = obj;
+      const lang = normalizeLang(obj)
+      state.lang = lang
+      persistLang(lang)
+      if (i18n && i18n.locale !== lang) {
+        i18n.locale = lang
+      }
     }
   },
   actions: {},

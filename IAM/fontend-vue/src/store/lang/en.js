@@ -1,11 +1,10 @@
 const en = {
-
-    campus : "ชื่อสถาบันอุดมศึกษา",
-    faculty: "สำนักวิชา",
-    department: "สาขาวิชา",
-    academicYear:"ปีการศึกษา",
-    semester:"ภาคการศึกษา",
-    course:"เลือกรายวิชา",
+    campus : "University Name",
+    faculty: "Faculty",
+    department: "Department",
+    academicYear:"Academic Year",
+    semester:"Semester",
+    course:"Select Course",
 
     button: {
         setting:"Setting",
@@ -15,4 +14,3 @@ const en = {
     description : "Description"
 }
 export default en
-

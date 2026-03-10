@@ -48,6 +48,7 @@ export default {
         edit: !!(row && row.edit),
         delete: !!(row && row.delete),
         action: !!(row && row.action),
+        owner: !!(row && row.owner),
         logs: !!(row && row.logs)
       }
 
