@@ -119,7 +119,7 @@ const router = new Router({
   routes: [
     {
       path: '/',
-      redirect: '/dashboard',
+      redirect: '/pages/research-login',
       name: 'Home',
       component: TheContainer,
       children: [
@@ -681,18 +681,20 @@ const router = new Router({
         {
           path: 'login',
           name: 'Login',
-          component: Login
+          component: Login,
+          meta: { guestOnly: true }
         },
         {
           path: 'research-login',
           name: 'ResearchLogin',
           component: ResearchLogin,
-          meta: { appAuth: 'research', guestOnly: true }
+          meta: { guestOnly: true }
         },
         {
           path: 'register',
           name: 'Register',
-          component: Register
+          component: Register,
+          meta: { guestOnly: true }
         }
       ]
     }

@@ -123,8 +123,14 @@ export default {
   },
 
   methods: {
-    onLogout() {
-      this.$store.dispatch('auth/signOut')
+    async onLogout() {
+      try {
+        await this.$store.dispatch('Authentication/logout')
+      } catch (e) {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_user')
+        window.location.href = '/pages/research-login'
+      }
     }
   },
 

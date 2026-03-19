@@ -1,5 +1,4 @@
 import Service from '../../../service/api.js';
-import router from '../../../router/index.js';
 
 const Authentication = {
   namespaced: true,
@@ -73,7 +72,7 @@ const Authentication = {
       commit('CLEAR_AUTH');
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
-      router.push('/pages/research-login');
+      window.location.href = '/pages/research-login';
     },
 
     async restoreSession({ commit }) {
