@@ -15,6 +15,23 @@
                 width="52px"
                 alt="Google Sign-In"
               />
+
+              <div class="divider my-4">
+                <span class="divider-text text-muted">or</span>
+              </div>
+
+              <button
+                class="btn btn-outline-primary btn-block mb-2"
+                @click="$router.push({ name: 'ResearchLogin', query: { tab: 'login' } })"
+              >
+                Login with Email / Password
+              </button>
+              <button
+                class="btn btn-outline-success btn-block"
+                @click="$router.push({ name: 'ResearchLogin', query: { tab: 'register' } })"
+              >
+                Register
+              </button>
             </CCardBody>
           </CCard>
         </CCol>
@@ -69,5 +86,19 @@ export default {
 }
 .google-btn:hover {
   transform: scale(1.08);
+}
+.divider {
+  display: flex;
+  align-items: center;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #d8dbe0;
+}
+.divider-text {
+  padding: 0 12px;
+  font-size: 0.9rem;
 }
 </style>

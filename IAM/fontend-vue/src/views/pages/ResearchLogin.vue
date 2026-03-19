@@ -5,6 +5,9 @@
         <div class="text-center mb-4">
           <h2 class="mb-1">MFU Research Platform</h2>
           <p class="text-muted mb-0">Research proposal management</p>
+          <router-link to="/pages/login" class="small text-primary mt-2 d-inline-block">
+            &larr; Back to Google Sign-In
+          </router-link>
         </div>
 
         <div class="btn-group d-flex mb-4" role="group">
@@ -175,7 +178,7 @@ export default {
   name: 'ResearchLogin',
   data() {
     return {
-      activeTab: 'login',
+      activeTab: this.$route.query.tab === 'register' ? 'register' : 'login',
       loading: false,
       errorMessage: '',
       showLoginPassword: false,
