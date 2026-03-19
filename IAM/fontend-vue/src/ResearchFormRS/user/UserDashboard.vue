@@ -154,39 +154,46 @@
               <td>
                 <div style="font-weight:500">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
                 <div style="font-size:12px;color:#888">{{ item.proposalCode }}</div>
-                <div style="font-size:12px;color:#64748b">{{ item.projectLeaderName || '-' }}</div>
+                <div style="font-size:12px;color:#aaa">{{ item.projectLeaderName || '-' }}</div>
               </td>
             </template>
 
             <template #updatedAt="{ item }">
-              <td>{{ formatDate(item.updatedAt || item.submittedAt || item.createdAt) }}</td>
+              <td style="text-align:center; vertical-align:middle">
+                {{ item.updatedAt
+                  ? new Date(item.updatedAt).toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' })
+                  : '-' }}
+              </td>
             </template>
 
             <template #currentStatus="{ item }">
-              <td style="min-width: 220px">
+              <td style="text-align:center; vertical-align:middle; min-width:220px">
                 <CBadge :color="getProgressColor(item.currentStatus)" class="mb-2" style="font-size:11px">
                   {{ getStatusLabel(item.currentStatus) }}
                 </CBadge>
                 <CProgress
                   :value="getProgressPercent(item.currentStatus)"
                   :color="getProgressColor(item.currentStatus)"
-                  :animated="isAnimatedStatus(item.currentStatus)"
+                  :animated="['submitted', 'faculty_review_pending', 'under_review', 'document_checking', 'assigned_to_committee'].includes(item.currentStatus)"
                   :striped="item.currentStatus === 'revision_requested'"
                   style="height:16px; font-size:11px"
                   class="mb-1"
                 />
-                <div style="font-size:11px; color:#888; margin-top:2px">
+                <div style="font-size:11px; color:#888">
                   {{ getProgressLabel(item.currentStatus) }}
-                </div>
-                <div style="font-size:11px; color:#64748b">
-                  {{ getProgressText(item.currentStatus) }}
                 </div>
               </td>
             </template>
 
             <template #show_details="{ item }">
-              <td>
-                <CButton size="sm" color="info" @click="goToDetail(item._id)">Show</CButton>
+              <td style="text-align:center; vertical-align:middle">
+                <CButton
+                  size="sm"
+                  color="info"
+                  @click="$router.push('/research-form/' + item._id)"
+                >
+                  Show
+                </CButton>
               </td>
             </template>
           </CDataTable>
@@ -214,10 +221,28 @@ export default {
       loading: true,
       fetchError: null,
       tableFields: [
-        { key: 'projectTitleTh', label: 'ชื่อโครงการวิจัย / หัวหน้าโครงการ', _style: 'min-width:250px' },
-        { key: 'updatedAt', label: 'วันที่ยื่น', _style: 'width:140px' },
-        { key: 'currentStatus', label: 'สถานะ', _style: 'width:260px' },
-        { key: 'show_details', label: 'Action', _style: 'width:80px', filter: false, sorter: false }
+        {
+          key: 'projectTitleTh',
+          label: 'ชื่อโครงการวิจัย / หัวหน้าโครงการ',
+          _style: 'min-width:250px; text-align:center;'
+        },
+        {
+          key: 'currentStatus',
+          label: 'สถานะ',
+          _style: 'width:220px; text-align:center;'
+        },
+        {
+          key: 'updatedAt',
+          label: 'วันที่ยื่น',
+          _style: 'width:140px; text-align:center;'
+        },
+        {
+          key: 'show_details',
+          label: 'Action',
+          _style: 'width:80px; text-align:center;',
+          filter: false,
+          sorter: false
+        }
       ],
       tableFilter: '',
       activeFilter: null,
