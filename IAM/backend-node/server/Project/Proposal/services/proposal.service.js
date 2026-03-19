@@ -117,17 +117,42 @@ function applyDraftPayload(target, payload = {}, fallback = {}) {
   return doc;
 }
 
+async function generateProposalCode() {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const datePrefix = `${yy}${mm}${dd}`;
+
+  const latestToday = await Proposal.findOne(
+    { proposalCode: { $regex: `^${datePrefix}` } },
+    { proposalCode: 1 },
+    { sort: { proposalCode: -1 } }
+  );
+
+  let nextSeq = 1;
+  if (latestToday && latestToday.proposalCode) {
+    const lastSeq = parseInt(String(latestToday.proposalCode).slice(-4), 10);
+    if (!isNaN(lastSeq)) {
+      nextSeq = lastSeq + 1;
+    }
+  }
+
+  const seq = String(nextSeq).padStart(4, '0');
+  return `${datePrefix}${seq}`;
+}
+
 async function createProposal(payload, user) {
   const doc = payload || {};
   if (!doc.applicantUserId) doc.applicantUserId = user._id;
   if (!doc.createdBy) doc.createdBy = user._id;
   doc.currentStatus = STATUS.DRAFT;
   normalizeDraftCoreFields(doc);
-  // generate a proposalCode if not provided; simple placeholder strategy
+
   if (!doc.proposalCode) {
-    // format: <fiscalYear>-<timestamp>-<random>
-    doc.proposalCode = `${doc.fiscalYear || 'FY'}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    doc.proposalCode = await generateProposalCode();
   }
+
   console.log('[Proposal.create] mongoose.connection.name:', mongoose.connection && mongoose.connection.name);
   console.log('[Proposal.create] Proposal.collection.name:', Proposal.collection && Proposal.collection.name);
   const proposal = new Proposal(doc);
