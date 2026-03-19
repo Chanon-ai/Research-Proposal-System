@@ -62,17 +62,22 @@ instance.interceptors.response.use(
     },
     (error) => {
       if (error.response && error.response.status === 401) {
-        const currentPath = router && router.currentRoute ? router.currentRoute.path : '';
-        if (isResearchAppPath(currentPath) || getResearchToken()) {
-          if (typeof window !== 'undefined' && window.localStorage) {
-            window.localStorage.removeItem('auth_token');
-            window.localStorage.removeItem('auth_user');
+        const requestUrl = error.config && error.config.url ? String(error.config.url) : '';
+        const is2FAFlow = requestUrl.includes('/auth/2fa/') || requestUrl.includes('/auth/trust-device') || requestUrl.includes('/auth/me');
+        console.warn('[AXIOS-401]', requestUrl, is2FAFlow ? '(skipped redirect)' : '(redirecting)');
+        if (!is2FAFlow) {
+          const currentPath = router && router.currentRoute ? router.currentRoute.path : '';
+          if (isResearchAppPath(currentPath) || getResearchToken()) {
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.removeItem('auth_token');
+              window.localStorage.removeItem('auth_user');
+            }
+            if (currentPath !== '/pages/research-login') {
+              router.push('/pages/research-login');
+            }
+          } else if (currentPath !== '/pages/login') {
+            router.push('/pages/login');
           }
-          if (currentPath !== '/pages/research-login') {
-            router.push('/pages/research-login');
-          }
-        } else if (currentPath !== '/pages/login') {
-          router.push('/pages/login');
         }
       }
       return Promise.reject(error);
