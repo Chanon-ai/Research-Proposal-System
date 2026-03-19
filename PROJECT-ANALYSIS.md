@@ -1118,4 +1118,142 @@ EMAIL_PASS=[Gmail App Password]
 
 ---
 
-*End of analysis. This document covers the complete architecture, all API endpoints, all database models, all frontend routes, all Vuex state, and the full proposal workflow of the MFU Research Proposal System.*
+## 15. Development Progress & Recent Changes
+
+> **Last Updated**: March 20, 2026
+
+### 15.1 Backend Improvements
+
+#### Robust Startup Launcher
+- **File**: `backend-node/scripts/start-backend.js` (new)
+- **File**: `backend-node/package.json` (`start` script updated)
+- แก้ปัญหา port ค้าง (8081/8082) บน Windows — เปลี่ยนจาก `prestart: kill-port` เป็น Node launcher script ที่:
+  - ตรวจ PID จาก `netstat -ano` → `taskkill /F /T`
+  - รอจนพอร์ตว่างจริง (wait loop)
+  - Spawn `nodemon` ผ่าน `npx.cmd` (Windows-safe)
+- `npm start` เพียงคำสั่งเดียวจัดการทุกอย่าง
+
+#### Proposal Code Generation
+- **File**: `backend-node/server/Project/Proposal/services/proposal.service.js`
+- เปลี่ยนจาก random/timestamp → **Daily Sequential Format**: `YYMMDDXXXX`
+- ฟังก์ชัน `generateProposalCode()` — query วันนี้ → increment ลำดับ
+
+#### Auth Route Shadowing Fix
+- **File**: `backend-node/server/Project/Auth/routes/auth.route.js`
+- JWT `GET /auth/me` ถูก shadow โดย legacy handler → ย้ายเป็น `GET /auth/user/me`
+- Frontend `service/api.js` อัปเดตเรียก path ใหม่
+
+#### Logger Stability
+- **File**: `backend-node/config/logger.js`
+- เพิ่ม transport error handler ป้องกัน uncaught exception
+- Truncate response body >10KB ก่อนเขียนลง MongoDB
+- ป้องกัน BSON 16MB limit crash
+
+#### CORS Hardening
+- **File**: `backend-node/config/corsAndIP.js` + `middleware/middlewares.js` + `config/express.js`
+- เพิ่ม `PATCH`, `DELETE`, `OPTIONS` ใน allowedMethods
+- จัดการ OPTIONS preflight ใน express.js
+
+### 15.2 Frontend — Auth & Routing
+
+#### Research Login/Logout Flow
+- **File**: `fontend-vue/src/store/modules/Authentication/index.js`
+  - Logout action: clear auth + hard redirect → `/pages/research-login`
+- **File**: `fontend-vue/src/containers/TheHeaderDropdownAccnt.vue`
+  - Logout dispatch → `Authentication/logout` + fallback `window.location.href`
+- **File**: `fontend-vue/src/containers/TheContainer.vue`
+  - Route-aware auth bootstrap (ข้าม legacy modal บน research routes)
+
+#### Router Cleanup
+- **File**: `fontend-vue/src/router/index.js`
+  - Research routes → ชี้ไปยัง `ResearchFormRS/*` components จริง (ไม่ใช่ stub)
+  - Root `/` redirect ตาม role
+  - `guestOnly` guard สำหรับ login pages
+  - Role-based redirect: committee→committee dashboard, admin→admin dashboard, researcher→userdashboard
+
+### 15.3 Frontend — Header & Navigation
+
+#### Notification Bell
+- **File**: `fontend-vue/src/containers/TheHeader.vue`
+  - เพิ่ม notification bell icon + unread badge ก่อน avatar
+  - Fetch unread count จาก `/api/v1/notifications/?isRead=false`
+
+#### Sidebar Cleanup
+- **File**: `fontend-vue/src/containers/_nav.js`
+  - ลบ Notifications ออกจาก User Panel (ย้ายไป header bell)
+  - Legacy IAM menus ซ่อนด้วย role token
+
+### 15.4 Frontend — UserDashboard Overhaul
+
+**File**: `fontend-vue/src/ResearchFormRS/user/UserDashboard.vue`
+
+#### Widget Cards (CWidgetDropdown)
+- 4 cards: แบบร่าง / กำลังดำเนินการ / ขอแก้ไข / อนุมัติแล้ว
+- แต่ละ card มี sparkline chart (CChartLine / CChartBar)
+- ✅ **Clickable Widget Cards** — กดเพื่อกรองตาราง:
+  - `@click="setFilter('draft')"` บนแต่ละ card wrapper
+  - Active state: `scale(1.03)` + `outline: 3px solid #fff`
+  - Inactive cards: `opacity: 0.6`
+  - กดซ้ำ card เดิม → reset filter
+- Stats คำนวณจากข้อมูลจริง (computed `stats`)
+
+#### Filter System
+- `activeFilter` — state เก็บ filter ปัจจุบัน (`null` = ทั้งหมด)
+- `filterGroups` — mapping card key → array of statuses:
+  - `draft`: `['draft']`
+  - `submitted`: `['submitted', 'faculty_review_pending', 'faculty_approved', 'office_received', 'document_checking', 'assigned_to_committee', 'under_review', 'meeting_completed', 'second_round_review', 'resubmitted']`
+  - `revision`: `['revision_requested']`
+  - `approved`: `['approved', 'announced']`
+  - `rejected`: `['rejected']`
+- `filteredProposals` (computed) — กรอง proposals ตาม activeFilter
+- `filterLabel` (computed) — "กรองตาม: ..." หรือ "โครงการทั้งหมด"
+- Filter label + badge count + ปุ่ม "× ล้างตัวกรอง" แสดงเหนือตาราง
+
+#### CDataTable (Advanced Table)
+- `:items="filteredProposals"` (ใช้ข้อมูลที่กรองแล้ว)
+- Pagination, sorter, column-filter, table-filter
+- Column order: **ชื่อโครงการ → สถานะ → วันที่ยื่น → Action**
+- Header text centered ทุกคอลัมน์ (`text-align:center` ใน `_style`)
+- Slot content: สถานะ/วันที่/ปุ่ม จัดกลาง (`text-align:center; vertical-align:middle`)
+
+#### Workflow Progress Bar (per row)
+- `CBadge` แสดง status label + สี
+- `CProgress` แสดง % ตาม workflow step:
+  - draft=10%, submitted=20%, ... approved/rejected=100%
+  - Animated สำหรับ statuses ที่กำลังดำเนินการ
+  - Striped สำหรับ `revision_requested`
+- `getProgressLabel()` — "ขั้นที่ X/10 — ..."
+- Color mapping: secondary(draft), primary(in-progress), warning(revision), success(approved), danger(rejected)
+
+### 15.5 Summary of All Modified Files
+
+| File | Changes |
+|---|---|
+| `backend-node/scripts/start-backend.js` | **New** — Robust startup launcher (Windows port management) |
+| `backend-node/package.json` | `start` script → launcher, removed fragile `prestart` |
+| `backend-node/config/logger.js` | Error handler, body truncation |
+| `backend-node/config/express.js` | OPTIONS preflight handling |
+| `backend-node/config/corsAndIP.js` | Added PATCH/DELETE/OPTIONS methods |
+| `backend-node/middleware/middlewares.js` | Dev CORS behavior |
+| `backend-node/server/Project/Auth/routes/auth.route.js` | `/me` → `/user/me` |
+| `backend-node/server/Project/Proposal/services/proposal.service.js` | Proposal code `YYMMDDXXXX` |
+| `fontend-vue/src/service/api.js` | `auth.me` path updated |
+| `fontend-vue/src/router/index.js` | Research routes → ResearchFormRS, guards, redirects |
+| `fontend-vue/src/store/modules/Authentication/index.js` | Logout → research-login redirect |
+| `fontend-vue/src/containers/TheContainer.vue` | Route-aware auth bootstrap |
+| `fontend-vue/src/containers/TheHeader.vue` | Notification bell + unread badge |
+| `fontend-vue/src/containers/TheHeaderDropdownAccnt.vue` | Logout dispatch fix |
+| `fontend-vue/src/containers/_nav.js` | Sidebar cleanup (notification removed, IAM gated) |
+| `fontend-vue/src/ResearchFormRS/user/UserDashboard.vue` | Full overhaul: widgets, table, filter, progress bars, column reorder |
+
+### 15.6 What's NOT Changed (Preserved)
+- Backend Proposal schema/model
+- Auth middleware logic (both legacy + JWT)
+- Admin/Committee views
+- All existing API endpoints
+- Security RBAC modules
+- Database schemas
+
+---
+
+*End of analysis. This document covers the complete architecture, all API endpoints, all database models, all frontend routes, all Vuex state, the full proposal workflow, and all recent development changes of the MFU Research Proposal System.*
