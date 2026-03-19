@@ -25,10 +25,6 @@ export default [{
         {
           name: 'History',
           to: '/user/history'
-        },
-        {
-          name: 'Notifications',
-          to: '/user/notification'
         }
       ]
     },

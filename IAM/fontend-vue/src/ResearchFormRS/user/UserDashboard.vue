@@ -1,167 +1,160 @@
 <template>
   <div class="page-content">
 
-    <div class="summary-strip mb-4">
-      <div v-for="s in stageSummary" :key="s.key" class="strip-card"
-        :class="[`strip-${s.key}`, { 'strip-active': activeFilter === s.key } ]" @click="toggleFilter(s.key)">
-        <div class="strip-left">
-          <span class="strip-icon-wrap">
-            <CIcon :name="s.icon" class="strip-icon"/>
-          </span>
-          <span class="strip-label">{{ s.label }}</span>
-        </div>
-        <div class="strip-right">
-          <span class="strip-count">{{ s.count }}</span>
-        </div>
-      </div>
-    </div>
+    <CRow class="mb-4">
+      <CCol sm="6" lg="3">
+        <CWidgetDropdown color="gradient-primary" :header="String(stats.draft)" text="แบบร่าง">
+          <template #default>
+            <CDropdown color="transparent p-0" placement="bottom-end">
+              <template #toggler-content>
+                <CIcon name="cil-settings"/>
+              </template>
+            </CDropdown>
+          </template>
+          <template #footer>
+            <div style="height:70px">
+              <CChartLine :datasets="[{ data: chartData.draft, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+            </div>
+          </template>
+        </CWidgetDropdown>
+      </CCol>
 
-    <!-- Table -->
-    <div class="panels-row">
+      <CCol sm="6" lg="3">
+        <CWidgetDropdown color="gradient-info" :header="String(stats.submitted)" text="ยื่นแล้ว">
+          <template #footer>
+            <div style="height:70px">
+              <CChartLine :datasets="[{ data: chartData.submitted, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+            </div>
+          </template>
+        </CWidgetDropdown>
+      </CCol>
 
-      <!-- Main Table Card -->
-      <div class="panel-table">
-        <div v-if="false" class="table-card-header">
-          <div class="d-flex align-items-center gap-2">
-            <span class="header-grid-icon">⊞</span>
-            <span class="table-card-title">Advanced <em>CDataTable</em> application</span>
-          </div>
-          <div class="d-flex gap-2">
-            <button class="btn-quick btn-success" @click="continueDraft">
-              <CIcon name="cil-file" class="btn-ic"/>
-              ร่างล่าสุด
-            </button>
-       
-          </div>
-        </div>
+      <CCol sm="6" lg="3">
+        <CWidgetDropdown color="gradient-warning" :header="String(stats.revision)" text="ต้องแก้ไข">
+          <template #footer>
+            <div style="height:70px">
+              <CChartLine :datasets="[{ data: chartData.revision, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+            </div>
+          </template>
+        </CWidgetDropdown>
+      </CCol>
 
-        <!-- Filter bar (Image 1 style) -->
-        <div class="filter-bar">
-          <div class="filter-right">
-            <label class="filter-label">Items per page:</label>
-            <select v-model="perPage" class="f-input f-perpage">
-              <option :value="5">5</option>
-              <option :value="10">10</option>
-              <option :value="25">25</option>
-            </select>
-          </div>
-        </div>
+      <CCol sm="6" lg="3">
+        <CWidgetDropdown color="gradient-success" :header="String(stats.approved)" text="อนุมัติ">
+          <template #footer>
+            <div style="height:70px">
+              <CChartBar :datasets="[{ data: chartData.approved, backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'transparent' }]" :options="chartOptions"/>
+            </div>
+          </template>
+        </CWidgetDropdown>
+      </CCol>
+    </CRow>
 
-        <!-- Loading -->
+    <CCard>
+      <CCardBody>
         <div v-if="loading" class="state-box">
           <div class="spinner"></div>
           <div class="state-text">กำลังโหลดข้อมูล…</div>
         </div>
 
-        <!-- Fetch error -->
         <div v-else-if="fetchError" class="state-box">
           <div class="state-text">เกิดข้อผิดพลาดในการโหลดข้อมูล: {{ fetchError }}</div>
           <div style="margin-top:10px;"><button class="btn-quick btn-success" @click="retryFetch">ลองอีกครั้ง</button></div>
         </div>
 
-        <!-- Empty -->
-        <div v-else-if="filteredItems.length === 0" class="state-box">
-          <CIcon name="cil-envelope-closed" class="empty-ic"/>
-          <div class="state-text">ไม่พบโครงการวิจัย</div>
-        </div>
+        <div v-else>
+          <CDataTable
+            :items="proposals"
+            :fields="tableFields"
+            :items-per-page="5"
+            :items-per-page-select="{ label: 'Items per page:' }"
+            sorter
+            column-filter
+            table-filter
+            :table-filter-value.sync="tableFilter"
+            pagination
+            hover
+            striped
+            border
+          >
+            <template #projectTitleTh="{ item }">
+              <td>
+                <div style="font-weight:500">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
+                <div style="font-size:12px;color:#888">{{ item.proposalCode }}</div>
+                <div style="font-size:12px;color:#64748b">{{ item.projectLeaderName || '-' }}</div>
+              </td>
+            </template>
 
-        <!-- Table -->
-        <div v-else class="table-wrapper">
-          <table class="data-table">
-            <thead>
-              <!-- Sortable headers -->
-              <tr class="thead-row">
-                <th class="th-sort" @click="sortBy('projectName')">
-                  ชื่อโครงการวิจัย / หัวหน้าโครงการ
-                  <span class="sort-ic">{{ sortIcon('projectName') }}</span>
-                </th>
-                <th class="th-sort" @click="sortBy('submitDate')">
-                  วันที่ยื่น
-                  <span class="sort-ic">{{ sortIcon('submitDate') }}</span>
-                </th>
-                <th class="th-sort" @click="sortBy('stageLabel')">
-                  สถานะ
-                  <span class="sort-ic">{{ sortIcon('stageLabel') }}</span>
-                </th>
-                <th>ขั้นตอนถัดไป</th>
-                <th class="th-sort" @click="sortBy('activityMeta')">
-                  Activity
-                  <span class="sort-ic">{{ sortIcon('activityMeta') }}</span>
-                </th>
-                <th class="th-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(item, i) in paginatedItems" :key="item.id || i" class="tbody-row">
-                <td>
-                  <div class="td-title">{{ item.projectName }}</div>
-                  <div class="td-sub">{{ item.projectLeader }}</div>
-                </td>
-                <td><span class="td-date">{{ item.submitDate }}</span></td>
-                <td>
-                  <span class="badge" :class="`badge-${item.stageBadgeColor}`">
-                    {{ item.stageLabel }}
-                  </span>
-                </td>
-                <td><span class="td-next">{{ item.nextAction }}</span></td>
-                <td>
-                  <div class="td-act-msg">{{ item.activityMessage }}</div>
-                  <div class="td-act-meta">{{ item.activityMeta }}</div>
-                </td>
-                <td class="td-right">
-                  <button class="btn-show" @click.stop="goToDetail(item.id)">Show</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            <template #updatedAt="{ item }">
+              <td>{{ formatDate(item.updatedAt || item.submittedAt || item.createdAt) }}</td>
+            </template>
+
+            <template #currentStatus="{ item }">
+              <td>
+                <CBadge :color="getStatusColor(item.currentStatus)">{{ getStatusLabel(item.currentStatus) }}</CBadge>
+              </td>
+            </template>
+
+            <template #show_details="{ item }">
+              <td>
+                <CButton size="sm" color="info" @click="goToDetail(item._id)">Show</CButton>
+              </td>
+            </template>
+          </CDataTable>
         </div>
-        <!-- Pagination -->
-        <div v-if="totalPages > 1" class="pagi-bar">
-          <button class="pg-btn" :disabled="currentPage === 1" @click="currentPage = 1">«</button>
-          <button class="pg-btn" :disabled="currentPage === 1" @click="currentPage--">‹</button>
-          <button v-for="p in visiblePages" :key="p" class="pg-btn" :class="{ 'pg-active': p === currentPage }"
-            @click="currentPage = p">{{ p }}</button>
-          <button class="pg-btn" :disabled="currentPage === totalPages" @click="currentPage++">›</button>
-          <button class="pg-btn" :disabled="currentPage === totalPages" @click="currentPage = totalPages">»</button>
-        </div>
-      </div>
-    </div>
+      </CCardBody>
+    </CCard>
+
     <button class="fab" title="สร้างโครงการใหม่" @click="onAdd">＋</button>
   </div>
 </template>
 
 <script>
 import Service from '@/service/api'
+import { CChartLine, CChartBar } from '@coreui/vue-chartjs'
 
 export default {
   name: "UserDashboard",
+  components: {
+    CChartLine,
+    CChartBar,
+  },
   data() {
     return {
       allProjects: [],
       loading: true,
       fetchError: null,
-      stageFilter: "",
-      activeFilter: "",
-      perPage: 10,
-      currentPage: 1,
-      sortKey: "",
-      sortDir: 1,
+      tableFields: [
+        { key: 'projectTitleTh', label: 'ชื่อโครงการวิจัย / หัวหน้าโครงการ', _style: 'min-width:250px' },
+        { key: 'updatedAt', label: 'วันที่ยื่น', _style: 'width:140px' },
+        { key: 'currentStatus', label: 'สถานะ', _style: 'width:160px' },
+        { key: 'show_details', label: 'Action', _style: 'width:80px', filter: false, sorter: false }
+      ],
+      tableFilter: '',
+      chartData: {
+        draft: [65, 59, 84, 84, 51, 55, 40],
+        submitted: [35, 49, 60, 71, 80, 90, 75],
+        revision: [20, 30, 15, 25, 10, 35, 20],
+        approved: [10, 20, 30, 25, 35, 45, 40],
+      },
+      chartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        legend: { display: false },
+        scales: {
+          xAxes: [{ display: false }],
+          yAxes: [{ display: false }]
+        },
+        elements: {
+          line: { borderWidth: 2, tension: 0.4 },
+          point: { radius: 0 }
+        }
+      }
     };
   },
 
   async mounted() {
     await this.fetchResearch();
-  },
-
-  watch: {
-    stageFilter() { this.currentPage = 1; },
-    activeFilter() { this.currentPage = 1; },
-    perPage() { this.currentPage = 1; },
-    totalPages(newVal) {
-      if (this.currentPage > newVal) {
-        this.currentPage = newVal;
-      }
-    }
   },
 
   computed: {
@@ -172,57 +165,20 @@ export default {
       return user && user._id ? String(user._id) : null;
     },
 
-    stageSummary() {
-      return [
-        { key: "DRAFT", label: "ร่าง", icon: "cil-file" },
-        { key: "SUBMITTED", label: "ยื่นแล้ว", icon: "cil-cloud-upload" },
-        { key: "NEED_REVISION", label: "ต้องแก้ไข", icon: "cil-warning" },
-        { key: "IN_REVIEW", label: "กำลังพิจารณา", icon: "cil-magnifying-glass" },
-        { key: "APPROVED", label: "อนุมัติ", icon: "cil-check" },
-      ].map(s => ({
-        ...s,
-        count: this.allProjects.filter(p => p.stage === s.key).length,
-      }));
+    proposals() {
+      return this.allProjects;
     },
 
-    nextActionItems() {
-      return this.allProjects.filter(p => p.stage === "NEED_REVISION" || p.stage === "DRAFT");
-    },
-
-    filteredItems() {
-      let list = [...this.allProjects];
-      if (this.activeFilter) list = list.filter(p => p.stage === this.activeFilter);
-      if (this.stageFilter) list = list.filter(p => p.stage === this.stageFilter);
-      if (this.sortKey) {
-        if (this.sortKey === "submitDate") {
-          list.sort((a, b) =>
-            (new Date(a.submitDateRaw) - new Date(b.submitDateRaw)) * this.sortDir
-          );
-        } else {
-          list.sort((a, b) =>
-            (a[this.sortKey] || "").toString()
-              .localeCompare((b[this.sortKey] || "").toString(), "th") * this.sortDir
-          );
-        }
-      }
-      return list;
-    },
-
-    totalPages() {
-      return Math.ceil(this.filteredItems.length / this.perPage) || 1;
-    },
-
-    paginatedItems() {
-      const s = (this.currentPage - 1) * this.perPage;
-      return this.filteredItems.slice(s, s + this.perPage);
-    },
-
-    visiblePages() {
-      const range = [];
-      const s = Math.max(1, this.currentPage - 2);
-      const e = Math.min(this.totalPages, this.currentPage + 2);
-      for (let i = s; i <= e; i++) range.push(i);
-      return range;
+    stats() {
+      const seed = { draft: 0, submitted: 0, revision: 0, approved: 0 };
+      return this.allProjects.reduce((acc, item) => {
+        const stage = this.inferStage(item);
+        if (stage === 'DRAFT') acc.draft += 1;
+        if (stage === 'SUBMITTED') acc.submitted += 1;
+        if (stage === 'NEED_REVISION') acc.revision += 1;
+        if (stage === 'APPROVED') acc.approved += 1;
+        return acc;
+      }, seed);
     },
   },
 
@@ -265,21 +221,15 @@ export default {
     },
 
     mapItem(item) {
-      const stage = this.inferStage(item);
-      const nextAction = this.inferNextAction(stage);
-      const { message, meta } = this.getLastActivityText(item);
       return {
-        id: item._id,
-        projectName: item.projectTitleTh || item.projectTitleEn || "(ไม่มีชื่อ)",
-        projectLeader: item.projectLeaderName || "-",
-        submitDate: this.formatDate(item.submittedAt || item.updatedAt || item.createdAt),
-        submitDateRaw: item.submittedAt || item.updatedAt || item.createdAt,
-        stage,
-        stageLabel: this.stageLabel(stage),
-        stageBadgeColor: this.stageBadgeColor(stage),
-        nextAction,
-        activityMessage: message,
-        activityMeta: meta,
+        _id: item._id,
+        proposalCode: item.proposalCode || '-',
+        projectTitleTh: item.projectTitleTh || '',
+        projectTitleEn: item.projectTitleEn || '',
+        projectLeaderName: item.projectLeaderName || '-',
+        submittedAt: item.submittedAt,
+        updatedAt: item.updatedAt,
+        createdAt: item.createdAt,
         currentStatus: item.currentStatus,
       };
     },
@@ -295,48 +245,28 @@ export default {
       return 'IN_REVIEW';
     },
 
-    inferNextAction(stage) {
+    getStatusLabel(status) {
+      const stage = this.inferStage({ currentStatus: status });
       return {
-        DRAFT: "กรอกข้อมูลให้ครบและบันทึก",
-        SUBMITTED: "รอเจ้าหน้าที่ตรวจสอบ",
-        NEED_REVISION: "แก้ไขตามข้อเสนอแนะและส่งใหม่",
-        IN_REVIEW: "รอผลการพิจารณา",
-        APPROVED: "ผ่านการพิจารณาแล้ว",
-        REJECTED: "สิ้นสุดการพิจารณา",
-      }[stage] || "-";
-    },
-
-    stageLabel(stage) {
-      return {
-        DRAFT: "ร่าง",
-        SUBMITTED: "ยื่นแล้ว",
-        NEED_REVISION: "ต้องแก้ไข",
-        IN_REVIEW: "กำลังพิจารณา",
-        APPROVED: "อนุมัติ",
-        REJECTED: "ไม่อนุมัติ",
+        DRAFT: 'ร่าง',
+        SUBMITTED: 'ยื่นแล้ว',
+        NEED_REVISION: 'ต้องแก้ไข',
+        IN_REVIEW: 'กำลังพิจารณา',
+        APPROVED: 'อนุมัติ',
+        REJECTED: 'ไม่อนุมัติ',
       }[stage] || stage;
     },
 
-    stageBadgeColor(stage) {
+    getStatusColor(status) {
+      const stage = this.inferStage({ currentStatus: status });
       return {
-        DRAFT: "secondary",
-        SUBMITTED: "info",
-        NEED_REVISION: "warning",
-        IN_REVIEW: "primary",
-        APPROVED: "success",
-        REJECTED: "danger",
-      }[stage] || "dark";
-    },
-
-    getLastActivityText(item) {
-      const la = item.lastActivity;
-      if (la?.message) {
-        return {
-          message: la.message,
-          meta: `${la.by || ""} • ${this.formatTimeAgo(la.at || item.updatedAt)}`,
-        };
-      }
-      return { message: "บันทึกล่าสุด", meta: this.formatTimeAgo(item.updatedAt) };
+        DRAFT: 'secondary',
+        SUBMITTED: 'info',
+        NEED_REVISION: 'warning',
+        IN_REVIEW: 'primary',
+        APPROVED: 'success',
+        REJECTED: 'danger',
+      }[stage] || 'dark';
     },
 
     formatDate(date) {
@@ -346,79 +276,11 @@ export default {
       });
     },
 
-    formatTimeAgo(date) {
-      if (!date) return "-";
-      const diff = Date.now() - new Date(date);
-      const minutes = Math.floor(diff / 60000);
-      const hours = Math.floor(diff / 3600000);
-      const days = Math.floor(diff / 86400000);
-      if (minutes < 1) return "เมื่อสักครู่";
-      if (minutes < 60) return `${minutes} นาทีที่แล้ว`;
-      if (hours < 24) return `${hours} ชั่วโมงที่แล้ว`;
-      return `${days} วันที่แล้ว`;
-    },
-
-    sortBy(key) {
-      if (this.sortKey === key) this.sortDir *= -1;
-      else { this.sortKey = key; this.sortDir = 1; }
-    },
-
-    sortIcon(key) {
-      if (this.sortKey !== key) return "↕";
-      return this.sortDir === 1 ? "↑" : "↓";
-    },
-
-    toggleFilter(key) {
-      this.activeFilter = this.activeFilter === key ? "" : key;
-      this.stageFilter = "";
-    },
-
-    isReadOnlyStatus(status) {
-      const s = String(status || '').toLowerCase();
-      return [
-        'submitted', 'faculty_review_pending', 'faculty_approved',
-        'office_received', 'document_checking', 'assigned_to_committee',
-        'under_review', 'meeting_completed', 'approved', 'rejected', 'announced'
-      ].includes(s);
-    },
-
-    openProposal(id, status) {
-      const s = String(status || '').toLowerCase();
-      this.$router.push({
-        name: 'ResearchForm',
-        query: {
-          id,
-          readOnly: this.isReadOnlyStatus(status) ? 'true' : 'false',
-          scrollFeedback: s === 'revision_requested' ? '1' : '0'
-        }
-      });
-    },
-
     goToDetail(id) {
-      const item = this.allProjects.find(p => p.id === id);
-      this.openProposal(id, item && item.currentStatus);
+      this.$router.push(`/research-form/${id}`);
     },
-    goToEdit(id) {
-      const item = this.allProjects.find(p => p.id === id);
-      this.openProposal(id, item && item.currentStatus);
-    },
+
     onAdd() { this.$router.push({ name: 'ResearchForm', query: { new: '1' } }); },
-
-    continueDraft() {
-      const draft = this.allProjects.find(p => p.stage === "DRAFT");
-
-      if (draft) {
-        this.openProposal(draft.id, draft.currentStatus);
-      } else {
-        this.$router.push({ name: 'ResearchForm', query: { new: '1' } });
-      }
-    },
-
-    exportPDF() { this.$router.push("/report"); },
-
-    onLogout() {
-      this.$router.push({ name: "Login" });
-    },
   },
 };
 </script>
