@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import NotificationPage from '@/views/๊UserNotification.vue'
+import NotificationPage from '../user/UserNotification.vue'
 
 export default {
   name: 'CommitteeNotifications',

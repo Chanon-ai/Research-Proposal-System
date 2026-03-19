@@ -168,7 +168,7 @@
 
 <script>
 import Service from '@/service/api'
-import ResearchForm from '@/views/ResearchForm'
+import ResearchForm from '../ResearchForm.vue'
 import Swal from 'sweetalert2'
 import {
   LOW_SCORE_THRESHOLD,
