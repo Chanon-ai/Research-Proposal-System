@@ -13,7 +13,9 @@ const corsOptions = {
         } else {
             callback(new Error('Not allowed by CORS'));
         }
-    }
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'X-Access-Token', 'x-access-token', 'lang']
 };
 
 // ฟังก์ชัน middleware สำหรับการตรวจสอบ IP ที่อนุญาต

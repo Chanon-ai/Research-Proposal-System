@@ -187,7 +187,7 @@ export default {
   auth: {
     login: (data) => instance.post('/api/v1/auth/login', data),
     register: (data) => instance.post('/api/v1/auth/register', data),
-    me: () => instance.get('/api/v1/auth/me'),
+    me: () => instance.get('/api/v1/auth/user/me'),
     logout: () => instance.post('/api/v1/auth/logout'),
     changePassword: (data) => instance.put('/api/v1/auth/change-password', data),
   },

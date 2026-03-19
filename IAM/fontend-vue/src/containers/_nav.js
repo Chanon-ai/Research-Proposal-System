@@ -124,6 +124,7 @@ export default [{
       name: 'Config',
       route: '/config',
       icon: 'cil-settings',
+      roles: ['legacy_admin'],
       items: [
         {
           name: 'Message Authen',
@@ -144,6 +145,7 @@ export default [{
       name: 'Setting',
       route: '/setting',
       icon: 'cil-list',
+      roles: ['legacy_admin'],
       items: [
         {
           name: 'Setting Group',
@@ -160,6 +162,7 @@ export default [{
       name: 'Accounts',
       route: '/accounts',
       icon: 'cil-user',
+      roles: ['legacy_admin'],
       items: [
         {
           name: 'Account Directory',
@@ -172,6 +175,7 @@ export default [{
       name: 'Training',
       route: '/training',
       icon: 'cil-library',
+      roles: ['legacy_admin'],
       items: [
         {
           name: 'Training Requests',
@@ -188,6 +192,7 @@ export default [{
       name: 'Permission',
       route: '/security/permissions',
       icon: 'cil-lock-locked',
+      roles: ['legacy_admin'],
       items: [
         {
           name: 'Create Menu',

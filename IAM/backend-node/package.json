@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "prestart": "kill-port 8082",
     "start": "nodemon -r dotenv/config server.js",
     "serve:test": "node -r dotenv/config server.js dotenv_config_path=.env.test",
     "serve:prod": "node -r dotenv/config server.js dotenv_config_path=.env.prod"
@@ -73,6 +74,7 @@
     "lodash": "^4.17.21",
     "macaddress": "^0.2.9",
     "messaging-api-line": "^1.1.0",
+    "kill-port": "^2.0.1",
     "mime": "^2.4.4",
     "moment": "^2.29.3",
     "mongoose": "^5.13.22",

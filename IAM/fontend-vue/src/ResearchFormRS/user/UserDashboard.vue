@@ -268,13 +268,10 @@ export default {
       const stage = this.inferStage(item);
       const nextAction = this.inferNextAction(stage);
       const { message, meta } = this.getLastActivityText(item);
-      const snapshot = item && item.formSnapshotJson ? item.formSnapshotJson : {};
-      const team = snapshot && snapshot.researchTeam ? snapshot.researchTeam : {};
-      const leader = team && team.projectLeader ? team.projectLeader : {};
       return {
         id: item._id,
         projectName: item.projectTitleTh || item.projectTitleEn || "(ไม่มีชื่อ)",
-        projectLeader: item.projectLeaderName || leader.name || "-",
+        projectLeader: item.projectLeaderName || "-",
         submitDate: this.formatDate(item.submittedAt || item.updatedAt || item.createdAt),
         submitDateRaw: item.submittedAt || item.updatedAt || item.createdAt,
         stage,

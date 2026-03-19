@@ -30,9 +30,6 @@ import TheHeader from './TheHeader'
 import TheFooter from './TheFooter'
 import TheAside from './TheAside'
 import {mapGetters} from "vuex";
-import store from "@/store/store";
-//
-import { io } from "socket.io-client";
 import DialogMessage from "@/projects/components/dialog/DialogMessage.vue";
 import CenterLoading from "@/projects/components/dialog/CenterLoading.vue";
 import SignIn from "@/projects/components/dialog/SignIn.vue";
@@ -53,9 +50,14 @@ export default {
     TheAside
   },
 
-  mounted() {
-    console.log(1234)
-
+  async mounted() {
+    const route = this.$route || {}
+    const isResearchRoute = !!(route.meta && route.meta.appAuth === 'research')
+    if (isResearchRoute) {
+      await this.$store.dispatch('Authentication/restoreSession')
+      return
+    }
+    await this.$store.dispatch('auth/bootstrapSession')
   },
 
   methods: {

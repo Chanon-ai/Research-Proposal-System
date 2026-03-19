@@ -5,26 +5,26 @@ import store from '@/store/store'
 const TheContainer = () => import('@/containers/TheContainer')
 
 const Dashboard = () => import('@/views/Dashboard')
-const UserDashboard = () => import('@/views/UserDashboard')
-const UserProfile = () => import('@/views/UserProfile')
-const UserHistory = () => import('@/views/UserHistory')
-const UserNotification = () => import('@/views/UserNotification')
+const UserDashboard = () => import('@/ResearchFormRS/user/UserDashboard.vue')
+const UserProfile = () => import('@/ResearchFormRS/user/UserProfile.vue')
+const UserHistory = () => import('@/ResearchFormRS/user/UserHistory.vue')
+const UserNotification = () => import('@/ResearchFormRS/user/UserNotification.vue')
 
-const AdminDashboard = () => import('@/views/AdminDashboard')
-const AdminProposalList = () => import('@/views/AdminProposalList')
-const AdminProposalDetail = () => import('@/views/AdminProposalDetail')
-const AdminDocuments = () => import('@/views/AdminDocuments')
-const AdminMeetings = () => import('@/views/AdminMeetings')
-const AdminNotifications = () => import('@/views/AdminNotifications')
-const AdminReports = () => import('@/views/AdminReports')
-const AdminSettings = () => import('@/views/AdminSettings')
-const AdminUsers = () => import('@/views/AdminUsers')
+const AdminDashboard = () => import('@/ResearchFormRS/admin/AdminDashboard.vue')
+const AdminProposalList = () => import('@/ResearchFormRS/admin/AdminProposalList.vue')
+const AdminProposalDetail = () => import('@/ResearchFormRS/admin/AdminProposalDetail.vue')
+const AdminDocuments = () => import('@/ResearchFormRS/admin/AdminDocuments.vue')
+const AdminMeetings = () => import('@/ResearchFormRS/admin/AdminMeetings.vue')
+const AdminNotifications = () => import('@/ResearchFormRS/admin/AdminNotifications.vue')
+const AdminReports = () => import('@/ResearchFormRS/admin/AdminReports.vue')
+const AdminSettings = () => import('@/ResearchFormRS/admin/AdminSettings.vue')
+const AdminUsers = () => import('@/ResearchFormRS/admin/AdminUsers.vue')
 
-const CommitteeDashboard = () => import('@/views/committee/ReviewerDashboard')
-const CommitteeMeetings = () => import('@/views/committee/CommitteeMeetings')
-const CommitteeNotifications = () => import('@/views/committee/CommitteeNotifications')
-const CommitteeProposalDetail = () => import('@/views/committee/CommitteeProposalDetail')
-const ResearchForm = () => import('@/views/ResearchForm')
+const CommitteeDashboard = () => import('@/ResearchFormRS/committee/ReviewerDashboard.vue')
+const CommitteeMeetings = () => import('@/ResearchFormRS/committee/CommitteeMeetings.vue')
+const CommitteeNotifications = () => import('@/ResearchFormRS/committee/CommitteeNotifications.vue')
+const CommitteeProposalDetail = () => import('@/ResearchFormRS/committee/CommitteeProposalDetail.vue')
+const ResearchForm = () => import('@/ResearchFormRS/ResearchForm.vue')
 
 const Colors = () => import('@/views/theme/Colors')
 const Typography = () => import('@/views/theme/Typography')
@@ -806,10 +806,14 @@ function hasResearchToken() {
 }
 
 router.beforeEach(async (to, from, next) => {
-  try {
-    await store.dispatch('auth/bootstrapSession')
-  } catch (err) {
-    // ignore legacy bootstrap error
+  const isResearchRoute = to.matched.some(record => record.meta && record.meta.appAuth === 'research')
+
+  if (!isResearchRoute) {
+    try {
+      await store.dispatch('auth/bootstrapSession')
+    } catch (err) {
+      // ignore legacy bootstrap error
+    }
   }
 
   let researchAuthenticated = !!store.getters['Authentication/isAuthenticated']
@@ -824,12 +828,7 @@ router.beforeEach(async (to, from, next) => {
 
   const researchRole = store.getters['Authentication/userRole'] || getStoredRole()
   const researchHome = getRoleHome(researchRole)
-  const isResearchRoute = to.matched.some(record => record.meta && record.meta.appAuth === 'research')
   const isResearchGuestOnly = to.matched.some(record => record.meta && record.meta.guestOnly)
-
-  if (to.path === '/dashboard' && researchAuthenticated && researchRole && researchHome !== to.path) {
-    return next(researchHome)
-  }
 
   if (isResearchGuestOnly) {
     if (researchAuthenticated && researchRole) {
@@ -840,7 +839,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (isResearchRoute) {
     if (!researchAuthenticated) {
-      return next({ path: '/pages/research-login' })
+      return next('/pages/research-login')
     }
 
     const roleRecords = to.matched.filter(record => (
@@ -849,35 +848,28 @@ router.beforeEach(async (to, from, next) => {
     if (roleRecords.length) {
       const allowed = roleRecords.every(record => record.meta.roles.includes(researchRole))
       if (!allowed) {
-        return next(researchHome)
+        if (researchRole === 'admin' || researchRole === 'chairman') return next('/admin/dashboard')
+        if (researchRole === 'committee') return next('/committee/dashboard')
+        return next('/userdashboard')
       }
     }
 
     return next()
   }
 
-  const publicLegacyPaths = new Set([
-    '/pages/404',
-    '/pages/500',
-    '/pages/login',
-    '/pages/register',
-    '/pages/research-login'
-  ])
+  if (to.path.startsWith('/pages/')) {
+    return next()
+  }
 
-  const isPublicPage = publicLegacyPaths.has(to.path)
-  const hasLegacyToken = !!store.state.XAccessToken
   const authState = store.getters['auth/authenticated'] || {}
   const legacyAuthenticated = !!authState.isAuthen
 
-  if (!isPublicPage && (!hasLegacyToken || !legacyAuthenticated)) {
-    return next({ path: '/pages/login' })
-  }
-
-  if (to.path === '/pages/login' && hasLegacyToken && legacyAuthenticated) {
-    return next({ path: '/dashboard' })
+  if (!researchAuthenticated && !legacyAuthenticated) {
+    return next('/pages/research-login')
   }
 
   const permissionMeta = to.meta && to.meta.permission
+  const hasLegacyToken = !!store.state.XAccessToken
   const profile = store.getters['auth/profile'] || null
   const isOwner = isOwnerProfile(profile)
   if (permissionMeta && hasLegacyToken && legacyAuthenticated && !isOwner) {

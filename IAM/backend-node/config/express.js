@@ -1,5 +1,6 @@
 // app.js
 const express = require('express');
+const cors = require('cors');
 const initialize = require("../helpers/initialize");
 const middlewares = require('../middleware/middlewares');
 const swagger = require('../swagger/swagger');
@@ -9,6 +10,9 @@ let isReady = false;
 
 module.exports = function () {
   const app = express();
+
+  // Global CORS preflight handler
+  app.options('*', cors());
 
   // Swagger setup
   swagger(app);
