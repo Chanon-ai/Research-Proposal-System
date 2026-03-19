@@ -110,11 +110,15 @@ function pickLangValue(items) {
 exports.onCheckAuthorization = async function (request, response, next) {
     try {
         var querys = {};
+        var headerToken = request.headers['x-access-token'] || '';
+        console.log('[AUTH-CHECK] x-access-token:', headerToken ? headerToken.substring(0, 20) + '...' : '(empty)');
+        console.log('[AUTH-CHECK] url:', request.originalUrl, 'method:', request.method);
 
-        querys['control.device.xAccessToken'] = request.headers['x-access-token'];
+        querys['control.device.xAccessToken'] = headerToken;
         // querys['control.device.expired_key'] = {$lte: new moment().unix()}
 
         const isDoc = await Account.onQuery(querys);
+        console.log('[AUTH-CHECK] found account:', isDoc ? String(isDoc._id) : 'null');
         if(isDoc != null){
             if (!request.body || typeof request.body !== 'object') {
                 request.body = {};
@@ -670,17 +674,17 @@ exports.onTwoFaRequest = async function (request, response, next) {
             }
         };
         await Account.onUpdate(query, updatePayload);
-        await Account.onUpdate(query, {
+        var pushResult = await Account.onUpdate(query, {
             $push: {
                 verification: {
                     src: 'signin-2fa',
                     code: code,
                     dateTime: new Date(),
-                    expired: expiresAt,
-                    status: null
+                    expired: expiresAt
                 }
             }
         });
+        console.log('[2FA-REQUEST] code:', code, 'stored verification:', JSON.stringify(pushResult && pushResult.verification));
 
         await writeAudit({
             module: 'auth',
@@ -729,6 +733,9 @@ exports.onTwoFaVerify = async function (request, response, next) {
         }
 
         var now = new Date();
+        console.log('[2FA-VERIFY] accountId:', String(accountId));
+        console.log('[2FA-VERIFY] code received:', JSON.stringify(code));
+        console.log('[2FA-VERIFY] verification entries:', JSON.stringify(account.verification));
         var matched = account.verification.find(function (item) {
             if (!item) return false;
             if (String(item.src || '') !== 'signin-2fa') return false;
@@ -736,6 +743,7 @@ exports.onTwoFaVerify = async function (request, response, next) {
             if (!item.expired) return false;
             return new Date(item.expired) >= now;
         });
+        console.log('[2FA-VERIFY] matched:', matched ? 'YES' : 'NO');
         if (!matched) {
             var denied = await resMsg.onMessage_Response(0,40100);
             return response.status(401).json(denied);

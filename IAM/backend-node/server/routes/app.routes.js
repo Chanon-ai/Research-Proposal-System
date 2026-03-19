@@ -17,6 +17,7 @@ module.exports = function (app) {
   app.use(path + '/organization', organizationRoutes);
   app.use(path + '/setting', settingsRoutes);
   app.use(path + '/security', securityRoutes);
+  app.use(path , accountRoutes);
   app.use(path + '/auth', authRoutes);
   app.use(path + '/users', userRoutes);
   app.use(path + '/admin/users', userRoutes);
@@ -25,6 +26,5 @@ module.exports = function (app) {
   app.use(path + '/meetings', meetingRoutes);
   app.use(path + '/reports', reportRoutes);
   app.use(path + '/notifications', notificationRoutes);
-  app.use(path , accountRoutes);
 
 };
