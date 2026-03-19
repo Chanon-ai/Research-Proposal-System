@@ -18,6 +18,9 @@ import '@/projects/styles/global.scss'
 import OtpInput from "@bachdgvn/vue-otp-input";
 Vue.component("v-otp-input", OtpInput);
 
+import VueQRCodeComponent from 'vue-qrcode-component'
+Vue.component('qr-code', VueQRCodeComponent)
+
 Vue.use(CoreuiVuePro)
 Vue.prototype.$log = console.log.bind(console)
 import moment from 'moment'

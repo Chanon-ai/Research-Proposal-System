@@ -3,21 +3,52 @@ import store from '@/store/store'
 import router from '@/router/index'
 const instance = axios.create();
 
-instance.defaults.baseURL = process.env.VUE_APP_API_BASE_URL || 'http://127.0.0.1:8081';
+instance.defaults.baseURL = process.env.VUE_APP_API_BASE_URL || process.env.VUE_APP_API_URL || 'http://127.0.0.1:8081';
 
 instance.defaults.headers = {
   "Content-Type": "application/json",
 }
 
+function getLegacyToken() {
+  return store.state.XAccessToken ? String(store.state.XAccessToken) : '';
+}
+
+function getResearchToken() {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return '';
+  }
+  const token = window.localStorage.getItem('auth_token');
+  return token ? String(token) : '';
+}
+
+function isResearchAppPath(pathname) {
+  return [
+    '/admin',
+    '/committee',
+    '/user',
+    '/research-form',
+    '/userdashboard'
+  ].some(prefix => String(pathname || '').startsWith(prefix))
+}
+
 instance.interceptors.request.use(
     (config) => {
-      const token = store.state.XAccessToken ? String(store.state.XAccessToken) : '';
-      if (token) {
-        config.headers.Authorization = `Bearer ${store.state.XAccessToken}`;
-        config.headers['x-access-token'] = token;
+      const legacyToken = getLegacyToken();
+      const researchToken = getResearchToken();
+      const bearerToken = researchToken || legacyToken;
+
+      if (bearerToken) {
+        config.headers.Authorization = `Bearer ${bearerToken}`;
       }
 
-      config.headers.lang  = `${store.getters['setting/lang']}`;
+      if (legacyToken) {
+        config.headers['x-access-token'] = legacyToken;
+      }
+
+      const lang = store.getters && store.getters['setting/lang']
+        ? store.getters['setting/lang']
+        : 'en';
+      config.headers.lang = `${lang}`;
       return config;
     },
     (error) => {
@@ -31,7 +62,18 @@ instance.interceptors.response.use(
     },
     (error) => {
       if (error.response && error.response.status === 401) {
-        router.push('/login');
+        const currentPath = router && router.currentRoute ? router.currentRoute.path : '';
+        if (isResearchAppPath(currentPath) || getResearchToken()) {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.removeItem('auth_token');
+            window.localStorage.removeItem('auth_user');
+          }
+          if (currentPath !== '/pages/research-login') {
+            router.push('/pages/research-login');
+          }
+        } else if (currentPath !== '/pages/login') {
+          router.push('/pages/login');
+        }
       }
       return Promise.reject(error);
     }
@@ -132,6 +174,81 @@ export default {
         return instance.put("/api/v1/setting/auth/message",data);
       case 'remove-message':
         return instance.delete("/api/v1/setting/auth/message", { data: data || {} });
+      default:
+        break;
+    }
+  },
+
+  auth: {
+    login: (data) => instance.post('/api/v1/auth/login', data),
+    register: (data) => instance.post('/api/v1/auth/register', data),
+    me: () => instance.get('/api/v1/auth/me'),
+    logout: () => instance.post('/api/v1/auth/logout'),
+    changePassword: (data) => instance.put('/api/v1/auth/change-password', data),
+  },
+
+  proposal: {
+    create: (data) => instance.post('/api/v1/proposals', data),
+    updateDraft: (id, data) => instance.patch(`/api/v1/proposals/${id}`, data),
+    deleteDraft: (id) => instance.delete(`/api/v1/proposals/${id}`),
+    submit: (id) => instance.post(`/api/v1/proposals/${id}/submit`),
+    resubmit: (id) => instance.post(`/api/v1/proposals/${id}/resubmit`),
+    changeStatus: (id, data) => instance.patch(`/api/v1/proposals/${id}/status`, data),
+    assignCommittee: (id, data) => instance.post(`/api/v1/proposals/${id}/assign-committee`, data),
+    saveReview: (id, data) => instance.post(`/api/v1/proposals/${id}/reviews`, data),
+    getMyReview: (id, params) => instance.get(`/api/v1/proposals/${id}/reviews/me`, { params }),
+    getReviewsByProposal: (id, params) => instance.get(`/api/v1/proposals/${id}/reviews`, { params }),
+    getReviewsByProposalAlt: (id, params) => instance.get(`/api/v1/proposals/reviews/by-proposal/${id}`, { params }),
+    getFeedback: (id) => instance.get(`/api/v1/proposals/${id}/feedback`),
+    getCommitteeUsers: (params) => instance.get('/api/v1/proposals/committee-users', { params }),
+    getById: (id) => instance.get(`/api/v1/proposals/${id}`),
+    list: (params) => instance.get('/api/v1/proposals', { params }),
+    listFormFiles: (id) => instance.get(`/api/v1/proposals/${id}/form-files`),
+    uploadFormFile: (id, formData) =>
+      instance.post(`/api/v1/proposals/${id}/form-files`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      }),
+    downloadFormFile: (id, fileId) =>
+      instance.get(`/api/v1/proposals/${id}/form-files/${fileId}`, { responseType: 'blob' }),
+    deleteFormFile: (id, fileId) => instance.delete(`/api/v1/proposals/${id}/form-files/${fileId}`),
+  },
+
+  research: {
+    list: (params) => instance.get('/api/v1/proposals', { params }),
+  },
+
+  notification: {
+    list: (params) => instance.get('/api/v1/notifications', { params }),
+    markRead: (id) => instance.patch(`/api/v1/notifications/${id}/read`),
+    markAllRead: () => instance.patch('/api/v1/notifications/mark-all-read'),
+  },
+
+  meeting: {
+    list: (params) => instance.get('/api/v1/meetings', { params }),
+  },
+
+  organization(method, data, configs) {
+    switch (method) {
+      case 'explorers':
+        return instance.post('/api/v1/organization/explorers', data);
+      default:
+        break;
+    }
+  },
+
+  agencies(method, data, configs) {
+    switch (method) {
+      case 'explorers':
+        return instance.post('/api/v1/organization/agencies/explorers', data);
+      default:
+        break;
+    }
+  },
+
+  department(method, data, configs) {
+    switch (method) {
+      case 'explorers':
+        return instance.post('/api/v1/organization/department/explorers', data);
       default:
         break;
     }
@@ -408,6 +525,32 @@ export default {
     }
   },
 
+  method(method, data, configs) {
+    switch (method) {
+      case 'exp':
+        return instance.post('/api/v1/payment/method/explorers', data);
+      case 'get':
+        return instance.get('/api/v1/payment/method');
+      case 'post':
+        return instance.post('/api/v1/payment/method', data);
+      case 'put':
+        return instance.put('/api/v1/payment/method', data);
+      case 'delete':
+        return instance.delete('/api/v1/payment/method');
+      default:
+        break;
+    }
+  },
+
+  payment(method, data, configs) {
+    switch (method) {
+      case 'explorers-transaction':
+        return instance.post('/api/v1/payment/transaction/explorers', data);
+      default:
+        break;
+    }
+  },
+
   attachments(method, data) {
     switch (method) {
       case 'list':
@@ -438,3 +581,5 @@ export default {
     }
   }
 }
+
+export { instance }

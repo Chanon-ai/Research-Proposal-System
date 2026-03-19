@@ -1,6 +1,109 @@
 export default [{
   _name: 'CSidebarNav',
   _children: [
+    {
+      _name: 'CSidebarNavItem',
+      name: 'Dashboard',
+      to: '/dashboard',
+      icon: 'cil-speedometer'
+    },
+    {
+      _name: 'CSidebarNavDropdown',
+      name: 'User Panel',
+      route: '/user',
+      icon: 'cil-user',
+      roles: ['researcher', 'chairman'],
+      items: [
+        {
+          name: 'User Dashboard',
+          to: '/userdashboard'
+        },
+        {
+          name: 'Profile',
+          to: '/user/profile'
+        },
+        {
+          name: 'History',
+          to: '/user/history'
+        },
+        {
+          name: 'Notifications',
+          to: '/user/notification'
+        }
+      ]
+    },
+    {
+      _name: 'CSidebarNavDropdown',
+      name: 'Admin Panel',
+      route: '/admin',
+      icon: 'cil-settings',
+      roles: ['admin', 'chairman'],
+      items: [
+        {
+          name: 'Admin Dashboard',
+          to: '/admin/dashboard'
+        },
+        {
+          name: 'Proposal List',
+          to: '/admin/proposals'
+        },
+        {
+          name: 'Documents',
+          to: '/admin/documents'
+        },
+        {
+          name: 'Meetings',
+          to: '/admin/meetings'
+        },
+        {
+          name: 'Notifications',
+          to: '/admin/notifications'
+        },
+        {
+          name: 'Reports',
+          to: '/admin/reports'
+        },
+        {
+          name: 'Settings',
+          to: '/admin/settings'
+        },
+        {
+          name: 'Users',
+          to: '/admin/users'
+        }
+      ]
+    },
+    {
+      _name: 'CSidebarNavDropdown',
+      name: 'Committee Panel',
+      route: '/committee',
+      icon: 'cil-people',
+      roles: ['committee'],
+      items: [
+        {
+          name: 'Dashboard',
+          to: '/committee/dashboard'
+        },
+        {
+          name: 'Meetings',
+          to: '/committee/meetings'
+        },
+        {
+          name: 'Notifications',
+          to: '/committee/notifications'
+        }
+      ]
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'Research Form',
+      to: '/research-form',
+      icon: 'cil-notes',
+      roles: ['researcher', 'admin', 'chairman', 'committee']
+    },
+    {
+      _name: 'CSidebarNavDivider'
+    },
 
     {
       _name: 'CSidebarNavItem',

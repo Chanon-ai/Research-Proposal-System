@@ -1,0 +1,473 @@
+const Meeting = require('../models/Meeting');
+const Proposal = require('../models/Proposal');
+const ProposalStatusLog = require('../models/ProposalStatusLog');
+const Notification = require('../models/Notification');
+const User = require('../../Auth/models/User');
+const STATUS = require('../constants/proposal-status');
+const { sendWorkflowEventEmails } = require('./workflow-notification.service');
+
+function normalizePagination(query = {}) {
+  const page = Math.max(parseInt(query.page, 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(query.limit, 10) || 9, 1), 200);
+  return {
+    page,
+    limit,
+    skip: (page - 1) * limit
+  };
+}
+
+function toDateInputValue(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().slice(0, 10);
+}
+
+function normalizeIds(values = []) {
+  return (Array.isArray(values) ? values : [])
+    .map(item => String(item || '').trim())
+    .filter(Boolean);
+}
+
+async function resolveMeetingParticipants(proposalIds = [], participantIds = []) {
+  const merged = new Set(normalizeIds(participantIds));
+  let proposals = [];
+
+  const normalizedProposalIds = normalizeIds(proposalIds);
+  if (normalizedProposalIds.length > 0) {
+    proposals = await Proposal.find({
+      _id: { $in: normalizedProposalIds },
+      isDeleted: { $ne: true }
+    }).select('_id applicantUserId committeeIds');
+
+    proposals.forEach((proposal) => {
+      if (proposal && proposal.applicantUserId) {
+        merged.add(String(proposal.applicantUserId));
+      }
+      (proposal && Array.isArray(proposal.committeeIds) ? proposal.committeeIds : []).forEach((userId) => {
+        merged.add(String(userId));
+      });
+    });
+  }
+
+  return {
+    participantIds: Array.from(merged),
+    proposals
+  };
+}
+
+function mapMeeting(row) {
+  const meeting = row && row.toObject ? row.toObject() : { ...(row || {}) };
+  return {
+    _id: meeting._id,
+    title: meeting.title || '',
+    meetingDate: toDateInputValue(meeting.meetingDate),
+    startTime: meeting.startTime || '',
+    endTime: meeting.endTime || '',
+    location: meeting.location || '',
+    videoLink: meeting.videoLink || '',
+    agenda: meeting.agenda || '',
+    status: meeting.status || 'scheduled',
+    proposalIds: Array.isArray(meeting.proposalIds) ? meeting.proposalIds.map(item => String(item)) : [],
+    participantIds: Array.isArray(meeting.participantIds) ? meeting.participantIds.map(item => String(item)) : [],
+    minutes: meeting.minutes || '',
+    decisions: meeting.decisions || '',
+    actionItems: Array.isArray(meeting.actionItems) ? meeting.actionItems : [],
+    createdAt: meeting.createdAt || null,
+    updatedAt: meeting.updatedAt || null
+  };
+}
+
+async function listMeetings(query = {}, user) {
+  const filter = {
+    isDeleted: { $ne: true }
+  };
+
+  const truthy = (v) => String(v || '').toLowerCase() === '1' || String(v || '').toLowerCase() === 'true';
+  const parseYmd = (s) => {
+    if (!s) return null;
+    const d = new Date(String(s));
+    if (Number.isNaN(d.getTime())) return null;
+    // Normalize to local start-of-day to make range filters stable.
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  };
+
+  if (query.status) {
+    filter.status = String(query.status).trim();
+  }
+
+  // Optional date range filtering: fromDate/toDate (YYYY-MM-DD) or upcoming=1 (from today, scheduled only).
+  const fromDate = parseYmd(query.fromDate);
+  const toDateRaw = parseYmd(query.toDate);
+  const isUpcoming = truthy(query.upcoming);
+
+  if (isUpcoming && !query.status) {
+    filter.status = 'scheduled';
+  }
+
+  if (fromDate || toDateRaw || isUpcoming) {
+    const range = {};
+    const start = fromDate || (isUpcoming ? new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) : null);
+    if (start) range.$gte = start;
+
+    if (toDateRaw) {
+      // inclusive end-of-day
+      const end = new Date(toDateRaw.getFullYear(), toDateRaw.getMonth(), toDateRaw.getDate(), 23, 59, 59, 999);
+      range.$lte = end;
+    } else if (isUpcoming) {
+      // default upcoming window: next 30 days
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 30, 23, 59, 59, 999);
+      range.$lte = end;
+    }
+
+    filter.meetingDate = range;
+  }
+
+  // Access control: committee/researcher see only meetings related to them.
+  // Related means: explicitly listed in participantIds OR attached to proposals where user is applicant/committee.
+  if (user && user._id && user.role && !['admin', 'chairman'].includes(user.role)) {
+    const orFilters = [{ participantIds: user._id }];
+
+    const proposalOr = [];
+    if (user.role === 'researcher') {
+      proposalOr.push({ applicantUserId: user._id });
+    } else {
+      proposalOr.push({ applicantUserId: user._id });
+      proposalOr.push({ committeeIds: user._id });
+    }
+
+    if (proposalOr.length) {
+      const relatedProposals = await Proposal.find({
+        isDeleted: { $ne: true },
+        $or: proposalOr
+      }).select('_id');
+      const proposalIds = (relatedProposals || []).map(p => p._id);
+      if (proposalIds.length) {
+        orFilters.push({ proposalIds: { $in: proposalIds } });
+      }
+    }
+
+    filter.$or = orFilters;
+  }
+
+  const { page, limit, skip } = normalizePagination(query);
+
+  const sort = isUpcoming
+    ? { meetingDate: 1, startTime: 1, _id: 1 }
+    : { meetingDate: -1, startTime: 1, _id: -1 };
+
+  const [rows, total] = await Promise.all([
+    Meeting.find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit),
+    Meeting.countDocuments(filter)
+  ]);
+
+  const items = (rows || []).map(mapMeeting);
+
+  return {
+    meetings: items,
+    items,
+    data: items,
+    total,
+    page,
+    limit,
+    totalPages: Math.max(1, Math.ceil(total / limit))
+  };
+}
+
+async function resolveMeetingRecipients(proposalIds = [], participantIds = []) {
+  const recipientIds = new Set(normalizeIds(participantIds));
+  let proposals = [];
+
+  if (proposalIds.length > 0) {
+    proposals = await Proposal.find({
+      _id: { $in: proposalIds },
+      isDeleted: { $ne: true }
+    }).select('_id proposalCode projectTitleTh applicantUserId committeeIds');
+
+    proposals.forEach((proposal) => {
+      if (proposal && proposal.applicantUserId) {
+        recipientIds.add(String(proposal.applicantUserId));
+      }
+      (proposal && Array.isArray(proposal.committeeIds) ? proposal.committeeIds : []).forEach((userId) => {
+        recipientIds.add(String(userId));
+      });
+    });
+  }
+
+  if (recipientIds.size === 0) {
+    const committeeUsers = await User.find({
+      role: 'committee',
+      isActive: true,
+      isDeleted: { $ne: true }
+    }).select('_id');
+    committeeUsers.forEach((user) => recipientIds.add(String(user._id)));
+  }
+
+  return {
+    recipientIds: Array.from(recipientIds),
+    proposals
+  };
+}
+
+async function createMeetingNotifications({ recipientIds, title, message, proposalIds = [], eventKey }) {
+  if (!recipientIds.length) return [];
+
+  const firstProposalId = proposalIds.length > 0 ? proposalIds[0] : null;
+  const docs = recipientIds.map((userId) => ({
+    userId,
+    proposalId: firstProposalId,
+    channel: 'in_app',
+    eventKey,
+    title,
+    message,
+    payload: {
+      proposalIds
+    },
+    isRead: false,
+    sentAt: new Date()
+  }));
+
+  try {
+    return await Notification.insertMany(docs);
+  } catch (err) {
+    throw new Error(`Failed to create notification records: ${err && err.message ? err.message : err}`);
+  }
+}
+
+async function createMeeting(payload = {}, user) {
+  const proposalIds = normalizeIds(payload.proposalIds);
+  const providedParticipantIds = normalizeIds(payload.participantIds);
+  const { participantIds } = await resolveMeetingParticipants(proposalIds, providedParticipantIds);
+
+  const meeting = new Meeting({
+    title: payload.title,
+    meetingDate: payload.meetingDate,
+    startTime: payload.startTime,
+    endTime: payload.endTime || '',
+    location: payload.location || '',
+    videoLink: payload.videoLink || '',
+    agenda: payload.agenda || '',
+    status: payload.status || 'scheduled',
+    proposalIds,
+    participantIds,
+    createdBy: user._id,
+    updatedBy: user._id
+  });
+
+  const saved = await meeting.save();
+
+  if (saved.status === 'scheduled') {
+    const { recipientIds, proposals } = await resolveMeetingRecipients(saved.proposalIds, saved.participantIds);
+    const proposalLabel = proposals.length > 0 ? ` สำหรับ ${proposals.length} โครงการ` : '';
+    await createMeetingNotifications({
+      recipientIds,
+      proposalIds: saved.proposalIds,
+      eventKey: 'meeting_scheduled',
+      title: 'มีการนัดหมายการประชุม',
+      message: `หัวข้อ ${saved.title}${proposalLabel} วันที่ ${toDateInputValue(saved.meetingDate)} เวลา ${saved.startTime || '-'}`
+    });
+
+    const emailResult = await sendWorkflowEventEmails({
+      eventKey: 'meeting_scheduled',
+      recipientIds,
+      proposal: proposals && proposals.length > 0 ? proposals[0] : null,
+      context: {
+        meetingTitle: saved.title,
+        meetingDate: toDateInputValue(saved.meetingDate),
+        meetingTime: saved.startTime || '-',
+        remarks: proposalLabel ? `เกี่ยวข้องกับ ${proposals.length} โครงการ` : ''
+      }
+    });
+
+    if (emailResult && (emailResult.failed > 0 || emailResult.skippedReason)) {
+      console.warn('[Meeting.create] Workflow email delivery issue:', {
+        meetingId: String(saved._id),
+        eventKey: 'meeting_scheduled',
+        skippedReason: emailResult.skippedReason || '',
+        failed: emailResult.failed || 0,
+        failures: emailResult.failures || []
+      });
+    }
+  }
+
+  return mapMeeting(saved);
+}
+
+async function updateMeeting(id, payload = {}, user) {
+  const meeting = await Meeting.findOne({ _id: id, isDeleted: { $ne: true } });
+  if (!meeting) throw new Error('Meeting not found');
+
+  meeting.title = payload.title !== undefined ? payload.title : meeting.title;
+  meeting.meetingDate = payload.meetingDate !== undefined ? payload.meetingDate : meeting.meetingDate;
+  meeting.startTime = payload.startTime !== undefined ? payload.startTime : meeting.startTime;
+  meeting.endTime = payload.endTime !== undefined ? payload.endTime : meeting.endTime;
+  meeting.location = payload.location !== undefined ? payload.location : meeting.location;
+  meeting.videoLink = payload.videoLink !== undefined ? payload.videoLink : meeting.videoLink;
+  meeting.agenda = payload.agenda !== undefined ? payload.agenda : meeting.agenda;
+  meeting.status = payload.status !== undefined ? payload.status : meeting.status;
+
+  const nextProposalIds = payload.proposalIds !== undefined
+    ? normalizeIds(payload.proposalIds)
+    : normalizeIds(meeting.proposalIds);
+  const nextProvidedParticipantIds = payload.participantIds !== undefined
+    ? normalizeIds(payload.participantIds)
+    : normalizeIds(meeting.participantIds);
+  const { participantIds: nextParticipantIds } = await resolveMeetingParticipants(nextProposalIds, nextProvidedParticipantIds);
+
+  meeting.proposalIds = nextProposalIds;
+  meeting.participantIds = nextParticipantIds;
+  meeting.updatedBy = user._id;
+
+  await meeting.save();
+
+  if (meeting.status === 'scheduled') {
+    const { recipientIds, proposals } = await resolveMeetingRecipients(meeting.proposalIds, meeting.participantIds);
+    const proposalLabel = proposals.length > 0 ? ` สำหรับ ${proposals.length} โครงการ` : '';
+    await createMeetingNotifications({
+      recipientIds,
+      proposalIds: meeting.proposalIds,
+      eventKey: 'meeting_scheduled',
+      title: 'มีการอัปเดตการประชุม',
+      message: `หัวข้อ ${meeting.title}${proposalLabel} วันที่ ${toDateInputValue(meeting.meetingDate)} เวลา ${meeting.startTime || '-'}`
+    });
+
+    const emailResult = await sendWorkflowEventEmails({
+      eventKey: 'meeting_scheduled',
+      recipientIds,
+      proposal: proposals && proposals.length > 0 ? proposals[0] : null,
+      context: {
+        meetingTitle: meeting.title,
+        meetingDate: toDateInputValue(meeting.meetingDate),
+        meetingTime: meeting.startTime || '-',
+        remarks: proposalLabel ? `เกี่ยวข้องกับ ${proposals.length} โครงการ` : ''
+      }
+    });
+
+    if (emailResult && (emailResult.failed > 0 || emailResult.skippedReason)) {
+      console.warn('[Meeting.update] Workflow email delivery issue:', {
+        meetingId: String(meeting._id),
+        eventKey: 'meeting_scheduled',
+        skippedReason: emailResult.skippedReason || '',
+        failed: emailResult.failed || 0,
+        failures: emailResult.failures || []
+      });
+    }
+  }
+
+  if (meeting.status === 'cancelled') {
+    const { recipientIds } = await resolveMeetingRecipients(meeting.proposalIds, meeting.participantIds);
+    await createMeetingNotifications({
+      recipientIds,
+      proposalIds: meeting.proposalIds,
+      eventKey: 'meeting_cancelled',
+      title: 'การประชุมถูกยกเลิก',
+      message: `หัวข้อ ${meeting.title} ถูกยกเลิกแล้ว`
+    });
+  }
+
+  return mapMeeting(meeting);
+}
+
+async function deleteMeeting(id) {
+  const meeting = await Meeting.findOne({ _id: id, isDeleted: { $ne: true } });
+  if (!meeting) throw new Error('Meeting not found');
+
+  meeting.isDeleted = true;
+  await meeting.save();
+
+  return true;
+}
+
+async function updateMeetingMinutes(id, payload = {}, user) {
+  const meeting = await Meeting.findOne({ _id: id, isDeleted: { $ne: true } });
+  if (!meeting) throw new Error('Meeting not found');
+
+  meeting.minutes = payload.minutes !== undefined ? payload.minutes : meeting.minutes;
+  meeting.decisions = payload.decisions !== undefined ? payload.decisions : meeting.decisions;
+  meeting.actionItems = Array.isArray(payload.actionItems) ? payload.actionItems : meeting.actionItems;
+  meeting.updatedBy = user._id;
+  await meeting.save();
+
+  return mapMeeting(meeting);
+}
+
+async function syncProposalStatusFromMeeting(meeting, user) {
+  const proposalIds = normalizeIds(meeting.proposalIds);
+  if (proposalIds.length === 0) return [];
+
+  const proposals = await Proposal.find({
+    _id: { $in: proposalIds },
+    isDeleted: { $ne: true }
+  });
+
+  const updated = [];
+  for (const proposal of proposals) {
+    if (![STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW].includes(proposal.currentStatus)) continue;
+
+    const fromStatus = proposal.currentStatus;
+    proposal.currentStatus = STATUS.MEETING_COMPLETED;
+    proposal.updatedBy = user._id;
+    await proposal.save();
+
+    await new ProposalStatusLog({
+      proposalId: proposal._id,
+      fromStatus,
+      toStatus: STATUS.MEETING_COMPLETED,
+      actionKey: 'meeting_completed',
+      remark: `Meeting: ${meeting.title}`,
+      roundNo: proposal.currentRound || 1,
+      changedBy: user._id
+    }).save();
+
+    updated.push(proposal);
+  }
+
+  return updated;
+}
+
+async function updateMeetingStatus(id, status, user) {
+  const meeting = await Meeting.findOne({ _id: id, isDeleted: { $ne: true } });
+  if (!meeting) throw new Error('Meeting not found');
+
+  meeting.status = status;
+  meeting.updatedBy = user._id;
+  await meeting.save();
+
+  const { recipientIds } = await resolveMeetingRecipients(meeting.proposalIds, meeting.participantIds);
+
+  if (status === 'completed') {
+    await syncProposalStatusFromMeeting(meeting, user);
+    await createMeetingNotifications({
+      recipientIds,
+      proposalIds: meeting.proposalIds,
+      eventKey: 'meeting_completed',
+      title: 'การประชุมเสร็จสิ้น',
+      message: `การประชุม ${meeting.title} บันทึกผลเรียบร้อยแล้ว`
+    });
+  }
+
+  if (status === 'cancelled') {
+    await createMeetingNotifications({
+      recipientIds,
+      proposalIds: meeting.proposalIds,
+      eventKey: 'meeting_cancelled',
+      title: 'การประชุมถูกยกเลิก',
+      message: `การประชุม ${meeting.title} ถูกยกเลิกแล้ว`
+    });
+  }
+
+  return mapMeeting(meeting);
+}
+
+module.exports = {
+  listMeetings,
+  createMeeting,
+  updateMeeting,
+  deleteMeeting,
+  updateMeetingMinutes,
+  updateMeetingStatus
+};

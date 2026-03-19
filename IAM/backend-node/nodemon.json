@@ -1,0 +1,14 @@
+{
+  "watch": ["server", "config", "middleware", "helpers", "server.js"],
+  "ext": "js,json",
+  "ignore": [
+    "public/**",
+    "temp_exports/**",
+    "server.out.txt",
+    "server.err.txt",
+    "**/*.log",
+    "**/.DS_Store"
+  ],
+  "delay": 500
+}
+

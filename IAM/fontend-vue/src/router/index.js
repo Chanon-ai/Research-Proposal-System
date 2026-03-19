@@ -2,22 +2,35 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import store from '@/store/store'
 
-// Containers
 const TheContainer = () => import('@/containers/TheContainer')
-const TheContainer_Landing = () => import('@/containers/TheContainer_Landing.vue')
-const TheContainer_Project = () => import('@/containers/TheContainer_Project')
 
+const Dashboard = () => import('@/views/Dashboard')
+const UserDashboard = () => import('@/views/UserDashboard')
+const UserProfile = () => import('@/views/UserProfile')
+const UserHistory = () => import('@/views/UserHistory')
+const UserNotification = () => import('@/views/UserNotification')
 
-// Views
-// const Dashboard = () => import('@/views/Dashboard')
+const AdminDashboard = () => import('@/views/AdminDashboard')
+const AdminProposalList = () => import('@/views/AdminProposalList')
+const AdminProposalDetail = () => import('@/views/AdminProposalDetail')
+const AdminDocuments = () => import('@/views/AdminDocuments')
+const AdminMeetings = () => import('@/views/AdminMeetings')
+const AdminNotifications = () => import('@/views/AdminNotifications')
+const AdminReports = () => import('@/views/AdminReports')
+const AdminSettings = () => import('@/views/AdminSettings')
+const AdminUsers = () => import('@/views/AdminUsers')
+
+const CommitteeDashboard = () => import('@/views/committee/ReviewerDashboard')
+const CommitteeMeetings = () => import('@/views/committee/CommitteeMeetings')
+const CommitteeNotifications = () => import('@/views/committee/CommitteeNotifications')
+const CommitteeProposalDetail = () => import('@/views/committee/CommitteeProposalDetail')
+const ResearchForm = () => import('@/views/ResearchForm')
 
 const Colors = () => import('@/views/theme/Colors')
 const Typography = () => import('@/views/theme/Typography')
-
 const Charts = () => import('@/views/charts/Charts')
 const Widgets = () => import('@/views/widgets/Widgets')
 
-// Views - Components
 const Cards = () => import('@/views/base/Cards')
 const Switches = () => import('@/views/base/Switches')
 const Tabs = () => import('@/views/base/Tabs')
@@ -35,56 +48,47 @@ const Tables = () => import('@/views/tables/Tables')
 const AdvancedTables = () => import('@/views/tables/AdvancedTables')
 const Tooltips = () => import('@/views/base/Tooltips')
 
-// Views - Buttons
 const StandardButtons = () => import('@/views/buttons/StandardButtons')
 const ButtonGroups = () => import('@/views/buttons/ButtonGroups')
 const Dropdowns = () => import('@/views/buttons/Dropdowns')
 const BrandButtons = () => import('@/views/buttons/BrandButtons')
 
-// Views - Editors
 const TextEditors = () => import('@/views/editors/TextEditors')
 const CodeEditors = () => import('@/views/editors/CodeEditors')
 
-// Views - Forms
 const BasicForms = () => import('@/views/forms/Forms')
 const AdvancedForms = () => import('@/views/forms/AdvancedForms')
 const ValidationForms = () => import('@/views/forms/ValidationForms')
 
-// Views GoogleMaps
 const GoogleMaps = () => import('@/views/GoogleMaps')
 
-// Views - Icons
 const CoreUIIcons = () => import('@/views/icons/CoreUIIcons')
 const Brands = () => import('@/views/icons/Brands')
 const Flags = () => import('@/views/icons/Flags')
 
-// Views - Notifications
 const Alerts = () => import('@/views/notifications/Alerts')
 const Badges = () => import('@/views/notifications/Badges')
 const Modals = () => import('@/views/notifications/Modals')
 const Toaster = () => import('@/views/notifications/Toaster')
 
-
-// Views - Pages
 const Page404 = () => import('@/views/pages/Page404')
 const Page500 = () => import('@/views/pages/Page500')
 const Login = () => import('@/views/pages/Login')
+const ResearchLogin = () => import('@/views/pages/ResearchLogin')
 const Register = () => import('@/views/pages/Register')
 
-// Users
 const Users = () => import('@/views/users/Users')
 const User = () => import('@/views/users/User')
 
-// Plugins
 const Draggable = () => import('@/views/plugins/Draggable')
 const Calendar = () => import('@/views/plugins/Calendar')
 const Spinners = () => import('@/views/plugins/Spinners')
 
-// Views - UI Kits
 const Invoice = () => import('@/views/apps/invoicing/Invoice')
 const Compose = () => import('@/views/apps/email/Compose')
 const Inbox = () => import('@/views/apps/email/Inbox')
 const Message = () => import('@/views/apps/email/Message')
+
 const CreateGroup = () => import('@/projects/views/security/CreateGroup')
 const CreateMenu = () => import('@/projects/views/security/CreateMenu')
 const PermissionMatrix = () => import('@/projects/views/security/PermissionMatrix')
@@ -97,23 +101,22 @@ const AccountManagement = () => import('@/projects/views/accounts/Management')
 const TrainingRequests = () => import('@/projects/views/training/Requests')
 const TrainingRecords = () => import('@/projects/views/training/Records')
 
-
-//
-const Dashboard = () => import('@/views/Dashboard')
-
-
 Vue.use(Router)
+
+function emptyRouterView() {
+  return {
+    render(c) {
+      return c('router-view')
+    }
+  }
+}
 
 const router = new Router({
   hash: false,
-  mode: "history", // https://router.vuejs.org/api/#mode
+  mode: 'history',
   linkActiveClass: 'open active',
   scrollBehavior: () => ({ y: 0 }),
   routes: [
-
-
-
-
     {
       path: '/',
       redirect: '/dashboard',
@@ -125,14 +128,139 @@ const router = new Router({
           name: 'Dashboard',
           component: Dashboard
         },
-
+        {
+          path: 'userdashboard',
+          name: 'UserDashboard',
+          component: UserDashboard,
+          meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman'] }
+        },
+        {
+          path: 'profile',
+          redirect: '/user/profile'
+        },
+        {
+          path: 'user/profile',
+          alias: '/profile',
+          name: 'UserProfile',
+          component: UserProfile,
+          meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman'] }
+        },
+        {
+          path: 'user/history',
+          name: 'UserHistory',
+          component: UserHistory,
+          meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman'] }
+        },
+        {
+          path: 'user/notification',
+          name: 'UserNotification',
+          component: UserNotification,
+          meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman'] }
+        },
+        {
+          path: 'admin-dashboard',
+          name: 'AdminDashboardLegacy',
+          component: AdminDashboard,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'admin/dashboard',
+          name: 'AdminDashboard',
+          component: AdminDashboard,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'admin/proposals',
+          name: 'AdminProposalList',
+          component: AdminProposalList,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'admin/proposals/:id',
+          name: 'AdminProposalDetail',
+          component: AdminProposalDetail,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'admin/documents',
+          name: 'AdminDocuments',
+          component: AdminDocuments,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'admin/users',
+          name: 'AdminUsers',
+          component: AdminUsers,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'admin/meetings',
+          name: 'AdminMeetings',
+          component: AdminMeetings,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'admin/notifications',
+          name: 'AdminNotifications',
+          component: AdminNotifications,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'admin/reports',
+          name: 'AdminReports',
+          component: AdminReports,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'admin/settings',
+          name: 'AdminSettings',
+          component: AdminSettings,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'research-form/:id?',
+          name: 'ResearchForm',
+          component: ResearchForm,
+          props: route => ({
+            proposalId: route.params.id || route.query.id || null,
+            readOnly: route.query.readOnly === 'true' || route.query.readOnly === '1'
+          }),
+          meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman', 'committee'] }
+        },
+        {
+          path: 'committee/meetings',
+          name: 'CommitteeMeetings',
+          component: CommitteeMeetings,
+          meta: { appAuth: 'research', roles: ['committee', 'admin', 'chairman'] }
+        },
+        {
+          path: 'committee/notifications',
+          name: 'CommitteeNotifications',
+          component: CommitteeNotifications,
+          meta: { appAuth: 'research', roles: ['committee', 'admin', 'chairman'] }
+        },
+        {
+          path: 'committee/dashboard',
+          name: 'CommitteeDashboard',
+          component: CommitteeDashboard,
+          meta: { appAuth: 'research', roles: ['committee', 'admin', 'chairman'] }
+        },
+        {
+          path: 'committee/proposals/:id',
+          alias: '/review/proposals/:id',
+          name: 'committeeProposalDetail',
+          component: CommitteeProposalDetail,
+          meta: { appAuth: 'research', roles: ['committee', 'admin', 'chairman'] }
+        },
+        {
+          path: 'committee/logout',
+          redirect: '/committee/dashboard'
+        },
         {
           path: 'theme',
           redirect: '/theme/colors',
           name: 'Theme',
-          component: {
-            render (c) { return c('router-view') }
-          },
+          component: emptyRouterView(),
           children: [
             {
               path: 'colors',
@@ -220,9 +348,7 @@ const router = new Router({
           path: 'tables',
           redirect: '/tables/tables',
           name: 'Tables',
-          component: {
-            render (c) { return c('router-view') }
-          },
+          component: emptyRouterView(),
           children: [
             {
               path: 'tables',
@@ -243,10 +369,8 @@ const router = new Router({
         },
         {
           path: 'users',
-          meta: { label: 'Users'},
-          component: {
-            render (c) { return c('router-view') }
-          },
+          meta: { label: 'Users' },
+          component: emptyRouterView(),
           children: [
             {
               path: '',
@@ -267,9 +391,7 @@ const router = new Router({
           path: 'base',
           redirect: '/base/cards',
           name: 'Base',
-          component: {
-            render (c) { return c('router-view') }
-          },
+          component: emptyRouterView(),
           children: [
             {
               path: 'breadcrumbs',
@@ -347,9 +469,7 @@ const router = new Router({
           path: 'buttons',
           redirect: '/buttons/standard-buttons',
           name: 'Buttons',
-          component: {
-            render (c) { return c('router-view') }
-          },
+          component: emptyRouterView(),
           children: [
             {
               path: 'standard-buttons',
@@ -377,9 +497,7 @@ const router = new Router({
           path: 'editors',
           redirect: '/editors/text-editors',
           name: 'Editors',
-          component: {
-            render (c) { return c('router-view') }
-          },
+          component: emptyRouterView(),
           children: [
             {
               path: 'text-editors',
@@ -397,9 +515,7 @@ const router = new Router({
           path: 'forms',
           redirect: '/forms/basic-forms',
           name: 'Forms',
-          component: {
-            render (c) { return c('router-view') }
-          },
+          component: emptyRouterView(),
           children: [
             {
               path: 'basic-forms',
@@ -425,11 +541,9 @@ const router = new Router({
         },
         {
           path: 'icons',
-          redirect: '/icons/font-awesome',
+          redirect: '/icons/coreui-icons',
           name: 'Icons',
-          component: {
-            render (c) { return c('router-view') }
-          },
+          component: emptyRouterView(),
           children: [
             {
               path: 'coreui-icons',
@@ -452,9 +566,7 @@ const router = new Router({
           path: 'notifications',
           redirect: '/notifications/alerts',
           name: 'Notifications',
-          component: {
-            render (c) { return c('router-view') }
-          },
+          component: emptyRouterView(),
           children: [
             {
               path: 'alerts',
@@ -482,9 +594,7 @@ const router = new Router({
           path: 'plugins',
           redirect: '/plugins/draggable',
           name: 'Plugins',
-          component: {
-            render (c) { return c('router-view') }
-          },
+          component: emptyRouterView(),
           children: [
             {
               path: 'draggable',
@@ -503,21 +613,16 @@ const router = new Router({
             }
           ]
         },
-
         {
           path: 'apps',
           name: 'Apps',
-          component: {
-            render (c) { return c('router-view') }
-          },
+          component: emptyRouterView(),
           children: [
             {
               path: 'invoicing',
               redirect: '/apps/invoicing/invoice',
               name: 'Invoicing',
-              component: {
-                render (c) { return c('router-view') }
-              },
+              component: emptyRouterView(),
               children: [
                 {
                   path: 'invoice',
@@ -530,9 +635,7 @@ const router = new Router({
               path: 'email',
               redirect: '/apps/email/inbox',
               name: 'Email',
-              component: {
-                render (c) { return c('router-view') }
-              },
+              component: emptyRouterView(),
               children: [
                 {
                   path: 'compose',
@@ -555,15 +658,15 @@ const router = new Router({
         }
       ]
     },
-
-
+    {
+      path: '/review/login',
+      redirect: '/committee/dashboard'
+    },
     {
       path: '/pages',
       redirect: '/pages/404',
       name: 'Pages',
-      component: {
-        render (c) { return c('router-view') }
-      },
+      component: emptyRouterView(),
       children: [
         {
           path: '404',
@@ -579,6 +682,12 @@ const router = new Router({
           path: 'login',
           name: 'Login',
           component: Login
+        },
+        {
+          path: 'research-login',
+          name: 'ResearchLogin',
+          component: ResearchLogin,
+          meta: { appAuth: 'research', guestOnly: true }
         },
         {
           path: 'register',
@@ -672,30 +781,106 @@ function isOwnerProfile(profile) {
   return tokens.has('owner')
 }
 
+function getStoredRole() {
+  const storeRole = store.getters && store.getters['Authentication/userRole']
+  if (storeRole) return storeRole
+  try {
+    const raw = localStorage.getItem('auth_user')
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed && parsed.role ? parsed.role : null
+  } catch (e) {
+    return null
+  }
+}
+
+function getRoleHome(role) {
+  if (role === 'committee') return '/committee/dashboard'
+  if (role === 'admin' || role === 'chairman') return '/admin/dashboard'
+  return '/userdashboard'
+}
+
+function hasResearchToken() {
+  if (typeof window === 'undefined' || !window.localStorage) return false
+  return !!window.localStorage.getItem('auth_token')
+}
+
 router.beforeEach(async (to, from, next) => {
   try {
     await store.dispatch('auth/bootstrapSession')
   } catch (err) {
-    // ignore bootstrap error
+    // ignore legacy bootstrap error
   }
 
-  const isPublicPage = to.path.startsWith('/pages')
-  const hasToken = !!store.state.XAccessToken
-  const authState = store.getters['auth/authenticated'] || {}
-  const isAuthenticated = !!authState.isAuthen
+  let researchAuthenticated = !!store.getters['Authentication/isAuthenticated']
+  if (!researchAuthenticated && hasResearchToken()) {
+    try {
+      await store.dispatch('Authentication/restoreSession')
+    } catch (err) {
+      // ignore research bootstrap error
+    }
+    researchAuthenticated = !!store.getters['Authentication/isAuthenticated']
+  }
 
-  if (!isPublicPage && (!hasToken || !isAuthenticated)) {
+  const researchRole = store.getters['Authentication/userRole'] || getStoredRole()
+  const researchHome = getRoleHome(researchRole)
+  const isResearchRoute = to.matched.some(record => record.meta && record.meta.appAuth === 'research')
+  const isResearchGuestOnly = to.matched.some(record => record.meta && record.meta.guestOnly)
+
+  if (to.path === '/dashboard' && researchAuthenticated && researchRole && researchHome !== to.path) {
+    return next(researchHome)
+  }
+
+  if (isResearchGuestOnly) {
+    if (researchAuthenticated && researchRole) {
+      return next(researchHome)
+    }
+    return next()
+  }
+
+  if (isResearchRoute) {
+    if (!researchAuthenticated) {
+      return next({ path: '/pages/research-login' })
+    }
+
+    const roleRecords = to.matched.filter(record => (
+      record.meta && Array.isArray(record.meta.roles) && record.meta.roles.length > 0
+    ))
+    if (roleRecords.length) {
+      const allowed = roleRecords.every(record => record.meta.roles.includes(researchRole))
+      if (!allowed) {
+        return next(researchHome)
+      }
+    }
+
+    return next()
+  }
+
+  const publicLegacyPaths = new Set([
+    '/pages/404',
+    '/pages/500',
+    '/pages/login',
+    '/pages/register',
+    '/pages/research-login'
+  ])
+
+  const isPublicPage = publicLegacyPaths.has(to.path)
+  const hasLegacyToken = !!store.state.XAccessToken
+  const authState = store.getters['auth/authenticated'] || {}
+  const legacyAuthenticated = !!authState.isAuthen
+
+  if (!isPublicPage && (!hasLegacyToken || !legacyAuthenticated)) {
     return next({ path: '/pages/login' })
   }
 
-  if (to.path === '/pages/login' && hasToken && isAuthenticated) {
+  if (to.path === '/pages/login' && hasLegacyToken && legacyAuthenticated) {
     return next({ path: '/dashboard' })
   }
 
   const permissionMeta = to.meta && to.meta.permission
   const profile = store.getters['auth/profile'] || null
   const isOwner = isOwnerProfile(profile)
-  if (permissionMeta && hasToken && isAuthenticated && !isOwner) {
+  if (permissionMeta && hasLegacyToken && legacyAuthenticated && !isOwner) {
     if (!store.getters['security/loaded']) {
       try {
         await store.dispatch('security/fetchMyPermissions')

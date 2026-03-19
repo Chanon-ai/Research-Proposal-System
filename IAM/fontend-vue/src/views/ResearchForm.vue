@@ -1,0 +1,3881 @@
+<template>
+  <div class="research-form" :class="{ 'research-form--has-admin-actions': showAdminFooterBar }">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <h2 class="mb-4">แบบฟอร์มข้อมูลการวิจัย</h2>
+          <div v-if="isAdminView"
+            style="background:#e8f4ff;border-left:4px solid #1a73e8;padding:10px 16px;margin-bottom:16px;border-radius:4px;font-size:14px;color:#1a73e8">
+            โหมดดูข้อมูล (Admin View) - ไม่สามารถแก้ไขได้
+          </div>
+        </div>
+      </div>
+
+      <!-- Research Team Form Component -->
+      <ResearchTeamForm
+        ref="researchTeamForm"
+        @team-changed="syncResearchTeamData"
+        :is-read-only="effectiveReadOnly"
+        :current-status="currentStatus"
+        :allow-auto-prefill="true"
+      />
+
+      <!-- Project Details Form Component -->
+      <ProjectDetailsForm
+        ref="projectDetailsForm"
+        :is-read-only="effectiveReadOnly"
+        :disable-project-title-section="shouldDisableProjectTitleSection"
+        @form-changed="syncProjectDetailsData"
+        @budget-changed="handleBudgetAutoSave"
+        @budget-attachment-upload="handleBudgetAttachmentUpload"
+        @budget-attachment-open="handleBudgetAttachmentOpen"
+        @budget-attachment-meta-change="handleBudgetAttachmentMetaChange"
+        @research-standard-upload="handleResearchStandardUpload"
+        @research-standard-open="handleResearchStandardOpen"
+        @research-standard-remove="handleResearchStandardRemove"
+      />
+
+      <!-- File Management Component -->
+      <FileManagement
+        ref="fileManagement"
+        :files="files"
+        :is-read-only="effectiveReadOnly"
+        @upload="handleUpload"
+        @open="openFile"
+        @update:files="files = $event"
+        @remove="removeFile"
+      />
+
+      <!-- Signature Card Component -->
+      <SignatureCard
+        ref="signatureCard"
+        v-model="signatureData"
+        :project-leader="researchTeamData.projectLeader"
+        :co-researchers="researchTeamData.coResearchers"
+        :advisors="researchTeamData.advisors"
+        :is-read-only="effectiveReadOnly"
+      />
+
+      <div v-if="!isAdminView && viewProposalId" class="card mt-3">
+        <div class="card-body">
+          <CAlert v-if="isRevisionRequested" color="warning" show class="mb-3">
+            โครงการนี้อยู่ในสถานะขอแก้ไขเพิ่มเติม คุณสามารถแก้ไขข้อมูล บันทึก และส่งแก้ไขอีกครั้งได้
+          </CAlert>
+          <CAlert v-else-if="isRejectedStatus" color="danger" show class="mb-3">
+            โครงการนี้ไม่อนุมัติ และไม่สามารถส่งแก้ไขอีกครั้งใน workflow เดิมได้
+          </CAlert>
+          <CAlert v-else-if="isApprovedStatus" color="success" show class="mb-3">
+            โครงการนี้ได้รับการอนุมัติแล้ว
+          </CAlert>
+
+          <div v-if="isRevisionRequested" class="d-flex justify-content-end" style="gap: 12px;">
+            <CButton
+              color="secondary"
+              :disabled="savingRevision"
+              @click="saveRevisionChanges"
+            >
+              {{ savingRevision ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
+            </CButton>
+            <CButton
+              color="primary"
+              :disabled="submittingRevision"
+              @click="resubmitRevision"
+            >
+              {{ submittingRevision ? 'กำลังส่ง...' : 'ส่งแก้ไขอีกครั้ง' }}
+            </CButton>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="isAdminView" ref="committeeReviewsSection" class="card mt-3 mb-5">
+        <div class="card-header">
+          <strong>ผลการประเมินจากคณะกรรมการ</strong>
+        </div>
+        <div class="card-body">
+          <div v-if="reviewsLoading" class="text-center py-3">
+            <CSpinner size="sm" color="primary" />
+            <span class="text-muted ml-2">กำลังโหลดผลการประเมิน...</span>
+          </div>
+
+          <CAlert v-else-if="reviewsError" color="warning" show>
+            ไม่สามารถโหลดผลการประเมินได้: {{ reviewsError }}
+          </CAlert>
+
+          <div v-else>
+            <div class="card mb-3" style="background: #f8fafc;">
+              <div class="card-body">
+                <h6 class="mb-3">Admin Review Summary</h6>
+                <div class="row">
+                  <div class="col-md-4 mb-1"><strong>จำนวนกรรมการทั้งหมด:</strong> {{ assignedCommitteeCount }}</div>
+                  <div class="col-md-4 mb-1"><strong>ส่งผลประเมินแล้ว:</strong> {{ submittedReviewCount }}</div>
+                  <div class="col-md-4 mb-1"><strong>รอการประเมิน:</strong> {{ pendingReviewCount }}</div>
+                  <div class="col-md-4 mb-1"><strong>ค่าเฉลี่ยคะแนนรวม:</strong> {{ averageSubmittedScore }}</div>
+                  <div class="col-md-4 mb-1"><strong>อนุมัติ:</strong> {{ approveCount }}</div>
+                  <div class="col-md-4 mb-1"><strong>ขอแก้ไข:</strong> {{ reviseCount }}</div>
+                  <div class="col-md-4 mb-1"><strong>ไม่อนุมัติ:</strong> {{ rejectCount }}</div>
+                </div>
+
+                <CAlert v-if="hasMixedOutcomes" color="warning" show class="mt-2 mb-0">
+                  ผลประเมินจากคณะกรรมการมีความเห็นไม่สอดคล้องกัน (Mixed outcomes)
+                </CAlert>
+                <CAlert v-if="pendingReviewCount > 0" color="info" show class="mt-2 mb-0">
+                  ยังมีกรรมการที่ยังไม่ได้ส่งผลประเมิน {{ pendingReviewCount }} คน
+                </CAlert>
+              </div>
+            </div>
+
+            <div class="card mb-3">
+              <div class="card-body">
+                <h6 class="mb-3">Admin Final Decision</h6>
+                <CSelect
+                  :value="adminFinalDecision"
+                  :options="adminDecisionOptions"
+                  @change="onAdminFinalDecisionChange"
+                />
+                <CTextarea
+                  class="mt-2"
+                  label="หมายเหตุจากแอดมิน"
+                  rows="3"
+                  :value.sync="adminFinalNote"
+                  placeholder="ระบุเหตุผลหรือข้อสรุปสำหรับการตัดสินใจ"
+                />
+                <div class="d-flex justify-content-end mt-2">
+                  <CButton
+                    v-if="isAdminView && isRejectedStatus"
+                    color="warning"
+                    class="mr-2"
+                    :disabled="reopeningRejected"
+                    @click="reopenRejectedForRevision"
+                  >
+                    {{ reopeningRejected ? 'กำลังเปิดให้แก้ไข...' : 'เปิดให้แก้ไขอีกครั้ง' }}
+                  </CButton>
+                  <CButton
+                    color="primary"
+                    :disabled="savingAdminDecision || !adminFinalDecision"
+                    @click="saveAdminFinalDecision"
+                  >
+                    {{ savingAdminDecision ? 'กำลังบันทึก...' : 'บันทึกผลการตัดสินใจ' }}
+                  </CButton>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="!groupedReviews.length" class="text-muted">
+              ยังไม่มีผลการประเมินจากคณะกรรมการ
+            </div>
+
+            <div v-else>
+              <div v-for="group in groupedReviews" :key="`review-round-${group.roundNo}`" class="mb-3">
+                <h6 class="mb-2">รอบที่ {{ group.roundNo }}</h6>
+                <div v-for="review in group.reviews" :key="review._id" class="card mb-2">
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6 mb-1"><strong>ผู้ประเมิน:</strong> {{ reviewerName(review) }}</div>
+                      <div class="col-md-6 mb-1"><strong>คะแนนรวม:</strong> {{ review.totalScore !== null && review.totalScore !== undefined ? review.totalScore : '-' }}</div>
+                      <div class="col-md-6 mb-1"><strong>ผลการพิจารณา:</strong> {{ decisionLabel(review.decision) }}</div>
+                      <div class="col-md-6 mb-1"><strong>วันที่ส่ง:</strong> {{ formatReviewDateTime(review.submittedAt || review.updatedAt) }}</div>
+                      <div class="col-12 mb-1"><strong>สรุปข้อเสนอแนะ:</strong> {{ review.summaryComment || '-' }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="!isAdminView && viewProposalId && isRevisionRequested" ref="userFeedbackSection" class="card mt-3 mb-5">
+        <div class="card-header">
+          <strong>ผลการพิจารณาและข้อเสนอแนะ</strong>
+        </div>
+        <div class="card-body">
+          <div v-if="feedbackLoading" class="text-center py-3">
+            <CSpinner size="sm" color="primary" />
+            <span class="text-muted ml-2">กำลังโหลดข้อเสนอแนะ...</span>
+          </div>
+
+          <CAlert v-else-if="feedbackError" color="warning" show>
+            ไม่สามารถโหลดข้อเสนอแนะได้: {{ feedbackError }}
+          </CAlert>
+
+          <div v-else>
+            <div class="card mb-3" style="background: #f8fafc;">
+              <div class="card-body">
+                <h6 class="mb-3">ข้อเสนอแนะสำหรับการแก้ไข</h6>
+                <div class="row">
+                  <div class="col-md-6 mb-1"><strong>ผลการตัดสินใจล่าสุด:</strong> {{ decisionStatusLabel(latestDecisionStatus) }}</div>
+                  <div class="col-md-6 mb-1"><strong>รอบการพิจารณา:</strong> {{ latestDecisionRound || (userFeedback && userFeedback.currentRound) || '-' }}</div>
+                  <div class="col-12 mb-1"><strong>หมายเหตุจากผู้พิจารณา:</strong> {{ latestDecisionRemark || '-' }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="feedbackEditableSections.length" class="feedback-workspace card mb-3">
+              <div class="card-body">
+                <h6 class="mb-3">หัวข้อที่ต้องแก้ไข</h6>
+                <div
+                  v-for="section in feedbackEditableSections"
+                  :key="section.sectionKey"
+                  class="feedback-workspace-card"
+                >
+                  <div class="feedback-workspace-card__header">
+                    <div>
+                      <div class="feedback-workspace-card__title">{{ section.meta.sectionLabel }}</div>
+                      <div class="feedback-workspace-card__subtitle">{{ section.meta.rubricLabel }}</div>
+                    </div>
+                    <div class="feedback-workspace-card__actions">
+                      <span v-if="isFeedbackSectionSubmitted(section.sectionKey)" class="feedback-workspace-card__status">
+                        ส่งแก้ไขแล้ว{{ feedbackSectionSubmittedAt(section.sectionKey) ? ` • ${formatReviewDateTime(feedbackSectionSubmittedAt(section.sectionKey))}` : '' }}
+                      </span>
+                      <CButton
+                        v-if="isFeedbackSectionSubmitted(section.sectionKey)"
+                        color="secondary"
+                        size="sm"
+                        variant="outline"
+                        @click="toggleFeedbackSectionCard(section.sectionKey)"
+                      >
+                        {{ isFeedbackSectionCollapsed(section.sectionKey) ? 'กางดู' : 'ยุบการ์ด' }}
+                      </CButton>
+                    </div>
+                  </div>
+
+                  <div v-if="!isFeedbackSectionCollapsed(section.sectionKey)" class="feedback-workspace-notes">
+                    <div
+                      v-for="note in section.notes"
+                      :key="note.id"
+                      class="feedback-workspace-note"
+                    >
+                      <div class="feedback-workspace-note__meta">
+                        <strong>{{ note.reviewerName }}</strong>
+                        <span v-if="note.score !== null"> | คะแนน {{ note.score }}/2</span>
+                        <span v-if="note.submittedAt"> | {{ formatReviewDateTime(note.submittedAt) }}</span>
+                      </div>
+                      <div class="feedback-workspace-note__body">{{ note.commentText || '-' }}</div>
+                    </div>
+                  </div>
+
+                  <div v-if="!isFeedbackSectionCollapsed(section.sectionKey)" class="feedback-workspace-editor">
+                    <template v-if="section.sectionKey === 'problem_significance' && !isFeedbackSectionSubmitted(section.sectionKey)">
+                      <TextEditor
+                        :model-value="feedbackSectionDraft(section.sectionKey)"
+                        :is-read-only="effectiveReadOnly"
+                        @update:modelValue="setFeedbackSectionDraft(section.sectionKey, $event)"
+                      />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'problem_significance'">
+                      <TextEditor :model-value="feedbackSectionSnapshot(section.sectionKey)" :is-read-only="true" />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'objectives' && !isFeedbackSectionSubmitted(section.sectionKey)">
+                      <TextEditor
+                        :model-value="feedbackSectionDraft(section.sectionKey)"
+                        :is-read-only="effectiveReadOnly"
+                        @update:modelValue="setFeedbackSectionDraft(section.sectionKey, $event)"
+                      />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'objectives'">
+                      <TextEditor :model-value="feedbackSectionSnapshot(section.sectionKey)" :is-read-only="true" />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'literature_review' && !isFeedbackSectionSubmitted(section.sectionKey)">
+                      <TextEditor
+                        :model-value="feedbackSectionDraft(section.sectionKey)"
+                        :is-read-only="effectiveReadOnly"
+                        @update:modelValue="setFeedbackSectionDraft(section.sectionKey, $event)"
+                      />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'literature_review'">
+                      <TextEditor :model-value="feedbackSectionSnapshot(section.sectionKey)" :is-read-only="true" />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'research_methodology' && !isFeedbackSectionSubmitted(section.sectionKey)">
+                      <TextEditor
+                        :model-value="feedbackSectionDraft(section.sectionKey)"
+                        :is-read-only="effectiveReadOnly"
+                        @update:modelValue="setFeedbackSectionDraft(section.sectionKey, $event)"
+                      />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'research_methodology'">
+                      <TextEditor :model-value="feedbackSectionSnapshot(section.sectionKey)" :is-read-only="true" />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'work_plan' && !isFeedbackSectionSubmitted(section.sectionKey)">
+                      <Section12
+                        :model-value="feedbackSectionDraft(section.sectionKey)"
+                        :is-read-only="effectiveReadOnly"
+                        @update:modelValue="setFeedbackSectionDraft(section.sectionKey, $event)"
+                      />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'work_plan'">
+                      <Section12 :model-value="feedbackSectionSnapshot(section.sectionKey)" :is-read-only="true" />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'budget' && !isFeedbackSectionSubmitted(section.sectionKey)">
+                      <BudgetSectionDemo
+                        :model-value="feedbackSectionDraft(section.sectionKey)"
+                        :is-read-only="effectiveReadOnly"
+                        @update:modelValue="setFeedbackSectionDraft(section.sectionKey, $event)"
+                      />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'budget'">
+                      <BudgetSectionDemo :model-value="feedbackSectionSnapshot(section.sectionKey)" :is-read-only="true" />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'integration' && !isFeedbackSectionSubmitted(section.sectionKey)">
+                      <TextEditor
+                        :model-value="feedbackSectionDraft(section.sectionKey)"
+                        :is-read-only="effectiveReadOnly"
+                        @update:modelValue="setFeedbackSectionDraft(section.sectionKey, $event)"
+                      />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'integration'">
+                      <TextEditor :model-value="feedbackSectionSnapshot(section.sectionKey)" :is-read-only="true" />
+                    </template>
+                    <template v-else-if="section.sectionKey === 'transfer_level' && !isFeedbackSectionSubmitted(section.sectionKey)">
+                      <div class="feedback-inline-radio-group">
+                        <label class="feedback-inline-radio">
+                          <input
+                            :checked="feedbackSectionDraft(section.sectionKey) === 'national-international'"
+                            type="radio"
+                            value="national-international"
+                            :disabled="effectiveReadOnly"
+                            @change="setFeedbackSectionDraft(section.sectionKey, 'national-international')"
+                          >
+                          <span>ระดับภูมิภาค/ประเทศ/นานาชาติ</span>
+                        </label>
+                        <label class="feedback-inline-radio">
+                          <input
+                            :checked="feedbackSectionDraft(section.sectionKey) === 'community-provincial'"
+                            type="radio"
+                            value="community-provincial"
+                            :disabled="effectiveReadOnly"
+                            @change="setFeedbackSectionDraft(section.sectionKey, 'community-provincial')"
+                          >
+                          <span>ระดับกลุ่มอาชีพ/ชุมชน/จังหวัด</span>
+                        </label>
+                        <label class="feedback-inline-radio">
+                          <input
+                            :checked="feedbackSectionDraft(section.sectionKey) === 'none'"
+                            type="radio"
+                            value="none"
+                            :disabled="effectiveReadOnly"
+                            @change="setFeedbackSectionDraft(section.sectionKey, 'none')"
+                          >
+                          <span>ไม่มีการถ่ายทอดสู่สังคม</span>
+                        </label>
+                      </div>
+                    </template>
+                    <template v-else-if="section.sectionKey === 'transfer_level'">
+                      <div class="feedback-workspace-preview-text">
+                        {{ transferLevelPreview(feedbackSectionSnapshot(section.sectionKey)) }}
+                      </div>
+                    </template>
+                    <template v-else-if="section.sectionKey === 'research_team'">
+                      <div class="row">
+                        <div class="col-md-6 mb-3">
+                          <label>ชื่อ-สกุลหัวหน้าโครงการ</label>
+                          <input
+                            :value="isFeedbackSectionSubmitted(section.sectionKey) ? feedbackSectionSnapshot(section.sectionKey).name : feedbackSectionDraft(section.sectionKey).name"
+                            @input="updateFeedbackSectionDraftField(section.sectionKey, 'name', $event.target.value)"
+                            type="text"
+                            class="form-control"
+                            :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                          >
+                        </div>
+                        <div class="col-md-6 mb-3">
+                          <label>สังกัดหน่วยงาน</label>
+                          <input
+                            :value="isFeedbackSectionSubmitted(section.sectionKey) ? feedbackSectionSnapshot(section.sectionKey).affiliation : feedbackSectionDraft(section.sectionKey).affiliation"
+                            @input="updateFeedbackSectionDraftField(section.sectionKey, 'affiliation', $event.target.value)"
+                            type="text"
+                            class="form-control"
+                            :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                          >
+                        </div>
+                        <div class="col-md-6 mb-3">
+                          <label>เบอร์โทรศัพท์</label>
+                          <input
+                            :value="isFeedbackSectionSubmitted(section.sectionKey) ? feedbackSectionSnapshot(section.sectionKey).phone : feedbackSectionDraft(section.sectionKey).phone"
+                            @input="updateFeedbackSectionDraftField(section.sectionKey, 'phone', $event.target.value)"
+                            type="text"
+                            class="form-control"
+                            :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                          >
+                        </div>
+                        <div class="col-md-6 mb-3">
+                          <label>E-mail</label>
+                          <input
+                            :value="isFeedbackSectionSubmitted(section.sectionKey) ? feedbackSectionSnapshot(section.sectionKey).email : feedbackSectionDraft(section.sectionKey).email"
+                            @input="updateFeedbackSectionDraftField(section.sectionKey, 'email', $event.target.value)"
+                            type="email"
+                            class="form-control"
+                            :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                          >
+                        </div>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div class="alert alert-warning mb-0">
+                        หัวข้อนี้ยังไม่มี editor แบบฝังในส่วนแก้ไข ระบบจะบันทึกความเห็นไว้ให้และยังแก้ได้จากฟอร์มหลักด้านบน
+                      </div>
+                    </template>
+
+                    <div v-if="!effectiveReadOnly" class="feedback-workspace-editor__actions">
+                      <CButton
+                        v-if="!isFeedbackSectionSubmitted(section.sectionKey)"
+                        color="primary"
+                        :disabled="isSubmittingFeedbackSection(section.sectionKey)"
+                        @click="submitFeedbackSection(section)"
+                      >
+                        {{ isSubmittingFeedbackSection(section.sectionKey) ? 'กำลังส่งแก้ไข...' : 'ส่งแก้ไข' }}
+                      </CButton>
+                      <CButton
+                        v-else
+                        color="secondary"
+                        variant="outline"
+                        @click="reopenFeedbackSection(section.sectionKey)"
+                      >
+                        แก้ไขต่อ
+                      </CButton>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="!feedbackReviews.length" class="text-muted">
+              ยังไม่มีข้อเสนอแนะเพิ่มเติม
+            </div>
+
+            <div v-else>
+              <div v-for="group in feedbackReviewGroups" :key="`feedback-round-${group.roundNo}`" class="mb-3">
+                <h6 class="mb-2">ความเห็นคณะกรรมการ รอบที่ {{ group.roundNo }}</h6>
+                <div v-for="review in group.reviews" :key="review._id" class="card mb-2">
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6 mb-1"><strong>ผู้ประเมิน:</strong> {{ reviewerName(review) }}</div>
+                      <div class="col-md-6 mb-1"><strong>คะแนนรวม:</strong> {{ review.totalScore !== null && review.totalScore !== undefined ? review.totalScore : '-' }}</div>
+                      <div class="col-md-6 mb-1"><strong>ผลการพิจารณา:</strong> {{ decisionLabel(review.decision) }}</div>
+                      <div class="col-md-6 mb-1"><strong>วันที่ส่ง:</strong> {{ formatReviewDateTime(review.submittedAt || review.updatedAt) }}</div>
+                      <div class="col-12 mb-1"><strong>ข้อเสนอแนะ:</strong> {{ review.summaryComment || '-' }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer with action buttons -->
+      <div v-if="showFooterBar" class="footer-fixed" :style="{ left: isSidebarOpen ? '256px' : '0px' }">
+        <div class="d-flex justify-content-between align-items-center w-100 px-3">
+
+          <div class="d-flex align-items-center" style="gap: 12px;">
+            <span class="me-2 fw-bold text-muted">สถานะ:</span>
+            <StatusBadge :status="currentStatus" role="researcher" />
+          </div>
+
+          <div class="d-flex justify-content-end" style="gap: 12px;">
+            <div v-if="showSubmitButton" class="px-3 py-2 rounded text-success fw-bold d-flex align-items-center"
+              style="background-color: #d1e7dd; border: 1px solid #badbcc;">
+              <i class="cil-check-circle me-2"></i>
+              ยื่นโครงการวิจัยแล้ว
+            </div>
+
+            <button
+              v-if="showDeleteDraftButton"
+              type="button"
+              class="btn btn-lg text-white"
+              style="background-color: #dc2626; border-color: #dc2626;"
+              @click="deleteDraftProposal"
+            >
+              <i class="cil-trash me-2"></i>
+              ลบโครงการ
+            </button>
+
+            <button v-if="showDraftActions" type="button" class="btn btn-lg text-white" :style="{
+              backgroundColor: isDraftSaved ? '#6c757d' : '#8b5cf6',
+              borderColor: isDraftSaved ? '#6c757d' : '#8b5cf6',
+              cursor: isDraftSaved ? 'not-allowed' : 'pointer'
+            }" :disabled="isDraftSaved" @click="saveDraft">
+              <i class="cil-save me-2"></i>
+              {{ isDraftSaved ? 'บันทึกแล้ว' : 'บันทึกฉบับร่าง' }}
+            </button>
+
+            <button v-if="showDraftActions" type="button" class="btn btn-lg text-white"
+              style="background-color: #1e40af; border-color: #1e40af;" @click="submitProject">
+              <i class="cil-send me-2"></i>
+              ยื่นโครงการ
+            </button>
+
+            <button
+              v-if="false"
+              type="button"
+              class="btn btn-lg text-white"
+              style="background-color: #dc2626; border-color: #dc2626;"
+              @click="deleteDraftProposal"
+            >
+              <i class="cil-trash me-2"></i>
+              ลบโครงการ
+            </button>
+
+            <button v-if="showExportPdfButton" type="button" class="btn btn-lg text-white"
+              style="background-color: #3b82f6; border-color: #3b82f6;" :disabled="isExportingPdf" @click="exportProposalPdf">
+              <i class="cil-file-pdf me-2"></i>
+              {{ isExportingPdf ? 'กำลังสร้าง PDF...' : 'Export PDF' }}
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Admin footer actions (Detail view) -->
+      <div v-if="showAdminFooterBar" class="footer-fixed admin-footer-fixed" :style="{ left: isSidebarOpen ? '256px' : '0px' }">
+        <div class="d-flex justify-content-between align-items-center w-100 px-3 flex-wrap" style="gap: 12px;">
+          <div class="d-flex align-items-center" style="gap: 12px;">
+            <span class="fw-bold text-muted">การดำเนินการ:</span>
+            <StatusBadge :status="currentStatus" role="admin" />
+          </div>
+
+          <div class="d-flex justify-content-end flex-wrap" style="gap: 10px;">
+            <CButton color="warning" size="sm" @click="openAdminStatusModal">เปลี่ยนสถานะ</CButton>
+            <CButton color="success" size="sm" @click="openAdminCommitteeModal">
+              {{ adminHasAssignedCommittee ? 'เปลี่ยนคณะกรรมการ' : 'มอบหมายคณะกรรมการ' }}
+            </CButton>
+            <CButton color="info" size="sm" @click="openAdminMeetingManage">จัดการประชุม</CButton>
+          </div>
+        </div>
+      </div>
+
+      <CModal
+        :show.sync="adminShowStatusModal"
+        :close-on-backdrop="false"
+        centered
+        size="lg"
+        scrollable
+        title="เปลี่ยนสถานะโครงการ"
+      >
+        <template #body-wrapper>
+          <div v-if="loadedProposal" class="status-modal-body" style="padding: 20px 24px 8px; max-height: calc(100vh - 220px); overflow-y: auto;">
+            <div class="status-modal-proposal">
+              <div class="status-modal-meta"><strong>รหัสโครงการ:</strong> {{ loadedProposal.proposalCode || '-' }}</div>
+              <div class="status-modal-meta"><strong>ชื่อโครงการ:</strong> {{ loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || '-' }}</div>
+            </div>
+            <div class="status-modal-current">
+              <strong>สถานะปัจจุบัน:</strong>
+              <CBadge :color="adminGetStatusBadgeColor(currentStatus)" class="ml-1">
+                {{ adminGetStatusLabel(currentStatus) }}
+              </CBadge>
+            </div>
+
+            <CSelect
+              class="status-modal-select"
+              label="เปลี่ยนสถานะเป็น"
+              :value="adminNewStatus"
+              :options="adminNextStatusOptions"
+              @change="onAdminNewStatusChange"
+            />
+
+            <label class="status-modal-remark-label">หมายเหตุ / เหตุผล</label>
+            <textarea
+              v-model="adminStatusRemark"
+              class="form-control"
+              rows="3"
+              placeholder="ระบุหมายเหตุเพิ่มเติม (ไม่บังคับ)"
+            />
+          </div>
+        </template>
+
+        <template #footer-wrapper>
+          <div class="status-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
+            <CButton color="secondary" class="mr-2" @click="closeAdminStatusModal">ยกเลิก</CButton>
+            <CButton color="primary" :disabled="!adminNewStatus || adminSubmittingStatus" @click="confirmAdminChangeStatus">
+              {{ adminSubmittingStatus ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+            </CButton>
+          </div>
+        </template>
+      </CModal>
+
+      <CModal
+        :show.sync="adminShowCommitteeModal"
+        :close-on-backdrop="false"
+        centered
+        size="lg"
+        scrollable
+        title="มอบหมายคณะกรรมการ"
+      >
+        <template #body-wrapper>
+          <div v-if="loadedProposal" class="committee-modal-body" style="padding: 20px 24px 8px; max-height: calc(100vh - 220px); overflow-y: auto;">
+            <div class="committee-modal-proposal">
+              <div class="committee-modal-meta"><strong>รหัสโครงการ:</strong> {{ loadedProposal.proposalCode || '-' }}</div>
+              <div class="committee-modal-meta"><strong>ชื่อโครงการ:</strong> {{ loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || '-' }}</div>
+            </div>
+
+            <div class="committee-selection-panel">
+              <div class="mb-2"><strong>คณะกรรมการที่เลือก ({{ adminSelectedCommitteeIds.length }}/3)</strong></div>
+              <div class="committee-selection-summary">
+                <span v-if="adminSelectedCommitteeProfiles.length === 0" class="text-muted">ยังไม่ได้เลือกคณะกรรมการ</span>
+                <span
+                  v-for="u in adminSelectedCommitteeProfiles"
+                  :key="`sel-${u._id}`"
+                  class="badge badge-info mr-2 mb-2 p-2"
+                  style="font-weight: 500;"
+                >
+                  {{ u.fullName || '-' }}
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-link text-white p-0 ml-2"
+                    style="text-decoration: none;"
+                    @click="removeAdminSelectedCommittee(u._id)"
+                  >
+                    ✕
+                  </button>
+                </span>
+              </div>
+            </div>
+
+            <div class="committee-tools row align-items-end">
+              <div class="col-md-6 mb-2">
+                <label class="mb-1"><strong>ค้นหา</strong></label>
+                <input v-model="adminCommitteeSearch" type="text" class="form-control" placeholder="ชื่อ / อีเมล / หน่วยงาน" />
+              </div>
+              <div class="col-md-6 mb-2">
+                <label class="mb-1"><strong>ตัวกรอง</strong></label>
+                <div class="d-flex flex-wrap" style="gap: 8px;">
+                  <CButton
+                    size="sm"
+                    color="primary"
+                    variant="outline"
+                    :disabled="!adminHasRecommendedCommitteeUsers"
+                    @click="setAdminCommitteeFilterMode('recommended')"
+                  >
+                    แนะนำ
+                  </CButton>
+                  <CButton
+                    size="sm"
+                    color="primary"
+                    variant="outline"
+                    @click="setAdminCommitteeFilterMode('all')"
+                  >
+                    ทั้งหมด
+                  </CButton>
+                  <CButton
+                    size="sm"
+                    color="primary"
+                    variant="outline"
+                    @click="setAdminCommitteeFilterMode('department')"
+                  >
+                    หน่วยงาน
+                  </CButton>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="adminCommitteeFilterMode === 'department'" class="mt-2">
+              <CSelect
+                label="เลือกหน่วยงาน"
+                :value="adminSelectedCommitteeDepartment"
+                :options="adminCommitteeDepartmentOptions"
+                @change="onAdminCommitteeDepartmentChange"
+              />
+            </div>
+
+            <div v-if="adminCommitteeUsersLoading" class="text-center py-3">
+              <CSpinner size="sm" color="primary" />
+              <span class="text-muted ml-2">กำลังโหลดรายชื่อกรรมการ...</span>
+            </div>
+            <CAlert v-else-if="adminCommitteeUsersError" color="warning" show>
+              ไม่สามารถโหลดรายชื่อกรรมการได้: {{ adminCommitteeUsersError }}
+            </CAlert>
+            <div v-else class="committee-user-list mt-2">
+              <div v-if="adminFilteredCommitteeUsers.length === 0" class="text-muted py-2">ไม่พบรายชื่อกรรมการ</div>
+              <div
+                v-for="u in adminFilteredCommitteeUsers"
+                :key="u._id"
+                class="committee-user-row"
+                :class="{ 'is-selected': isAdminSelectedCommittee(u._id) }"
+              >
+                <label class="d-flex align-items-start mb-0" style="gap: 10px; cursor: pointer;">
+                  <input
+                    type="checkbox"
+                    :checked="isAdminSelectedCommittee(u._id)"
+                    :disabled="!isAdminSelectedCommittee(u._id) && adminSelectedCommitteeIds.length >= 3"
+                    @change="toggleAdminCommitteeSelection(u)"
+                  />
+                  <div>
+                    <div class="font-weight-bold">{{ u.fullName || '-' }}</div>
+                    <div class="text-muted" style="font-size: 0.85rem;">
+                      <span v-if="u.email">{{ u.email }}</span>
+                      <span v-if="u.department"> • {{ u.department }}</span>
+                      <span v-if="u.isRecommended" class="badge badge-success ml-2">แนะนำ</span>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <template #footer-wrapper>
+          <div class="committee-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
+            <CButton color="secondary" class="mr-2" @click="closeAdminCommitteeModal">ยกเลิก</CButton>
+            <CButton color="success" :disabled="adminSubmittingCommittee || adminSelectedCommitteeIds.length === 0" @click="confirmAdminAssignCommittee">
+              {{ adminSubmittingCommittee ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+            </CButton>
+          </div>
+        </template>
+      </CModal>
+
+      <CModal
+        :show.sync="adminShowMeetingPopup"
+        :close-on-backdrop="false"
+        centered
+        size="lg"
+        scrollable
+        title="จัดการการประชุม"
+      >
+        <template #body-wrapper>
+          <div class="meeting-form" style="padding: 20px 24px 8px; max-height: calc(100vh - 220px); overflow-y: auto;">
+            <div class="mb-3">
+              <div class="text-muted">โครงการ</div>
+              <div class="font-weight-bold">
+                {{ (loadedProposal && (loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || loadedProposal.projectTitle)) || '-' }}
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">ชื่อการประชุม <span class="text-danger">*</span></label>
+              <CInput v-model="adminMeetingForm.title" />
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">วันที่ประชุม <span class="text-danger">*</span></label>
+                <CInput type="date" v-model="adminMeetingForm.meetingDate" />
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">เวลาเริ่ม <span class="text-danger">*</span></label>
+                <CInput type="time" v-model="adminMeetingForm.startTime" />
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">เวลาสิ้นสุด</label>
+                <CInput type="time" v-model="adminMeetingForm.endTime" />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">สถานที่</label>
+              <CInput v-model="adminMeetingForm.location" />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">ลิงก์ประชุมออนไลน์</label>
+              <CInput v-model="adminMeetingForm.videoLink" />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">วาระการประชุม</label>
+              <textarea v-model="adminMeetingForm.agenda" class="form-control" rows="4" />
+            </div>
+          </div>
+        </template>
+
+        <template #footer-wrapper>
+          <div class="d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
+            <CButton color="secondary" class="mr-2" @click="closeAdminMeetingPopup">ปิด</CButton>
+            <CButton
+              color="primary"
+              :disabled="adminMeetingSubmitting || !adminMeetingForm.title || !adminMeetingForm.meetingDate || !adminMeetingForm.startTime"
+              @click="submitAdminMeeting"
+            >
+              {{ adminMeetingSubmitting ? 'กำลังบันทึก...' : 'บันทึก' }}
+            </CButton>
+          </div>
+        </template>
+      </CModal>
+
+      <div class="report-export-host" aria-hidden="true">
+        <ReportView
+          v-if="reportExportForm"
+          ref="reportView"
+          :form="reportExportForm"
+        />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import ResearchTeamForm from '@/ResearchFormRS/component/ResearchTeamForm.vue'
+import ProjectDetailsForm from '@/ResearchFormRS/component/ProjectDetailsForm.vue'
+import FileManagement from '@/ResearchFormRS/component/FileManagement.vue'
+import SignatureCard from '@/ResearchFormRS/component/SignatureCard.vue'
+import StatusBadge from '@/ResearchFormRS/component/StatusBadge.vue'
+import TextEditor from '@/ResearchFormRS/component/TextEditor.vue'
+import Section12 from '@/ResearchFormRS/component/TestComponent/Section12.vue'
+import BudgetSectionDemo from '@/ResearchFormRS/component/BudgetSectionDemo.vue'
+import ReportView from '@/views/Report.vue'
+import { COMMITTEE_SECTION_FEEDBACK_MAP, getCommitteeFeedbackMeta } from '@/ResearchFormRS/constants/committeeFeedback'
+import Swal from 'sweetalert2'
+import Service, { instance as axios } from '@/service/api'
+
+const ACTIVE_DRAFT_STORAGE_KEY = 'research_form_active_draft_id'
+
+const ADMIN_ALLOWED_TRANSITIONS = {
+  submitted: ['faculty_review_pending'],
+  faculty_approved: ['office_received'],
+  office_received: ['document_checking'],
+  document_checking: ['assigned_to_committee', 'revision_requested'],
+  under_review: ['meeting_completed'],
+  meeting_completed: ['approved', 'rejected', 'revision_requested'],
+  revision_requested: ['resubmitted'],
+  resubmitted: ['second_round_review'],
+  second_round_review: ['approved', 'rejected', 'revision_requested'],
+  approved: ['announced'],
+  rejected: ['announced']
+}
+
+const ADMIN_STATUS_LABELS = {
+  draft: 'แบบร่าง',
+  submitted: 'ยื่นแล้ว',
+  faculty_review_pending: 'รอประธานพิจารณา',
+  faculty_approved: 'ประธานอนุมัติ',
+  office_received: 'ส่วนบริหารรับแล้ว',
+  document_checking: 'ตรวจสอบเอกสาร',
+  assigned_to_committee: 'มอบหมายกรรมการแล้ว',
+  under_review: 'กำลังพิจารณา',
+  meeting_completed: 'ประชุมเสร็จแล้ว',
+  revision_requested: 'ขอแก้ไข',
+  resubmitted: 'ส่งแก้ไขแล้ว',
+  second_round_review: 'พิจารณารอบ 2',
+  approved: 'อนุมัติ',
+  rejected: 'ปฏิเสธ',
+  announced: 'ประกาศผลแล้ว'
+}
+
+const ADMIN_STATUS_COLORS = {
+  draft: 'secondary',
+  submitted: 'info',
+  faculty_review_pending: 'warning',
+  faculty_approved: 'primary',
+  office_received: 'primary',
+  document_checking: 'warning',
+  assigned_to_committee: 'info',
+  under_review: 'danger',
+  meeting_completed: 'primary',
+  revision_requested: 'danger',
+  resubmitted: 'info',
+  second_round_review: 'warning',
+  approved: 'success',
+  rejected: 'danger',
+  announced: 'primary'
+}
+
+export default {
+  name: 'ResearchForm',
+  props: {
+    prefill: {
+      type: Object,
+      default: null
+    },
+    proposalId: {
+      type: String,
+      default: ''
+    },
+    readOnly: {
+      type: Boolean,
+      default: false
+    },
+    hideFooterBar: {
+      type: Boolean,
+      default: false
+    }
+  },
+  components: {
+    ResearchTeamForm,
+    ProjectDetailsForm,
+    FileManagement,
+    SignatureCard,
+    StatusBadge,
+    TextEditor,
+    Section12,
+    BudgetSectionDemo,
+    ReportView
+  },
+  data() {
+    return {
+      isReadOnly: false,
+      viewProposalId: null,
+      isAdminView: false,
+      adminShowStatusModal: false,
+      adminNewStatus: '',
+      adminStatusRemark: '',
+      adminSubmittingStatus: false,
+
+      adminShowCommitteeModal: false,
+      adminSubmittingCommittee: false,
+      adminCommitteeUsersLoading: false,
+      adminCommitteeUsersError: null,
+      adminCommitteeUsers: [],
+      adminCommitteeSearch: '',
+      adminSelectedCommitteeIds: [],
+      adminCommitteeFilterMode: 'all',
+      adminSelectedCommitteeDepartment: '',
+      adminCommitteeDepartments: [],
+      adminProposalDepartmentHint: '',
+
+      adminShowMeetingPopup: false,
+      adminMeetingSubmitting: false,
+      adminMeetingForm: {
+        title: '',
+        meetingDate: '',
+        startTime: '',
+        endTime: '',
+        location: '',
+        videoLink: '',
+        agenda: '',
+        status: 'scheduled'
+      },
+      isDraftSaved: false,
+      currentStatus: 'draft',
+      showSubmitButton: false,
+      reviewsLoading: false,
+      reviewsError: null,
+      proposalReviews: [],
+      feedbackLoading: false,
+      feedbackError: null,
+      userFeedback: null,
+      loadedProposal: null,
+      adminFinalDecision: '',
+      adminFinalNote: '',
+      savingAdminDecision: false,
+      reopeningRejected: false,
+      suppressAutoSave: true,
+      autoSaveTimerId: null,
+      budgetAutoSaveTimerId: null,
+      isAutoSaving: false,
+      isExportingPdf: false,
+      autoSavePending: false,
+      lastAutoSavedAt: null,
+      savingRevision: false,
+      submittingRevision: false,
+      files: [],
+      pendingFormFiles: [],
+      signatureData: null,
+      reportExportForm: null,
+      feedbackSectionCardStates: {},
+      feedbackSectionDrafts: {},
+      projectDetailsData: {
+        problemSignificance: '',
+        objectives: '',
+        literatureReview: '',
+        researchMethodology: '',
+        workPlan: [],
+        budget: {},
+        integration: '',
+        transferLevel: ''
+      },
+      researchTeamData: {
+        projectLeader: {
+          name: '',
+          affiliation: '',
+          phone: '',
+          email: '',
+          proportion: ''
+        },
+        coResearchers: [],
+        advisors: []
+      }
+    }
+  },
+  created () {
+    const query = this.$route && this.$route.query ? this.$route.query : {}
+    const isNewDraftRequested = query.new === '1'
+    const storedDraftId = isNewDraftRequested ? '' : this.getStoredDraftId()
+    const id = query.id || this.proposalId || storedDraftId
+
+    if (id) {
+      this.viewProposalId = id
+    }
+    if (query.readOnly === 'true') {
+      this.isReadOnly = true
+    }
+    if (query.mode === 'admin-view') {
+      this.isAdminView = true
+    }
+  },
+  async mounted() {
+    // Sync research team data when component is mounted
+    this.syncResearchTeamData();
+
+    const query = this.$route && this.$route.query ? this.$route.query : {}
+    const isNewDraftRequested = query.new === '1'
+    const storedDraftId = isNewDraftRequested ? '' : this.getStoredDraftId()
+    const id = this.viewProposalId || query.id || this.proposalId || storedDraftId
+
+    if (id && !query.id && !this.proposalId && !isNewDraftRequested) {
+      this.syncRouteProposalId(id)
+    }
+
+    if (id) {
+      await this.loadProposalById(id)
+
+      if (this.isAdminView) {
+        if (!this.isDraftStatus) {
+          await this.fetchProposalReviews(id)
+          await this.scrollToReviewsIfRequested()
+        }
+      } else {
+        if (this.isRevisionRequested) {
+          await this.fetchUserFeedback(id)
+          await this.scrollToFeedbackIfNeeded()
+        }
+      }
+    }
+
+    this.$nextTick(() => {
+      this.suppressAutoSave = false
+    })
+  },
+  async beforeRouteLeave (to, from, next) {
+    try {
+      await this.flushAutoSaveBeforeLeave()
+    } catch (_) { void _ }
+    next()
+  },
+  beforeDestroy () {
+    this.clearAutoSaveTimer()
+    this.clearBudgetAutoSaveTimer()
+  },
+  computed: {
+    effectiveReadOnly () {
+      return Boolean(this.readOnly || this.isReadOnly)
+    },
+    showAdminFooterBar () {
+      return Boolean(this.isAdminView && this.viewProposalId)
+    },
+    adminHasAssignedCommittee () {
+      return Array.isArray(this.loadedProposal && this.loadedProposal.committeeIds) && this.loadedProposal.committeeIds.length > 0
+    },
+    adminNextStatusOptions () {
+      const current = String(this.currentStatus || '').trim()
+      const statuses = ADMIN_ALLOWED_TRANSITIONS[current] || []
+      if (!statuses.length) return [{ value: '', label: 'ไม่มีสถานะถัดไปที่อนุญาต' }]
+      return [{ value: '', label: 'เลือกสถานะ' }, ...statuses.map(s => ({ value: s, label: this.adminGetStatusLabel(s) }))]
+    },
+    adminFilteredCommitteeUsers () {
+      let scopedUsers = this.adminCommitteeUsers || []
+
+      if (this.adminCommitteeFilterMode === 'recommended') {
+        scopedUsers = scopedUsers.filter(u => Boolean(u && u.isRecommended))
+      } else if (this.adminCommitteeFilterMode === 'department') {
+        const selected = String(this.adminSelectedCommitteeDepartment || '').trim().toLowerCase()
+        if (selected) {
+          scopedUsers = scopedUsers.filter(u => String(u && u.department ? u.department : '').trim().toLowerCase() === selected)
+        }
+      }
+
+      const q = String(this.adminCommitteeSearch || '').trim().toLowerCase()
+      if (!q) return scopedUsers
+      return scopedUsers.filter(u => {
+        const text = [u.fullName, u.email, u.department].filter(Boolean).join(' ').toLowerCase()
+        return text.includes(q)
+      })
+    },
+    adminCommitteeDepartmentOptions () {
+      const options = [{ value: '', label: 'ทุกหน่วยงาน' }]
+      ;(this.adminCommitteeDepartments || []).forEach(dep => {
+        if (dep) options.push({ value: dep, label: dep })
+      })
+      return options
+    },
+    adminHasRecommendedCommitteeUsers () {
+      return (this.adminCommitteeUsers || []).some(u => Boolean(u && u.isRecommended))
+    },
+    adminSelectedCommitteeProfiles () {
+      const byId = new Map((this.adminCommitteeUsers || []).map(u => [String(u._id), u]))
+      return (this.adminSelectedCommitteeIds || [])
+        .map(id => byId.get(String(id)))
+        .filter(Boolean)
+    },
+    shouldDisableProjectTitleSection () {
+      return String(this.currentStatus || '').toLowerCase() !== 'draft'
+    },
+    groupedReviews () {
+      const groups = {}
+      ;(this.proposalReviews || []).forEach(r => {
+        const key = r && r.roundNo ? r.roundNo : 1
+        if (!groups[key]) groups[key] = []
+        groups[key].push(r)
+      })
+      return Object.keys(groups)
+        .map(k => ({ roundNo: Number(k), reviews: groups[k] }))
+        .sort((a, b) => a.roundNo - b.roundNo)
+    },
+    submittedReviews () {
+      return (this.proposalReviews || []).filter(r => r && r.reviewStatus === 'submitted')
+    },
+    assignedCommitteeCount () {
+      const ids = this.loadedProposal && Array.isArray(this.loadedProposal.committeeIds)
+        ? this.loadedProposal.committeeIds
+        : []
+      return ids.length
+    },
+    submittedReviewCount () {
+      return this.submittedReviews.length
+    },
+    pendingReviewCount () {
+      return Math.max(this.assignedCommitteeCount - this.submittedReviewCount, 0)
+    },
+    averageSubmittedScore () {
+      const nums = this.submittedReviews
+        .map(r => Number(r && r.totalScore))
+        .filter(n => Number.isFinite(n))
+      if (!nums.length) return '-'
+      const avg = nums.reduce((s, n) => s + n, 0) / nums.length
+      return avg.toFixed(2)
+    },
+    approveCount () {
+      return this.submittedReviews.filter(r => r && r.decision === 'approve').length
+    },
+    reviseCount () {
+      return this.submittedReviews.filter(r => r && r.decision === 'revise').length
+    },
+    rejectCount () {
+      return this.submittedReviews.filter(r => r && r.decision === 'reject').length
+    },
+    hasMixedOutcomes () {
+      const nonZeroBuckets = [this.approveCount, this.reviseCount, this.rejectCount].filter(c => c > 0)
+      return nonZeroBuckets.length > 1
+    },
+    feedbackReviews () {
+      const rows = this.userFeedback && Array.isArray(this.userFeedback.committeeReviews)
+        ? this.userFeedback.committeeReviews
+        : []
+      return rows.filter(r => r && r.reviewStatus === 'submitted')
+    },
+    feedbackReviewGroups () {
+      const groups = {}
+      ;(this.feedbackReviews || []).forEach(r => {
+        const key = r && r.roundNo ? r.roundNo : 1
+        if (!groups[key]) groups[key] = []
+        groups[key].push(r)
+      })
+      return Object.keys(groups)
+        .map(k => ({ roundNo: Number(k), reviews: groups[k] }))
+        .sort((a, b) => a.roundNo - b.roundNo)
+    },
+    feedbackEditableSections () {
+      const grouped = {}
+
+      ;(this.feedbackReviews || []).forEach(review => {
+        this.reviewActionItems(review).forEach(item => {
+          const meta = this.feedbackMetaForItem(item)
+          if (!meta) return
+
+          if (!grouped[meta.sectionKey]) {
+            grouped[meta.sectionKey] = {
+              sectionKey: meta.sectionKey,
+              meta,
+              notes: []
+            }
+          }
+
+          grouped[meta.sectionKey].notes.push({
+            id: `${review._id || 'review'}-${item.fieldKey || item.sectionKey}-${grouped[meta.sectionKey].notes.length}`,
+            reviewerName: this.reviewerName(review),
+            score: this.feedbackItemScore(review, item),
+            submittedAt: review.submittedAt || review.updatedAt || null,
+            commentText: item.commentText || '',
+            decision: review.decision || ''
+          })
+        })
+      })
+
+      return Object.values(grouped)
+        .sort((left, right) => {
+          const leftOrder = Number.isFinite(Number(left.meta && left.meta.sectionNo)) ? Number(left.meta.sectionNo) : Number.MAX_SAFE_INTEGER
+          const rightOrder = Number.isFinite(Number(right.meta && right.meta.sectionNo)) ? Number(right.meta.sectionNo) : Number.MAX_SAFE_INTEGER
+          return leftOrder - rightOrder
+        })
+    },
+    latestDecisionStatus () {
+      return this.userFeedback && this.userFeedback.latestDecision
+        ? this.userFeedback.latestDecision.toStatus
+        : ''
+    },
+    latestDecisionRemark () {
+      return this.userFeedback && this.userFeedback.latestDecision
+        ? this.userFeedback.latestDecision.remark
+        : ''
+    },
+    latestDecisionRound () {
+      return this.userFeedback && this.userFeedback.latestDecision
+        ? this.userFeedback.latestDecision.roundNo
+        : null
+    },
+    isRevisionRequested () {
+      return String(this.currentStatus || '').toLowerCase() === 'revision_requested'
+    },
+    isRejectedStatus () {
+      return String(this.currentStatus || '').toLowerCase() === 'rejected'
+    },
+    isApprovedStatus () {
+      return String(this.currentStatus || '').toLowerCase() === 'approved'
+    },
+    isDraftStatus () {
+      return String(this.currentStatus || '').toLowerCase() === 'draft'
+    },
+    showDraftActions () {
+      return !this.isAdminView && !this.showSubmitButton && this.isDraftStatus
+    },
+    showExportPdfButton () {
+      return !this.isAdminView && Boolean(this.viewProposalId) && !this.isDraftStatus
+    },
+    showFooterBar () {
+      if (this.hideFooterBar) return false
+      return !this.isAdminView && (!this.effectiveReadOnly || this.showExportPdfButton)
+    },
+    showDeleteDraftButton () {
+      return this.showDraftActions && Boolean(this.viewProposalId)
+    },
+    adminDecisionOptions () {
+      return [
+        { value: '', label: 'เลือกผลการตัดสินใจ' },
+        { value: 'revision_requested', label: 'ขอแก้ไขเพิ่มเติม' },
+        { value: 'approved', label: 'อนุมัติ' },
+        { value: 'rejected', label: 'ไม่อนุมัติ' }
+      ]
+    },
+    isSidebarOpen() {
+      // ดึงสถานะเปิด/ปิด Sidebar มาจากตัวแปรส่วนกลาง
+      const show = this.$store.state.sidebarShow;
+      // CoreUI มักจะเก็บค่าเป็น boolean (true/false) หรือสตริง 'responsive'
+      return show === true || show === 'responsive';
+    }
+  },
+  watch: {
+    feedbackEditableSections: {
+      immediate: true,
+      handler (sections) {
+        this.syncFeedbackSectionCardStates(sections)
+      }
+    },
+    signatureData: {
+      deep: true,
+      handler () {
+        this.markAsEdited()
+      }
+    },
+    prefill: {
+      immediate: true,
+      deep: true,
+      handler () {
+        this.applyPrefill()
+      }
+    },
+    proposalId: {
+      immediate: false,
+      async handler (newId) {
+        if (newId && newId !== this.viewProposalId) {
+          this.viewProposalId = newId
+          await this.loadProposalById(newId)
+
+          if (this.isAdminView) {
+            if (!this.isDraftStatus) {
+              await this.fetchProposalReviews(newId)
+              await this.scrollToReviewsIfRequested()
+            }
+          } else {
+            if (this.isRevisionRequested) {
+              await this.fetchUserFeedback(newId)
+              await this.scrollToFeedbackIfNeeded()
+            }
+          }
+        }
+      }
+    }
+  },
+  methods: {
+    getStoredDraftId () {
+      if (typeof window === 'undefined' || !window.sessionStorage) return ''
+      try {
+        return window.sessionStorage.getItem(ACTIVE_DRAFT_STORAGE_KEY) || ''
+      } catch (_) {
+        return ''
+      }
+    },
+    setStoredDraftId (proposalId) {
+      if (typeof window === 'undefined' || !window.sessionStorage) return
+      try {
+        if (proposalId) {
+          window.sessionStorage.setItem(ACTIVE_DRAFT_STORAGE_KEY, String(proposalId))
+        } else {
+          window.sessionStorage.removeItem(ACTIVE_DRAFT_STORAGE_KEY)
+        }
+      } catch (_) { void _ }
+    },
+    syncRouteProposalId (proposalId) {
+      if (!proposalId || !this.$router || !this.$route) return
+      const nextQuery = {
+        ...(this.$route.query || {}),
+        id: proposalId
+      }
+      delete nextQuery.new
+      this.$router.replace({
+        name: this.$route.name || 'ResearchForm',
+        query: nextQuery
+      }).catch(() => {})
+    },
+    adminGetStatusLabel (status) {
+      return ADMIN_STATUS_LABELS[status] || status || '-'
+    },
+    adminGetStatusBadgeColor (status) {
+      return ADMIN_STATUS_COLORS[status] || 'secondary'
+    },
+    adminGetSelectValue (val) {
+      return val && val.target ? val.target.value : val
+    },
+    openAdminStatusModal () {
+      if (!this.isAdminView || !this.viewProposalId) return
+      this.adminNewStatus = ''
+      this.adminStatusRemark = ''
+      this.adminShowStatusModal = true
+    },
+    closeAdminStatusModal () {
+      this.adminShowStatusModal = false
+      this.adminNewStatus = ''
+      this.adminStatusRemark = ''
+    },
+    onAdminNewStatusChange (val) {
+      this.adminNewStatus = this.adminGetSelectValue(val)
+    },
+    async confirmAdminChangeStatus () {
+      if (!this.isAdminView || !this.viewProposalId || !this.adminNewStatus) return
+      this.adminSubmittingStatus = true
+      try {
+        await Service.proposal.changeStatus(this.viewProposalId, {
+          toStatus: this.adminNewStatus,
+          remark: this.adminStatusRemark || ''
+        })
+        await this.loadProposalById(this.viewProposalId)
+        this.adminShowStatusModal = false
+        await Swal.fire({ icon: 'success', title: 'เปลี่ยนสถานะสำเร็จ', timer: 1500, showConfirmButton: false })
+      } catch (err) {
+        await Swal.fire('เปลี่ยนสถานะไม่สำเร็จ', (err && err.response && err.response.data && err.response.data.message) || 'ลองใหม่อีกครั้ง', 'error')
+      } finally {
+        this.adminSubmittingStatus = false
+      }
+    },
+    openAdminCommitteeModal () {
+      if (!this.isAdminView || !this.viewProposalId) return
+      const ids = (this.loadedProposal && Array.isArray(this.loadedProposal.committeeIds)) ? this.loadedProposal.committeeIds : []
+      this.adminSelectedCommitteeIds = ids.map(String).slice(0, 3)
+      this.adminCommitteeSearch = ''
+      this.adminSelectedCommitteeDepartment = ''
+      this.adminShowCommitteeModal = true
+      this.fetchAdminCommitteeUsers()
+    },
+    closeAdminCommitteeModal () {
+      this.adminShowCommitteeModal = false
+      this.adminCommitteeSearch = ''
+      this.adminSelectedCommitteeDepartment = ''
+      this.adminSelectedCommitteeIds = []
+    },
+    isAdminSelectedCommittee (id) {
+      const key = String(id)
+      return (this.adminSelectedCommitteeIds || []).map(String).includes(key)
+    },
+    toggleAdminCommitteeSelection (user) {
+      const key = String(user && user._id ? user._id : '')
+      if (!key) return
+      const current = (this.adminSelectedCommitteeIds || []).map(String)
+      const idx = current.indexOf(key)
+      if (idx >= 0) {
+        current.splice(idx, 1)
+      } else {
+        if (current.length >= 3) return
+        current.push(key)
+      }
+      this.adminSelectedCommitteeIds = current
+    },
+    removeAdminSelectedCommittee (id) {
+      const key = String(id)
+      this.adminSelectedCommitteeIds = (this.adminSelectedCommitteeIds || []).map(String).filter(x => x !== key)
+    },
+    setAdminCommitteeFilterMode (mode) {
+      this.adminCommitteeFilterMode = mode
+      if (mode === 'department' && !this.adminSelectedCommitteeDepartment) {
+        this.adminSelectedCommitteeDepartment = this.adminProposalDepartmentHint || ''
+      }
+    },
+    onAdminCommitteeDepartmentChange (val) {
+      this.adminSelectedCommitteeDepartment = this.adminGetSelectValue(val)
+      this.adminCommitteeFilterMode = this.adminSelectedCommitteeDepartment ? 'department' : 'all'
+    },
+    async fetchAdminCommitteeUsers () {
+      this.adminCommitteeUsersLoading = true
+      this.adminCommitteeUsersError = null
+      try {
+        const proposalId = String(this.viewProposalId || '')
+        const res = await Service.proposal.getCommitteeUsers({ limit: 200, proposalId })
+        const payload = res && res.data ? res.data : null
+        if (Array.isArray(payload)) this.adminCommitteeUsers = payload
+        else if (payload && Array.isArray(payload.data)) this.adminCommitteeUsers = payload.data
+        else this.adminCommitteeUsers = []
+
+        this.adminCommitteeDepartments = []
+        this.adminProposalDepartmentHint = ''
+
+        if (payload && payload.data && !Array.isArray(payload.data)) {
+          const wrapped = payload.data
+          this.adminCommitteeUsers = Array.isArray(wrapped.items) ? wrapped.items : []
+          this.adminCommitteeDepartments = Array.isArray(wrapped.departments) ? wrapped.departments : []
+          this.adminProposalDepartmentHint = String(wrapped.proposalDepartment || '').trim()
+        }
+
+        if (!this.adminCommitteeDepartments.length) {
+          const dedup = Array.from(new Set((this.adminCommitteeUsers || []).map(u => String(u && u.department ? u.department : '').trim()).filter(Boolean)))
+          this.adminCommitteeDepartments = dedup.sort((a, b) => a.localeCompare(b, 'th'))
+        }
+
+        if (this.adminHasRecommendedCommitteeUsers) {
+          this.adminCommitteeFilterMode = 'recommended'
+        } else {
+          this.adminCommitteeFilterMode = 'all'
+        }
+        this.adminSelectedCommitteeDepartment = this.adminProposalDepartmentHint || ''
+      } catch (err) {
+        this.adminCommitteeUsers = []
+        this.adminCommitteeDepartments = []
+        this.adminProposalDepartmentHint = ''
+        this.adminCommitteeFilterMode = 'all'
+        this.adminSelectedCommitteeDepartment = ''
+        this.adminCommitteeUsersError = (err && err.response && err.response.data && err.response.data.message)
+          || err.message
+          || 'Unknown error'
+      } finally {
+        this.adminCommitteeUsersLoading = false
+      }
+    },
+    async confirmAdminAssignCommittee () {
+      if (!this.isAdminView || !this.viewProposalId) return
+      if (!this.adminSelectedCommitteeIds.length) {
+        await Swal.fire('กรุณาเลือกคณะกรรมการ', 'เลือกอย่างน้อย 1 คน (สูงสุด 3 คน)', 'warning')
+        return
+      }
+      if (this.adminSelectedCommitteeIds.length > 3) {
+        await Swal.fire('เลือกได้สูงสุด 3 คน', '', 'warning')
+        return
+      }
+      this.adminSubmittingCommittee = true
+      try {
+        const committeeIds = (this.adminSelectedCommitteeIds || []).map(String)
+        await Service.proposal.assignCommittee(this.viewProposalId, { committeeIds })
+        await this.loadProposalById(this.viewProposalId)
+        this.adminShowCommitteeModal = false
+        await Swal.fire({ icon: 'success', title: 'มอบหมายคณะกรรมการสำเร็จ', timer: 1500, showConfirmButton: false })
+      } catch (err) {
+        await Swal.fire('ไม่สำเร็จ', (err && err.response && err.response.data && err.response.data.message) || 'ลองใหม่อีกครั้ง', 'error')
+      } finally {
+        this.adminSubmittingCommittee = false
+      }
+    },
+    openAdminMeetingManage () {
+      if (!this.isAdminView || !this.viewProposalId) return
+      const p = this.loadedProposal || {}
+      const projectTitle = p.projectTitleTh || p.projectTitleEn || p.projectTitle || ''
+      const title = projectTitle ? `ประชุมพิจารณาโครงการ: ${projectTitle}` : 'ประชุมพิจารณาโครงการ'
+      this.adminMeetingForm = {
+        title,
+        meetingDate: '',
+        startTime: '',
+        endTime: '',
+        location: '',
+        videoLink: '',
+        agenda: projectTitle ? `โครงการ: ${projectTitle}` : '',
+        status: 'scheduled'
+      }
+      this.adminShowMeetingPopup = true
+    },
+    closeAdminMeetingPopup () {
+      this.adminShowMeetingPopup = false
+    },
+    async submitAdminMeeting () {
+      if (!this.isAdminView || !this.viewProposalId) return
+      if (!this.adminMeetingForm.title || !this.adminMeetingForm.meetingDate || !this.adminMeetingForm.startTime) return
+      this.adminMeetingSubmitting = true
+      try {
+        const body = {
+          title: String(this.adminMeetingForm.title || '').trim(),
+          meetingDate: this.adminMeetingForm.meetingDate,
+          startTime: this.adminMeetingForm.startTime,
+          endTime: this.adminMeetingForm.endTime || '',
+          location: this.adminMeetingForm.location || '',
+          videoLink: this.adminMeetingForm.videoLink || '',
+          agenda: this.adminMeetingForm.agenda || '',
+          status: this.adminMeetingForm.status || 'scheduled',
+          proposalIds: [String(this.viewProposalId)]
+        }
+        await axios.post('/api/v1/meetings', body)
+        this.adminShowMeetingPopup = false
+        await Swal.fire({ icon: 'success', title: 'บันทึกการประชุมสำเร็จ', timer: 1500, showConfirmButton: false })
+      } catch (err) {
+        await Swal.fire('บันทึกไม่สำเร็จ', (err && err.response && err.response.data && err.response.data.message) || 'ลองใหม่อีกครั้ง', 'error')
+      } finally {
+        this.adminMeetingSubmitting = false
+      }
+    },
+    decisionStatusLabel (status) {
+      if (status === 'revision_requested') return 'ขอแก้ไขเพิ่มเติม'
+      if (status === 'approved') return 'อนุมัติ'
+      if (status === 'rejected') return 'ไม่อนุมัติ'
+      if (status === 'submitted') return 'ยื่นแล้ว'
+      return status || '-'
+    },
+    onAdminFinalDecisionChange (val) {
+      this.adminFinalDecision = val && val.target ? val.target.value : val
+    },
+    async saveAdminFinalDecision () {
+      if (!this.isAdminView || !this.viewProposalId || !this.adminFinalDecision) return
+
+      this.savingAdminDecision = true
+      try {
+        await Service.proposal.changeStatus(this.viewProposalId, {
+          toStatus: this.adminFinalDecision,
+          remark: this.adminFinalNote || ''
+        })
+
+        await this.loadProposalById(this.viewProposalId)
+        await this.showAlert({
+          icon: 'success',
+          title: 'บันทึกผลการตัดสินใจสำเร็จ',
+          text: 'ระบบได้อัปเดตสถานะโครงการเรียบร้อยแล้ว'
+        })
+      } catch (err) {
+        await this.showAlert({
+          icon: 'error',
+          title: 'บันทึกผลการตัดสินใจไม่สำเร็จ',
+          text: (err && err.response && err.response.data && err.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+        })
+      } finally {
+        this.savingAdminDecision = false
+      }
+    },
+    async reopenRejectedForRevision () {
+      if (!this.isAdminView || !this.viewProposalId || !this.isRejectedStatus) return
+
+      const result = await this.showAlert({
+        icon: 'warning',
+        title: 'ยืนยันการเปิดให้แก้ไขอีกครั้ง',
+        text: 'ต้องการเปลี่ยนสถานะจากไม่อนุมัติเป็นขอแก้ไขเพิ่มเติมใช่หรือไม่?',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก'
+      })
+      if (!result || !result.isConfirmed) return
+
+      this.reopeningRejected = true
+      try {
+        await Service.proposal.changeStatus(this.viewProposalId, {
+          toStatus: 'revision_requested',
+          remark: this.adminFinalNote || 'Admin reopened proposal for revision'
+        })
+
+        await this.loadProposalById(this.viewProposalId)
+        await this.fetchProposalReviews(this.viewProposalId)
+        await this.showAlert({
+          icon: 'success',
+          title: 'เปิดให้แก้ไขสำเร็จ',
+          text: 'ระบบได้เปลี่ยนสถานะเป็นขอแก้ไขเพิ่มเติมเรียบร้อยแล้ว'
+        })
+      } catch (err) {
+        await this.showAlert({
+          icon: 'error',
+          title: 'ไม่สามารถเปิดให้แก้ไขได้',
+          text: (err && err.response && err.response.data && err.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+        })
+      } finally {
+        this.reopeningRejected = false
+      }
+    },
+    async saveRevisionChanges () {
+      if (!this.viewProposalId || !this.isRevisionRequested) return
+
+      this.clearAutoSaveTimer()
+      this.savingRevision = true
+      try {
+        const payload = this.normalizeApiPayload()
+        await Service.proposal.updateDraft(this.viewProposalId, payload)
+        await this.loadProposalById(this.viewProposalId)
+        await this.showAlert({
+          icon: 'success',
+          title: 'บันทึกการแก้ไขสำเร็จ',
+          text: 'ระบบได้บันทึกการแก้ไขล่าสุดเรียบร้อยแล้ว'
+        })
+      } catch (err) {
+        await this.showAlert({
+          icon: 'error',
+          title: 'บันทึกการแก้ไขไม่สำเร็จ',
+          text: (err && err.response && err.response.data && err.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+        })
+      } finally {
+        this.savingRevision = false
+      }
+    },
+    async resubmitRevision () {
+      if (!this.viewProposalId || !this.isRevisionRequested) return
+
+      this.clearAutoSaveTimer()
+      this.submittingRevision = true
+      try {
+        const payload = this.normalizeApiPayload()
+        await Service.proposal.updateDraft(this.viewProposalId, payload)
+        await Service.proposal.resubmit(this.viewProposalId)
+        await this.loadProposalById(this.viewProposalId)
+        await this.fetchUserFeedback(this.viewProposalId)
+        await this.showAlert({
+          icon: 'success',
+          title: 'ส่งแก้ไขอีกครั้งสำเร็จ',
+          text: 'ข้อเสนอของคุณถูกส่งกลับเข้าสู่กระบวนการพิจารณาแล้ว'
+        })
+      } catch (err) {
+        await this.showAlert({
+          icon: 'error',
+          title: 'ส่งแก้ไขอีกครั้งไม่สำเร็จ',
+          text: (err && err.response && err.response.data && err.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+        })
+      } finally {
+        this.submittingRevision = false
+      }
+    },
+    async fetchProposalReviews (proposalId) {
+      this.reviewsLoading = true
+      this.reviewsError = null
+      this.proposalReviews = []
+      try {
+        let res
+        try {
+          res = await Service.proposal.getReviewsByProposal(encodeURIComponent(proposalId))
+        } catch (err) {
+          const status = err && err.response ? err.response.status : null
+          if (status !== 404) throw err
+          res = await Service.proposal.getReviewsByProposalAlt(encodeURIComponent(proposalId))
+        }
+
+        const payload = res && res.data ? res.data : null
+        if (Array.isArray(payload)) this.proposalReviews = payload
+        else if (payload && Array.isArray(payload.data)) this.proposalReviews = payload.data
+        else this.proposalReviews = []
+      } catch (err) {
+        const status = err && err.response ? err.response.status : null
+        this.proposalReviews = []
+        if (status !== 404) {
+          this.reviewsError = (err && err.response && err.response.data && err.response.data.message)
+            || err.message
+            || 'Unknown error'
+        }
+      } finally {
+        this.reviewsLoading = false
+      }
+    },
+    async fetchUserFeedback (proposalId) {
+      this.feedbackLoading = true
+      this.feedbackError = null
+      this.userFeedback = null
+      this.feedbackSectionCardStates = {}
+      this.feedbackSectionDrafts = {}
+      try {
+        const res = await Service.proposal.getFeedback(encodeURIComponent(proposalId))
+        const payload = res && res.data ? res.data : null
+        this.userFeedback = payload && payload.data ? payload.data : payload
+      } catch (err) {
+        this.userFeedback = null
+        this.feedbackError = (err && err.response && err.response.data && err.response.data.message)
+          || err.message
+          || 'Unknown error'
+      } finally {
+        this.feedbackLoading = false
+      }
+    },
+    async scrollToReviewsIfRequested () {
+      const query = this.$route && this.$route.query ? this.$route.query : {}
+      if (query.scrollReviews !== '1') return
+      if (!this.groupedReviews.length) return
+
+      await this.$nextTick()
+      const target = this.$refs.committeeReviewsSection
+      if (target && typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    },
+    async scrollToFeedbackIfNeeded () {
+      const query = this.$route && this.$route.query ? this.$route.query : {}
+      const isRevisionStatus = String(this.currentStatus || '').toLowerCase() === 'revision_requested'
+      const requestedByQuery = query.scrollFeedback === '1' || query.scrollReviews === '1'
+      if (!isRevisionStatus && !requestedByQuery) return
+
+      await this.$nextTick()
+      const target = this.$refs.userFeedbackSection
+      if (target && typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    },
+    reviewerName (review) {
+      const u = review && review.reviewerUserId ? review.reviewerUserId : null
+      if (u && typeof u === 'object') return u.fullName || u.email || '-'
+      return String(u || '-')
+    },
+    decisionLabel (decision) {
+      if (decision === 'approve') return 'อนุมัติ'
+      if (decision === 'revise') return 'ขอแก้ไข'
+      if (decision === 'reject') return 'ไม่อนุมัติ'
+      return 'ยังไม่ระบุ'
+    },
+    formatReviewDateTime (dateStr) {
+      if (!dateStr) return '-'
+      const d = new Date(dateStr)
+      if (Number.isNaN(d.getTime())) return '-'
+      const day = String(d.getDate()).padStart(2, '0')
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const year = d.getFullYear()
+      const hour = String(d.getHours()).padStart(2, '0')
+      const minute = String(d.getMinutes()).padStart(2, '0')
+      return `${day}/${month}/${year} ${hour}:${minute}`
+    },
+    syncFeedbackSectionCardStates (sections) {
+      const next = {}
+      ;(Array.isArray(sections) ? sections : []).forEach(section => {
+        const key = section && section.sectionKey ? section.sectionKey : null
+        if (!key) return
+
+        const existing = this.feedbackSectionCardStates[key] || {}
+        next[key] = {
+          collapsed: Boolean(existing.collapsed),
+          submitted: Boolean(existing.submitted),
+          submittedAt: existing.submittedAt || null,
+          snapshot: Object.prototype.hasOwnProperty.call(existing, 'snapshot') ? existing.snapshot : null,
+          saving: Boolean(existing.saving)
+        }
+      })
+      this.feedbackSectionCardStates = next
+    },
+    cloneSerializable (value) {
+      if (value === null || value === undefined) return value
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value
+      try {
+        return JSON.parse(JSON.stringify(value))
+      } catch (err) {
+        return value
+      }
+    },
+    feedbackSectionState (sectionKey) {
+      return this.feedbackSectionCardStates[sectionKey] || {
+        collapsed: false,
+        submitted: false,
+        submittedAt: null,
+        snapshot: null,
+        saving: false
+      }
+    },
+    isFeedbackSectionSubmitted (sectionKey) {
+      return Boolean(this.feedbackSectionState(sectionKey).submitted)
+    },
+    isFeedbackSectionCollapsed (sectionKey) {
+      return Boolean(this.feedbackSectionState(sectionKey).collapsed)
+    },
+    isSubmittingFeedbackSection (sectionKey) {
+      return Boolean(this.feedbackSectionState(sectionKey).saving)
+    },
+    feedbackSectionSubmittedAt (sectionKey) {
+      return this.feedbackSectionState(sectionKey).submittedAt || null
+    },
+    currentWindowScrollTop () {
+      if (typeof window === 'undefined') return 0
+      return window.pageYOffset
+        || window.scrollY
+        || (document && document.documentElement ? document.documentElement.scrollTop : 0)
+        || 0
+    },
+    async restoreWindowScrollTop (scrollTop) {
+      if (typeof window === 'undefined') return
+      const targetTop = Math.max(0, Number(scrollTop) || 0)
+      await this.$nextTick()
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: targetTop, behavior: 'auto' })
+        window.requestAnimationFrame(() => {
+          window.scrollTo({ top: targetTop, behavior: 'auto' })
+        })
+      })
+    },
+    setFeedbackSectionCardState (sectionKey, patch = {}) {
+      const current = this.feedbackSectionState(sectionKey)
+      this.$set(this.feedbackSectionCardStates, sectionKey, {
+        ...current,
+        ...patch
+      })
+    },
+    toggleFeedbackSectionCard (sectionKey) {
+      const current = this.feedbackSectionState(sectionKey)
+      this.setFeedbackSectionCardState(sectionKey, { collapsed: !current.collapsed })
+    },
+    currentFeedbackSectionValue (sectionKey) {
+      if (sectionKey === 'problem_significance') return this.projectDetailsData.problemSignificance || ''
+      if (sectionKey === 'objectives') return this.projectDetailsData.objectives || ''
+      if (sectionKey === 'literature_review') return this.projectDetailsData.literatureReview || ''
+      if (sectionKey === 'research_methodology') return this.projectDetailsData.researchMethodology || ''
+      if (sectionKey === 'work_plan') return this.projectDetailsData.workPlan || []
+      if (sectionKey === 'budget') return this.projectDetailsData.budget || {}
+      if (sectionKey === 'integration') return this.projectDetailsData.integration || ''
+      if (sectionKey === 'transfer_level') return this.projectDetailsData.transferLevel || ''
+      if (sectionKey === 'research_team') return this.researchTeamData.projectLeader || {}
+      return null
+    },
+    feedbackSectionDraft (sectionKey) {
+      if (!Object.prototype.hasOwnProperty.call(this.feedbackSectionDrafts, sectionKey)) {
+        this.$set(this.feedbackSectionDrafts, sectionKey, this.cloneSerializable(this.currentFeedbackSectionValue(sectionKey)))
+      }
+      return this.feedbackSectionDrafts[sectionKey]
+    },
+    setFeedbackSectionDraft (sectionKey, value) {
+      this.$set(this.feedbackSectionDrafts, sectionKey, this.cloneSerializable(value))
+    },
+    updateFeedbackSectionDraftField (sectionKey, field, value) {
+      const current = this.cloneSerializable(this.feedbackSectionDraft(sectionKey)) || {}
+      current[field] = value
+      this.$set(this.feedbackSectionDrafts, sectionKey, current)
+    },
+    applyFeedbackSectionDraftToForm (sectionKey) {
+      const draft = this.cloneSerializable(this.feedbackSectionDraft(sectionKey))
+
+      if (sectionKey === 'problem_significance' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
+        this.$refs.projectDetailsForm.form.problemSignificance = draft || ''
+      } else if (sectionKey === 'objectives' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
+        this.$refs.projectDetailsForm.form.objectives = draft || ''
+      } else if (sectionKey === 'literature_review' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
+        this.$refs.projectDetailsForm.form.literatureReview = draft || ''
+      } else if (sectionKey === 'research_methodology' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
+        this.$refs.projectDetailsForm.form.researchMethodology = draft || ''
+      } else if (sectionKey === 'work_plan' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
+        this.$refs.projectDetailsForm.form.workPlan = Array.isArray(draft) || typeof draft === 'object' ? draft : []
+      } else if (sectionKey === 'budget' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
+        this.$refs.projectDetailsForm.form.budget = (draft && typeof draft === 'object') ? draft : {}
+      } else if (sectionKey === 'integration' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
+        this.$refs.projectDetailsForm.form.integration = draft || ''
+      } else if (sectionKey === 'transfer_level' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
+        this.$refs.projectDetailsForm.form.transferLevel = draft || ''
+      } else if (sectionKey === 'research_team' && this.$refs.researchTeamForm && this.$refs.researchTeamForm.projectLeader) {
+        Object.assign(this.$refs.researchTeamForm.projectLeader, draft || {})
+      }
+
+      this.syncProjectDetailsData()
+      this.syncResearchTeamData()
+    },
+    cloneFeedbackSectionValue (sectionKey) {
+      return this.cloneSerializable(this.currentFeedbackSectionValue(sectionKey))
+    },
+    feedbackSectionSnapshot (sectionKey) {
+      const state = this.feedbackSectionState(sectionKey)
+      if (state && state.snapshot !== null && state.snapshot !== undefined) {
+        return state.snapshot
+      }
+      const current = this.currentFeedbackSectionValue(sectionKey)
+      if (sectionKey === 'research_team') {
+        return current || { name: '', affiliation: '', phone: '', email: '' }
+      }
+      return current
+    },
+    transferLevelPreview (value) {
+      if (value === 'national-international') return 'ระดับภูมิภาค/ประเทศ/นานาชาติ'
+      if (value === 'community-provincial') return 'ระดับกลุ่มอาชีพ/ชุมชน/จังหวัด'
+      if (value === 'none') return 'ไม่มีการถ่ายทอดสู่สังคม'
+      return '-'
+    },
+    async submitFeedbackSection (section) {
+      const sectionKey = section && section.sectionKey ? section.sectionKey : ''
+      if (!sectionKey || this.effectiveReadOnly) return
+
+      const preservedScrollTop = this.currentWindowScrollTop()
+      this.setFeedbackSectionCardState(sectionKey, { saving: true })
+      try {
+        this.applyFeedbackSectionDraftToForm(sectionKey)
+        if (this.viewProposalId) {
+          const payload = this.normalizeApiPayload()
+          await Service.proposal.updateDraft(this.viewProposalId, payload)
+        }
+
+        this.setFeedbackSectionCardState(sectionKey, {
+          saving: false,
+          submitted: true,
+          collapsed: true,
+          submittedAt: new Date().toISOString(),
+          snapshot: this.cloneFeedbackSectionValue(sectionKey)
+        })
+        await this.restoreWindowScrollTop(preservedScrollTop)
+      } catch (err) {
+        this.setFeedbackSectionCardState(sectionKey, { saving: false })
+        await this.restoreWindowScrollTop(preservedScrollTop)
+        await this.showAlert({
+          icon: 'error',
+          title: 'ส่งแก้ไขไม่สำเร็จ',
+          text: (err && err.response && err.response.data && err.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+        })
+      }
+    },
+    reopenFeedbackSection (sectionKey) {
+      this.$set(this.feedbackSectionDrafts, sectionKey, this.cloneSerializable(this.feedbackSectionSnapshot(sectionKey)))
+      this.setFeedbackSectionCardState(sectionKey, {
+        submitted: false,
+        collapsed: false
+      })
+    },
+    reviewActionItems (review) {
+      const explicitItems = Array.isArray(review && review.commentItems) ? review.commentItems.slice() : []
+      const filteredExplicitItems = explicitItems
+        .filter(item => item && item.sectionKey && item.sectionKey !== 'summary' && item.visibility !== 'committee_only')
+
+      if (filteredExplicitItems.length) {
+        return filteredExplicitItems.sort((left, right) => this.feedbackItemSortOrder(left) - this.feedbackItemSortOrder(right))
+      }
+
+      const scoreItems = Array.isArray(review && review.scoreItems) ? review.scoreItems : []
+      return scoreItems
+        .filter(scoreItem => Number(scoreItem && scoreItem.score) <= 1)
+        .map(scoreItem => {
+          const meta = getCommitteeFeedbackMeta(scoreItem && scoreItem.criteriaKey)
+          if (!meta) return null
+          return {
+            sectionKey: meta.sectionKey,
+            fieldKey: `criteria_${scoreItem.criteriaKey}`,
+            commentType: 'required_fix',
+            commentText: this.buildFallbackFeedbackComment(meta, review && review.summaryComment),
+            visibility: 'researcher_visible'
+          }
+        })
+        .filter(Boolean)
+        .sort((left, right) => this.feedbackItemSortOrder(left) - this.feedbackItemSortOrder(right))
+    },
+    feedbackMetaForItem (item) {
+      const fieldKey = String(item && item.fieldKey ? item.fieldKey : '')
+      const matched = fieldKey.match(/^criteria_(\d+)$/)
+      if (matched) {
+        return getCommitteeFeedbackMeta(matched[1])
+      }
+
+      const all = Object.values(COMMITTEE_SECTION_FEEDBACK_MAP)
+      return all.find(entry => entry.sectionKey === (item && item.sectionKey)) || null
+    },
+    feedbackItemSortOrder (item) {
+      const meta = this.feedbackMetaForItem(item)
+      if (!meta) return Number.MAX_SAFE_INTEGER
+      return Number.isFinite(Number(meta.sectionNo)) ? Number(meta.sectionNo) : Number.MAX_SAFE_INTEGER - 1
+    },
+    feedbackItemSectionLabel (item) {
+      const meta = this.feedbackMetaForItem(item)
+      return meta ? meta.sectionLabel : 'หัวข้อที่ต้องแก้ไข'
+    },
+    feedbackItemRubricLabel (item) {
+      const meta = this.feedbackMetaForItem(item)
+      return meta ? meta.rubricLabel : 'ข้อเสนอแนะจากคณะกรรมการ'
+    },
+    feedbackItemScore (review, item) {
+      const fieldKey = String(item && item.fieldKey ? item.fieldKey : '')
+      const matched = fieldKey.match(/^criteria_(\d+)$/)
+      if (!matched) return null
+
+      const scoreItems = Array.isArray(review && review.scoreItems) ? review.scoreItems : []
+      const found = scoreItems.find(scoreItem => String(scoreItem && scoreItem.criteriaKey) === matched[1])
+      if (!found) return null
+
+      const score = Number(found.score)
+      return Number.isFinite(score) ? score : null
+    },
+    buildFallbackFeedbackComment (meta, summaryComment) {
+      const summary = String(summaryComment || '').trim()
+      if (summary) {
+        return `${summary}\nโปรดตรวจสอบ${meta.sectionLabel}`
+      }
+      return `โปรดตรวจสอบและปรับปรุง${meta.sectionLabel}ตามความเห็นของคณะกรรมการ`
+    },
+    async goToFeedbackSection (item) {
+      const meta = this.feedbackMetaForItem(item)
+      if (!meta) return
+
+      await this.$nextTick()
+      const targetComponent = meta.target === 'researchTeam'
+        ? this.$refs.researchTeamForm
+        : this.$refs.projectDetailsForm
+
+      if (targetComponent && typeof targetComponent.scrollToSection === 'function') {
+        targetComponent.scrollToSection(meta.sectionKey)
+        return
+      }
+
+      const target = targetComponent && targetComponent.$el ? targetComponent.$el : targetComponent
+      if (target && typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    },
+    applyPrefill () {
+      const data = this.prefill
+      if (!data) return
+      if (this.viewProposalId || this.loadedProposal) return
+
+      this.$nextTick(() => {
+        const projectDetailsForm = this.$refs.projectDetailsForm
+        if (projectDetailsForm && projectDetailsForm.form) {
+          if (!projectDetailsForm.form.projectNameEnglish && data.projectNameEnglish) {
+            projectDetailsForm.form.projectNameEnglish = data.projectNameEnglish
+          }
+          if (!projectDetailsForm.form.projectNameThai && data.projectNameThai) {
+            projectDetailsForm.form.projectNameThai = data.projectNameThai
+          }
+        }
+
+        const researchTeamForm = this.$refs.researchTeamForm
+        if (researchTeamForm && researchTeamForm.projectLeader) {
+          if (!researchTeamForm.projectLeader.name && data.projectLeaderName) {
+            researchTeamForm.projectLeader.name = data.projectLeaderName
+          }
+          if (!researchTeamForm.projectLeader.affiliation && data.projectLeaderAffiliation) {
+            researchTeamForm.projectLeader.affiliation = data.projectLeaderAffiliation
+          }
+        }
+      })
+    },
+
+    showAlert(options) {
+      if (this.$swal && typeof this.$swal.fire === 'function') {
+        return this.$swal.fire(options)
+      }
+      return Swal.fire(options)
+    },
+
+    normalizeApiPayload() {
+      const teamData = this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.getFormData === 'function'
+        ? this.$refs.researchTeamForm.getFormData()
+        : {}
+      const formData = this.$refs.projectDetailsForm && typeof this.$refs.projectDetailsForm.getFormData === 'function'
+        ? this.$refs.projectDetailsForm.getFormData()
+        : {}
+      const form = formData && formData.form ? formData.form : (formData || {})
+
+      const rawKeywords = String(form.keywords || '')
+        .replace(/<[^>]+>/g, '')
+        .trim()
+      const keywordList = rawKeywords
+        ? rawKeywords.split(/[,\n]+/).map(k => k.trim()).filter(Boolean)
+        : []
+      const fallbackDraftTitle = 'ร่างโครงการวิจัย'
+      const projectTitleTh = (form.projectNameThai || form.projectTitleTh || '').trim() || fallbackDraftTitle
+
+      const budgetTotal = (form.budget && form.budget.grandTotal)
+        || form.budgetTotal
+        || 0
+
+      const projectLeader = teamData && teamData.projectLeader ? teamData.projectLeader : {}
+      const projectLeaderName = projectLeader.name || form.projectLeaderName || ''
+
+      const signatures = this.signatureData
+        || (this.$refs.signatureCard && typeof this.$refs.signatureCard.getAllSignatures === 'function'
+          ? this.$refs.signatureCard.getAllSignatures()
+          : null)
+
+       const persistedFiles = Array.isArray(this.files)
+         ? this.files.filter(f => f && !f._pending)
+         : []
+
+       return {
+        projectTitleTh,
+        projectTitleEn: form.projectNameEnglish || form.projectTitleEn || '',
+        fiscalYear: form.fiscalYear || new Date().getFullYear(),
+        fundingType: form.fundingType || null,
+        researchType: form.researchType || null,
+        budgetTotal,
+        keywordList,
+        abstractText: form.problemSignificance || '',
+        projectLeaderName,
+        projectLeaderAffiliation: projectLeader.affiliation || '',
+        projectLeaderPhone: projectLeader.phone || '',
+        projectLeaderEmail: projectLeader.email || '',
+        projectLeaderProportion: projectLeader.proportion || '',
+         formSnapshotJson: {
+          projectNameThai: form.projectNameThai || '',
+          projectNameEnglish: form.projectNameEnglish || '',
+          fiscalYear: form.fiscalYear || new Date().getFullYear(),
+          fundingType: form.fundingType || null,
+          researchType: form.researchType || null,
+          keywords: form.keywords || '',
+          fundingSubType: form.fundingSubType,
+          collaboration: form.collaboration,
+          collaborationAgency: form.collaborationAgency,
+          problemSignificance: form.problemSignificance,
+          objectives: form.objectives,
+          literatureReview: form.literatureReview,
+          references: form.references,
+          researchMethodology: form.researchMethodology,
+          researchScope: form.researchScope,
+          workPlan: form.workPlan || [],
+          milestones: form.milestones,
+          selectedOutcome: form.selectedOutcome,
+          integration: form.integration,
+          transferLevel: form.transferLevel,
+          researchStandard: form.researchStandard || {},
+          budget: form.budget || {},
+           signatures: signatures || {},
+           researchTeam: teamData,
+           files: persistedFiles
+         }
+       }
+     },
+
+    markAsEdited() {
+      if (this.suppressAutoSave) return
+      this.scheduleAutoSave()
+      if (this.isDraftSaved) {
+        this.isDraftSaved = false; // ปลดล็อคปุ่มให้กลับมากดได้
+      }
+    },
+    async handleUpload(event) {
+      if (this.effectiveReadOnly) return
+      const input = event && event.target ? event.target : null
+      const selected = input && input.files ? Array.from(input.files) : []
+      if (!selected.length) return
+
+      // Reset the input so selecting the same file again will fire change.
+      if (input) input.value = ''
+
+      // If proposal is not created yet, queue the binary until after saveDraft creates an id.
+      if (!this.viewProposalId) {
+        this.pendingFormFiles = [...this.pendingFormFiles, ...selected]
+        const placeholders = selected.map((file) => ({
+          name: file.name,
+          datetime: new Date().toLocaleString(),
+          type: '',
+          note: '',
+          _pending: true
+        }))
+        this.files = [...(this.files || []), ...placeholders]
+        this.markAsEdited()
+        return
+      }
+
+      await this.uploadFormFiles(selected)
+      this.markAsEdited()
+    },
+    async ensureProposalDraftExistsForAttachments () {
+      if (this.viewProposalId) return this.viewProposalId
+
+      await this.persistDraft({ silent: true })
+      return this.viewProposalId
+    },
+    currentResearchStandardValue () {
+      const projectDetailsForm = this.$refs.projectDetailsForm
+      if (!projectDetailsForm || !projectDetailsForm.form) return null
+      const standard = projectDetailsForm.form.researchStandard || {}
+      return {
+        ...standard,
+        attachments: {
+          plantApproved: null,
+          plantPending: null,
+          humanApproved: null,
+          humanPending: null,
+          animalApproved: null,
+          animalPending: null,
+          ...(standard.attachments || {})
+        }
+      }
+    },
+    currentBudgetValue () {
+      const projectDetailsForm = this.$refs.projectDetailsForm
+      if (!projectDetailsForm || !projectDetailsForm.form) return null
+      return projectDetailsForm.form.budget || null
+    },
+    setBudgetValue (nextValue) {
+      const projectDetailsForm = this.$refs.projectDetailsForm
+      if (!projectDetailsForm || !projectDetailsForm.form) return
+      projectDetailsForm.form.budget = nextValue || {}
+      this.syncProjectDetailsData(projectDetailsForm.getFormData())
+    },
+    updateBudgetItemAttachment (itemId, updater) {
+      const current = this.currentBudgetValue()
+      if (!current || !Array.isArray(current.categories)) return
+
+      const nextBudget = {
+        ...current,
+        categories: current.categories.map((category) => ({
+          ...category,
+          items: Array.isArray(category.items)
+            ? category.items.map((item) => {
+              if (!item || String(item.id) !== String(itemId)) return item
+              return updater(item)
+            })
+            : []
+        }))
+      }
+
+      this.setBudgetValue(nextBudget)
+    },
+    setResearchStandardValue (nextValue) {
+      const projectDetailsForm = this.$refs.projectDetailsForm
+      if (!projectDetailsForm || !projectDetailsForm.form) return
+      projectDetailsForm.form.researchStandard = nextValue
+      this.syncProjectDetailsData(projectDetailsForm.getFormData())
+    },
+    upsertFormFileRow (row) {
+      if (!row || !row.fileId) return
+      const next = Array.isArray(this.files) ? this.files.filter(item => String(item && item.fileId) !== String(row.fileId)) : []
+      this.files = [...next, row]
+    },
+    removeFormFileRow (fileId) {
+      this.files = Array.isArray(this.files)
+        ? this.files.filter(item => String(item && item.fileId) !== String(fileId))
+        : []
+    },
+    async handleBudgetAttachmentUpload ({ categoryName, itemId, file }) {
+      if (this.effectiveReadOnly || !itemId || !file) return
+
+      try {
+        const proposalId = await this.ensureProposalDraftExistsForAttachments()
+        if (!proposalId) throw new Error('ยังไม่สามารถสร้างแบบร่างเพื่อแนบเอกสารได้')
+
+        const note = `เอกสารแนบในหมวด ${categoryName || 'งบประมาณ'}`
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('type', 'อื่น ๆ')
+        formData.append('note', note)
+
+        const res = await Service.proposal.uploadFormFile(proposalId, formData)
+        const row = res && res.data && res.data.data ? res.data.data : null
+        if (!row) throw new Error('อัปโหลดเอกสารงบประมาณไม่สำเร็จ')
+
+        const budgetRow = {
+          ...row,
+          fileName: row.name || row.originalName || file.name,
+          docType: ''
+        }
+
+        this.updateBudgetItemAttachment(itemId, (item) => ({
+          ...item,
+          attachment: budgetRow
+        }))
+        this.upsertFormFileRow(row)
+        await this.persistDraft({ silent: true })
+      } catch (err) {
+        this.updateBudgetItemAttachment(itemId, (item) => ({
+          ...item,
+          attachment: null
+        }))
+        await this.showAlert({
+          icon: 'error',
+          title: 'แนบเอกสารงบประมาณไม่สำเร็จ',
+          text: (err && err.response && err.response.data && err.response.data.message) || err.message || 'กรุณาลองใหม่อีกครั้ง'
+        })
+      }
+    },
+    async handleBudgetAttachmentOpen ({ file }) {
+      if (!file) return
+      await this.openFile(file)
+    },
+    handleBudgetAttachmentMetaChange ({ itemId, attachment }) {
+      if (!itemId || !attachment) return
+
+      this.updateBudgetItemAttachment(itemId, (item) => ({
+        ...item,
+        attachment: {
+          ...(item && item.attachment ? item.attachment : {}),
+          ...attachment
+        }
+      }))
+
+      if (attachment.fileId) {
+        this.files = Array.isArray(this.files)
+          ? this.files.map((item) => {
+            if (String(item && item.fileId) !== String(attachment.fileId)) return item
+            return {
+              ...item,
+              type: attachment.docType || item.type || '',
+              note: item.note || 'เอกสารแนบในหมวดงบประมาณ'
+            }
+          })
+          : []
+      }
+    },
+    async handleResearchStandardUpload ({ slotKey, file }) {
+      if (this.effectiveReadOnly || !slotKey || !file) return
+
+      try {
+        const proposalId = await this.ensureProposalDraftExistsForAttachments()
+        if (!proposalId) throw new Error('ยังไม่สามารถสร้างแบบร่างเพื่อแนบเอกสารได้')
+
+        const previous = this.currentResearchStandardValue()
+        const previousFile = previous && previous.attachments ? previous.attachments[slotKey] : null
+
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('type', 'research_standard_attachment')
+        formData.append('note', slotKey)
+        const res = await Service.proposal.uploadFormFile(proposalId, formData)
+        const row = res && res.data && res.data.data ? res.data.data : null
+        if (!row) throw new Error('อัปโหลดเอกสารไม่สำเร็จ')
+
+        const nextResearchStandard = {
+          ...(previous || {}),
+          attachments: {
+            ...(previous && previous.attachments ? previous.attachments : {}),
+            [slotKey]: row
+          }
+        }
+        this.setResearchStandardValue(nextResearchStandard)
+        this.upsertFormFileRow(row)
+
+        if (previousFile && previousFile.fileId && String(previousFile.fileId) !== String(row.fileId)) {
+          try {
+            await Service.proposal.deleteFormFile(proposalId, previousFile.fileId)
+          } catch (err) {
+            void err
+          }
+          this.removeFormFileRow(previousFile.fileId)
+        }
+
+        await this.persistDraft({ silent: true })
+      } catch (err) {
+        await this.showAlert({
+          icon: 'error',
+          title: 'แนบเอกสารไม่สำเร็จ',
+          text: (err && err.response && err.response.data && err.response.data.message) || err.message || 'กรุณาลองใหม่อีกครั้ง'
+        })
+      }
+    },
+    async handleResearchStandardOpen ({ file }) {
+      if (!file) return
+      await this.openFile(file)
+    },
+    async handleResearchStandardRemove ({ slotKey, file }) {
+      if (this.effectiveReadOnly || !slotKey || !file || !this.viewProposalId) return
+
+      try {
+        if (file.fileId) {
+          await Service.proposal.deleteFormFile(this.viewProposalId, file.fileId)
+          this.removeFormFileRow(file.fileId)
+        }
+
+        const previous = this.currentResearchStandardValue()
+        const nextResearchStandard = {
+          ...(previous || {}),
+          attachments: {
+            ...(previous && previous.attachments ? previous.attachments : {}),
+            [slotKey]: null
+          }
+        }
+        this.setResearchStandardValue(nextResearchStandard)
+        await this.persistDraft({ silent: true })
+      } catch (err) {
+        await this.showAlert({
+          icon: 'error',
+          title: 'ลบเอกสารไม่สำเร็จ',
+          text: (err && err.response && err.response.data && err.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+        })
+      }
+    },
+
+    async uploadFormFiles(files) {
+      if (!this.viewProposalId) return
+      const list = Array.isArray(files) ? files : []
+      for (const file of list) {
+        const formData = new FormData()
+        formData.append('file', file)
+        try {
+          const res = await Service.proposal.uploadFormFile(this.viewProposalId, formData)
+          const ok = res && res.data && res.data.success
+          if (ok && res.data.data) {
+            this.files = (this.files || []).filter(f => f && !f._pending)
+            this.files = [...this.files, res.data.data]
+          }
+        } catch (e) {
+          // Keep a placeholder so the user can retry by re-uploading.
+          this.files = [...(this.files || []), {
+            name: file && file.name ? file.name : 'file',
+            datetime: new Date().toLocaleString(),
+            type: '',
+            note: 'อัปโหลดไม่สำเร็จ กรุณาลองใหม่',
+            _pending: true
+          }]
+        }
+      }
+    },
+
+    async flushPendingFormFiles() {
+      if (!this.viewProposalId) return
+      if (!Array.isArray(this.pendingFormFiles) || !this.pendingFormFiles.length) return
+      const batch = [...this.pendingFormFiles]
+      this.pendingFormFiles = []
+      // Remove placeholders before uploading, then re-add uploaded entries.
+      this.files = (this.files || []).filter(f => f && !f._pending)
+      await this.uploadFormFiles(batch)
+    },
+
+    async removeFile(index) {
+      const item = Array.isArray(this.files) ? this.files[index] : null
+      if (!item) return
+
+      // Remove placeholders only from UI
+      if (item._pending) {
+        this.files.splice(index, 1)
+        this.markAsEdited()
+        return
+      }
+
+      if (this.viewProposalId && item.fileId) {
+        try {
+          await Service.proposal.deleteFormFile(this.viewProposalId, item.fileId)
+        } catch (e) {
+          // ignore and still remove from UI
+        }
+      }
+
+      this.files.splice(index, 1)
+      this.markAsEdited()
+    },
+
+    async openFile(item) {
+      if (!item || !this.viewProposalId || !item.fileId) return
+
+      // Open a blank tab immediately to avoid popup blockers (async opens are often blocked).
+      const popup = window.open('', '_blank')
+      try {
+        if (popup && popup.document && popup.document.body) {
+          popup.document.title = 'กำลังเปิดไฟล์...'
+          popup.document.body.style.fontFamily = 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif'
+          popup.document.body.innerHTML = '<div style="padding:16px;color:#334155">กำลังดาวน์โหลดไฟล์...</div>'
+        }
+      } catch (_) { void _ }
+      try {
+        const res = await Service.proposal.downloadFormFile(this.viewProposalId, item.fileId)
+        const blob = res && res.data ? res.data : null
+        const headers = res && res.headers ? res.headers : {}
+        const contentType = headers['content-type'] || headers['Content-Type'] || (blob && blob.type) || ''
+
+        if (!blob || (typeof blob.size === 'number' && blob.size === 0)) {
+          if (popup && !popup.closed) popup.close()
+          return
+        }
+
+        // If server returned JSON error, show a friendly message.
+        if (String(contentType).toLowerCase().includes('application/json')) {
+          try {
+            const text = await blob.text()
+            const json = JSON.parse(text)
+            const msg = (json && (json.message || json.error)) ? (json.message || json.error) : 'ไม่สามารถเปิดไฟล์ได้'
+            if (popup && !popup.closed) popup.close()
+            await this.showAlert({
+              icon: 'error',
+              title: 'ไม่สามารถเปิดไฟล์ได้',
+              text: msg,
+              confirmButtonText: 'ตกลง'
+            })
+            return
+          } catch (_) {
+            // fall through and try to render
+          }
+        }
+
+        // Ensure blob has a useful MIME type for in-browser rendering.
+        const fixedBlob = contentType && blob && blob.type !== contentType
+          ? new Blob([blob], { type: contentType })
+          : blob
+
+        const url = window.URL.createObjectURL(fixedBlob)
+
+        const lower = String(contentType || '').toLowerCase()
+        const canInline = lower.includes('pdf') || lower.startsWith('image/')
+
+        if (popup && !popup.closed && popup.document) {
+          // Render inline (PDF/images) or show download UI for other types.
+          const safeName = String(item.name || item.originalName || 'file').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          if (canInline) {
+            popup.document.open()
+            popup.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>${safeName}</title>
+    <style>html,body{height:100%;margin:0} .wrap{height:100%} embed,img{width:100%;height:100%;object-fit:contain}</style>
+  </head>
+  <body>
+    <div class="wrap">
+      <embed src="${url}" type="${lower || 'application/octet-stream'}" />
+    </div>
+  </body>
+</html>`)
+            popup.document.close()
+          } else {
+            popup.document.open()
+            popup.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>${safeName}</title>
+    <style>
+      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px;color:#0f172a}
+      a.btn{display:inline-block;background:#2563eb;color:#fff;padding:10px 14px;border-radius:10px;text-decoration:none}
+      .meta{margin-top:10px;color:#475569;font-size:13px}
+    </style>
+  </head>
+  <body>
+    <div style="font-weight:700;font-size:16px;margin-bottom:12px;">ไฟล์: ${safeName}</div>
+    <a class="btn" href="${url}" download="${safeName}">ดาวน์โหลดไฟล์</a>
+    <div class="meta">ชนิดไฟล์: ${lower || '-'}</div>
+  </body>
+</html>`)
+            popup.document.close()
+          }
+        } else {
+          window.open(url, '_blank')
+        }
+
+        setTimeout(() => window.URL.revokeObjectURL(url), 5 * 60 * 1000)
+      } catch (e) {
+        try {
+          if (popup && !popup.closed) popup.close()
+        } catch (_) { void _ }
+
+        const status = e && e.response ? e.response.status : null
+        const message =
+          status === 404
+            ? 'ไม่พบไฟล์ในฐานข้อมูล เอกสารนี้อาจถูกแนบไว้ก่อนระบบอัปโหลดแบบใหม่ กรุณาอัปโหลดเอกสารอีกครั้ง'
+            : status === 403
+              ? 'คุณไม่มีสิทธิ์เข้าถึงไฟล์นี้'
+              : 'กรุณาลองใหม่อีกครั้ง'
+
+        await this.showAlert({
+          icon: 'error',
+          title: 'ไม่สามารถเปิดไฟล์ได้',
+          text: message,
+          confirmButtonText: 'ตกลง'
+        })
+      }
+    },
+
+    async deleteDraftProposal () {
+      if (!this.viewProposalId || !this.isDraftStatus) return
+
+      const result = await this.showAlert({
+        icon: 'warning',
+        title: 'ยืนยันการลบโครงการ',
+        text: 'หากลบแล้วจะไม่สามารถกู้คืนข้อมูลได้',
+        showCancelButton: true,
+        confirmButtonText: 'ลบโครงการ',
+        cancelButtonText: 'ยกเลิก'
+      })
+      if (!result || !result.isConfirmed) return
+
+      try {
+        await Service.proposal.deleteDraft(this.viewProposalId)
+        this.setStoredDraftId('')
+        await this.showAlert({
+          icon: 'success',
+          title: 'ลบโครงการสำเร็จ',
+          confirmButtonText: 'ตกลง'
+        })
+        this.$router.push({ name: 'UserHistory' })
+      } catch (err) {
+        await this.showAlert({
+          icon: 'error',
+          title: 'ลบโครงการไม่สำเร็จ',
+          text: (err && err.response && err.response.data && err.response.data.message) || 'กรุณาลองใหม่อีกครั้ง',
+          confirmButtonText: 'ตกลง'
+        })
+      }
+    },
+    syncResearchTeamData(data) {
+      if (data && typeof data === 'object') {
+        this.researchTeamData = this.cloneSerializable(data) || data
+        this.markAsEdited()
+        return
+      }
+
+      // Get research team data and pass to components
+      if (!this.$refs.researchTeamForm || typeof this.$refs.researchTeamForm.getFormData !== 'function') {
+        return;
+      }
+      const teamData = this.$refs.researchTeamForm.getFormData();
+      this.researchTeamData = this.cloneSerializable(teamData) || teamData;
+      this.markAsEdited();
+    },
+    syncProjectDetailsData(data) {
+      if (data && typeof data === 'object') {
+        this.projectDetailsData = this.cloneSerializable(data) || data
+        this.markAsEdited()
+        return
+      }
+
+      if (!this.$refs.projectDetailsForm || typeof this.$refs.projectDetailsForm.getFormData !== 'function') {
+        return
+      }
+
+      this.projectDetailsData = this.cloneSerializable(this.$refs.projectDetailsForm.getFormData()) || this.$refs.projectDetailsForm.getFormData()
+      this.markAsEdited()
+    },
+
+    async loadProposalById(proposalId) {
+      this.suppressAutoSave = true
+      try {
+        const res = await Service.proposal.getById(proposalId)
+        const isSuccess = res && res.data && res.data.success
+        if (!isSuccess) {
+          return
+        }
+
+        const proposal = res.data.data || {}
+        this.loadedProposal = proposal
+        const snapshot = proposal.formSnapshotJson || {}
+        this.currentStatus = proposal.currentStatus || 'draft'
+        this.signatureData = snapshot.signatures || null
+
+        await this.$nextTick()
+
+        if (this.$refs.projectDetailsForm) {
+          const formData = {
+            projectNameThai: snapshot.projectNameThai || proposal.projectTitleTh || '',
+            projectNameEnglish: snapshot.projectNameEnglish || proposal.projectTitleEn || '',
+            fiscalYear: snapshot.fiscalYear || proposal.fiscalYear,
+            fundingType: proposal.fundingType || snapshot.fundingType || '',
+            fundingSubType: snapshot.fundingSubType || '',
+            researchType: proposal.researchType || snapshot.researchType || '',
+            collaboration: snapshot.collaboration || 'none',
+            collaborationAgency: snapshot.collaborationAgency || '',
+            keywords: snapshot.keywords || (Array.isArray(proposal.keywordList) ? proposal.keywordList.join(', ') : ''),
+            problemSignificance: snapshot.problemSignificance || proposal.abstractText || '',
+            objectives: snapshot.objectives || '',
+            literatureReview: snapshot.literatureReview || '',
+            references: snapshot.references || '',
+            researchMethodology: snapshot.researchMethodology || '',
+            researchScope: snapshot.researchScope || '',
+            workPlan: snapshot.workPlan || [],
+            milestones: snapshot.milestones || '',
+            selectedOutcome: snapshot.selectedOutcome || '',
+            integration: snapshot.integration || '',
+            transferLevel: snapshot.transferLevel || '',
+            researchStandard: snapshot.researchStandard || {},
+            budget: snapshot.budget || {}
+          }
+
+          if (typeof this.$refs.projectDetailsForm.setFormData === 'function') {
+            const hydratedFormData = await this.$refs.projectDetailsForm.setFormData(formData)
+            this.syncProjectDetailsData(hydratedFormData || formData)
+          } else if (this.$refs.projectDetailsForm.form && typeof this.$refs.projectDetailsForm.form === 'object') {
+            Object.assign(this.$refs.projectDetailsForm.form, formData)
+            this.syncProjectDetailsData(formData)
+          }
+        }
+
+        if (this.$refs.researchTeamForm) {
+          const team = snapshot.researchTeam || {}
+          if (typeof this.$refs.researchTeamForm.setTeamData === 'function') {
+            const hydratedTeamData = await this.$refs.researchTeamForm.setTeamData(team)
+            this.syncResearchTeamData(hydratedTeamData || team)
+          } else {
+            if (team.projectLeader && this.$refs.researchTeamForm.projectLeader) {
+              Object.assign(this.$refs.researchTeamForm.projectLeader, team.projectLeader)
+            }
+            if (Array.isArray(team.coResearchers)) {
+              this.$refs.researchTeamForm.coResearchers = [].concat(team.coResearchers)
+            }
+            if (Array.isArray(team.advisors)) {
+              this.$refs.researchTeamForm.advisors = [].concat(team.advisors)
+            }
+            this.syncResearchTeamData(team)
+          }
+        }
+
+        this.files = Array.isArray(snapshot.files) ? snapshot.files : []
+
+        // If binary is stored in DB, enrich snapshot metadata without losing editable fields (type/note).
+        try {
+          const fileRes = await Service.proposal.listFormFiles(proposalId)
+          const ok = fileRes && fileRes.data && fileRes.data.success
+          const rows = ok && Array.isArray(fileRes.data.data) ? fileRes.data.data : []
+
+          if (!this.files.length && rows.length) {
+            this.files = rows
+          } else if (this.files.length && rows.length) {
+            const map = new Map(rows.map(r => [String(r && r.fileId), r]))
+            this.files = this.files.map((f) => {
+              const fid = f && f.fileId ? String(f.fileId) : ''
+              if (!fid || !map.has(fid)) return f
+              const fresh = map.get(fid)
+              return {
+                ...fresh,
+                // keep user-edited fields from snapshot
+                type: f.type || fresh.type,
+                note: f.note || fresh.note
+              }
+            })
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        if (proposal.currentStatus) {
+          this.currentStatus = proposal.currentStatus
+        }
+
+        if (String(proposal.currentStatus || '').toLowerCase() === 'draft') {
+          this.setStoredDraftId(proposal._id || proposalId)
+        } else {
+          this.setStoredDraftId('')
+        }
+
+        const nonEditableStatuses = [
+          'submitted', 'faculty_review_pending', 'faculty_approved',
+          'office_received', 'document_checking', 'assigned_to_committee',
+          'under_review', 'meeting_completed', 'resubmitted', 'second_round_review',
+          'approved', 'rejected', 'announced'
+        ]
+
+        if (nonEditableStatuses.indexOf(proposal.currentStatus) !== -1) {
+          this.isReadOnly = true
+        }
+      } catch (err) {
+        console.error('loadProposalById error:', err)
+      } finally {
+        this.$nextTick(() => {
+          this.suppressAutoSave = false
+        })
+      }
+    },
+
+    clearAutoSaveTimer () {
+      if (!this.autoSaveTimerId) return
+      clearTimeout(this.autoSaveTimerId)
+      this.autoSaveTimerId = null
+    },
+    clearBudgetAutoSaveTimer () {
+      if (!this.budgetAutoSaveTimerId) return
+      clearTimeout(this.budgetAutoSaveTimerId)
+      this.budgetAutoSaveTimerId = null
+    },
+    async flushAutoSaveBeforeLeave () {
+      const hasPendingDraftSave = Boolean(
+        this.autoSaveTimerId ||
+        this.budgetAutoSaveTimerId ||
+        this.autoSavePending ||
+        (Array.isArray(this.pendingFormFiles) && this.pendingFormFiles.length)
+      )
+
+      if (!hasPendingDraftSave || !this.canAutoSave()) return
+
+      this.clearAutoSaveTimer()
+      this.clearBudgetAutoSaveTimer()
+
+      if (this.isAutoSaving) {
+        this.autoSavePending = true
+        return
+      }
+
+      await this.persistDraft({ silent: true })
+    },
+    handleBudgetAutoSave (budget) {
+      const nextBudget = this.cloneSerializable(budget) || {}
+
+      if (this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
+        this.$refs.projectDetailsForm.form.budget = nextBudget
+      }
+
+      this.projectDetailsData = {
+        ...(this.projectDetailsData || {}),
+        budget: nextBudget
+      }
+
+      this.markAsEdited()
+
+      if (!this.canAutoSave()) return
+
+      this.clearBudgetAutoSaveTimer()
+      this.budgetAutoSaveTimerId = setTimeout(() => {
+        this.autoSaveDraft()
+      }, 800)
+    },
+    canAutoSave () {
+      if (this.suppressAutoSave) return false
+      if (this.isAdminView) return false
+      if (this.effectiveReadOnly) return false
+      const status = String(this.currentStatus || 'draft').toLowerCase()
+      return status === 'draft' || status === 'revision_requested'
+    },
+    scheduleAutoSave () {
+      if (!this.canAutoSave()) return
+      this.clearAutoSaveTimer()
+      this.autoSaveTimerId = setTimeout(() => {
+        this.autoSaveDraft()
+      }, 1500)
+    },
+    async persistDraft ({ silent = false } = {}) {
+      const payload = this.normalizeApiPayload()
+      payload.status = 'draft'
+
+      try {
+        if (this.viewProposalId) {
+          await Service.proposal.updateDraft(this.viewProposalId, payload)
+          this.setStoredDraftId(this.viewProposalId)
+          await this.flushPendingFormFiles()
+        } else {
+          const createRes = await Service.proposal.create(payload)
+          const created = createRes && createRes.data && createRes.data.data ? createRes.data.data : null
+          const proposalId = created && (created._id || created.id)
+          if (proposalId) {
+            this.viewProposalId = proposalId
+            this.setStoredDraftId(proposalId)
+            this.syncRouteProposalId(proposalId)
+            await this.flushPendingFormFiles()
+          }
+        }
+
+        this.isDraftSaved = true
+        this.lastAutoSavedAt = new Date().toISOString()
+
+        if (!silent) {
+          await this.showAlert({
+            title: 'สำเร็จ!',
+            text: 'บันทึกแบบร่างเรียบร้อยแล้ว',
+            icon: 'success',
+            confirmButtonText: 'ตกลง'
+          })
+        }
+      } catch (err) {
+        this.isDraftSaved = false
+
+        const message = err && err.response && err.response.data && err.response.data.message
+          ? err.response.data.message
+          : 'ไม่สามารถบันทึกแบบร่างได้ในขณะนี้'
+
+        if (!silent) {
+          await this.showAlert({
+            title: 'บันทึกแบบร่างไม่สำเร็จ',
+            text: message,
+            icon: 'error',
+            confirmButtonText: 'ตกลง'
+          })
+        } else {
+          console.error('Auto save draft failed:', message)
+        }
+
+        throw err
+      }
+    },
+    async autoSaveDraft () {
+      this.clearAutoSaveTimer()
+      this.clearBudgetAutoSaveTimer()
+      if (!this.canAutoSave()) return
+      if (this.isAutoSaving) {
+        this.autoSavePending = true
+        return
+      }
+
+      this.isAutoSaving = true
+      try {
+        await this.persistDraft({ silent: true })
+      } catch (err) {
+        void err
+      } finally {
+        this.isAutoSaving = false
+        if (this.autoSavePending) {
+          this.autoSavePending = false
+          this.scheduleAutoSave()
+        }
+      }
+    },
+    async saveDraft() {
+      this.clearAutoSaveTimer()
+      this.clearBudgetAutoSaveTimer()
+      try {
+        await this.persistDraft({ silent: false })
+      } catch (err) {
+        void err
+      }
+    },
+
+    async submitProject() {
+      this.clearAutoSaveTimer()
+      this.clearBudgetAutoSaveTimer()
+
+      const previousShowSubmit = this.showSubmitButton
+      const previousStatus = this.currentStatus
+      const previousReadOnly = this.isReadOnly
+
+      const validation = this.validateBeforeSubmit()
+      if (!validation.ok) {
+        await this.showAlert({
+          icon: 'warning',
+          title: 'ไม่สามารถยื่นโครงการได้',
+          text: validation.message || 'กรุณากรอกข้อมูลให้ครบถ้วนก่อนยื่นโครงการ',
+          confirmButtonText: 'ตกลง'
+        })
+        return
+      }
+
+      this.showSubmitButton = true;
+      this.currentStatus = 'submitted';
+      this.isReadOnly = true;
+      try {
+        const payload = this.normalizeApiPayload()
+        // Avoid creating a duplicate project: if draft already exists, update + submit the same record.
+        if (this.viewProposalId) {
+          await Service.proposal.updateDraft(this.viewProposalId, payload)
+          await this.flushPendingFormFiles()
+          await Service.proposal.submit(this.viewProposalId)
+        } else {
+          const createRes = await Service.proposal.create(payload)
+          const created = createRes && createRes.data && createRes.data.data ? createRes.data.data : null
+          const proposalId = created && (created._id || created.id)
+
+          if (proposalId) {
+            this.viewProposalId = proposalId
+            this.syncRouteProposalId(proposalId)
+            await this.flushPendingFormFiles()
+            await Service.proposal.submit(proposalId)
+          }
+        }
+
+        this.setStoredDraftId('')
+        await this.showAlert({
+          title: 'สำเร็จ!',
+          text: 'ยื่นโครงการเรียบร้อยแล้ว',
+          icon: 'success',
+          confirmButtonText: 'ตกลง'
+        })
+      } catch (err) {
+        this.showSubmitButton = previousShowSubmit
+        this.currentStatus = previousStatus
+        this.isReadOnly = previousReadOnly
+
+        const message = err && err.response && err.response.data && err.response.data.message
+          ? err.response.data.message
+          : 'ไม่สามารถยื่นโครงการได้ในขณะนี้'
+
+        await this.showAlert({
+          title: 'ยื่นโครงการไม่สำเร็จ',
+          text: message,
+          icon: 'error',
+          confirmButtonText: 'ตกลง'
+        })
+      }
+    },
+
+    normalizeBudgetNumber (value) {
+      const normalizedValue = typeof value === 'string'
+        ? value.replace(/,/g, '').trim()
+        : value
+      const parsed = Number(normalizedValue)
+      if (!Number.isFinite(parsed)) return 0
+      return Math.round(parsed * 100) / 100
+    },
+
+    budgetNumbersMatch (left, right) {
+      return Math.abs(this.normalizeBudgetNumber(left) - this.normalizeBudgetNumber(right)) < 0.01
+    },
+
+    sumBudgetCategoryItems (category) {
+      if (!category || !Array.isArray(category.items)) return 0
+      return this.normalizeBudgetNumber(
+        category.items.reduce((sum, item) => sum + (Number(item && item.total) || 0), 0)
+      )
+    },
+
+    sumBudgetPeriods (items, index) {
+      if (!Array.isArray(items)) return 0
+      return this.normalizeBudgetNumber(
+        items.reduce((sum, item) => {
+          const periods = item && Array.isArray(item.periods) ? item.periods : []
+          return sum + (Number(periods[index]) || 0)
+        }, 0)
+      )
+    },
+
+    findBudgetCategory (categories, expectedName, fallbackIndex) {
+      if (!Array.isArray(categories)) return null
+
+      const byName = categories.find((category) => category && category.name === expectedName)
+      if (byName) return byName
+
+      if (typeof fallbackIndex === 'number' && fallbackIndex >= 0) {
+        return categories[fallbackIndex] || null
+      }
+
+      return null
+    },
+
+    focusBudgetSection () {
+      try {
+        if (
+          this.$refs.projectDetailsForm &&
+          typeof this.$refs.projectDetailsForm.scrollToSection === 'function'
+        ) {
+          this.$refs.projectDetailsForm.scrollToSection('budget')
+        }
+      } catch (_) { void _ }
+    },
+
+    getBudgetValidationResult () {
+      if (
+        this.$refs.projectDetailsForm &&
+        typeof this.$refs.projectDetailsForm.getBudgetValidationResult === 'function'
+      ) {
+        return this.$refs.projectDetailsForm.getBudgetValidationResult()
+      }
+
+      const form = this.$refs.projectDetailsForm && typeof this.$refs.projectDetailsForm.getFormData === 'function'
+        ? this.$refs.projectDetailsForm.getFormData()
+        : null
+      const budget = form && form.budget ? form.budget : null
+      const categories = budget && Array.isArray(budget.categories) ? budget.categories : []
+      const items = categories.reduce((list, category) => {
+        const categoryItems = category && Array.isArray(category.items) ? category.items : []
+        return list.concat(categoryItems)
+      }, [])
+
+      const computedGrandTotal = this.normalizeBudgetNumber(
+        items.reduce((sum, item) => sum + (Number(item && item.total) || 0), 0)
+      )
+      const grandTotal = this.normalizeBudgetNumber(
+        (budget && budget.grandTotal) || computedGrandTotal
+      )
+
+      const travelCategory = this.findBudgetCategory(categories, 'หมวดค่าเดินทาง', 2)
+      const travelTotal = this.sumBudgetCategoryItems(travelCategory)
+      const travelLimit = this.normalizeBudgetNumber(grandTotal * 0.25)
+
+      const totalPeriod1 = this.sumBudgetPeriods(items, 0)
+      const totalPeriod2 = this.sumBudgetPeriods(items, 1)
+      const totalPeriod3 = this.sumBudgetPeriods(items, 2)
+      const expectedPeriod1 = this.normalizeBudgetNumber(grandTotal * 0.5)
+      const expectedPeriod2 = this.normalizeBudgetNumber(grandTotal * 0.4)
+      const expectedPeriod3 = this.normalizeBudgetNumber(grandTotal * 0.1)
+      const invalidPeriodRow = false
+
+      const errors = []
+
+      if (grandTotal > 0 && travelTotal > travelLimit) {
+        errors.push(
+          `หมวดค่าเดินทางเกิน 25% ของงบทั้งหมด (ขอ ${travelTotal.toLocaleString('th-TH')} บาท จากเพดาน ${travelLimit.toLocaleString('th-TH')} บาท)`
+        )
+      }
+
+      // Installment validation uses the sum of every item across every budget category in the proposal.
+      if (!this.budgetNumbersMatch(totalPeriod1, expectedPeriod1)) {
+        errors.push(
+          `งวด 1 ต้องเท่ากับ 50% ของงบทั้งหมด (${expectedPeriod1.toLocaleString('th-TH')} บาท)`
+        )
+      }
+
+      if (!this.budgetNumbersMatch(totalPeriod2, expectedPeriod2)) {
+        errors.push(
+          `งวด 2 ต้องเท่ากับ 40% ของงบทั้งหมด (${expectedPeriod2.toLocaleString('th-TH')} บาท)`
+        )
+      }
+
+      if (!this.budgetNumbersMatch(totalPeriod3, expectedPeriod3)) {
+        errors.push(
+          `งวด 3 ต้องเท่ากับ 10% ของงบทั้งหมด (${expectedPeriod3.toLocaleString('th-TH')} บาท)`
+        )
+      }
+
+      if (invalidPeriodRow) {
+        errors.push('พบรายการงบประมาณที่ยอดงวด 1-3 รวมกันเกินงบของรายการนั้น')
+      }
+
+      return {
+        ok: errors.length === 0,
+        errors
+      }
+    },
+
+    validateBeforeSubmit () {
+      // 1) Validate research team required fields
+      const teamValidation = this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.getValidationResult === 'function'
+        ? this.$refs.researchTeamForm.getValidationResult()
+        : null
+      const teamData = this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.getFormData === 'function'
+        ? this.$refs.researchTeamForm.getFormData()
+        : null
+      const isTeamValid = teamValidation ? teamValidation.ok : this.validateForm(teamData)
+      if (!teamData || !isTeamValid) {
+        try {
+          if (this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.scrollToSection === 'function') {
+            this.$refs.researchTeamForm.scrollToSection('research_team')
+          }
+        } catch (_) { void _ }
+        if (teamValidation && teamValidation.message) {
+          return { ok: false, message: teamValidation.message }
+        }
+        return { ok: false, message: 'กรุณากรอกข้อมูลคณะผู้วิจัยให้ครบถ้วน' }
+      }
+
+      // 2) Validate HTML required inputs across the page (project details includes many required fields)
+      const missing = this.findFirstMissingRequiredInput()
+      if (missing) {
+        try {
+          if (typeof missing.scrollIntoView === 'function') {
+            missing.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+          if (typeof missing.focus === 'function') missing.focus()
+        } catch (_) { void _ }
+        return { ok: false, message: 'กรุณากรอกข้อมูลให้ครบถ้วนก่อนยื่นโครงการ' }
+      }
+
+      // 3) Extra rule: research standard selection (from ProjectDetailsForm.submitForm)
+      const form = this.$refs.projectDetailsForm && typeof this.$refs.projectDetailsForm.getFormData === 'function'
+        ? this.$refs.projectDetailsForm.getFormData()
+        : null
+      const std = form && form.researchStandard ? form.researchStandard : null
+      if (std && std.mainType === 'human_animal' && !std.isHuman && !std.isAnimal) {
+        return { ok: false, message: 'กรุณาระบุมาตรฐานการวิจัยให้ครบถ้วน (เลือก มนุษย์ หรือ สัตว์ทดลอง อย่างน้อย 1 รายการ)' }
+      }
+
+      // 4) Special rule: section 17 budget must satisfy submission criteria
+      const budgetValidation = this.getBudgetValidationResult()
+      if (!budgetValidation.ok) {
+        this.focusBudgetSection()
+        return {
+          ok: false,
+          message: `กรุณาแก้ไขหัวข้อ 17 งบประมาณให้ถูกต้องก่อนยื่นโครงการ\n- ${budgetValidation.errors.join('\n- ')}`
+        }
+      }
+
+      return { ok: true }
+    },
+
+    findFirstMissingRequiredInput () {
+      const root = this.$el
+      if (!root || typeof root.querySelectorAll !== 'function') return null
+      const nodes = root.querySelectorAll('input[required], select[required], textarea[required]')
+      for (let i = 0; i < nodes.length; i++) {
+        const el = nodes[i]
+        if (!el || el.disabled) continue
+
+        const tag = (el.tagName || '').toLowerCase()
+        const type = (el.type || '').toLowerCase()
+
+        if (type === 'checkbox' || type === 'radio') {
+          if (!el.checked) return el
+          continue
+        }
+
+        const value = (tag === 'select')
+          ? String(el.value || '')
+          : String(el.value || '')
+
+        if (!value.trim()) return el
+      }
+      return null
+    },
+
+    exportPDF() {
+      console.log('Exporting PDF...');
+
+      // Add PDF export logic here
+      this.showAlert({
+        title: 'กำลังสร้าง PDF...',
+        text: 'PDF กำลังถูกสร้างขึ้น',
+        icon: 'info',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    },
+    reportBudgetType (fundingType) {
+      const map = {
+        'new-researcher': 'new',
+        'researcher-development': 'dev',
+        'strategic-research': 'strategic',
+        'industry-extension': 'industrial'
+      }
+      return map[fundingType] || ''
+    },
+    reportStrategy (fundingType, fundingSubType) {
+      if (fundingType === 'new-researcher') return '2_1'
+      if (fundingType === 'industry-extension') return '2_3_1'
+      if (fundingType === 'researcher-development') {
+        const map = {
+          'economic-development': '2_2_1',
+          'social-environment': '2_2_2',
+          'science-technology': '2_2_3',
+          'human-resources': '2_2_4'
+        }
+        return map[fundingSubType] || ''
+      }
+      return ''
+    },
+    reportResearchTypeLabel (researchType) {
+      const map = {
+        'science-technology': 'ด้านวิทยาศาสตร์และเทคโนโลยี',
+        'health-science': 'ด้านวิทยาศาสตร์สุขภาพ',
+        'social-humanities': 'ด้านสังคมศาสตร์และมนุษยศาสตร์'
+      }
+      return map[researchType] || researchType || '-'
+    },
+    reportSelectedOutcomes (fundingType, selectedOutcome) {
+      const map = {
+        'new-researcher:internationalConference': ['14_1_fullpaper'],
+        'new-researcher:scopusJournal': ['14_1_international'],
+        'new-researcher:tciJournal': ['14_1_tci'],
+        'new-researcher:patent': ['14_1_patent'],
+        'researcher-development:scopusJournal': ['14_2_international'],
+        'researcher-development:tciJournal': ['14_2_tci1'],
+        'researcher-development:patent': ['14_2_patent'],
+        'strategic-research:scopusJournal': ['14_3_international'],
+        'strategic-research:tciJournal': ['14_3_tci1'],
+        'strategic-research:patent': ['14_3_patent'],
+        'industry-extension:ipRegistration': ['14_4_ip']
+      }
+      return map[`${fundingType}:${selectedOutcome}`] || []
+    },
+    reportSocialTransfer (transferLevel) {
+      const map = {
+        'national-international': '16_1',
+        'community-provincial': '16_2',
+        none: '16_3'
+      }
+      return map[transferLevel] || ''
+    },
+    reportActivities (workPlan) {
+      if (!workPlan) return []
+      const duration = Number(workPlan.duration) || 0
+      const rows = Array.isArray(workPlan.activities) ? workPlan.activities : (Array.isArray(workPlan) ? workPlan : [])
+      return rows.map((activity) => {
+        const selectedMonths = Array.isArray(activity && activity.selectedMonths) ? activity.selectedMonths : []
+        const totalMonths = duration || Math.max(...selectedMonths, 0)
+        return {
+          name: (activity && activity.activityName) || '',
+          months: Array.from({ length: totalMonths }, (_, index) => selectedMonths.includes(index + 1)),
+          owner: (activity && activity.responsible) || ''
+        }
+      })
+    },
+    reportBudgetData (budget) {
+      const hasEnteredValue = (value) => (
+        value !== undefined &&
+        value !== null &&
+        String(value).trim() !== ''
+      )
+      const hasFilledMultiplier = (multiplier) => (
+        hasEnteredValue(
+          multiplier && (
+            multiplier.value !== undefined
+              ? multiplier.value
+              : multiplier.val
+          )
+        )
+      )
+      const isFilledBudgetRow = (row) => {
+        const periods = row && Array.isArray(row.periods) ? row.periods : []
+        return Boolean((row && row.name ? String(row.name).trim() : '')) ||
+          hasEnteredValue(row && row.total) ||
+          hasEnteredValue(row && (row.p1 !== undefined ? row.p1 : periods[0])) ||
+          hasEnteredValue(row && (row.p2 !== undefined ? row.p2 : periods[1])) ||
+          hasEnteredValue(row && (row.p3 !== undefined ? row.p3 : periods[2])) ||
+          (Array.isArray(row && row.multipliers) && row.multipliers.some(hasFilledMultiplier))
+      }
+      const categories = Array.isArray(budget && budget.categories) ? budget.categories : []
+      const normalizedCategories = categories.map((category) => {
+        const rows = Array.isArray(category && category.rows)
+          ? category.rows
+          : (Array.isArray(category && category.items) ? category.items : [])
+        const normalizedRows = rows
+          .filter(isFilledBudgetRow)
+          .map((row) => ({
+            name: (row && row.name) || '-',
+            multipliers: Array.isArray(row && row.multipliers)
+              ? row.multipliers
+                .filter(hasFilledMultiplier)
+                .map((multiplier) => ({
+                  label: (multiplier && multiplier.label) || '',
+                  value: this.normalizeBudgetNumber(
+                    (multiplier && (
+                      multiplier.value !== undefined
+                        ? multiplier.value
+                        : multiplier.val
+                    )) || 0
+                  )
+                }))
+              : [],
+            total: this.normalizeBudgetNumber((row && row.total) || 0),
+            p1: this.normalizeBudgetNumber(
+              (row && (
+                row.p1 !== undefined
+                  ? row.p1
+                  : (row.periods && row.periods[0])
+              )) || 0
+            ),
+            p2: this.normalizeBudgetNumber(
+              (row && (
+                row.p2 !== undefined
+                  ? row.p2
+                  : (row.periods && row.periods[1])
+              )) || 0
+            ),
+            p3: this.normalizeBudgetNumber(
+              (row && (
+                row.p3 !== undefined
+                  ? row.p3
+                  : (row.periods && row.periods[2])
+              )) || 0
+            )
+          }))
+        return {
+          title: (category && (category.title || category.name)) || '-',
+          rows: normalizedRows
+        }
+      }).filter((category) => category.rows.length)
+
+      const computedGrandTotal = normalizedCategories.reduce((sum, category) => (
+        sum + category.rows.reduce((rowSum, row) => rowSum + this.normalizeBudgetNumber(row.total || 0), 0)
+      ), 0)
+      const budgetGrandTotal = this.normalizeBudgetNumber(budget && budget.grandTotal)
+      const grandTotal = hasEnteredValue(budget && budget.grandTotal) &&
+        this.budgetNumbersMatch(budgetGrandTotal, computedGrandTotal)
+        ? budgetGrandTotal
+        : computedGrandTotal
+
+      return {
+        categories: normalizedCategories,
+        grandTotal
+      }
+    },
+    reportResearchStandardData (researchStandard) {
+      const standard = researchStandard || {}
+      const selected = []
+
+      if (standard.mainType === 'none') selected.push('none')
+      if (standard.isHuman) selected.push('human')
+      if (standard.isAnimal) selected.push('animal')
+      if (standard.isPlant) selected.push('plant')
+      if (!selected.length) selected.push('none')
+
+      const createDetail = (subType) => ({
+        hasCert: subType === 'approved',
+        isPending: subType === 'pending',
+        applyDate: '-'
+      })
+
+      return {
+        researchStandard: selected,
+        humanDetail: createDetail(standard.humanSubType),
+        animalDetail: createDetail(standard.animalSubType),
+        plantDetail: createDetail(standard.plantSubType)
+      }
+    },
+    reportSignatureDate (value) {
+      return value && value.timestamp ? value.timestamp : ''
+    },
+    reportResearcherRow (person, signature) {
+      const data = person || {}
+      const sign = signature || {}
+      return {
+        name: data.name || '',
+        affiliation: data.affiliation || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        code: data.proportion || '',
+        signature: sign.data || '',
+        signatureDate: this.reportSignatureDate(sign)
+      }
+    },
+    buildReportExportForm () {
+      const projectDetails = this.$refs.projectDetailsForm && typeof this.$refs.projectDetailsForm.getFormData === 'function'
+        ? (this.cloneSerializable(this.$refs.projectDetailsForm.getFormData()) || {})
+        : (this.cloneSerializable(this.projectDetailsData) || {})
+      const researchTeam = this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.getFormData === 'function'
+        ? (this.cloneSerializable(this.$refs.researchTeamForm.getFormData()) || {})
+        : (this.cloneSerializable(this.researchTeamData) || {})
+      const signatures = this.$refs.signatureCard && typeof this.$refs.signatureCard.getAllSignatures === 'function'
+        ? (this.cloneSerializable(this.$refs.signatureCard.getAllSignatures()) || {})
+        : (this.cloneSerializable(this.signatureData) || {})
+      const budgetData = this.reportBudgetData(projectDetails.budget)
+      const researchStandardData = this.reportResearchStandardData(projectDetails.researchStandard)
+      const leader = this.reportResearcherRow(researchTeam.projectLeader, signatures.projectLeader)
+      const coResearchers = Array.isArray(researchTeam.coResearchers)
+        ? researchTeam.coResearchers.map((person, index) => this.reportResearcherRow(person, signatures[`coResearcher-${index}`]))
+        : []
+      const advisors = Array.isArray(researchTeam.advisors)
+        ? researchTeam.advisors.map((person, index) => this.reportResearcherRow(person, signatures[`advisor-${index}`]))
+        : []
+
+      return {
+        budgetType: this.reportBudgetType(projectDetails.fundingType),
+        titleTH: projectDetails.projectNameThai || '',
+        titleEN: projectDetails.projectNameEnglish || '',
+        selectedStrategy: this.reportStrategy(projectDetails.fundingType, projectDetails.fundingSubType),
+        researchers: {
+          mainResearcher: leader,
+          coResearchers,
+          advisors
+        },
+        cooperation: projectDetails.collaboration === 'yes' ? 'มี' : 'ไม่มี',
+        cooperationDetail: projectDetails.collaborationAgency || '',
+        researchType: this.reportResearchTypeLabel(projectDetails.researchType),
+        keywords: projectDetails.keywords || '',
+        importance: projectDetails.problemSignificance || '',
+        objective: projectDetails.objectives || '',
+        literature: projectDetails.literatureReview || '',
+        reference: projectDetails.references || '',
+        methodology: projectDetails.researchMethodology || '',
+        scope: projectDetails.researchScope || '',
+        activities: this.reportActivities(projectDetails.workPlan),
+        progressReport: projectDetails.milestones || '',
+        selectedOutcomes: this.reportSelectedOutcomes(projectDetails.fundingType, projectDetails.selectedOutcome),
+        integration: projectDetails.integration || '',
+        socialTransfer: this.reportSocialTransfer(projectDetails.transferLevel),
+        budgetData,
+        researchStandard: researchStandardData.researchStandard,
+        humanDetail: researchStandardData.humanDetail,
+        animalDetail: researchStandardData.animalDetail,
+        plantDetail: researchStandardData.plantDetail,
+        remark: ''
+      }
+    },
+    async exportProposalPdf() {
+      if (this.isExportingPdf) return
+
+      this.isExportingPdf = true
+
+      try {
+        this.reportExportForm = this.buildReportExportForm()
+        await this.$nextTick()
+
+        const reportView = this.$refs.reportView
+        if (!reportView || typeof reportView.generatePDF !== 'function') {
+          throw new Error('Report view is not ready')
+        }
+
+        await reportView.generatePDF()
+      } catch (err) {
+        await this.showAlert({
+          icon: 'error',
+          title: 'ไม่สามารถส่งออก PDF ได้',
+          text: (err && err.message) || 'กรุณาลองใหม่อีกครั้ง'
+        })
+      } finally {
+        this.isExportingPdf = false
+      }
+    },
+
+    onSubmit() {
+      const formData = this.$refs.researchTeamForm.getFormData();
+      console.log('Form Data:', formData);
+
+      // Validate form
+      if (!this.validateForm(formData)) {
+        alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+        return;
+      }
+
+      // Simulate save
+      alert('บันทึกข้อมูลสำเร็จ!');
+      console.log('Saved data:', formData);
+    },
+
+    onReset() {
+      if (confirm('คุณต้องการรีเซ็ตฟอร์มใช่หรือไม่?')) {
+        this.$refs.researchTeamForm.projectLeader = {
+          name: '',
+          affiliation: '',
+          phone: '',
+          email: '',
+          proportion: ''
+        };
+        this.$refs.researchTeamForm.coResearchers = [];
+        this.$refs.researchTeamForm.advisors = [];
+      }
+    },
+
+    onPreview() {
+      const formData = this.$refs.researchTeamForm.getFormData();
+      console.log('Preview Data:', formData);
+
+      // Create preview content
+      let preview = '=== ตัวอย่างข้อมูลการวิจัย ===\n\n';
+      preview += '1.1 หัวหน้าโครงการวิจัย\n';
+      preview += `ชื่อ-สกุล: ${formData.projectLeader.name}\n`;
+      preview += `สังกัดหน่วยงาน: ${formData.projectLeader.affiliation}\n`;
+      preview += `เบอร์โทรศัพท์: ${formData.projectLeader.phone}\n`;
+      preview += `E-mail: ${formData.projectLeader.email}\n`;
+      preview += `สัดส่วนการวิจัย: ${formData.projectLeader.proportion}%\n\n`;
+
+      if (formData.coResearchers.length > 0) {
+        preview += '1.2 ผู้ร่วมโครงการวิจัย\n';
+        formData.coResearchers.forEach((researcher, index) => {
+          preview += `ผู้ร่วมที่ ${index + 1}:\n`;
+          preview += `  ชื่อ-สกุล: ${researcher.name}\n`;
+          preview += `  สังกัดหน่วยงาน: ${researcher.affiliation}\n`;
+          preview += `  เบอร์โทรศัพท์: ${researcher.phone}\n`;
+          preview += `  E-mail: ${researcher.email}\n`;
+          preview += `  สัดส่วนการวิจัย: ${researcher.proportion}%\n\n`;
+        });
+      }
+
+      if (formData.advisors.length > 0) {
+        preview += 'ที่ปรึกษาโครงการวิจัย\n';
+        formData.advisors.forEach((advisor, index) => {
+          preview += `ที่ปรึกษาที่ ${index + 1}:\n`;
+          preview += `  ชื่อ-สกุล: ${advisor.name}\n`;
+          preview += `  สังกัดหน่วยงาน: ${advisor.affiliation}\n`;
+          preview += `  เบอร์โทรศัพท์: ${advisor.phone}\n`;
+          preview += `  E-mail: ${advisor.email}\n`;
+          preview += `  สัดส่วนการวิจัย: ${advisor.proportion}%\n\n`;
+        });
+      }
+
+      alert(preview);
+    },
+
+    validateForm(data) {
+      if (!data || !data.projectLeader) {
+        return false;
+      }
+
+      const hasText = (value) => String(value || '').trim() !== '';
+      const hasValidNumber = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) && parsed > 0;
+      };
+
+      // Validate project leader
+      if (!hasText(data.projectLeader.name) || !hasText(data.projectLeader.affiliation) ||
+        !hasText(data.projectLeader.phone) || !hasText(data.projectLeader.email) ||
+        !hasValidNumber(data.projectLeader.proportion)) {
+        return false;
+      }
+
+      // Validate co-researchers
+      for (let researcher of data.coResearchers) {
+        if (!hasText(researcher.name) || !hasText(researcher.affiliation) ||
+          !hasText(researcher.phone) || !hasText(researcher.email) ||
+          !hasValidNumber(researcher.proportion)) {
+          return false;
+        }
+      }
+
+      // Validate advisors
+      for (let advisor of data.advisors) {
+        if (!hasText(advisor.name) || !hasText(advisor.affiliation) ||
+          !hasText(advisor.phone) || !hasText(advisor.email)) {
+          return false;
+        }
+      }
+
+      if (data.isProportionValid === false) {
+        return false;
+      }
+
+      return true;
+    }
+  }
+}
+</script>
+
+<style scoped>
+.research-form {
+  padding: 28px;
+  background-color: #ffffff;
+  min-height: 100vh;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+}
+
+.research-form--has-admin-actions {
+  padding-bottom: 110px;
+}
+
+.research-form h2 {
+  color: white;
+  font-weight: 800;
+  text-align: center;
+  padding: 18px 0;
+  background: #007bff;
+  margin: 0 0 20px 0;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 5px;
+}
+
+.card {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 0px;
+}
+
+.btn {
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border: none;
+  color: white;
+}
+
+.btn-info {
+  background: 4facfe;
+  border: none;
+} 
+
+.feedback-workspace {
+  border: 1px solid #dbeafe;
+  background: #ffffff;
+}
+
+.feedback-workspace-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #fcfdff;
+}
+
+.feedback-workspace-card:last-child {
+  margin-bottom: 0;
+}
+
+.feedback-workspace-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.85rem;
+}
+
+.feedback-workspace-card__title {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.feedback-workspace-card__subtitle {
+  margin-top: 0.2rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.feedback-workspace-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.feedback-workspace-card__status {
+  color: #047857;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.feedback-workspace-notes {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.feedback-workspace-note {
+  border-left: 4px solid #3b82f6;
+  background: #f8fafc;
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+}
+
+.feedback-workspace-note__meta {
+  color: #334155;
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+.feedback-workspace-note__body {
+  color: #0f172a;
+  white-space: pre-line;
+}
+
+.feedback-workspace-editor {
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 1rem;
+}
+
+.feedback-workspace-editor__actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.feedback-workspace-editor label {
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.4rem;
+}
+
+.feedback-workspace-preview-text {
+  border: 1px solid #dbeafe;
+  background: #f8fbff;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  color: #0f172a;
+}
+
+.feedback-inline-radio-group {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.feedback-inline-radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.feedback-fix-list__title {
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+}
+
+.feedback-fix-card {
+  border: 1px solid #dbeafe;
+  background: #f8fbff;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.feedback-fix-card:last-child {
+  margin-bottom: 0;
+}
+
+.feedback-fix-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.feedback-fix-card__section {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.feedback-fix-card__meta {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-top: 0.15rem;
+}
+
+.feedback-fix-card__body {
+  margin-top: 0.75rem;
+  color: #334155;
+  white-space: pre-line;
+}
+
+.footer-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid #dee2e6;
+  padding: 15px 20px;
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
+  transition: left 0.3s ease-in-out;
+  box-sizing: border-box;
+}
+
+.footer-fixed .btn {
+  white-space: nowrap;
+}
+
+.admin-footer-fixed {
+  padding-bottom: calc(15px + env(safe-area-inset-bottom));
+}
+
+.committee-user-row {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: #ffffff;
+}
+
+.committee-user-row.is-selected {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+
+.footer-fixed .card {
+  border: none;
+  border-radius: 8px;
+}
+
+.report-export-host {
+  position: fixed;
+  top: 0;
+  right: -260mm;
+  width: 210mm;
+  z-index: -1;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .research-form {
+    padding: 10px;
+  }
+
+  .btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .footer-fixed {
+    padding: 10px 12px;
+  }
+
+  .footer-fixed .btn {
+    display: inline-flex;
+    width: auto;
+    margin-bottom: 0;
+  }
+
+  .footer-fixed .btn.btn-lg {
+    padding: 8px 12px;
+    font-size: 0.95rem;
+  }
+
+  .footer-fixed .d-flex {
+    flex-wrap: wrap;
+  }
+
+  .feedback-fix-card__head {
+    flex-direction: column;
+  }
+
+  .feedback-workspace-card__header {
+    flex-direction: column;
+  }
+
+  .feedback-workspace-card__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+</style>

@@ -5,9 +5,11 @@ Vue.use(Vuex);
 import DialogMessages from "./modules/Dialog/index";
 import Setting from './modules/Setting/index'
 import Auth from "./modules/Authen/index";
+import Authentication from "./modules/Authentication/index";
 import Security from "./modules/Security/index";
 import Accounts from './modules/Accounts/index'
 import Training from './modules/Training/index'
+import Organization from './modules/organization/index'
 
 
 const state = {
@@ -44,10 +46,10 @@ export default new Vuex.Store({
     setting : Setting,
     //
     auth : Auth,
+    Authentication,
+    organization: Organization,
     security: Security,
     accounts: Accounts,
     training: Training,
-    
-
   }
 });

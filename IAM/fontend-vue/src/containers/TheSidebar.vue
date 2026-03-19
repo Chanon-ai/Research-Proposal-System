@@ -56,11 +56,61 @@ export default {
     },
     minimize() {
       return this.$store.state.sidebarMinimize
+    },
+    currentRole() {
+      const storeRole = this.$store.getters['Authentication/userRole']
+      if (storeRole) return storeRole
+
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        return parsed && parsed.role ? parsed.role : null
+      } catch (e) {
+        return null
+      }
+    },
+    navs() {
+      const role = this.currentRole
+      if (!role) return nav
+
+      const filterByRole = (items) => {
+        return (items || []).reduce((acc, item) => {
+          if (item.roles && !item.roles.includes(role)) {
+            return acc
+          }
+
+          const next = { ...item }
+          if (Array.isArray(next.items)) {
+            next.items = filterByRole(next.items)
+            if (next.items.length === 0 && !next.to) {
+              return acc
+            }
+          }
+
+          if (Array.isArray(next._children)) {
+            next._children = filterByRole(next._children)
+            if (next._children.length === 0 && !next.to) {
+              return acc
+            }
+          }
+
+          acc.push(next)
+          return acc
+        }, [])
+      }
+
+      return nav.map(section => {
+        if (!section || !Array.isArray(section._children)) return section
+        return {
+          ...section,
+          _children: filterByRole(section._children)
+        }
+      })
     }
   },
   data() {
     return {
-      navs: nav
     }
   }
 }
