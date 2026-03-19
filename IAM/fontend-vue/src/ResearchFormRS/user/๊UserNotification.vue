@@ -8,8 +8,8 @@
     <!-- ───────────── MAIN BODY ───────────── -->
     <div class="app-body" :class="{ 'sidebar-open': sidebarExpanded }">
 
-      <div class="page-wrapper">
-        <div class="notif-card">
+      <div class="page-wrapper" :class="{ 'is-dark': isDarkTheme }">
+        <div class="notif-card" :class="{ 'is-dark': isDarkTheme }">
 
           <!-- Header: title (top-left) + filter buttons + toolbar -->
           <div class="notif-header">
@@ -170,6 +170,10 @@ export default {
   },
 
   computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+
     unreadCount() {
       return this.notifications.filter(n => !n.read).length
     },
@@ -602,6 +606,69 @@ export default {
   font-size: 20px;
   font-weight: 700;
   color: #111827;
+}
+
+.page-wrapper.is-dark {
+  background: transparent;
+}
+
+.notif-card.is-dark {
+  background: #1f2933;
+  border: 1px solid #334155;
+  box-shadow: 0 1px 0 rgba(148, 163, 184, 0.08);
+}
+
+.page-wrapper.is-dark .page-title,
+.page-wrapper.is-dark .group-label,
+.page-wrapper.is-dark .notif-title {
+  color: #e5edf5;
+}
+
+.page-wrapper.is-dark .unread-count,
+.page-wrapper.is-dark .notif-desc,
+.page-wrapper.is-dark .notif-time,
+.page-wrapper.is-dark .empty-state p {
+  color: #9fb0c3;
+}
+
+.page-wrapper.is-dark .filter-tab {
+  background: #253240;
+  color: #dce7f3;
+}
+
+.page-wrapper.is-dark .filter-tab.active {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.page-wrapper.is-dark .notif-item {
+  background: #1f2933;
+  border-bottom-color: #334155;
+}
+
+.page-wrapper.is-dark .notif-item:hover {
+  background: #253240;
+}
+
+.page-wrapper.is-dark .notif-item.unread {
+  background: #20303f;
+}
+
+.page-wrapper.is-dark .notif-item.unread:hover {
+  background: #27384a;
+}
+
+.page-wrapper.is-dark .notif-action-btn {
+  background: #1f4b2d;
+  color: #7ee2a3;
+}
+
+.page-wrapper.is-dark .notif-action-btn:hover {
+  background: #245b36;
+}
+
+.page-wrapper.is-dark .btn-mark-all {
+  color: #9fd4b3;
 }
 
 /* ══════════════════════════════════

@@ -7,7 +7,7 @@
   >
     <template #toggler>
       <CHeaderNavLink class="header-switch-link">
-        <CIcon name="cil-globe-alt" size="lg"/>
+        <CIcon name="cil-language" size="lg"/>
       </CHeaderNavLink>
     </template>
 
@@ -65,6 +65,16 @@ export default {
   align-items: center;
   min-width: 180px;
   gap: 8px;
+}
+
+:deep(.c-dark-theme) .lang-item,
+:deep([data-coreui-theme='dark']) .lang-item {
+  color: #dce7f3;
+}
+
+:deep(.c-dark-theme) .lang-item.active,
+:deep([data-coreui-theme='dark']) .lang-item.active {
+  background: #2a3645;
 }
 
 .flag {

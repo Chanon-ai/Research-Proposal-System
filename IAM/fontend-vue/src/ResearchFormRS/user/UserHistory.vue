@@ -1,7 +1,7 @@
 <template>
   <div class="app-layout">
     <div class="page-wrapper">
-      <div class="history-page">
+      <div class="history-page" :class="{ 'is-dark': isDarkTheme }">
         <div class="history-card">
           <div class="history-header">
             <h2>ประวัติโครงการ</h2>
@@ -67,6 +67,10 @@ export default {
     await this.fetchHistory()
   },
   computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+
     currentUserId () {
       const user = this.$store && this.$store.getters
         ? this.$store.getters['Authentication/currentUser']
@@ -204,6 +208,56 @@ export default {
 .s-reviewing { background:#e0f2fe; color:#0369a1 }
 
 .page-wrapper { padding: 16px; width: 100%; max-width: 1240px; margin: 0 auto; box-sizing: border-box; }
+
+.history-page {
+  background: transparent;
+}
+
+.history-page.is-dark {
+  background: transparent;
+}
+
+.history-page.is-dark .history-card {
+  background: #1f2933;
+  box-shadow: 0 1px 0 rgba(148, 163, 184, 0.1);
+  border: 1px solid #334155;
+}
+
+.history-page.is-dark .history-header h2,
+.history-page.is-dark .history-title {
+  color: #e5edf5;
+}
+
+.history-page.is-dark .history-sub,
+.history-page.is-dark .small-code,
+.history-page.is-dark .history-date {
+  color: #9fb0c3;
+}
+
+.history-page.is-dark .pill {
+  border-color: #334155;
+  background: #253240;
+  color: #dce7f3;
+}
+
+.history-page.is-dark .pill.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.history-page.is-dark .history-item {
+  background: #1f2933;
+  border-color: #334155;
+}
+
+.history-page.is-dark .history-item:hover {
+  background: #253240;
+}
+
+.history-page.is-dark .history-item.selected {
+  background: #2a3645;
+}
 
 /* Responsive: mobile adjustments */
 @media (max-width: 768px) {

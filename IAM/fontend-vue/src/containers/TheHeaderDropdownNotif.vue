@@ -4,8 +4,8 @@
     :caret="false"
     in-nav
     :show.sync="isNotificationOpen"
-    class="c-header-nav-item mx-2"
-    add-menu-classes="pt-0 notification-menu"
+    class="c-header-nav-item mx-2 notification-dropdown"
+    :add-menu-classes="menuClasses"
   >
     <template #toggler>
       <CHeaderNavLink class="notification-bell-link">
@@ -23,44 +23,46 @@
       </CHeaderNavLink>
     </template>
 
-    <CDropdownHeader tag="div" class="notification-header bg-light">
+    <CDropdownHeader tag="div" class="notification-header notification-dropdown__header">
       <strong>{{ $t('header.youHave', { count: notificationCount }) }}</strong>
     </CDropdownHeader>
 
-    <CDropdownItem
-      v-for="notif in notifications"
-      :key="notif.id"
-      class="notification-item d-block"
-      @click="openNotification(notif)"
-    >
-      <div class="notification-row">
-        <div class="notification-avatar-wrap mr-3">
-          <div v-if="notif.avatar" class="c-avatar">
-            <img :src="notif.avatar" class="c-avatar-img" :alt="notif.senderName">
+    <div class="notification-list notification-dropdown__list">
+      <CDropdownItem
+        v-for="notif in notifications"
+        :key="notif.id"
+        class="notification-item notification-dropdown__item d-block"
+        @click="openNotification(notif)"
+      >
+        <div class="notification-row">
+          <div class="notification-avatar-wrap notification-dropdown__avatar-wrap">
+            <div v-if="notif.avatar" class="c-avatar">
+              <img :src="notif.avatar" class="c-avatar-img" :alt="notif.senderName">
+            </div>
+            <div v-else class="notification-type-icon" :class="`type-${notif.type}`">
+              <CIcon :name="iconByType(notif.type)" size="sm"/>
+            </div>
           </div>
-          <div v-else class="notification-type-icon" :class="`type-${notif.type}`">
-            <CIcon :name="iconByType(notif.type)" size="sm"/>
+
+          <div class="notification-content">
+            <div class="notification-top-line">
+              <small class="notification-sender notification-dropdown__sender text-truncate pr-2">{{ notif.senderName }}</small>
+              <small class="notification-time notification-dropdown__time">{{ notif.timeLabel }}</small>
+            </div>
+            <div class="notification-title notification-dropdown__title" :class="{ 'is-unread': notif.unread }">{{ notif.title }}</div>
+            <div class="notification-message notification-dropdown__message">{{ notif.message }}</div>
           </div>
+
+          <span v-if="notif.unread" class="unread-dot" aria-hidden="true"></span>
         </div>
+      </CDropdownItem>
 
-        <div class="notification-content">
-          <div class="notification-top-line">
-            <small class="text-muted text-truncate pr-2">{{ notif.senderName }}</small>
-            <small class="text-muted notification-time">{{ notif.timeLabel }}</small>
-          </div>
-          <div class="notification-title" :class="{ 'is-unread': notif.unread }">{{ notif.title }}</div>
-          <div class="notification-message">{{ notif.message }}</div>
-        </div>
+      <CDropdownItem v-if="notifications.length === 0" class="text-center notification-empty">
+        {{ $t('header.noNotifications') }}
+      </CDropdownItem>
+    </div>
 
-        <span v-if="notif.unread" class="unread-dot" aria-hidden="true"></span>
-      </div>
-    </CDropdownItem>
-
-    <CDropdownItem v-if="notifications.length === 0" class="text-center text-muted">
-      {{ $t('header.noNotifications') }}
-    </CDropdownItem>
-
-    <CDropdownItem class="border-top text-center" @click="viewAll">
+    <CDropdownItem class="border-top text-center notification-footer notification-dropdown__footer" @click="viewAll">
       <strong>{{ $t('common.viewAll') }}</strong>
     </CDropdownItem>
   </CDropdown>
@@ -76,6 +78,18 @@ export default {
       isNotificationOpen: false,
       notificationCount: 0,
       notifications: []
+    }
+  },
+
+  computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+
+    menuClasses () {
+      return this.isDarkTheme
+        ? 'pt-0 notification-menu notification-dropdown__menu notification-dropdown__menu--dark'
+        : 'pt-0 notification-menu notification-dropdown__menu'
     }
   },
 
@@ -254,11 +268,25 @@ export default {
 }
 
 .notification-header {
-  min-width: 320px;
+  min-width: 360px;
+  padding: 0.66rem 1rem;
+  background: var(--notif-header-bg, #f8f9fa);
+  border-bottom: 1px solid var(--notif-border, #e5e7eb);
+  color: var(--notif-text-main, #212529);
+}
+
+.notification-list {
+  max-height: 356px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--notif-dropdown-bg, #fff);
 }
 
 .notification-item {
-  padding: 0.7rem 0.85rem;
+  padding: 0.72rem 1rem;
+  color: var(--notif-text-main, #212529);
+  border-bottom: 1px solid var(--notif-border, #eef2f6);
+  background: var(--notif-item-bg, transparent);
 }
 
 .notification-row {
@@ -270,6 +298,7 @@ export default {
 
 .notification-avatar-wrap {
   flex: 0 0 auto;
+  margin-right: 0.75rem;
 }
 
 .notification-type-icon {
@@ -291,6 +320,10 @@ export default {
   flex: 1;
 }
 
+.notification-sender {
+  color: var(--notif-sender, #4b5563);
+}
+
 .notification-top-line {
   display: flex;
   align-items: center;
@@ -303,11 +336,13 @@ export default {
   flex: 0 0 auto;
   text-align: right;
   white-space: nowrap;
+  color: var(--notif-time, #6b7280);
+  font-size: 0.72rem;
 }
 
 .notification-title {
   font-size: 0.835rem;
-  color: #212529;
+  color: var(--notif-title, #1f2937);
   line-height: 1.25;
   margin-bottom: 2px;
   white-space: nowrap;
@@ -321,12 +356,24 @@ export default {
 
 .notification-message {
   font-size: 0.76rem;
-  color: #6c757d;
-  line-height: 1.3;
+  color: var(--notif-muted, #6b7280);
+  line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.notification-empty {
+  color: var(--notif-muted, #6b7280);
+  padding: 1rem;
+}
+
+.notification-footer {
+  background: var(--notif-dropdown-bg, #fff);
+  color: var(--notif-footer, #1f2937);
+  padding: 0.7rem 1rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .unread-dot {
@@ -339,17 +386,132 @@ export default {
   flex: 0 0 auto;
 }
 
-.notification-menu {
+:deep(.notification-menu) {
+  width: 360px;
   max-width: calc(100vw - 24px);
+  max-height: min(420px, calc(100vh - 90px));
+  overflow: hidden;
+  border-radius: 0.7rem;
+  padding-bottom: 0;
+  --notif-dropdown-bg: var(--cui-dropdown-bg, #fff);
+  --notif-header-bg: var(--cui-tertiary-bg, #f8f9fa);
+  --notif-item-bg: transparent;
+  --notif-text-main: var(--cui-dropdown-color, #1f2937);
+  --notif-title: var(--cui-body-color, #111827);
+  --notif-sender: var(--cui-secondary-color, #4b5563);
+  --notif-muted: var(--cui-secondary-color, #6b7280);
+  --notif-time: var(--cui-secondary-color, #6b7280);
+  --notif-footer: var(--cui-dropdown-link-hover-color, #1f2937);
+  --notif-border: var(--cui-border-color, #e5e7eb);
+  --notif-item-hover: #f3f4f6;
+  --notif-footer-hover: #f3f4f6;
+  background: var(--notif-dropdown-bg);
+  border: 1px solid var(--notif-border);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.22);
+}
+
+:deep(.notification-dropdown__menu) .dropdown-item {
+  white-space: normal;
+}
+
+:deep(.notification-dropdown__menu--dark) {
+  --notif-dropdown-bg: var(--cui-dropdown-bg, #1c2733);
+  --notif-header-bg: #182330;
+  --notif-item-bg: transparent;
+  --notif-text-main: #e7eef7;
+  --notif-title: #f5f8fd;
+  --notif-sender: #d5e2ef;
+  --notif-muted: #aebed0;
+  --notif-time: #b7c8da;
+  --notif-footer: #e7eef7;
+  --notif-border: #314255;
+  --notif-item-hover: #243344;
+  --notif-footer-hover: #243344;
+  background: var(--notif-dropdown-bg);
+  border-color: var(--notif-border);
+  box-shadow: 0 20px 44px rgba(2, 6, 23, 0.5);
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-dropdown__header {
+  color: var(--notif-text-main);
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-dropdown__item {
+  color: var(--notif-text-main);
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-dropdown__item:hover {
+  background: var(--notif-item-hover);
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-dropdown__item:active {
+  background: #202d3d;
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-dropdown__item .notification-dropdown__title.is-unread {
+  color: #ffffff;
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-dropdown__footer {
+  border-top-color: var(--notif-border) !important;
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-dropdown__footer:hover {
+  background: var(--notif-footer-hover);
+  color: #f5f8fd;
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-empty {
+  color: var(--notif-muted) !important;
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-type-icon.type-warning {
+  color: #ffd166;
+  background: rgba(255, 209, 102, 0.18);
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-type-icon.type-info {
+  color: #7bd5e2;
+  background: rgba(123, 213, 226, 0.18);
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-type-icon.type-primary {
+  color: #7bb2ff;
+  background: rgba(123, 178, 255, 0.2);
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-type-icon.type-success {
+  color: #7fe39f;
+  background: rgba(127, 227, 159, 0.18);
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-dropdown__sender {
+  color: var(--notif-sender);
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-dropdown__time {
+  color: var(--notif-time);
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-dropdown__title {
+  color: var(--notif-title);
+}
+
+:deep(.notification-dropdown__menu--dark) .notification-dropdown__message {
+  color: var(--notif-muted);
 }
 
 @media (max-width: 767.98px) {
   .notification-header {
-    min-width: 280px;
+    min-width: 300px;
   }
 
   .notification-item {
-    padding: 0.6rem 0.7rem;
+    padding: 0.62rem 0.76rem;
+  }
+
+  :deep(.notification-menu) {
+    width: min(360px, calc(100vw - 20px));
   }
 }
 </style>
