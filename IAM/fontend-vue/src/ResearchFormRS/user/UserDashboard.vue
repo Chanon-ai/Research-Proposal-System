@@ -3,52 +3,125 @@
 
     <CRow class="mb-4">
       <CCol sm="6" lg="3">
-        <CWidgetDropdown color="gradient-primary" :header="String(stats.draft)" text="แบบร่าง">
-          <template #default>
-            <CDropdown color="transparent p-0" placement="bottom-end">
-              <template #toggler-content>
-                <CIcon name="cil-settings"/>
-              </template>
-            </CDropdown>
-          </template>
-          <template #footer>
-            <div style="height:70px">
-              <CChartLine :datasets="[{ data: chartData.draft, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
-            </div>
-          </template>
-        </CWidgetDropdown>
+        <div
+          @click="setFilter('draft')"
+          :style="{
+            cursor: 'pointer',
+            transform: activeFilter === 'draft' ? 'scale(1.03)' : 'scale(1)',
+            transition: 'transform 0.2s',
+            opacity: activeFilter && activeFilter !== 'draft' ? '0.6' : '1',
+            outline: activeFilter === 'draft' ? '3px solid #fff' : 'none',
+            borderRadius: '8px',
+          }"
+        >
+          <CWidgetDropdown color="gradient-primary" :header="String(stats.draft || 0)" text="แบบร่าง">
+            <template #default>
+              <CDropdown color="transparent p-0" placement="bottom-end">
+                <template #toggler-content>
+                  <CIcon name="cil-settings"/>
+                </template>
+              </CDropdown>
+            </template>
+            <template #footer>
+              <div style="height:70px">
+                <CChartLine :datasets="[{ data: chartData.draft, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+              </div>
+            </template>
+          </CWidgetDropdown>
+        </div>
       </CCol>
 
       <CCol sm="6" lg="3">
-        <CWidgetDropdown color="gradient-info" :header="String(stats.submitted)" text="ยื่นแล้ว">
-          <template #footer>
-            <div style="height:70px">
-              <CChartLine :datasets="[{ data: chartData.submitted, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
-            </div>
-          </template>
-        </CWidgetDropdown>
+        <div
+          @click="setFilter('submitted')"
+          :style="{
+            cursor: 'pointer',
+            transform: activeFilter === 'submitted' ? 'scale(1.03)' : 'scale(1)',
+            transition: 'transform 0.2s',
+            opacity: activeFilter && activeFilter !== 'submitted' ? '0.6' : '1',
+            outline: activeFilter === 'submitted' ? '3px solid #fff' : 'none',
+            borderRadius: '8px',
+          }"
+        >
+          <CWidgetDropdown color="gradient-info" :header="String(stats.submitted || 0)" text="กำลังดำเนินการ">
+            <template #footer>
+              <div style="height:70px">
+                <CChartLine :datasets="[{ data: chartData.submitted, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+              </div>
+            </template>
+          </CWidgetDropdown>
+        </div>
       </CCol>
 
       <CCol sm="6" lg="3">
-        <CWidgetDropdown color="gradient-warning" :header="String(stats.revision)" text="ต้องแก้ไข">
-          <template #footer>
-            <div style="height:70px">
-              <CChartLine :datasets="[{ data: chartData.revision, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
-            </div>
-          </template>
-        </CWidgetDropdown>
+        <div
+          @click="setFilter('revision')"
+          :style="{
+            cursor: 'pointer',
+            transform: activeFilter === 'revision' ? 'scale(1.03)' : 'scale(1)',
+            transition: 'transform 0.2s',
+            opacity: activeFilter && activeFilter !== 'revision' ? '0.6' : '1',
+            outline: activeFilter === 'revision' ? '3px solid #fff' : 'none',
+            borderRadius: '8px',
+          }"
+        >
+          <CWidgetDropdown color="gradient-warning" :header="String(stats.revision || 0)" text="ขอแก้ไข">
+            <template #footer>
+              <div style="height:70px">
+                <CChartLine :datasets="[{ data: chartData.revision, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+              </div>
+            </template>
+          </CWidgetDropdown>
+        </div>
       </CCol>
 
       <CCol sm="6" lg="3">
-        <CWidgetDropdown color="gradient-success" :header="String(stats.approved)" text="อนุมัติ">
-          <template #footer>
-            <div style="height:70px">
-              <CChartBar :datasets="[{ data: chartData.approved, backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'transparent' }]" :options="chartOptions"/>
-            </div>
-          </template>
-        </CWidgetDropdown>
+        <div
+          @click="setFilter('approved')"
+          :style="{
+            cursor: 'pointer',
+            transform: activeFilter === 'approved' ? 'scale(1.03)' : 'scale(1)',
+            transition: 'transform 0.2s',
+            opacity: activeFilter && activeFilter !== 'approved' ? '0.6' : '1',
+            outline: activeFilter === 'approved' ? '3px solid #fff' : 'none',
+            borderRadius: '8px',
+          }"
+        >
+          <CWidgetDropdown color="gradient-success" :header="String(stats.approved || 0)" text="อนุมัติแล้ว">
+            <template #footer>
+              <div style="height:70px">
+                <CChartBar :datasets="[{ data: chartData.approved, backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'transparent' }]" :options="chartOptions"/>
+              </div>
+            </template>
+          </CWidgetDropdown>
+        </div>
       </CCol>
     </CRow>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <span style="font-size:15px;font-weight:500">
+          {{ filterLabel }}
+        </span>
+        <CBadge
+          v-if="activeFilter"
+          color="primary"
+          class="ml-2"
+          style="font-size:12px"
+        >
+          {{ filteredProposals.length }} รายการ
+        </CBadge>
+      </div>
+
+      <CButton
+        v-if="activeFilter"
+        color="secondary"
+        size="sm"
+        @click="clearFilter"
+      >
+        × ล้างตัวกรอง
+      </CButton>
+    </div>
 
     <CCard>
       <CCardBody>
@@ -64,7 +137,7 @@
 
         <div v-else>
           <CDataTable
-            :items="proposals"
+            :items="filteredProposals"
             :fields="tableFields"
             :items-per-page="5"
             :items-per-page-select="{ label: 'Items per page:' }"
@@ -147,6 +220,25 @@ export default {
         { key: 'show_details', label: 'Action', _style: 'width:80px', filter: false, sorter: false }
       ],
       tableFilter: '',
+      activeFilter: null,
+      filterGroups: {
+        draft: ['draft'],
+        submitted: [
+          'submitted',
+          'faculty_review_pending',
+          'faculty_approved',
+          'office_received',
+          'document_checking',
+          'assigned_to_committee',
+          'under_review',
+          'meeting_completed',
+          'second_round_review',
+          'resubmitted',
+        ],
+        revision: ['revision_requested'],
+        approved: ['approved', 'announced'],
+        rejected: ['rejected'],
+      },
       workflowSteps: [
         { key: 'draft', label: 'แบบร่าง', step: 1 },
         { key: 'submitted', label: 'ยื่นโครงการแล้ว', step: 2 },
@@ -203,19 +295,62 @@ export default {
     },
 
     stats() {
-      const seed = { draft: 0, submitted: 0, revision: 0, approved: 0 };
-      return this.allProjects.reduce((acc, item) => {
-        const stage = this.inferStage(item);
-        if (stage === 'DRAFT') acc.draft += 1;
-        if (stage === 'SUBMITTED') acc.submitted += 1;
-        if (stage === 'NEED_REVISION') acc.revision += 1;
-        if (stage === 'APPROVED') acc.approved += 1;
-        return acc;
-      }, seed);
+      const all = this.proposals;
+      return {
+        draft: all.filter(p => p.currentStatus === 'draft').length,
+        submitted: all.filter(p => [
+          'submitted',
+          'faculty_review_pending',
+          'faculty_approved',
+          'office_received',
+          'document_checking',
+          'assigned_to_committee',
+          'under_review',
+          'meeting_completed',
+          'resubmitted',
+          'second_round_review'
+        ].includes(p.currentStatus)).length,
+        revision: all.filter(p => p.currentStatus === 'revision_requested').length,
+        approved: all.filter(p => ['approved', 'announced'].includes(p.currentStatus)).length,
+        rejected: all.filter(p => p.currentStatus === 'rejected').length,
+      };
+    },
+
+    filteredProposals() {
+      if (!this.activeFilter) {
+        return this.proposals;
+      }
+      const statuses = this.filterGroups[this.activeFilter] || [];
+      return this.proposals.filter(p => statuses.includes(p.currentStatus));
+    },
+
+    filterLabel() {
+      const labels = {
+        draft: 'แบบร่าง',
+        submitted: 'กำลังดำเนินการ',
+        revision: 'ขอแก้ไข',
+        approved: 'อนุมัติแล้ว',
+        rejected: 'ปฏิเสธ',
+      };
+      return this.activeFilter
+        ? `กรองตาม: ${labels[this.activeFilter]}`
+        : 'โครงการทั้งหมด';
     },
   },
 
   methods: {
+    setFilter(filterKey) {
+      if (this.activeFilter === filterKey) {
+        this.activeFilter = null;
+      } else {
+        this.activeFilter = filterKey;
+      }
+    },
+
+    clearFilter() {
+      this.activeFilter = null;
+    },
+
     async fetchResearch() {
       this.loading = true;
       this.fetchError = null;
