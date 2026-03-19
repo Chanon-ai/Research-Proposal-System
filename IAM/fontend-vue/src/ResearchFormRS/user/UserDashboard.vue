@@ -4,26 +4,16 @@
     <CRow class="mb-4">
       <CCol sm="6" lg="3">
         <div
+          class="widget-click-area widget-draft"
           @click="setFilter('draft')"
-          :style="{
-            cursor: 'pointer',
-            transform: activeFilter === 'draft' ? 'scale(1.03)' : 'scale(1)',
-            transition: 'transform 0.2s',
-            opacity: activeFilter && activeFilter !== 'draft' ? '0.6' : '1',
-            outline: activeFilter === 'draft' ? '3px solid #fff' : 'none',
-            borderRadius: '8px',
+          :class="{
+            'is-active': activeFilter === 'draft',
+            'is-dimmed': activeFilter && activeFilter !== 'draft'
           }"
         >
-          <CWidgetDropdown color="gradient-primary" :header="String(stats.draft || 0)" text="แบบร่าง">
-            <template #default>
-              <CDropdown color="transparent p-0" placement="bottom-end">
-                <template #toggler-content>
-                  <CIcon name="cil-settings"/>
-                </template>
-              </CDropdown>
-            </template>
+          <CWidgetDropdown class="user-widget-card" color="gradient-primary" :header="String(stats.draft || 0)" text="แบบร่าง">
             <template #footer>
-              <div style="height:70px">
+              <div class="widget-footer-chart">
                 <CChartLine :datasets="[{ data: chartData.draft, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
               </div>
             </template>
@@ -33,19 +23,16 @@
 
       <CCol sm="6" lg="3">
         <div
+          class="widget-click-area widget-submitted"
           @click="setFilter('submitted')"
-          :style="{
-            cursor: 'pointer',
-            transform: activeFilter === 'submitted' ? 'scale(1.03)' : 'scale(1)',
-            transition: 'transform 0.2s',
-            opacity: activeFilter && activeFilter !== 'submitted' ? '0.6' : '1',
-            outline: activeFilter === 'submitted' ? '3px solid #fff' : 'none',
-            borderRadius: '8px',
+          :class="{
+            'is-active': activeFilter === 'submitted',
+            'is-dimmed': activeFilter && activeFilter !== 'submitted'
           }"
         >
-          <CWidgetDropdown color="gradient-info" :header="String(stats.submitted || 0)" text="กำลังดำเนินการ">
+          <CWidgetDropdown class="user-widget-card" color="gradient-info" :header="String(stats.submitted || 0)" text="กำลังดำเนินการ">
             <template #footer>
-              <div style="height:70px">
+              <div class="widget-footer-chart">
                 <CChartLine :datasets="[{ data: chartData.submitted, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
               </div>
             </template>
@@ -55,19 +42,16 @@
 
       <CCol sm="6" lg="3">
         <div
+          class="widget-click-area widget-revision"
           @click="setFilter('revision')"
-          :style="{
-            cursor: 'pointer',
-            transform: activeFilter === 'revision' ? 'scale(1.03)' : 'scale(1)',
-            transition: 'transform 0.2s',
-            opacity: activeFilter && activeFilter !== 'revision' ? '0.6' : '1',
-            outline: activeFilter === 'revision' ? '3px solid #fff' : 'none',
-            borderRadius: '8px',
+          :class="{
+            'is-active': activeFilter === 'revision',
+            'is-dimmed': activeFilter && activeFilter !== 'revision'
           }"
         >
-          <CWidgetDropdown color="gradient-warning" :header="String(stats.revision || 0)" text="ขอแก้ไข">
+          <CWidgetDropdown class="user-widget-card" color="gradient-warning" :header="String(stats.revision || 0)" text="ขอแก้ไข">
             <template #footer>
-              <div style="height:70px">
+              <div class="widget-footer-chart">
                 <CChartLine :datasets="[{ data: chartData.revision, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
               </div>
             </template>
@@ -77,19 +61,16 @@
 
       <CCol sm="6" lg="3">
         <div
+          class="widget-click-area widget-approved"
           @click="setFilter('approved')"
-          :style="{
-            cursor: 'pointer',
-            transform: activeFilter === 'approved' ? 'scale(1.03)' : 'scale(1)',
-            transition: 'transform 0.2s',
-            opacity: activeFilter && activeFilter !== 'approved' ? '0.6' : '1',
-            outline: activeFilter === 'approved' ? '3px solid #fff' : 'none',
-            borderRadius: '8px',
+          :class="{
+            'is-active': activeFilter === 'approved',
+            'is-dimmed': activeFilter && activeFilter !== 'approved'
           }"
         >
-          <CWidgetDropdown color="gradient-success" :header="String(stats.approved || 0)" text="อนุมัติแล้ว">
+          <CWidgetDropdown class="user-widget-card" color="gradient-success" :header="String(stats.approved || 0)" text="อนุมัติแล้ว">
             <template #footer>
-              <div style="height:70px">
+              <div class="widget-footer-chart">
                 <CChartBar :datasets="[{ data: chartData.approved, backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'transparent' }]" :options="chartOptions"/>
               </div>
             </template>
@@ -582,277 +563,122 @@ export default {
 </script>
 
 <style scoped>
-/* ═══════════════════════════════════════
-   CSS Variables
-═══════════════════════════════════════ */
-:root {
-  --sb-bg: #7b0d0d;
-  --sb-bg2: #5a0a0a;
-  --sb-text: #f5cece;
-  --sb-active: rgba(255, 255, 255, 0.18);
-  --sb-hover: rgba(255, 255, 255, 0.10);
-  --sb-width: 210px;
-  --sb-mini: 58px;
-  --blue: #1d4ed8;
-  --blue-light: #eff6ff;
-  --yellow: #f59e0b;
-}
-
 .page-content {
   padding: 24px 28px;
   flex: 1;
 }
 
-.summary-strip {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.strip-card {
-  flex: 1;
-  min-width: 170px;
-  background: #fff;
-  border-radius: 12px;
-  border: 2px solid transparent;
-  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.07);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+/* Widget cards: keep CoreUI look and clip decorative background inside card */
+.widget-click-area {
+  position: relative;
   cursor: pointer;
-  transition: all 0.18s ease;
-  user-select: none;
+  border-radius: 0.5rem;
+  transform: scale(1);
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
 }
 
-.strip-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(29, 78, 216, 0.13);
-  border-color: #1d4ed8;
+.widget-click-area.is-active {
+  transform: scale(1.03);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85);
 }
 
-.strip-card.strip-active {
-  border-color: #1d4ed8;
-  background: #eff6ff;
+.widget-click-area.is-dimmed {
+  opacity: 0.6;
 }
 
-.strip-card.strip-NEED_REVISION.strip-active {
-  background: #eff6ff;
-  border-color: #1d4ed8;
-}
-
-.strip-icon {
-  font-size: 1.9rem;
-  display: inline-block;
-  line-height: 1;
-}
-
-.strip-count {
-  font-size: 2.6rem;
-  font-weight: 900;
-  color: #0f172a;
-  line-height: 1;
-  display: inline-block;
-  text-align: right;
-}
-
-.strip-label {
-  font-size: 0.82rem;
-  color: #334155;
-  font-weight: 700;
-}
-
-.strip-left {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.strip-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.strip-icon-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 10px;
-  box-shadow: 0 4px 12px rgba(16,24,40,0.06);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
-}
-
-.strip-icon-wrap .strip-icon svg {
-  width: 26px;
-  height: 26px;
-}
-
-.strip-card:hover .strip-icon-wrap {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 26px rgba(16,24,40,0.12);
-}
-
-/* Colors per status */
-.strip-card.strip-DRAFT .strip-icon-wrap { background: #64748b; color: #fff; }
-.strip-card.strip-SUBMITTED .strip-icon-wrap { background: #0ea5e9; color: #fff; }
-.strip-card.strip-NEED_REVISION .strip-icon-wrap { background: #ffae00; color: #fff; }
-.strip-card.strip-IN_REVIEW .strip-icon-wrap { background: #2563eb; color: #fff; }
-.strip-card.strip-APPROVED .strip-icon-wrap { background: #16a34a; color: #fff; }
-
-@media (max-width: 720px) {
-  .strip-card {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-  .strip-left {
-    align-items: center;
-  }
-  .strip-right {
-    align-items: center;
-  }
-}
-
-/* ═══════════════════════════════════════
-   PANELS ROW (equal height)
-═══════════════════════════════════════ */
-.panels-row {
-  display: flex;
-  gap: 18px;
-  align-items: stretch;
-  /* ← KEY for equal height */
-}
-
-/* ── Table Panel ─────────────────────── */
-.panel-table {
-  flex: 1;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(29, 78, 216, 0.08);
+.widget-click-area .user-widget-card {
+  border: 0;
+  border-radius: 0.5rem;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 0;
+  position: relative;
+  isolation: isolate;
 }
 
-/* Quick buttons */
-.btn-quick {
-  border: none;
-  border-radius: 7px;
-  font-size: 0.76rem;
-  padding: 4px 11px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: opacity 0.15s;
+.widget-click-area .user-widget-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-repeat: no-repeat;
+  background-size: 128px 128px;
+  background-position: calc(100% + 8px) -10px;
+  opacity: 0.23;
+  z-index: 1;
+  pointer-events: none;
 }
 
-/* extra spacing between quick action buttons in header */
-.table-card-header .btn-quick + .btn-quick {
-  margin-left: 12px;
+.widget-click-area .user-widget-card ::v-deep(.card-body),
+.widget-click-area .user-widget-card ::v-deep(.card-footer) {
+  position: relative;
+  z-index: 2;
 }
 
-.btn-quick:hover {
-  opacity: 0.85;
+.widget-click-area .user-widget-card ::v-deep(.card-footer) {
+  border-radius: 0 0 0.5rem 0.5rem;
+  overflow: hidden;
 }
 
-.btn-success {
-  background: #16a34a;
-  color: #fff;
+.widget-draft .user-widget-card::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='26' y='18' width='68' height='84' rx='10' fill='white' fill-opacity='0.9'/%3E%3Crect x='38' y='38' width='44' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='52' width='40' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='66' width='33' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Cpath d='M84 18v20h20' fill='white' fill-opacity='0.72'/%3E%3C/svg%3E");
 }
 
-.btn-gray {
-  background: #64748b;
-  color: #fff;
+.widget-submitted .user-widget-card::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='36' cy='36' r='11' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='84' cy='60' r='11' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='44' cy='88' r='11' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M44 36h28M75 41l8-5-8-5M75 84l8 5-8 5M54 83l23-16' stroke='%23000000' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
 }
 
-.btn-ic {
-  display: inline-flex;
-  align-items: center;
-  margin-right: 8px;
+.widget-revision .user-widget-card::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='20' width='72' height='80' rx='12' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M42 74l10 10 24-24' stroke='%23000000' stroke-width='6' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3Cpath d='M72 34l12 12M61 45l23-23 12 12-23 23H61z' fill='%23000000' fill-opacity='0.2'/%3E%3C/svg%3E");
 }
 
-.btn-ic svg {
-  width: 16px;
-  height: 16px;
+.widget-approved .user-widget-card::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
 }
 
-.btn-ic { color: inherit; }
-
-/* ── Filter Bar ──────────────────────── */
-.filter-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 18px;
-  gap: 10px;
-  flex-wrap: wrap;
-  border-bottom: 1px solid #f1f5f9;
-  flex-shrink: 0;
+.widget-footer-chart {
+  position: relative;
+  z-index: 2;
+  height: 70px;
+  width: 100%;
+  max-width: 100%;
+  padding-right: 8px;
+  overflow: hidden;
+  border-radius: inherit;
 }
 
-.filter-left,
-.filter-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+.widget-footer-chart ::v-deep(canvas),
+.widget-footer-chart ::v-deep(svg) {
+  display: block;
+  width: 100% !important;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-.filter-label {
-  font-size: 0.8rem;
-  color: #374151;
-  white-space: nowrap;
+@media (max-width: 991.98px) {
+  .widget-click-area {
+    margin-bottom: 0.25rem;
+  }
+
+  .widget-click-area .user-widget-card::before {
+    background-size: 104px 104px;
+    background-position: calc(100% + 4px) -8px;
+    opacity: 0.2;
+  }
 }
 
-.f-input {
-  border: 1px solid #cbd5e1;
-  border-radius: 5px;
-  padding: 4px 8px;
-  font-size: 0.8rem;
-  outline: none;
-  background: #fff;
-  transition: border-color 0.15s;
+@media (max-width: 575.98px) {
+  .page-content {
+    padding: 18px 14px;
+  }
+
+  .widget-click-area.is-active {
+    transform: scale(1.01);
+  }
 }
 
-.f-input:focus {
-  border-color: #3b82f6;
-}
-
-.f-text {
-  width: 170px;
-}
-
-.f-select {
-  width: 130px;
-}
-
-.f-perpage {
-  width: 62px;
-}
-
-/* ── State boxes ─────────────────────── */
 .state-box {
   text-align: center;
   padding: 48px 20px;
-}
-
-.state-box .empty-ic {
-  color: #94a3b8;
-  width: 56px;
-  height: 56px;
-  display: inline-block;
-  margin-bottom: 8px;
-}
-.state-box .empty-ic svg {
-  width: 56px;
-  height: 56px;
 }
 
 .state-text {
@@ -875,209 +701,6 @@ export default {
   to {
     transform: rotate(360deg);
   }
-}
-
-/* ── Table ───────────────────────────── */
-.table-wrapper {
-  overflow-x: auto;
-  flex: 1;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.845rem;
-}
-
-.thead-row th {
-  background: #fff;
-  color: #374151;
-  font-weight: 600;
-  padding: 10px 13px;
-  border-bottom: 2px solid #e2e8f0;
-  white-space: nowrap;
-  text-align: left;
-}
-
-.th-sort {
-  cursor: pointer;
-}
-
-.th-sort:hover {
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-.sort-ic {
-  font-size: 0.7rem;
-  color: #94a3b8;
-  margin-left: 3px;
-}
-
-.thead-sub th {
-  background: #f8fafc;
-  padding: 5px 13px 6px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.col-fi {
-  width: 100%;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-  padding: 2px 7px;
-  font-size: 0.77rem;
-  height: 24px;
-  background: #fff;
-  outline: none;
-}
-
-.col-fi:focus {
-  border-color: #3b82f6;
-}
-
-.tbody-row td {
-  padding: 10px 13px;
-  border-bottom: 1px solid #f1f5f9;
-  background: #fff;
-  vertical-align: middle;
-}
-
-.tbody-row:hover td {
-  background: #f0f7ff;
-}
-
-.td-title {
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 0.86rem;
-  line-height: 1.3;
-}
-
-.td-sub {
-  font-size: 0.74rem;
-  color: #64748b;
-  margin-top: 2px;
-}
-
-.td-date {
-  font-size: 0.8rem;
-  color: #475569;
-  white-space: nowrap;
-}
-
-.td-next {
-  font-size: 0.77rem;
-  color: #475569;
-}
-
-.td-act-msg {
-  font-size: 0.79rem;
-  font-weight: 500;
-  color: #1e293b;
-}
-
-.td-act-meta {
-  font-size: 0.72rem;
-  color: #94a3b8;
-  margin-top: 2px;
-}
-
-.td-right {
-  text-align: right;
-}
-
-/* Badge */
-.badge {
-  display: inline-block;
-  font-size: 0.73rem;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 20px;
-  color: #fff;
-}
-
-.badge-secondary {
-  background: #64748b;
-}
-
-.badge-info {
-  background: #0ea5e9;
-}
-
-.badge-warning {
-  background: #f59e0b;
-  color: #1a1a2e;
-}
-
-.badge-primary {
-  background: #2563eb;
-}
-
-.badge-success {
-  background: #16a34a;
-}
-
-.badge-dark {
-  background: #1e293b;
-}
-
-/* Show button */
-.btn-show {
-  border: 1px solid #3b82f6;
-  background: transparent;
-  color: #3b82f6;
-  border-radius: 5px;
-  font-size: 0.76rem;
-  padding: 3px 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-
-.btn-show:hover {
-  background: #3b82f6;
-  color: #fff;
-}
-
-/* ── Pagination ──────────────────────── */
-.pagi-bar {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 4px;
-  padding: 12px 16px;
-  border-top: 1px solid #f1f5f9;
-  flex-shrink: 0;
-}
-
-.pg-btn {
-  min-width: 30px;
-  height: 30px;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #3b82f6;
-  border-radius: 5px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.14s;
-  padding: 0 6px;
-}
-
-.pg-btn:hover:not(:disabled) {
-  background: #eff6ff;
-  border-color: #3b82f6;
-}
-
-.pg-btn:disabled {
-  color: #cbd5e1;
-  cursor: default;
-}
-
-.pg-active {
-  background: #1d4ed8 !important;
-  border-color: #1d4ed8 !important;
-  color: #fff !important;
-  font-weight: 700;
 }
 
 /* ── FAB ─────────────────────────────── */
