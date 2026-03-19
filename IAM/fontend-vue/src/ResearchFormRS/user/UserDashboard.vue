@@ -152,14 +152,18 @@
                 <CBadge :color="getProgressColor(item.currentStatus)" class="mb-2" style="font-size:11px">
                   {{ getStatusLabel(item.currentStatus) }}
                 </CBadge>
-                <CProgress
-                  :value="getProgressPercent(item.currentStatus)"
-                  :color="getProgressColor(item.currentStatus)"
-                  :animated="['submitted', 'faculty_review_pending', 'under_review', 'document_checking', 'assigned_to_committee'].includes(item.currentStatus)"
-                  :striped="item.currentStatus === 'revision_requested'"
-                  style="height:16px; font-size:11px"
-                  class="mb-1"
-                />
+                <div class="status-progress-wrap">
+                  <CProgress
+                    :value="getProgressPercent(item.currentStatus)"
+                    :color="getProgressColor(item.currentStatus)"
+                    :animated="['submitted', 'faculty_review_pending', 'under_review', 'document_checking', 'assigned_to_committee'].includes(item.currentStatus)"
+                    :striped="item.currentStatus === 'revision_requested'"
+                    show-percentage
+                    :precision="0"
+                    height="16px"
+                    class="status-progress-bar mb-1"
+                  />
+                </div>
                 <div style="font-size:11px; color:#888">
                   {{ getProgressLabel(item.currentStatus) }}
                 </div>
@@ -455,24 +459,12 @@ export default {
 
     getProgressPercent(status) {
       const key = String(status || '').toLowerCase();
-      const stepMap = {
-        draft: 10,
-        submitted: 20,
-        faculty_review_pending: 30,
-        faculty_approved: 40,
-        office_received: 45,
-        document_checking: 50,
-        assigned_to_committee: 60,
-        under_review: 70,
-        meeting_completed: 80,
-        revision_requested: 50,
-        resubmitted: 55,
-        second_round_review: 70,
-        approved: 100,
-        rejected: 100,
-        announced: 100,
-      };
-      return stepMap[key] || 0;
+      const stepInfo = this.workflowSteps.find(step => step.key === key);
+      if (!stepInfo) return 0;
+      const totalSteps = 10;
+      const currentStep = Number(stepInfo.step) || 0;
+      const percent = (currentStep / totalSteps) * 100;
+      return Math.max(0, Math.min(100, Math.round(percent)));
     },
 
     getProgressColor(status) {
@@ -679,6 +671,27 @@ export default {
 .state-box {
   text-align: center;
   padding: 48px 20px;
+}
+
+.status-progress-wrap {
+  width: 100%;
+  max-width: 220px;
+  margin: 0 auto;
+}
+
+.status-progress-bar {
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.status-progress-bar ::v-deep(.progress) {
+  margin-bottom: 0;
+}
+
+.status-progress-bar ::v-deep(.progress-bar) {
+  white-space: nowrap;
+  text-align: center;
+  font-weight: 600;
 }
 
 .state-text {
