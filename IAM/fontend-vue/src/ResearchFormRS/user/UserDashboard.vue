@@ -90,8 +90,24 @@
             </template>
 
             <template #currentStatus="{ item }">
-              <td>
-                <CBadge :color="getStatusColor(item.currentStatus)">{{ getStatusLabel(item.currentStatus) }}</CBadge>
+              <td style="min-width: 220px">
+                <CBadge :color="getProgressColor(item.currentStatus)" class="mb-2" style="font-size:11px">
+                  {{ getStatusLabel(item.currentStatus) }}
+                </CBadge>
+                <CProgress
+                  :value="getProgressPercent(item.currentStatus)"
+                  :color="getProgressColor(item.currentStatus)"
+                  :animated="isAnimatedStatus(item.currentStatus)"
+                  :striped="item.currentStatus === 'revision_requested'"
+                  style="height:16px; font-size:11px"
+                  class="mb-1"
+                />
+                <div style="font-size:11px; color:#888; margin-top:2px">
+                  {{ getProgressLabel(item.currentStatus) }}
+                </div>
+                <div style="font-size:11px; color:#64748b">
+                  {{ getProgressText(item.currentStatus) }}
+                </div>
               </td>
             </template>
 
@@ -127,10 +143,27 @@ export default {
       tableFields: [
         { key: 'projectTitleTh', label: 'ชื่อโครงการวิจัย / หัวหน้าโครงการ', _style: 'min-width:250px' },
         { key: 'updatedAt', label: 'วันที่ยื่น', _style: 'width:140px' },
-        { key: 'currentStatus', label: 'สถานะ', _style: 'width:160px' },
+        { key: 'currentStatus', label: 'สถานะ', _style: 'width:260px' },
         { key: 'show_details', label: 'Action', _style: 'width:80px', filter: false, sorter: false }
       ],
       tableFilter: '',
+      workflowSteps: [
+        { key: 'draft', label: 'แบบร่าง', step: 1 },
+        { key: 'submitted', label: 'ยื่นโครงการแล้ว', step: 2 },
+        { key: 'faculty_review_pending', label: 'รอประธานพิจารณา', step: 3 },
+        { key: 'faculty_approved', label: 'ประธานอนุมัติ', step: 4 },
+        { key: 'office_received', label: 'ส่วนบริหารรับแล้ว', step: 5 },
+        { key: 'document_checking', label: 'ตรวจสอบเอกสาร', step: 6 },
+        { key: 'assigned_to_committee', label: 'มอบหมายกรรมการ', step: 7 },
+        { key: 'under_review', label: 'กำลังพิจารณา', step: 8 },
+        { key: 'meeting_completed', label: 'ประชุมเสร็จแล้ว', step: 9 },
+        { key: 'revision_requested', label: 'ขอแก้ไข', step: 5 },
+        { key: 'resubmitted', label: 'ส่งแก้ไขแล้ว', step: 6 },
+        { key: 'second_round_review', label: 'พิจารณารอบ 2', step: 8 },
+        { key: 'approved', label: 'อนุมัติ', step: 10 },
+        { key: 'rejected', label: 'ปฏิเสธ', step: 10 },
+        { key: 'announced', label: 'ประกาศผลแล้ว', step: 10 },
+      ],
       chartData: {
         draft: [65, 59, 84, 84, 51, 55, 40],
         submitted: [35, 49, 60, 71, 80, 90, 75],
@@ -246,15 +279,25 @@ export default {
     },
 
     getStatusLabel(status) {
-      const stage = this.inferStage({ currentStatus: status });
-      return {
-        DRAFT: 'ร่าง',
-        SUBMITTED: 'ยื่นแล้ว',
-        NEED_REVISION: 'ต้องแก้ไข',
-        IN_REVIEW: 'กำลังพิจารณา',
-        APPROVED: 'อนุมัติ',
-        REJECTED: 'ไม่อนุมัติ',
-      }[stage] || stage;
+      const key = String(status || '').toLowerCase();
+      const labels = {
+        draft: 'ร่าง',
+        submitted: 'ยื่นแล้ว',
+        faculty_review_pending: 'รอประธานพิจารณา',
+        faculty_approved: 'ประธานอนุมัติ',
+        office_received: 'ส่วนบริหารรับแล้ว',
+        document_checking: 'ตรวจสอบเอกสาร',
+        assigned_to_committee: 'มอบหมายกรรมการ',
+        under_review: 'กำลังพิจารณา',
+        meeting_completed: 'ประชุมเสร็จแล้ว',
+        revision_requested: 'ขอแก้ไข',
+        resubmitted: 'ส่งแก้ไขแล้ว',
+        second_round_review: 'พิจารณารอบ 2',
+        approved: 'อนุมัติ',
+        rejected: 'ไม่อนุมัติ',
+        announced: 'ประกาศผลแล้ว',
+      };
+      return labels[key] || 'กำลังดำเนินการ';
     },
 
     getStatusColor(status) {
@@ -267,6 +310,99 @@ export default {
         APPROVED: 'success',
         REJECTED: 'danger',
       }[stage] || 'dark';
+    },
+
+    getProgressPercent(status) {
+      const key = String(status || '').toLowerCase();
+      const stepMap = {
+        draft: 10,
+        submitted: 20,
+        faculty_review_pending: 30,
+        faculty_approved: 40,
+        office_received: 45,
+        document_checking: 50,
+        assigned_to_committee: 60,
+        under_review: 70,
+        meeting_completed: 80,
+        revision_requested: 50,
+        resubmitted: 55,
+        second_round_review: 70,
+        approved: 100,
+        rejected: 100,
+        announced: 100,
+      };
+      return stepMap[key] || 0;
+    },
+
+    getProgressColor(status) {
+      const key = String(status || '').toLowerCase();
+      if (key === 'approved' || key === 'announced') return 'success';
+      if (key === 'rejected') return 'danger';
+      if (key === 'revision_requested') return 'warning';
+      if (key === 'draft') return 'secondary';
+      return 'primary';
+    },
+
+    isAnimatedStatus(status) {
+      const key = String(status || '').toLowerCase();
+      return [
+        'submitted',
+        'faculty_review_pending',
+        'under_review',
+        'document_checking',
+        'assigned_to_committee'
+      ].includes(key);
+    },
+
+    getProgressLabel(status) {
+      const key = String(status || '').toLowerCase();
+      const labels = {
+        draft: 'ขั้นที่ 1/10 — กำลังร่าง',
+        submitted: 'ขั้นที่ 2/10 — ยื่นโครงการแล้ว',
+        faculty_review_pending: 'ขั้นที่ 3/10 — รอประธานพิจารณา',
+        faculty_approved: 'ขั้นที่ 4/10 — ประธานอนุมัติ',
+        office_received: 'ขั้นที่ 5/10 — ส่วนบริหารรับแล้ว',
+        document_checking: 'ขั้นที่ 5/10 — ตรวจสอบเอกสาร',
+        assigned_to_committee: 'ขั้นที่ 6/10 — มอบหมายกรรมการแล้ว',
+        under_review: 'ขั้นที่ 7/10 — กำลังพิจารณา',
+        meeting_completed: 'ขั้นที่ 8/10 — ประชุมเสร็จแล้ว',
+        revision_requested: 'ขอแก้ไข — กรุณาแก้ไขเอกสาร',
+        resubmitted: 'ส่งแก้ไขแล้ว — รอพิจารณารอบ 2',
+        second_round_review: 'ขั้นที่ 7/10 — พิจารณารอบ 2',
+        approved: 'ขั้นที่ 10/10 — อนุมัติแล้ว ✓',
+        rejected: 'ขั้นที่ 10/10 — ไม่ผ่านการพิจารณา',
+        announced: 'ขั้นที่ 10/10 — ประกาศผลแล้ว ✓',
+      };
+      return labels[key] || 'กำลังดำเนินการ';
+    },
+
+    getProgressText(status) {
+      const key = String(status || '').toLowerCase();
+      const pct = this.getProgressPercent(key);
+      if (key === 'approved' || key === 'announced') return 'อนุมัติแล้ว';
+      if (key === 'rejected') return 'ไม่ผ่าน';
+      if (key === 'revision_requested') return 'รอแก้ไข';
+      return `${pct}%`;
+    },
+
+    getSegmentWidth(segmentStatus, currentStatus) {
+      const order = [
+        'draft',
+        'submitted',
+        'faculty_review_pending',
+        'office_received',
+        'document_checking',
+        'assigned_to_committee',
+        'under_review',
+        'meeting_completed',
+        'approved'
+      ];
+      const currentIdx = order.indexOf(String(currentStatus || '').toLowerCase());
+      const segmentIdx = order.indexOf(String(segmentStatus || '').toLowerCase());
+      if (segmentIdx < 0 || currentIdx < 0) return 0;
+      if (segmentIdx < currentIdx) return 11;
+      if (segmentIdx === currentIdx) return 11;
+      return 0;
     },
 
     formatDate(date) {
