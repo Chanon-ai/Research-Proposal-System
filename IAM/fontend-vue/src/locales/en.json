@@ -1,0 +1,39 @@
+{
+  "common": {
+    "show": "Show",
+    "viewAll": "View all"
+  },
+  "header": {
+    "language": "Language",
+    "theme": "Theme",
+    "notifications": "notifications",
+    "youHave": "You have {count} notifications",
+    "noNotifications": "No notifications"
+  },
+  "lang": {
+    "th": "Thai",
+    "en": "English"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "userPanel": "User Panel",
+    "userDashboard": "User Dashboard",
+    "profile": "Profile",
+    "history": "History",
+    "researchForm": "Research Form"
+  },
+  "status": {
+    "draft": "Draft",
+    "inProgress": "In Progress",
+    "revision": "Revision Requested",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "allProjects": "All Projects",
+    "filteredBy": "Filtered by: {label}",
+    "itemsCount": "{count} items"
+  }
+}

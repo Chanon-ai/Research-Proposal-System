@@ -53,25 +53,10 @@
 <!--          <CIcon size="lg" name="cil-applications-settings" class="mr-2"/>-->
 <!--        </button>-->
 <!--      </CHeaderNavItem>-->
-      <CHeaderNavItem >
-        <CButton size="sm" color="info" shape="pill" variant="outline" style="width: 35px; height:35px;" @click="onSwitchLang" >
-          {{lang.toUpperCase()}}
-        </CButton>
-      </CHeaderNavItem>
+      <TheHeaderDropdownLang/>
+      <TheHeaderDropdownTheme/>
 
-      <CHeaderNavItem class="position-relative ml-2">
-        <CButton class="c-header-nav-btn" @click="$router.push('/user/notification')">
-          <CBadge
-            v-if="unreadCount > 0"
-            color="danger"
-            shape="pill"
-            style="position:absolute;top:6px;right:6px;font-size:10px;min-width:16px;padding:2px 4px"
-          >
-            {{ unreadCount > 9 ? '9+' : unreadCount }}
-          </CBadge>
-          <CIcon name="cil-bell" size="lg"/>
-        </CButton>
-      </CHeaderNavItem>
+      <TheHeaderDropdownNotif class="ml-2"/>
 
       <TheHeaderDropdownAccnt class="pr-3"/>
     </CHeaderNav>
@@ -87,8 +72,8 @@ import TheHeaderDropdownAccnt from './TheHeaderDropdownAccnt'
 import TheHeaderDropdownNotif from './TheHeaderDropdownNotif'
 import TheHeaderDropdownTasks from './TheHeaderDropdownTasks'
 import TheHeaderDropdownMssgs from './TheHeaderDropdownMssgs'
-import {mapGetters} from "vuex";
-import Service from '@/service/api'
+import TheHeaderDropdownLang from './TheHeaderDropdownLang'
+import TheHeaderDropdownTheme from './TheHeaderDropdownTheme'
 
 export default {
   name: 'TheHeader',
@@ -96,44 +81,9 @@ export default {
     TheHeaderDropdownAccnt,
     TheHeaderDropdownNotif,
     TheHeaderDropdownTasks,
-    TheHeaderDropdownMssgs
-  },
-  data() {
-    return {
-      unreadCount: 0
-    }
-  },
-  async mounted() {
-    await this.fetchUnreadCount()
-  },
-
-  methods: {
-    async fetchUnreadCount() {
-      try {
-        const res = await Service.notification.list({ isRead: false, limit: 1 })
-        this.unreadCount = res && res.data && res.data.data && res.data.data.total
-          ? Number(res.data.data.total)
-          : 0
-      } catch (e) {
-        this.unreadCount = 0
-      }
-    },
-    onSwitchLang(){
-      switch (this.lang) {
-        case "th":
-          this.$store.commit("setting/lang", "en")
-          break;
-        case "en":
-          this.$store.commit("setting/lang", "th")
-          break;
-      }
-    }
-  },
-
-  computed: {
-    ...mapGetters({
-      lang: "setting/lang",
-    })
+    TheHeaderDropdownMssgs,
+    TheHeaderDropdownLang,
+    TheHeaderDropdownTheme
   },
 }
 </script>

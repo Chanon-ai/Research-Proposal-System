@@ -1,0 +1,39 @@
+{
+  "common": {
+    "show": "แสดง",
+    "viewAll": "ดูทั้งหมด"
+  },
+  "header": {
+    "language": "ภาษา",
+    "theme": "ธีม",
+    "notifications": "การแจ้งเตือน",
+    "youHave": "คุณมี {count} การแจ้งเตือน",
+    "noNotifications": "ไม่มีการแจ้งเตือน"
+  },
+  "lang": {
+    "th": "ภาษาไทย",
+    "en": "English"
+  },
+  "theme": {
+    "light": "โหมดสว่าง",
+    "dark": "โหมดมืด"
+  },
+  "nav": {
+    "dashboard": "แดชบอร์ด",
+    "userPanel": "แผงผู้ใช้",
+    "userDashboard": "แดชบอร์ดผู้ใช้",
+    "profile": "โปรไฟล์",
+    "history": "ประวัติ",
+    "researchForm": "แบบฟอร์มวิจัย"
+  },
+  "status": {
+    "draft": "แบบร่าง",
+    "inProgress": "กำลังดำเนินการ",
+    "revision": "ขอแก้ไข",
+    "approved": "อนุมัติแล้ว",
+    "rejected": "ปฏิเสธ",
+    "allProjects": "โครงการทั้งหมด",
+    "filteredBy": "กรองตาม: {label}",
+    "itemsCount": "{count} รายการ"
+  }
+}

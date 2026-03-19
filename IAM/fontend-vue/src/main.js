@@ -34,6 +34,13 @@ const gauthOption = {
 }
 Vue.use(GAuth, gauthOption)
 
+if (typeof document !== 'undefined') {
+  const initialTheme = store.state.darkMode ? 'dark' : 'light'
+  document.documentElement.setAttribute('data-coreui-theme', initialTheme)
+  document.body.setAttribute('data-coreui-theme', initialTheme)
+  document.body.classList.toggle('c-dark-theme', initialTheme === 'dark')
+}
+
 new Vue({
   el: '#app',
   router,
