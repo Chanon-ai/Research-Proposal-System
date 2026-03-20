@@ -3,6 +3,7 @@
 > **วัตถุประสงค์ของเอกสารนี้**: เพื่อให้ AI หรือนักพัฒนาคนอื่นสามารถอ่านแล้วเข้าใจโครงสร้างทั้งหมดของระบบได้อย่างครบถ้วน
 >
 > **Generated**: March 20, 2026
+> **Updated**: March 20, 2026 (Theme/UX progress sync)
 
 ---
 
@@ -22,6 +23,7 @@
 12. [Security & RBAC System](#12-security--rbac-system)
 13. [Cross-Module Relationships](#13-cross-module-relationships)
 14. [Known Issues & Technical Debt](#14-known-issues--technical-debt)
+15. [Development Progress & Recent Changes](#15-development-progress--recent-changes)
 
 ---
 
@@ -1253,6 +1255,47 @@ EMAIL_PASS=[Gmail App Password]
 - All existing API endpoints
 - Security RBAC modules
 - Database schemas
+
+### 15.7 Latest Frontend Theme/UX Updates (March 20, 2026)
+
+#### Commit-level summary (latest wave)
+- `348ff31` — เปลี่ยนหน้า Research เป็นโหมดมืด (Dark Theme rollout)
+- `819909a` — ปรับ Dark Theme หน้า Profile + Notification popup ใน Header
+- `bae7e2f` — ปรับปุ่ม Auto-save เป็นไอคอน + ปรับ responsive layout
+- `5737570` — ปรับสีส่วนอัปโหลดเอกสาร (Section 12)
+- `f35a853` — ปรับโทนสีส่วนงบประมาณ/ข้อ 17
+- `5e01457` — พับเก็บโค้ดตัวอย่างบางส่วน
+
+#### Scope of added/updated files
+- Research Form pages/components:
+  - `fontend-vue/src/ResearchFormRS/ResearchForm.vue`
+  - `fontend-vue/src/ResearchFormRS/component/BudgetSectionDemo.vue`
+  - `fontend-vue/src/ResearchFormRS/component/FileManagement.vue`
+  - `fontend-vue/src/ResearchFormRS/component/ProjectDetailsForm.vue`
+  - `fontend-vue/src/ResearchFormRS/component/ResearchStandardSection.vue`
+  - `fontend-vue/src/ResearchFormRS/component/ResearchTeamForm.vue`
+  - `fontend-vue/src/ResearchFormRS/component/SignatureCard.vue`
+  - `fontend-vue/src/ResearchFormRS/component/TestComponent/Section12.vue`
+- User/Profile/Notification UX:
+  - `fontend-vue/src/ResearchFormRS/user/UserProfile.vue`
+  - `fontend-vue/src/ResearchFormRS/user/UserHistory.vue`
+  - `fontend-vue/src/ResearchFormRS/user/UserNotification.vue`
+  - `fontend-vue/src/containers/TheHeader.vue`
+  - `fontend-vue/src/containers/TheHeaderDropdownNotif.vue`
+  - `fontend-vue/src/projects/styles/global.scss`
+- Navigation/bootstrap cleanup:
+  - `fontend-vue/src/containers/_nav.js`
+  - `fontend-vue/src/main.js`
+
+#### Current assessment after this update
+- Frontend track (Theme + UX) มีความคืบหน้าสูงและมีการแก้ไฟล์จริงหลายจุดต่อเนื่อง
+- Backend track ในรอบล่าสุดไม่มีการเปลี่ยนเชิงโครงสร้างใหม่ (ยังคงตามข้อ 15.1 เดิม)
+- Test/QA evidence: ยังไม่พบ commit ที่เพิ่ม automated tests โดยตรงสำหรับรอบ Dark Theme นี้
+
+#### Follow-up risk to resolve
+- พบไฟล์ชื่อผิดปกติในโฟลเดอร์ผู้ใช้: `fontend-vue/src/ResearchFormRS/user/๊UserNotification.vue`
+- ความเสี่ยง: import สับสน, duplicate component, และ cross-platform filesystem issue
+- แนะนำ: keep canonical file เพียง `UserNotification.vue` แล้วอัปเดต import references ให้ตรง
 
 ---
 

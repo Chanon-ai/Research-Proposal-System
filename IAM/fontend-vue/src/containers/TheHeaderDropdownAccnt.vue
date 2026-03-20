@@ -3,7 +3,7 @@
     inNav
     class="c-header-nav-items"
     placement="bottom-end"
-    add-menu-classes="pt-0 mt-2"
+    :add-menu-classes="menuClasses"
   >
     <template #toggler>
       <CHeaderNavLink>
@@ -13,116 +13,79 @@
         </div>
       </CHeaderNavLink>
     </template>
+    <CDropdownHeader tag="div" class="account-dropdown-header">
+      <strong>{{ $t('nav.userPanel') }}</strong>
+    </CDropdownHeader>
 
-<!--    <CDropdownItem  @click="onAccounts">-->
-<!--&lt;!&ndash;      <CDropdownItem  @click="$store.commit('toggle', 'asideShow')">&ndash;&gt;-->
-<!--      <div >-->
-<!--        <div class="pt-1 mr-3 float-left">-->
-<!--          <div class="c-avatar">-->
-<!--            <img :src="(profile.userinfo.imageProfile != undefined)?profile.userinfo.imageProfile.src:defualt"  class="c-avatar-img" style="height: 100%"/>-->
-<!--          </div>-->
-<!--        </div>-->
-<!--        <div>-->
-<!--          <h6 class="text-muted mt-2">{{profile.userinfo.profile}} {{profile.userinfo.firstName}} {{profile.userinfo.lastName}}</h6>-->
-<!--&lt;!&ndash;          <small class="text-muted float-right mt-1">5 minutes ago</small>&ndash;&gt;-->
-<!--        </div>-->
-<!--        <h6 class=" font-weight-bold">Account : {{subAccount.zid}}  </h6>-->
-<!--      </div>-->
-<!--    </CDropdownItem>-->
-<!--    <CDropdownDivider/>-->
+    <CDropdownItem
+      v-if="showUserMenu"
+      class="account-dropdown-item"
+      :class="{ active: isActiveRoute('/user/profile') }"
+      @click="goTo('/user/profile')"
+    >
+      <CIcon name="cil-user" /> {{ $t('nav.profile') }}
+    </CDropdownItem>
 
-<!--    <div class="pl-3 pr-3 pt-2 pb-2 "  style="cursor: pointer" @click="cardCollapse = !cardCollapse" >-->
-<!--      <div class="text-info">-->
-<!--        Other Profile-->
-<!--        <CBadge color="info" class="ml-auto">{{profile.subAccount.length}}</CBadge>-->
-<!--      </div>-->
-<!--      <div class="float-right">-->
-<!--&lt;!&ndash;        <CIcon name="cil-chevron-circle-right-alt"  />&ndash;&gt;-->
-<!--      </div>-->
-<!--    </div>-->
-<!--    <CCollapse :show="cardCollapse" class="overflow-auto" style="max-height: 150px; ">-->
-<!--      <div style="cursor: pointer" class="btn-ghost-dark  pl-3 pr-3 pt-2 pb-2 float-left w-100 "  v-for="item in profile.subAccount" @click="switAccount(item)">-->
-<!--&lt;!&ndash;        <div class="c-avatar float-left mr-2">&ndash;&gt;-->
-<!--&lt;!&ndash;          <img :src="(profile.userinfo.imageProfile != undefined)?profile.userinfo.imageProfile.src:defualt"  class="c-avatar-img" style="height: 100%"/>&ndash;&gt;-->
-<!--&lt;!&ndash;        </div>&ndash;&gt;-->
-<!--        <div class="float-left">-->
-<!--          <CRow>-->
-<!--            <CCol>-->
-<!--              <h6>Account : {{item.zid}} </h6>-->
-<!--            </CCol>-->
-<!--          </CRow>-->
-<!--          <CRow>-->
-<!--            <CCol>-->
-<!--              <h6>Level : <CBadge color="success" class="ml-auto pl-2 pr-2 " shape="pill"> {{ item.package }} </CBadge></h6>-->
-<!--            </CCol>-->
-<!--          </CRow>-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </CCollapse>-->
+    <CDropdownItem
+      v-if="showUserMenu"
+      class="account-dropdown-item"
+      :class="{ active: isActiveRoute('/user/history') }"
+      @click="goTo('/user/history')"
+    >
+      <CIcon name="cil-history" /> {{ $t('nav.history') }}
+    </CDropdownItem>
 
-
-<!--    <div class="pl-4 pr-3 pt-2 pb-2 "  style="cursor: pointer"  @click="accountCollapse = !accountCollapse">-->
-<!--      <div>-->
-<!--        <CIcon name="cil-user-follow" size="xl"/>Create New ZID-->
-<!--      </div>-->
-<!--      <div class="float-right">-->
-<!--        &lt;!&ndash;        <CIcon name="cil-chevron-circle-right-alt"  />&ndash;&gt;-->
-<!--      </div>-->
-<!--    </div>-->
-<!--    <CCollapse :show="accountCollapse" class="overflow-auto" >-->
-<!--      <div style="cursor: pointer" class="bg-zdrive  pl-3 pr-3 pt-2 pb-2 float-left w-100 " >-->
-<!--        <CRow>-->
-<!--          <CCol  class="text-center">-->
-<!--            You want to create new profile?-->
-<!--          </CCol>-->
-<!--        </CRow>-->
-<!--        <CRow>-->
-<!--          <CCol class="text-center">-->
-<!--            <CButton variant="ghost"  color="success" class="mr-3 font-weight-bold" @click="createSubAccount" >YES</CButton>-->
-<!--            <CButton variant="ghost"  color="danger" class="font-weight-bold"  @click="accountCollapse = !accountCollapse" > NO </CButton>-->
-<!--          </CCol>-->
-<!--        </CRow>-->
-<!--      </div>-->
-<!--    </CCollapse>-->
-
-
-<!--    <CDropdownDivider/>-->
-<!--    <CDropdownItem>-->
-<!--      <CIcon name="cil-shield-alt" size="xl" /> Lock Account-->
-<!--    </CDropdownItem>-->
+    <CDropdownDivider/>
     <CDropdownItem @click="onLogout">
-      <CIcon name="cil-lock-locked" size="xl" /> Logout
+      <CIcon name="cil-account-logout" /> Logout
     </CDropdownItem>
   </CDropdown>
 </template>
 
 <script>
-import {mapGetters} from "vuex";
-
 export default {
   name: 'TheHeaderDropdownAccnt',
 
-  data () {
-    return {
-      defualt:"https://demo.zdrive.fund/assets/images/brand/logo.png",
-      itemsCount: 42,
-      cardCollapse: true,
-      accountCollapse: false
+  computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+
+    menuClasses () {
+      return this.isDarkTheme
+        ? 'pt-0 mt-2 account-menu account-menu--dark'
+        : 'pt-0 mt-2 account-menu'
+    },
+
+    currentRole () {
+      const storeRole = this.$store.getters['Authentication/userRole']
+      if (storeRole) return storeRole
+
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        return parsed && parsed.role ? parsed.role : null
+      } catch (e) {
+        return null
+      }
+    },
+
+    showUserMenu () {
+      return ['researcher', 'admin', 'chairman'].includes(this.currentRole)
     }
   },
 
-  mounted () {
-
-  },
-
-  created () {
-
-  },
-  beforeDestroy () {
-
-  },
-
   methods: {
+    isActiveRoute (targetPath) {
+      return this.$route && this.$route.path === targetPath
+    },
+
+    goTo (targetPath) {
+      if (this.$route && this.$route.path === targetPath) return
+      this.$router.push(targetPath)
+    },
+
     async onLogout() {
       try {
         await this.$store.dispatch('Authentication/logout')
@@ -132,24 +95,53 @@ export default {
         window.location.href = '/pages/research-login'
       }
     }
-  },
-
-  computed:{
-    ...mapGetters({
-    })
-  },
-
-  watch: {
-
   }
 }
 </script>
 
 <style scoped>
-  .c-icon {
-    margin-right: 0.3rem;
-  }
-  .c-header-nav .dropdown-item{
-    min-width: 250px;
-  }
+.c-icon {
+  margin-right: 0.45rem;
+}
+
+.c-header-nav .dropdown-item {
+  min-width: 230px;
+}
+
+.account-dropdown-header {
+  padding: 0.7rem 1rem;
+}
+
+.account-dropdown-item {
+  display: flex;
+  align-items: center;
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+}
+
+.account-menu {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(60, 75, 100, 0.15);
+}
+
+.account-menu.account-menu--dark {
+  background: #2d2f34;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.account-menu.account-menu--dark .dropdown-header,
+.account-menu.account-menu--dark .dropdown-item {
+  color: #e6e7eb;
+}
+
+.account-menu.account-menu--dark .dropdown-item:hover,
+.account-menu.account-menu--dark .dropdown-item:focus,
+.account-menu.account-menu--dark .dropdown-item.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.account-menu.account-menu--dark .dropdown-divider {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
 </style>

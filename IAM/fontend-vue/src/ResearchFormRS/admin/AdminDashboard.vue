@@ -15,11 +15,14 @@
         <CCol sm="6" lg="3" class="mb-3" v-for="card in summaryRow1" :key="card.status">
           <div
             class="summary-card"
-            :class="[`border-${card.borderColor}`, { active: selectedStatus === card.status }]"
+            :class="[card.toneClass, { active: selectedStatus === card.status }]"
             @click="onCardClick(card.status)"
           >
-            <small class="text-muted">{{ card.label }}</small>
-            <div class="summary-number">{{ summary[card.status] || 0 }}</div>
+            <div class="summary-card-bg" aria-hidden="true"></div>
+            <div class="summary-card-content">
+              <small class="summary-label">{{ card.label }}</small>
+              <div class="summary-number">{{ summary[card.status] || 0 }}</div>
+            </div>
           </div>
         </CCol>
       </CRow>
@@ -28,11 +31,14 @@
         <CCol sm="6" lg="3" class="mb-3" v-for="card in summaryRow2" :key="card.status">
           <div
             class="summary-card"
-            :class="[`border-${card.borderColor}`, { active: selectedStatus === card.status }]"
+            :class="[card.toneClass, { active: selectedStatus === card.status }]"
             @click="onCardClick(card.status)"
           >
-            <small class="text-muted">{{ card.label }}</small>
-            <div class="summary-number">{{ summary[card.status] || 0 }}</div>
+            <div class="summary-card-bg" aria-hidden="true"></div>
+            <div class="summary-card-content">
+              <small class="summary-label">{{ card.label }}</small>
+              <div class="summary-number">{{ summary[card.status] || 0 }}</div>
+            </div>
           </div>
         </CCol>
       </CRow>
@@ -41,11 +47,14 @@
         <CCol sm="6" lg="3" class="mb-3" v-for="card in summaryRow3" :key="card.status">
           <div
             class="summary-card summary-card-small"
-            :class="[`border-${card.borderColor}`, { active: selectedStatus === card.status }]"
+            :class="[card.toneClass, { active: selectedStatus === card.status }]"
             @click="onCardClick(card.status)"
           >
-            <small class="text-muted">{{ card.label }}</small>
-            <div class="summary-number">{{ summary[card.status] || 0 }}</div>
+            <div class="summary-card-bg" aria-hidden="true"></div>
+            <div class="summary-card-content">
+              <small class="summary-label">{{ card.label }}</small>
+              <div class="summary-number">{{ summary[card.status] || 0 }}</div>
+            </div>
           </div>
         </CCol>
       </CRow>
@@ -407,16 +416,16 @@ const STATUS_COLORS = {
 }
 
 const SUMMARY_CARDS = {
-  draft: { label: 'แบบร่าง', borderColor: 'secondary' },
-  submitted: { label: 'ยื่นแล้ว', borderColor: 'info' },
-  faculty_review_pending: { label: 'รอประธานพิจารณา', borderColor: 'warning' },
-  document_checking: { label: 'ตรวจสอบเอกสาร', borderColor: 'warning' },
-  assigned_to_committee: { label: 'มอบหมายกรรมการแล้ว', borderColor: 'info' },
-  under_review: { label: 'กำลังพิจารณา', borderColor: 'danger' },
-  revision_requested: { label: 'ขอแก้ไข', borderColor: 'danger' },
-  approved: { label: 'อนุมัติ', borderColor: 'success' },
-  rejected: { label: 'ปฏิเสธ', borderColor: 'danger' },
-  announced: { label: 'ประกาศผลแล้ว', borderColor: 'primary' }
+  draft: { label: 'แบบร่าง', toneClass: 'summary-tone-draft' },
+  submitted: { label: 'ยื่นแล้ว', toneClass: 'summary-tone-submitted' },
+  faculty_review_pending: { label: 'รอประธานพิจารณา', toneClass: 'summary-tone-meeting' },
+  document_checking: { label: 'ตรวจสอบเอกสาร', toneClass: 'summary-tone-checking' },
+  assigned_to_committee: { label: 'มอบหมายกรรมการแล้ว', toneClass: 'summary-tone-assigned' },
+  under_review: { label: 'กำลังพิจารณา', toneClass: 'summary-tone-review' },
+  revision_requested: { label: 'ขอแก้ไข', toneClass: 'summary-tone-revision' },
+  approved: { label: 'อนุมัติ', toneClass: 'summary-tone-approved' },
+  rejected: { label: 'ปฏิเสธ', toneClass: 'summary-tone-rejected' },
+  announced: { label: 'ประกาศผลแล้ว', toneClass: 'summary-tone-announced' }
 }
 
 const STATUS_KEYS = [
@@ -904,33 +913,139 @@ export default {
 
 <style scoped>
 .summary-card {
-  background: #ffffff;
-  border: 1px solid #e9ecef;
-  border-left-width: 5px;
-  border-radius: 8px;
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
   padding: 14px 16px;
+  min-height: 108px;
   cursor: pointer;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transform: scale(1);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  isolation: isolate;
 }
 
 .summary-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
 }
 
 .summary-card.active {
-  box-shadow: 0 0 0 2px rgba(50, 31, 219, 0.15);
+  transform: scale(1.02);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 10px 24px rgba(15, 23, 42, 0.24);
 }
 
 .summary-card-small {
-  padding-top: 12px;
-  padding-bottom: 12px;
+  min-height: 98px;
+}
+
+.summary-card-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  z-index: 1;
+  background: linear-gradient(135deg, var(--summary-start, #4f46e5), var(--summary-end, #3730a3));
+}
+
+.summary-card-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--summary-graphic);
+  background-repeat: no-repeat;
+  background-size: 122px 122px;
+  background-position: calc(100% + 10px) -12px;
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+.summary-card-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 60%);
+  pointer-events: none;
+}
+
+.summary-card-content {
+  position: relative;
+  z-index: 2;
+}
+
+.summary-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  font-size: 0.8rem;
 }
 
 .summary-number {
   font-size: 1.75rem;
   font-weight: 700;
   line-height: 1.1;
+  color: #ffffff;
+  margin-top: 6px;
+}
+
+.summary-tone-draft {
+  --summary-start: #4f46e5;
+  --summary-end: #3730a3;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='26' y='18' width='68' height='84' rx='10' fill='white' fill-opacity='0.9'/%3E%3Crect x='38' y='38' width='44' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='52' width='40' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='66' width='33' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Cpath d='M84 18v20h20' fill='white' fill-opacity='0.72'/%3E%3C/svg%3E");
+}
+
+.summary-tone-submitted {
+  --summary-start: #0ea5e9;
+  --summary-end: #0369a1;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='36' cy='36' r='11' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='84' cy='60' r='11' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='44' cy='88' r='11' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M44 36h28M75 41l8-5-8-5M75 84l8 5-8 5M54 83l23-16' stroke='%23000000' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
+}
+
+.summary-tone-meeting {
+  --summary-start: #f59e0b;
+  --summary-end: #d97706;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='20' y='24' width='80' height='72' rx='12' fill='white' fill-opacity='0.9'/%3E%3Crect x='20' y='36' width='80' height='14' fill='%23000000' fill-opacity='0.13'/%3E%3Ccircle cx='38' cy='64' r='7' fill='%23000000' fill-opacity='0.18'/%3E%3Ccircle cx='60' cy='64' r='7' fill='%23000000' fill-opacity='0.18'/%3E%3Ccircle cx='82' cy='64' r='7' fill='%23000000' fill-opacity='0.18'/%3E%3C/svg%3E");
+}
+
+.summary-tone-checking {
+  --summary-start: #0f766e;
+  --summary-end: #115e59;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='20' width='70' height='84' rx='12' fill='white' fill-opacity='0.9'/%3E%3Crect x='36' y='40' width='38' height='5' rx='2.5' fill='%23000000' fill-opacity='0.18'/%3E%3Crect x='36' y='54' width='30' height='5' rx='2.5' fill='%23000000' fill-opacity='0.18'/%3E%3Ccircle cx='79' cy='74' r='12' fill='white' fill-opacity='0.85'/%3E%3Cpath d='M88 84l10 10' stroke='%23000000' stroke-width='4' stroke-linecap='round' stroke-opacity='0.22'/%3E%3C/svg%3E");
+}
+
+.summary-tone-assigned {
+  --summary-start: #0284c7;
+  --summary-end: #1d4ed8;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='38' cy='46' r='12' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='62' cy='40' r='10' fill='white' fill-opacity='0.86'/%3E%3Ccircle cx='83' cy='48' r='11' fill='white' fill-opacity='0.82'/%3E%3Crect x='28' y='64' width='62' height='26' rx='13' fill='white' fill-opacity='0.72'/%3E%3C/svg%3E");
+}
+
+.summary-tone-review {
+  --summary-start: #f97316;
+  --summary-end: #ea580c;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M60 42v18l14 10' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
+}
+
+.summary-tone-revision {
+  --summary-start: #ef4444;
+  --summary-end: #dc2626;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='20' width='72' height='80' rx='12' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M42 74l10 10 24-24' stroke='%23000000' stroke-width='6' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3Cpath d='M72 34l12 12M61 45l23-23 12 12-23 23H61z' fill='%23000000' fill-opacity='0.2'/%3E%3C/svg%3E");
+}
+
+.summary-tone-approved {
+  --summary-start: #16a34a;
+  --summary-end: #15803d;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
+}
+
+.summary-tone-rejected {
+  --summary-start: #dc2626;
+  --summary-end: #b91c1c;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 46l28 28M74 46L46 74' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-opacity='0.24' fill='none'/%3E%3C/svg%3E");
+}
+
+.summary-tone-announced {
+  --summary-start: #6366f1;
+  --summary-end: #4f46e5;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M24 70h56l20 18V32L80 50H24z' fill='white' fill-opacity='0.88'/%3E%3Ccircle cx='36' cy='86' r='6' fill='white' fill-opacity='0.7'/%3E%3Ccircle cx='56' cy='86' r='6' fill='white' fill-opacity='0.58'/%3E%3C/svg%3E");
 }
 
 .admin-actions {
@@ -1058,5 +1173,17 @@ export default {
 .status-modal-remark-label {
   margin-top: 0.25rem;
   margin-bottom: 0.5rem;
+}
+
+@media (max-width: 991.98px) {
+  .summary-card {
+    min-height: 102px;
+  }
+
+  .summary-card-bg::before {
+    background-size: 108px 108px;
+    background-position: calc(100% + 4px) -8px;
+    opacity: 0.2;
+  }
 }
 </style>

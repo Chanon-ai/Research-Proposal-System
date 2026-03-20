@@ -322,6 +322,7 @@ export default {
 
 .notification-sender {
   color: var(--notif-sender, #4b5563);
+  min-width: 0;
 }
 
 .notification-top-line {
@@ -345,9 +346,10 @@ export default {
   color: var(--notif-title, #1f2937);
   line-height: 1.25;
   margin-bottom: 2px;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .notification-title.is-unread {
@@ -387,12 +389,16 @@ export default {
 }
 
 :deep(.notification-menu) {
-  width: 480px;
-  max-width: calc(100vw - 24px);
+  width: 440px;
+  min-width: 420px;
+  max-width: min(460px, calc(100vw - 20px));
   max-height: min(560px, calc(100vh - 90px));
   overflow: hidden;
   border-radius: 0.7rem;
   padding-bottom: 0;
+  left: auto !important;
+  right: -10px !important;
+  transform: translate3d(0, 0, 0) !important;
   --notif-dropdown-bg: var(--cui-dropdown-bg, #fff);
   --notif-header-bg: var(--cui-tertiary-bg, #f8f9fa);
   --notif-item-bg: transparent;
@@ -547,7 +553,10 @@ export default {
   }
 
   :deep(.notification-menu) {
-    width: min(360px, calc(100vw - 20px));
+    min-width: 0;
+    width: min(360px, calc(100vw - 16px));
+    max-width: calc(100vw - 16px);
+    right: 0 !important;
   }
 }
 </style>

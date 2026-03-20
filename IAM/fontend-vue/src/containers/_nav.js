@@ -16,15 +16,18 @@ export default [{
       items: [
         {
           name: 'User Dashboard',
-          to: '/userdashboard'
+          to: '/userdashboard',
+          roles: ['researcher', 'chairman']
         },
         {
           name: 'Profile',
-          to: '/user/profile'
+          to: '/user/profile',
+          roles: ['chairman']
         },
         {
           name: 'History',
-          to: '/user/history'
+          to: '/user/history',
+          roles: ['chairman']
         }
       ]
     },
@@ -38,10 +41,6 @@ export default [{
         {
           name: 'Admin Dashboard',
           to: '/admin/dashboard'
-        },
-        {
-          name: 'Proposal List',
-          to: '/admin/proposals'
         },
         {
           name: 'Documents',
