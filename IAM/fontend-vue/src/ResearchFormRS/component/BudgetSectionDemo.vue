@@ -910,6 +910,54 @@ export default {
   min-height: 38px;
 }
 
+/* =========================================================
+   Responsive: Summary box (installments) on small screens
+   - Align title/criteria/amounts to the left
+   - Stack each period with a top divider instead of left divider
+   ========================================================= */
+@media (max-width: 768px) {
+  .budget-section-container ::v-deep .row.text-center.align-items-center {
+    text-align: left !important;
+  }
+
+  .budget-section-container ::v-deep .row.text-center.align-items-center .text-right {
+    text-align: left !important;
+  }
+
+  .budget-section-container ::v-deep .row.text-center.align-items-center > [class*="col-"] {
+    text-align: left !important;
+  }
+
+  .budget-section-container ::v-deep .row.text-center.align-items-center .border-left {
+    border-left: 0 !important;
+    border-top: 1px solid rgba(234, 223, 206, 0.95) !important;
+    padding-top: 10px;
+    margin-top: 10px;
+  }
+
+  /* First period column is the 2nd child in this row (after the title column). */
+  .budget-section-container ::v-deep .row.text-center.align-items-center > div.border-left:nth-child(2) {
+    border-top: 0 !important;
+    padding-top: 0;
+    margin-top: 0;
+  }
+}
+
+/* Category header actions: on small screens stack buttons (1 per line) aligned to the right */
+@media (max-width: 576px) {
+  .budget-section-container ::v-deep .card-header.text-white.d-flex.justify-content-between.align-items-center > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .budget-section-container ::v-deep .card-header.text-white.d-flex.justify-content-between.align-items-center > div .mr-2 {
+    margin-right: 0 !important;
+  }
+}
+
 /* Floating Label Outline CSS */
 .floating-outline-wrap {
   position: relative;

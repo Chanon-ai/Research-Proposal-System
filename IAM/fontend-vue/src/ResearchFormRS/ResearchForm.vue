@@ -1,5 +1,11 @@
 <template>
-  <div class="research-form" :class="{ 'research-form--has-admin-actions': showAdminFooterBar }">
+  <div
+    class="research-form"
+    :class="{
+      'research-form--has-admin-actions': showAdminFooterBar,
+      'research-form--draft': isDraftStatus && !isAdminView
+    }"
+  >
     <div class="container-fluid">
       <div class="row">
         <div class="col-12">
@@ -463,11 +469,34 @@
 
       <!-- Footer with action buttons -->
       <div v-if="showFooterBar" class="footer-fixed" :style="{ left: isSidebarOpen ? '256px' : '0px' }">
-        <div class="d-flex justify-content-between align-items-center w-100 px-3">
+        <div class="d-flex justify-content-between align-items-center w-100 px-2">
 
           <div class="d-flex align-items-center" style="gap: 12px;">
             <span class="me-2 fw-bold text-muted">สถานะ:</span>
             <StatusBadge :status="currentStatus" role="researcher" />
+            <span
+              v-if="isAutoSaving || isDraftSaving"
+              class="save-indicator save-indicator--saving"
+              title="Saving"
+              aria-label="Saving"
+            >
+              <CSpinner size="sm" />
+            </span>
+            <span
+              v-else-if="isDraftSaved"
+              class="save-indicator save-indicator--saved"
+              title="Saved"
+              aria-label="Saved"
+            >
+              <i class="cil-check-circle"></i>
+            </span>
+            <span
+              v-if="isAutoSaving || isDraftSaving"
+              class="save-hint"
+              title="บันทึกอัตโนมัติ"
+            >
+              กำลังเซฟ
+            </span>
           </div>
 
           <div class="d-flex justify-content-end" style="gap: 12px;">
@@ -486,15 +515,6 @@
             >
               <i class="cil-trash me-2"></i>
               ลบโครงการ
-            </button>
-
-            <button v-if="showDraftActions" type="button" class="btn btn-lg text-white" :style="{
-              backgroundColor: isDraftSaved ? '#6c757d' : '#8b1212',
-              borderColor: isDraftSaved ? '#6c757d' : '#8b1212',
-              cursor: isDraftSaved ? 'not-allowed' : 'pointer'
-            }" :disabled="isDraftSaved" @click="saveDraft">
-              <i class="cil-save me-2"></i>
-              {{ isDraftSaved ? 'บันทึกแล้ว' : 'บันทึกฉบับร่าง' }}
             </button>
 
             <button v-if="showDraftActions" type="button" class="btn btn-lg text-white"
@@ -526,7 +546,7 @@
 
       <!-- Admin footer actions (Detail view) -->
       <div v-if="showAdminFooterBar" class="footer-fixed admin-footer-fixed" :style="{ left: isSidebarOpen ? '256px' : '0px' }">
-        <div class="d-flex justify-content-between align-items-center w-100 px-3 flex-wrap" style="gap: 12px;">
+        <div class="d-flex justify-content-between align-items-center w-100 px-2 flex-wrap" style="gap: 12px;">
           <div class="d-flex align-items-center" style="gap: 12px;">
             <span class="fw-bold text-muted">การดำเนินการ:</span>
             <StatusBadge :status="currentStatus" role="admin" />
@@ -898,10 +918,12 @@ export default {
     ReportView
   },
   data() {
-    return {
-      isReadOnly: false,
-      viewProposalId: null,
-      isAdminView: false,
+      return {
+        // Used to determine "responsive" sidebar behavior across all viewport sizes.
+        windowWidth: (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1200,
+        isReadOnly: false,
+        viewProposalId: null,
+        isAdminView: false,
       adminShowStatusModal: false,
       adminNewStatus: '',
       adminStatusRemark: '',
@@ -932,6 +954,7 @@ export default {
         status: 'scheduled'
       },
       isDraftSaved: false,
+      isDraftSaving: false,
       currentStatus: 'draft',
       showSubmitButton: false,
       reviewsLoading: false,
@@ -1002,6 +1025,19 @@ export default {
     }
   },
   async mounted() {
+    // Keep windowWidth reactive so computed sidebar behavior updates on resize.
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      this._rfResizeHandler = () => {
+        this.windowWidth = window.innerWidth || this.windowWidth
+      }
+      this._rfResizeHandler()
+      try {
+        window.addEventListener('resize', this._rfResizeHandler, { passive: true })
+      } catch (_) {
+        window.addEventListener('resize', this._rfResizeHandler)
+      }
+    }
+
     // Sync research team data when component is mounted
     this.syncResearchTeamData();
 
@@ -1047,6 +1083,10 @@ export default {
   beforeDestroy () {
     this.clearAutoSaveTimer()
     this.clearBudgetAutoSaveTimer()
+    if (typeof window !== 'undefined' && window.removeEventListener && this._rfResizeHandler) {
+      window.removeEventListener('resize', this._rfResizeHandler)
+      this._rfResizeHandler = null
+    }
   },
   computed: {
     effectiveReadOnly () {
@@ -1252,7 +1292,10 @@ export default {
       // ดึงสถานะเปิด/ปิด Sidebar มาจากตัวแปรส่วนกลาง
       const show = this.$store.state.sidebarShow;
       // CoreUI มักจะเก็บค่าเป็น boolean (true/false) หรือสตริง 'responsive'
-      return show === true || show === 'responsive';
+      if (show === true) return true
+      if (show === false) return false
+      // 'responsive' means: show on desktop, overlay/hidden on smaller screens.
+      return show === 'responsive' && Number(this.windowWidth) >= 992
     }
   },
   watch: {
@@ -2928,9 +2971,12 @@ export default {
       this.clearAutoSaveTimer()
       this.clearBudgetAutoSaveTimer()
       try {
+        this.isDraftSaving = true
         await this.persistDraft({ silent: false })
       } catch (err) {
         void err
+      } finally {
+        this.isDraftSaving = false
       }
     },
 
@@ -3627,6 +3673,11 @@ export default {
   padding-bottom: 110px;
 }
 
+/* Draft: hide the bottom "note" block in SignatureCard (shown just above the status footer) */
+.research-form--draft ::v-deep .signature-card .alert.alert-info {
+  display: none;
+}
+
 .research-form h2 {
   color: white;
   font-weight: 800;
@@ -3852,6 +3903,9 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
+  /* Footer button rhythm (desktop defaults) */
+  --rf-footer-btn-gap: 0.55rem;
+  --rf-footer-btn-px: 16px;
   z-index: 1000;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -3864,6 +3918,81 @@ export default {
 
 .footer-fixed .btn {
   white-space: nowrap;
+}
+
+.footer-fixed .btn.btn-lg {
+  /* Make label vertically centered and keep top/bottom padding visually equal */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rf-footer-btn-gap);
+  line-height: 1.05;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: var(--rf-footer-btn-px);
+  padding-right: var(--rf-footer-btn-px);
+}
+
+.footer-fixed .btn.btn-lg i {
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  align-self: center;
+  vertical-align: middle;
+}
+
+.footer-fixed .btn.btn-lg .me-2 {
+  /* Use flex gap for spacing; neutralize bootstrap margin so left/right feels balanced */
+  margin-right: 0 !important;
+}
+
+.footer-fixed .btn.btn-lg svg,
+.footer-fixed .btn.btn-lg .c-icon {
+  height: 1em;
+  width: 1em;
+  flex: 0 0 auto;
+  align-self: center;
+  vertical-align: middle;
+}
+
+.footer-fixed .save-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(139, 18, 18, 0.22);
+  color: #8b1212;
+}
+
+.footer-fixed .save-indicator .spinner-border {
+  width: 14px;
+  height: 14px;
+  border-width: 0.14em;
+}
+
+.footer-fixed .save-indicator--saved {
+  background: rgba(197, 155, 58, 0.14);
+  border-color: rgba(197, 155, 58, 0.42);
+  color: #8b1212;
+}
+
+.footer-fixed .save-hint {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-left: -4px;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .footer-fixed .save-hint {
+    display: none;
+  }
 }
 
 .admin-footer-fixed {
@@ -3904,6 +4033,13 @@ export default {
     overflow-x: hidden;
   }
 
+  /* Give modals a bit more outer left/right breathing room on small screens */
+  .research-form ::v-deep .modal-dialog {
+    margin-left: 14px;
+    margin-right: 14px;
+    max-width: calc(100% - 28px);
+  }
+
   .btn {
     display: block;
     width: 100%;
@@ -3919,21 +4055,51 @@ export default {
 
   .footer-fixed {
     padding: 10px 12px;
+    --rf-footer-btn-gap: 0.44rem;
+    --rf-footer-btn-px: 10px;
+  }
+
+  /* Status badge: scale down on small screens to match the compact buttons */
+  .footer-fixed ::v-deep .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    line-height: 1.05;
+    padding: 6px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
   }
 
   .footer-fixed .btn {
     display: inline-flex;
     width: auto;
     margin-bottom: 0;
+    justify-content: center;
+    text-align: center;
   }
 
   .footer-fixed .btn.btn-lg {
-    padding: 8px 12px;
-    font-size: 0.95rem;
+    padding: 7px 10px;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    line-height: 1.05;
+    padding-top: 7px;
+    padding-bottom: 7px;
   }
 
   .footer-fixed .d-flex {
     flex-wrap: wrap;
+  }
+
+  /* Tighten spacing between action buttons on mobile */
+  .footer-fixed .d-flex.justify-content-end {
+    gap: 8px !important;
+  }
+
+  /* Reduce icon gap a bit (bootstrap .me-2) */
+  .footer-fixed .btn.btn-lg .me-2 {
+    margin-right: 0 !important;
   }
 
   .feedback-fix-card__head {
@@ -3947,6 +4113,32 @@ export default {
   .feedback-workspace-card__actions {
     width: 100%;
     justify-content: space-between;
+  }
+}
+
+@media (max-width: 520px) {
+  .footer-fixed .btn.btn-lg {
+    padding: 6px 8px;
+    font-size: 0.84rem;
+    border-radius: 9px;
+    line-height: 1.05;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .footer-fixed .btn.btn-lg .me-2 {
+    margin-right: 0 !important;
+  }
+
+  .footer-fixed {
+    --rf-footer-btn-gap: 0.38rem;
+    --rf-footer-btn-px: 8px;
+  }
+
+  .footer-fixed ::v-deep .badge {
+    font-size: 0.74rem;
+    padding: 5px 7px;
+    border-radius: 9px;
   }
 }
 

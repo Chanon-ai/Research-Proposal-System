@@ -333,7 +333,9 @@ export default {
 
 .table-wrapper {
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid rgba(234, 223, 206, 0.95);
   box-shadow: 0 14px 28px rgba(2, 6, 23, 0.08);
   background: linear-gradient(135deg, var(--rf-accent, #8b1212), rgba(139, 18, 18, 0.92));

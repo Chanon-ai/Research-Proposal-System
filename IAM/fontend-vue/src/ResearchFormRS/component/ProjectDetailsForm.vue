@@ -796,7 +796,8 @@ export default {
     padding: 10px 15px;
   }
   .project-details-form {
-    padding-bottom: 140px;
+    /* Footer spacing is handled by ResearchForm page; avoid large blank gap before next section */
+    padding-bottom: 0 !important;
   }
   .footer-fixed .btn {
     font-size: 0.9rem;

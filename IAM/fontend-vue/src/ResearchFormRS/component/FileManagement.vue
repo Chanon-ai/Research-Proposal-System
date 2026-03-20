@@ -3,7 +3,7 @@
     <div class="card shadow-sm border-0">
       <div class="card-body p-4 bg-white">
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="file-header d-flex justify-content-between align-items-center mb-3">
           <div>
             <h5 class="mb-1 font-weight-bold text-dark">
               อัปโหลดเอกสารประกอบ
@@ -20,7 +20,7 @@
             @click="$refs.fileInput.click()"
           >
             <CIcon name="cil-paperclip" class="me-1"/>
-            เลือกไฟล์เพื่ออัปโหลด
+             อัปโหลดไฟล์
           </button>
 
           <input
@@ -174,17 +174,35 @@ export default {
 <style scoped>
 .card {
   border: 1px solid rgba(234, 223, 206, 0.95);
-  border-radius: 12px;
+  border-radius: 14px;
+  overflow: hidden; /* ensure inner white background clips to rounded corners */
+  background: #ffffff;
 }
 
 .card-body {
-  background: #ffffff;
+  background: transparent;
+}
+
+.container-fluid.p-0.mt-4 {
+  /* Override Bootstrap .mt-4 (uses !important) so section spacing is consistent */
+  margin-top: 12px !important;
+}
+
+.file-header {
+  gap: 12px;
+  flex-wrap: wrap;
+  /* Override Bootstrap .mb-3 (uses !important) */
+  margin-bottom: 10px !important;
 }
 
 .btn-outline-dark {
   border-color: rgba(139, 18, 18, 0.40);
   color: #8b1212;
   background: rgba(255, 255, 255, 0.90);
+}
+
+.file-header .btn-outline-dark {
+  white-space: nowrap;
 }
 
 .btn-outline-dark:hover {
@@ -202,6 +220,20 @@ export default {
   vertical-align: middle;
 }
 
+/* Action cell: this <td> currently uses Bootstrap .d-flex which breaks table-cell centering */
+.table td.d-flex.justify-content-center {
+  display: table-cell !important;
+  vertical-align: middle !important;
+  white-space: nowrap;
+}
+
+.table td.d-flex.justify-content-center > .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 6px;
+}
+
 .table-bordered th,
 .table-bordered td {
   border-color: rgba(139, 18, 18, 0.30) !important;
@@ -214,10 +246,12 @@ export default {
 
 .table-responsive {
   /* Fix corner artifacts: clip table header/background to rounded container */
-  border-radius: 12px;
-  overflow: hidden;
+  border-radius: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
   border: 1.5px solid rgba(139, 18, 18, 0.30);
   background: #fff;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table.table-bordered {
@@ -236,6 +270,7 @@ export default {
 .btn-outline-info,
 .btn-outline-danger {
   padding: 2px 8px;
+  white-space: nowrap;
 }
 
 /* Light red header (force override against page-level table styles) */
@@ -243,6 +278,7 @@ export default {
 .table thead th {
   background: rgba(139, 18, 18, 0.10) !important;
   color: #111827 !important;
+  white-space: nowrap;
   /* Match gridline color/weight with table body */
   border-color: rgba(139, 18, 18, 0.30) !important;
   border-width: 1.5px !important;
@@ -255,6 +291,65 @@ export default {
 
 .text-primary {
   color: #8b1212 !important;
+}
+
+@media (max-width: 992px) {
+  /* Many phones/tablets are wider than 576px in landscape; still keep spacing tight */
+  .container-fluid.p-0.mt-4 {
+    margin-top: 12px !important;
+  }
+
+  .file-header.mb-3 {
+    margin-bottom: 10px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  /* Keep left/right spacing visually balanced on narrow screens */
+  .container-fluid.p-0.mt-4 {
+    margin-top: 12px !important;
+  }
+
+  .card-body {
+    padding: 16px !important;
+  }
+
+  .file-header {
+    align-items: flex-start !important;
+  }
+
+  .file-header > button.btn {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Force horizontal scroll instead of squeezing columns on small screens */
+  .table.table-bordered {
+    min-width: 720px;
+  }
+}
+
+@media (max-width: 576px) {
+  /* On phones: stack icon + label (2 lines) for better readability */
+  td .btn.btn-sm.btn-outline-info,
+  td .btn.btn-sm.btn-outline-danger {
+    min-width: 64px;
+    padding: 6px 8px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.1;
+    gap: 4px;
+  }
+
+  td .btn.btn-sm.btn-outline-info .c-icon,
+  td .btn.btn-sm.btn-outline-danger .c-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 0 !important; /* neutralize .me-1 */
+  }
 }
 
 .italic {
