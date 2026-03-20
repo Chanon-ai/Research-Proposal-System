@@ -54,9 +54,6 @@
               @change="onFilterStatusChange"
             />
           </CCol>
-          <CCol md="3" lg="2">
-            <CButton color="secondary" variant="outline" block class="filter-reset-btn" @click="onReset">ล้างตัวกรอง</CButton>
-          </CCol>
         </CRow>
 
         <div class="filter-card__bottom-actions">
@@ -114,60 +111,61 @@
             </span>
           </div>
 
-          <div class="meeting-card__body">
-            <h5 class="meeting-card__title">{{ meeting.title || '-' }}</h5>
-            <div class="meeting-card__meta">
-              <CWidgetIcon
-                class="meeting-card__meta-widget"
-                :header="formatDate(meeting.meetingDate)"
-                text="วันที่ประชุม"
-                color="gradient-primary"
-                :icon-padding="false"
-              >
-                <CIcon name="cil-calendar" width="24" />
-              </CWidgetIcon>
-              <CWidgetIcon
-                class="meeting-card__meta-widget"
-                :header="`${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`"
-                text="เวลา"
-                color="gradient-info"
-                :icon-padding="false"
-              >
-                <CIcon name="cil-clock" width="24" />
-              </CWidgetIcon>
+          <div class="meeting-card__content">
+            <div class="meeting-card__body">
+              <h5 class="meeting-card__title">{{ meeting.title || '-' }}</h5>
+              <div class="meeting-card__meta">
+                <CWidgetIcon
+                  class="meeting-card__meta-widget"
+                  :header="formatDate(meeting.meetingDate)"
+                  text="วันที่ประชุม"
+                  color="gradient-primary"
+                  :icon-padding="false"
+                >
+                  <CIcon name="cil-calendar" width="24" />
+                </CWidgetIcon>
+                <CWidgetIcon
+                  class="meeting-card__meta-widget"
+                  :header="`${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`"
+                  text="เวลา"
+                  color="gradient-info"
+                  :icon-padding="false"
+                >
+                  <CIcon name="cil-clock" width="24" />
+                </CWidgetIcon>
+              </div>
+
+              <div class="meeting-card__detail-list">
+                <div class="meeting-card__detail">
+                  <span class="meeting-card__detail-key">รูปแบบ</span>
+                  <span class="meeting-card__detail-value">{{ getMeetingModeLabel(meeting) }}</span>
+                </div>
+                <div class="meeting-card__detail">
+                  <span class="meeting-card__detail-key">สถานที่</span>
+                  <span class="meeting-card__detail-value">{{ meeting.location || '-' }}</span>
+                </div>
+                <div class="meeting-card__detail">
+                  <span class="meeting-card__detail-key">ลิงก์ประชุม</span>
+                  <span class="meeting-card__detail-value">
+                    <template v-if="meeting.videoLink">
+                      <a :href="meeting.videoLink" target="_blank" rel="noopener noreferrer">{{ meeting.videoLink }}</a>
+                    </template>
+                    <template v-else>-</template>
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <div class="meeting-card__detail-list">
-              <div class="meeting-card__detail">
-                <span class="meeting-card__detail-key">รูปแบบ</span>
-                <span class="meeting-card__detail-value">{{ getMeetingModeLabel(meeting) }}</span>
-              </div>
-              <div class="meeting-card__detail">
-                <span class="meeting-card__detail-key">สถานที่</span>
-                <span class="meeting-card__detail-value">{{ meeting.location || '-' }}</span>
-              </div>
-              <div class="meeting-card__detail">
-                <span class="meeting-card__detail-key">ลิงก์ประชุม</span>
-                <span class="meeting-card__detail-value">
-                  <template v-if="meeting.videoLink">
-                    <a :href="meeting.videoLink" target="_blank" rel="noopener noreferrer">{{ meeting.videoLink }}</a>
-                  </template>
-                  <template v-else>-</template>
-                </span>
-              </div>
+            <div class="meeting-card__footer">
+              <CButton
+                size="sm"
+                block
+                :color="meeting.status === 'completed' ? 'secondary' : 'primary'"
+                @click.stop="openMinutesModal(meeting)"
+              >
+                {{ meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม' }}
+              </CButton>
             </div>
-
-          </div>
-
-          <div class="meeting-card__footer">
-            <CButton
-              size="sm"
-              block
-              :color="meeting.status === 'completed' ? 'secondary' : 'primary'"
-              @click="openMinutesModal(meeting)"
-            >
-              {{ meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม' }}
-            </CButton>
           </div>
         </div>
       </div>
@@ -1087,11 +1085,6 @@ export default {
   font-size: 0.88rem;
 }
 
-.filter-reset-btn {
-  min-height: 44px;
-  border-radius: 12px;
-}
-
 .filter-card__bottom-actions {
   margin-top: 14px;
   display: flex;
@@ -1108,18 +1101,23 @@ export default {
 
 .meeting-card {
   --status-rgb: 59, 130, 246;
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 480px;
   border: 1px solid rgba(148, 163, 184, 0.35);
-  border-radius: 20px;
-  padding: 18px;
-  background: #ffffff;
+  border-radius: 26px;
+  padding: 0;
+  background: linear-gradient(90deg, rgba(var(--status-rgb), 0.92), rgba(var(--status-rgb), 0.74));
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   overflow: hidden;
   outline: none;
+}
+
+.meeting-card::before {
+  content: none;
 }
 
 .meeting-card--selected {
@@ -1139,17 +1137,49 @@ export default {
 }
 
 .meeting-card__top {
+  position: relative;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
-  margin-left: -18px;
-  margin-right: -18px;
-  margin-top: -18px;
-  padding: 12px 18px;
-  background: linear-gradient(90deg, rgba(var(--status-rgb), 0.22), rgba(var(--status-rgb), 0.08));
-  border-bottom: 1px solid rgba(var(--status-rgb), 0.18);
+  min-height: 42px;
+  padding: 14px 18px 14px;
+  background: transparent;
+  border-top-left-radius: 26px;
+  border-top-right-radius: 26px;
+}
+
+.meeting-card__top::before {
+  content: none;
+}
+
+.meeting-card__top::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(1200px 260px at 12% 0%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 60%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.meeting-card__top > * {
+  position: relative;
+  z-index: 2;
+}
+
+.meeting-card__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-top-left-radius: 26px;
+  border-top-right-radius: 26px;
+  border-bottom-left-radius: 26px;
+  border-bottom-right-radius: 26px;
+  margin-top: 0;
+  padding: 18px;
+  box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .meeting-card__actions {
@@ -1161,14 +1191,18 @@ export default {
   padding: 6px 10px;
   border-radius: 999px;
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  background-color: rgba(255, 255, 255, 0.22) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(15, 23, 42, 0.25);
 }
 
 .meeting-card__participant-pill {
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(var(--status-rgb), 0.22);
-  color: rgb(15, 23, 42);
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
   font-size: 0.85rem;
   font-weight: 600;
   line-height: 1;
@@ -1176,10 +1210,12 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+  text-shadow: 0 1px 1px rgba(15, 23, 42, 0.25);
 }
 
 .meeting-card__participant-ic {
-  color: rgba(var(--status-rgb), 0.92);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .meeting-card.scheduled {
@@ -1196,6 +1232,8 @@ export default {
 
 .meeting-card__body {
   flex: 1;
+  position: relative;
+  z-index: 2;
 }
 
 .meeting-card__title {
@@ -1313,12 +1351,10 @@ export default {
 
 .meeting-card.completed {
   border-color: rgba(34, 197, 94, 0.35);
-  background: linear-gradient(180deg, #ffffff, #f3fff7);
 }
 
 .meeting-card.cancelled {
   border-color: rgba(239, 68, 68, 0.3);
-  background: linear-gradient(180deg, #ffffff, #fff5f5);
   opacity: 0.88;
 }
 
