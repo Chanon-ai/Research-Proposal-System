@@ -540,7 +540,6 @@ exports.onUpdateAccount = async function (request, response, next) {
         const code = payload.code ? String(payload.code).trim() : '';
         const cardId = payload.cardId ? String(payload.cardId).trim() : '';
         const msisdn = payload.msisdn ? String(payload.msisdn).trim() : '';
-        const lineId = payload.lineId ? String(payload.lineId).trim() : '';
         const religion = payload.religion ? String(payload.religion).trim() : '';
         const image = payload.image ? String(payload.image).trim() : '';
         const birthday = normalizeDateInput(payload.birthday);
@@ -562,7 +561,6 @@ exports.onUpdateAccount = async function (request, response, next) {
                 cardId: cardId || null,
                 birthday: birthday,
                 msisdn: msisdn || null,
-                lineId: lineId || null,
                 religion: religion || null
             })
         };

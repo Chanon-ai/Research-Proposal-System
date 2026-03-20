@@ -149,7 +149,6 @@ Account {
     cardId        : String             — เลขบัตรประชาชน 13 หลัก
     birthday      : Date
     msisdn        : String             — เบอร์โทรศัพท์
-    lineId        : String
     religion      : String
   }
   address[]       : [{

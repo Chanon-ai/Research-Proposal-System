@@ -7,7 +7,6 @@
       </label>
       <CRow>
         <CCol md="6" col="12"><CPInput v-model="value.msisdn" label="Phone" placeholder="" /></CCol>
-        <CCol md="6" col="12"><CPInput v-model="value.lineId" label="Line ID" placeholder="" /></CCol>
       </CRow>
       <CRow>
         <CCol md="6" col="12"><CPInput v-model="value.religion" label="Religion" placeholder="" /></CCol>
