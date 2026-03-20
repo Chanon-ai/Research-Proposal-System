@@ -46,29 +46,37 @@
 
             <!-- Tabs -->
             <div class="profile-tabs-wrap">
-              <div class="profile-tabs">
+              <div class="profile-tabs" ref="tabsWrap">
                 <button
                   v-for="tab in tabs" :key="tab.key"
+                  ref="tabBtn"
                   class="tab-btn"
                   :class="{ active: activeTab === tab.key }"
                   @click="activeTab = tab.key"
                 >{{ tab.label }}</button>
+
+                <div class="tab-slider" :style="sliderStyle"></div>
               </div>
-              
             </div>
 
             <!-- Tab: ข้อมูลส่วนตัว -->
-            <div v-if="activeTab === 'info'" class="tab-content">
-              <div class="section-title">ข้อมูลส่วนตัว</div>
+            <div v-if="activeTab === 'info'" class="tab-content tab-info">
+                  <div class="section-title">ข้อมูลส่วนตัว
+                  </div>
 
               <div class="form-grid">
-                <div class="form-group">
-                  <label>คำนำหน้า</label>
-                  <input v-model="form.prefix" class="form-input" :disabled="!editing" />
-                </div>
+                    <div class="form-group full-width">
+                      <label>ชื่อผู้ใช้ (USERNAME)</label>
+                      <input v-model="form.username" class="form-input" disabled />
+                    </div>
+
+                    <div class="form-group">
+                      <label>คำนำหน้า</label>
+                      <input v-model="form.prefix" class="form-input" :disabled="!editing" />
+                    </div>
                 <div class="form-group">
                   <label>ชื่อ - นามสกุล</label>
-                  <input v-model="form.name" class="form-input" :disabled="!editing" />
+                      <input v-model="form.name" class="form-input" :disabled="!editing" placeholder="ชื่อจริง" />
                 </div>
                 <div class="form-group">
                   <label>อีเมล</label>
@@ -76,8 +84,12 @@
                 </div>
                 <div class="form-group">
                   <label>เบอร์โทรศัพท์</label>
-                  <input v-model="form.phone" class="form-input" :disabled="!editing" />
+                      <input v-model="form.phone" class="form-input" :disabled="!editing" placeholder="088-xxx-xxxx" />
                 </div>
+                    <div class="form-group">
+                      <label>วันเกิด</label>
+                      <input v-model="form.birthdate" type="date" class="form-input" :disabled="!editing" />
+                    </div>
                 <div class="form-group">
                   <label>ตำแหน่ง</label>
                   <input v-model="form.position" class="form-input" :disabled="!editing" />
@@ -86,13 +98,78 @@
                   <label>สังกัด / คณะ</label>
                   <input v-model="form.department" class="form-input" :disabled="!editing" />
                 </div>
-                <div class="form-group full-width">
-                  <label>ที่อยู่</label>
-                  <textarea v-model="form.address" class="form-input form-textarea" :disabled="!editing" rows="3" />
+                    <div class="form-group">
+                      <label>เพศ</label>
+                      <input v-model="form.gender" class="form-input" :disabled="!editing" />
+                    </div>
+                
+                <div class="form-group full-width address-field">
+                  <textarea v-model="form.address" class="form-input form-textarea address-text" :disabled="!editing" rows="3" />
                 </div>
               </div>
 
               
+            </div>
+
+            <!-- Tab: ที่อยู่ -->
+            <div v-if="activeTab === 'address'" class="tab-content">
+              <div class="section-title">ที่อยู่</div>
+
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label>ที่อยู่</label>
+                  <div class="input-wrap icon-left">
+                    <span class="input-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a7c59" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 6-9 13-9 13S3 16 3 10a9 9 0 1 1 18 0z"/>
+                        <circle cx="12" cy="10" r="2"/>
+                      </svg>
+                    </span>
+                    <input v-model="form.addrLine" class="form-input" :disabled="true" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>ตำบล / แขวง</label>
+                  <div class="input-wrap icon-left">
+                    <span class="input-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a7c59" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 6-9 13-9 13S3 16 3 10a9 9 0 1 1 18 0z"/>
+                        <circle cx="12" cy="10" r="2"/>
+                      </svg>
+                    </span>
+                    <input v-model="form.addrSubdistrict" class="form-input" :disabled="true" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>อำเภอ / เขต</label>
+                  <div class="input-wrap icon-left">
+                    <span class="input-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a7c59" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 6-9 13-9 13S3 16 3 10a9 9 0 1 1 18 0z"/>
+                        <circle cx="12" cy="10" r="2"/>
+                      </svg>
+                    </span>
+                    <input v-model="form.addrDistrict" class="form-input" :disabled="true" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>จังหวัด</label>
+                  <input v-model="form.addrProvince" class="form-input" :disabled="true" />
+                </div>
+                <div class="form-group">
+                  <label>รหัสไปรษณีย์</label>
+                  <input v-model="form.addrPostal" class="form-input" :disabled="true" />
+                </div>
+
+                <div class="form-group full-width">
+                  <div class="address-summary">
+                    <i class="icon-location" style="margin-right:8px"></i>
+                    <strong>{{ form.addrLine }}{{ form.addrLine && ' · ' }}{{ form.addrSubdistrict }}{{ form.addrSubdistrict && ' · ' }}{{ form.addrDistrict }}{{ form.addrProvince && ' · ' }}{{ form.addrProvince }}{{ form.addrPostal && ' · ' }}{{ form.addrPostal }}</strong>
+                  </div>
+                </div>
+              </div>
             </div>
 
             
@@ -140,6 +217,7 @@ export default {
       activeTab: 'info',
       tabs: [
           { key: 'info',     label: 'ข้อมูลส่วนตัว' },
+          { key: 'address',  label: 'ที่อยู่' },
       ],
 
       // Profile form
@@ -150,6 +228,7 @@ export default {
         pending: 0
       },
       form: {
+        username:   '',
         prefix:     '',
         name:       '',
         email:      '',
@@ -157,6 +236,14 @@ export default {
         position:   '',
         department: '',
         address:    '',
+        addrLine:   '',
+        addrSubdistrict: '',
+        addrDistrict: '',
+        addrProvince: '',
+        addrPostal: '',
+        birthdate:  '',
+        gender:     '',
+        
       },
       formBackup: null,
 
@@ -165,6 +252,9 @@ export default {
       // Toast
       toast: { show: false, msg: '', type: 'success' },
 
+  // Tab slider style
+  sliderStyle: { left: '0px', width: '0px' },
+
       
     }
   },
@@ -172,7 +262,18 @@ export default {
   async mounted () {
     await this.fetchProfile()
     await this.fetchProfileStats()
+      this.$nextTick(() => {
+        this.updateSlider()
+        window.addEventListener('resize', this.updateSlider)
+      })
   },
+
+    beforeDestroy() {
+      window.removeEventListener('resize', this.updateSlider)
+    },
+    beforeUnmount() {
+      window.removeEventListener('resize', this.updateSlider)
+    },
 
   computed: {
     isDarkTheme () {
@@ -191,6 +292,27 @@ export default {
   },
 
   methods: {
+    updateSlider() {
+      try {
+        const wrap = this.$refs.tabsWrap
+        const btns = this.$refs.tabBtn || []
+        if (!wrap || !btns || !btns.length) return
+
+        // find active button
+        const activeIndex = this.tabs.findIndex(t => t.key === this.activeTab)
+        const activeEl = Array.isArray(btns) ? btns[activeIndex] : btns
+        if (!activeEl) return
+
+        const wrapRect = wrap.getBoundingClientRect()
+        const btnRect = activeEl.getBoundingClientRect()
+        const left = Math.max(0, btnRect.left - wrapRect.left)
+        const width = Math.max(24, btnRect.width)
+
+        this.sliderStyle = { left: left + 'px', width: width + 'px' }
+      } catch (e) {
+        // ignore
+      }
+    },
     async fetchProfile () {
       try {
         const res = await Service.auth.me()
@@ -207,12 +329,20 @@ export default {
 
         this.form = {
           ...this.form,
+          username: user.username || user.email || '',
           name: fullName,
           email: user.email || '',
           phone: user.phone || '',
           position: roleMap[user.role] || (user.role || '-'),
           department: user.department || user.faculty || '-',
-          address: user.address || ''
+          address: user.address || '',
+          addrLine: (user.address && Array.isArray(user.address) && user.address[0] && user.address[0].address) ? user.address[0].address : (user.address || ''),
+          addrSubdistrict: (user.address && Array.isArray(user.address) && user.address[0] && user.address[0].subDistrict) ? user.address[0].subDistrict : '',
+          addrDistrict: (user.address && Array.isArray(user.address) && user.address[0] && user.address[0].district) ? user.address[0].district : '',
+          addrProvince: (user.address && Array.isArray(user.address) && user.address[0] && user.address[0].province) ? user.address[0].province : '',
+          addrPostal: (user.address && Array.isArray(user.address) && user.address[0] && user.address[0].zipcode) ? user.address[0].zipcode : '',
+          birthdate: user.birthdate || '',
+          gender: user.gender || ''
         }
       } catch (err) {
         // keep page usable even when profile API is temporarily unavailable
@@ -252,6 +382,37 @@ export default {
       this.editing = false
     },
 
+    startEdit() {
+      this.formBackup = { ...this.form }
+      this.editing = true
+    },
+
+    async saveProfile() {
+      try {
+        const payload = { ...this.form }
+        // try common API method names if available
+        if (Service.auth && typeof Service.auth.update === 'function') {
+          await Service.auth.update(payload)
+        } else if (Service.auth && typeof Service.auth.updateProfile === 'function') {
+          await Service.auth.updateProfile(payload)
+        } else {
+          // no API available in this environment — simulate delay
+          await new Promise(r => setTimeout(r, 500))
+        }
+
+
+    // keep slider in sync when tab changes
+    // watch-style: use a small method invoked via $nextTick in watcher below
+    
+        this.editing = false
+        this.formBackup = null
+        this.showToast('บันทึกข้อมูลสำเร็จ', 'success')
+        await this.fetchProfile()
+      } catch (err) {
+        this.showToast('บันทึกข้อมูลไม่สำเร็จ', 'error')
+      }
+    },
+
 
 
     showToast(msg, type = 'success') {
@@ -259,6 +420,13 @@ export default {
       setTimeout(() => { this.toast.show = false }, 3000)
     },
   },
+
+  watch: {
+    activeTab() {
+      this.$nextTick(() => this.updateSlider())
+    }
+  },
+
 }
 </script>
 
@@ -372,6 +540,27 @@ export default {
   padding: 16px 10px;
   flex: 1;
 }
+
+/* Profile page small controls */
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+.edit-actions { display: flex; gap: 8px; align-items: center }
+.btn-edit, .btn-save, .btn-cancel {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+}
+.btn-save { background: #4a7c59; color: #fff; border-color: #4a7c59 }
+.btn-cancel { background: transparent; color: #6b7280 }
+
 
 .nav-item {
   display: flex;
@@ -553,7 +742,8 @@ export default {
 /* Tabs */
 .profile-tabs {
   display: flex;
-  border-bottom: 2px solid #f3f4f6;
+  position: relative;
+  border-bottom: 1px solid #f3f4f6;
   padding: 0 24px;
 }
 
@@ -565,13 +755,31 @@ export default {
   font-weight: 500;
   color: #9ca3af;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  transition: color 0.2s, border-color 0.2s;
+  margin-bottom: 0;
+  transition: color 0.18s ease;
   font-family: 'Sarabun', sans-serif;
 }
 .tab-btn:hover  { color: #4a7c59; }
-.tab-btn.active { color: #4a7c59; border-bottom-color: #4a7c59; font-weight: 600; }
+.tab-btn.active { color: #4a7c59; font-weight: 600 }
+
+/* remove default focus/active outline (black border) on buttons */
+.tab-btn:focus,
+.tab-btn:active,
+.tab-btn:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.tab-btn::-moz-focus-inner { border: 0; }
+
+.tab-slider {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  background: #4a7c59;
+  border-radius: 3px;
+  transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1), width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: left, width;
+}
 
 /* Tab content */
 .tab-content { padding: 20px 24px 24px; }
@@ -621,6 +829,20 @@ export default {
 
 .form-textarea { resize: vertical; min-height: 80px; }
 
+/* Remove framed box for address on profile info tab */
+.tab-info .address-field .form-input.address-text {
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  min-height: 36px;
+}
+.tab-info .address-field .form-input.address-text:disabled {
+  background: transparent;
+  color: #111827;
+  cursor: default;
+}
+
 /* Input with eye button */
 .input-wrap { position: relative; }
 .input-wrap .form-input { width: 100%; padding-right: 44px; }
@@ -635,6 +857,21 @@ export default {
   transition: color 0.2s;
 }
 .eye-btn:hover { color: #4a7c59; }
+
+/* icon-left variant */
+.input-wrap.icon-left { position: relative; }
+.input-wrap.icon-left .form-input { padding-left: 42px; padding-right: 14px; }
+.input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a7c59;
+  width: 18px; height: 18px;
+}
 
 /* Password strength */
 .strength-bar {

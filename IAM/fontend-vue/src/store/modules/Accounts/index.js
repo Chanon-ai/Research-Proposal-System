@@ -42,7 +42,6 @@ function mapAccount(item) {
     lastName,
     fullName: `${prefix} ${firstName} ${lastName}`.trim() || '-',
     msisdn: item && item.userinfo && item.userinfo.msisdn ? String(item.userinfo.msisdn) : '-',
-    lineId: item && item.userinfo && item.userinfo.lineId ? String(item.userinfo.lineId) : '-',
     cardId: item && item.userinfo && item.userinfo.cardId ? String(item.userinfo.cardId) : '-',
     religion: item && item.userinfo && item.userinfo.religion ? String(item.userinfo.religion) : '-',
     birthday: birthdayRaw && !Number.isNaN(birthdayRaw.getTime()) ? birthdayRaw.toISOString().slice(0, 10) : '',

@@ -450,7 +450,7 @@ Pre-save: lowercase email, bcrypt password (salt 12), detect MFU staff, validate
     prefix:    { text, value }
     firstName: [{ lang, text }]   // multilingual
     lastName:  [{ lang, text }]
-    image, cardId, birthday, msisdn, lineId, religion
+    image, cardId, birthday, msisdn, religion
   }
   address: [{
     type: ObjectId → Address_Type,
