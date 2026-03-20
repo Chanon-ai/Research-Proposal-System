@@ -221,12 +221,9 @@
 
         <!-- 3 -->
         <div class="section">
-          <div class="sub-title">3. ความร่วมมือ</div>
+          <div class="sub-title">3. หน่วยงานที่ร่วมมือ</div>
           <div class="field-line">
-            {{ form.cooperation }}
-            <span v-if="form.cooperation === 'มี'">
-              ({{ form.cooperationDetail }})
-            </span>
+            {{ form.cooperationDetail || '-' }}
           </div>
         </div>
 

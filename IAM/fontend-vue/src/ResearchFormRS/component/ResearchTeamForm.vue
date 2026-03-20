@@ -537,7 +537,6 @@ export default {
 }
 
 .co-researcher-item, .advisor-item {
-  border-left: 4px solid #007bff;
   margin-bottom: 15px;
   border-radius: 8px;
   overflow: hidden;
