@@ -315,7 +315,7 @@ export default {
 .duration-selector .btn {
   font-weight: 800;
   letter-spacing: 0.15px;
-  border-radius: 12px !important;
+  border-radius: 8px !important;
   border-color: rgba(234, 223, 206, 0.95) !important;
 }
 
@@ -332,7 +332,7 @@ export default {
 }
 
 .table-wrapper {
-  border-radius: 14px;
+  border-radius: 10px;
   overflow: hidden;
   border: 1px solid rgba(234, 223, 206, 0.95);
   box-shadow: 0 14px 28px rgba(2, 6, 23, 0.08);
@@ -369,11 +369,11 @@ export default {
 }
 
 .plan-table thead tr > th:first-child {
-  border-top-left-radius: 14px;
+  border-top-left-radius: 10px;
 }
 
 .plan-table thead tr > th:last-child {
-  border-top-right-radius: 14px;
+  border-top-right-radius: 10px;
 }
 
 .plan-table thead th {
@@ -390,7 +390,7 @@ export default {
 }
 
 .custom-textarea {
-  border-radius: 12px;
+  border-radius: 10px;
   border-color: rgba(234, 223, 206, 0.95) !important;
 }
 

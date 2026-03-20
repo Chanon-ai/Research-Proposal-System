@@ -799,38 +799,62 @@ export default {
   cursor: pointer;
 }
 
-/* Make header and table flush (no visible gap) and keep text readable on gradients */
-.budget-section-container ::v-deep .card-header {
-  border-bottom: 0 !important;
-  padding-bottom: 8px;
-  margin: 0;
+/* Make header and table feel like one piece (no gaps), and keep it readable */
+.budget-section-container ::v-deep .card {
+  overflow: hidden; /* clip the table header to the card's corners */
+  border-radius: 12px;
+}
+
+.budget-section-container ::v-deep .budget-category-header {
+  margin: 0 !important;
   width: 100%;
+  padding: 12px 16px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(234, 223, 206, 0.95) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 242, 234, 0.94)) !important;
+}
+
+.budget-section-container ::v-deep .budget-category-title {
+  color: #111827 !important;
+  letter-spacing: 0.15px;
+}
+
+.budget-section-container ::v-deep .budget-category-title i {
+  color: var(--rf-gold, #c59b3a);
+}
+
+.budget-section-container ::v-deep .budget-category-header > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.budget-section-container ::v-deep .budget-category-header .btn,
+.budget-section-container ::v-deep .budget-category-header label.btn {
+  border-radius: 10px;
+  font-weight: 800;
+  border: 1px solid rgba(234, 223, 206, 0.98);
+  box-shadow: 0 8px 14px rgba(2, 6, 23, 0.08);
+}
+
+.budget-section-container ::v-deep .budget-category-header .btn.btn-light,
+.budget-section-container ::v-deep .budget-category-header label.btn.btn-light {
+  background: rgba(255, 255, 255, 0.94) !important;
 }
 
 .budget-section-container ::v-deep .card-body.p-0 {
   padding-top: 0 !important;
 }
 
-.budget-section-container ::v-deep .card {
-  overflow: hidden; /* let header + table share the same rounded corners */
-  border-radius: 14px;
+/* No rounding from the table itself; the card handles corners */
+.budget-section-container ::v-deep table,
+.budget-section-container ::v-deep thead,
+.budget-section-container ::v-deep thead th {
+  border-radius: 0 !important;
 }
 
 .budget-section-container ::v-deep .table-responsive {
   margin-top: 0 !important;
-}
-
-.budget-section-container ::v-deep .card-header {
-  border-top-left-radius: 14px !important;
-  border-top-right-radius: 14px !important;
-  background-clip: border-box;
-  overflow: hidden;
-  position: relative;
-}
-
-.budget-section-container ::v-deep .card-header:first-child {
-  border-top-left-radius: 14px !important;
-  border-top-right-radius: 14px !important;
 }
 
 .budget-section-container ::v-deep .table {
