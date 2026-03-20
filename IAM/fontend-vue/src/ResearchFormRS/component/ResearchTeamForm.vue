@@ -130,7 +130,7 @@
                   <div class="col-md-2" v-if="!isReadOnly">
                     <div class="form-group">
                       <label>&nbsp;</label>
-                      <button @click="removeCoResearcher(index)" title="ลบผู้ร่วมโครงการวิจัย" class="btn btn-danger form-control delete-action-btn">
+                      <button type="button" @click="removeCoResearcher(index)" title="ลบผู้ร่วมโครงการวิจัย" class="btn btn-outline-danger form-control delete-action-btn">
                         <CIcon name="cil-trash" class="mr-1"/>
                         <span>ลบ</span>
                       </button>
@@ -248,7 +248,7 @@
                   <div class="col-md-2" v-if="!isReadOnly">
                     <div class="form-group">
                       <label>&nbsp;</label>
-                      <button @click="removeAdvisor(index)" title="ลบที่ปรึกษาโครงการวิจัย" class="btn btn-danger form-control delete-action-btn">
+                      <button type="button" @click="removeAdvisor(index)" title="ลบที่ปรึกษาโครงการวิจัย" class="btn btn-outline-danger form-control delete-action-btn">
                         <CIcon name="cil-trash" class="mr-1" />
                         <span>ลบ</span>
                       </button>
@@ -989,19 +989,26 @@ export default {
   gap: 6px;
   min-height: 38px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
-  color: #ffffff !important;
+  border: 1px solid #8b1212 !important;
+  background: #ffffff !important;
+  color: #8b1212 !important;
+  border-radius: 6px;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .delete-action-btn:hover,
 .delete-action-btn:focus {
-  color: #ffffff !important;
+  background: rgba(139, 18, 18, 0.08) !important;
+  border-color: #8b1212 !important;
+  color: #8b1212 !important;
+  transform: translateY(-1px);
 }
 
 .delete-action-btn .c-icon,
 .delete-action-btn span {
-  color: #ffffff !important;
+  color: #8b1212 !important;
 }
 
 .btn-sm {
