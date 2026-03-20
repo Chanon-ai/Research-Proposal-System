@@ -284,6 +284,7 @@ export default {
   data() {
     return {
       suppressEmit: false,
+      emitScheduled: false,
       categories: [
         { 
           name: 'หมวดค่าตอบแทน', isOther: false, items: [],
@@ -431,11 +432,22 @@ export default {
     categories: {
       deep: true,
       handler() {
-        this.emitModelValue()
+        this.queueEmitModelValue()
       }
     }
   },
   methods: {
+    queueEmitModelValue() {
+      if (this.suppressEmit) return
+      if (this.isReadOnly) return
+      if (this.emitScheduled) return
+
+      this.emitScheduled = true
+      this.$nextTick(() => {
+        this.emitScheduled = false
+        this.emitModelValue()
+      })
+    },
     applyModelValue(val) {
       if (!val || !Array.isArray(val.categories)) return
       if (!this.shouldApplyIncomingModel(val.categories)) return

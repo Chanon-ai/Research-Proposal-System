@@ -1981,7 +1981,7 @@ export default {
     reviewActionItems (review) {
       const explicitItems = Array.isArray(review && review.commentItems) ? review.commentItems.slice() : []
       const filteredExplicitItems = explicitItems
-        .filter(item => item && item.sectionKey && item.sectionKey !== 'summary' && item.visibility !== 'committee_only')
+        .filter(item => item && item.sectionKey && item.sectionKey !== 'summary' && item.visibility === 'researcher_visible')
 
       if (filteredExplicitItems.length) {
         return filteredExplicitItems.sort((left, right) => this.feedbackItemSortOrder(left) - this.feedbackItemSortOrder(right))

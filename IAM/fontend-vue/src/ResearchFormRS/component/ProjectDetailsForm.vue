@@ -555,21 +555,17 @@ export default {
         return this.isAllowedSymbol(char)
       }).join('')
     },
-    isSameBudget(left, right) {
-      try {
-        return JSON.stringify(left || {}) === JSON.stringify(right || {})
-      } catch (_) {
-        return left === right
-      }
-    },
     handleBudgetUpdate(newBudget) {
-      const nextBudget = this.cloneSerializable(newBudget) || { categories: [], grandTotal: 0 }
-      if (!this.isSameBudget(this.form.budget, nextBudget)) {
+      if (this.isHydrating) return
+      const nextBudget = newBudget || { categories: [], grandTotal: 0 }
+
+      // In normal flow v-model already updates form.budget, but keep a guard
+      // in case the component is wired without v-model in the future.
+      if (this.form.budget !== nextBudget) {
         this.form.budget = nextBudget
       }
-      if (this.isHydrating) return
-      this.$emit('budget-changed', nextBudget)
-      this.$emit('form-changed', this.getFormData())
+
+      this.$emit('budget-changed', this.cloneSerializable(nextBudget))
     },
     sectionClass(sectionKey) {
       return [

@@ -230,6 +230,12 @@ export default {
     proposalId() {
       return this.proposal && this.proposal._id ? this.proposal._id : (this.$route.params.id || '')
     },
+    activeRoundNo() {
+      const status = String(this.proposal && this.proposal.currentStatus ? this.proposal.currentStatus : '').toLowerCase()
+      if (status === 'second_round_review') return 2
+      const round = Number(this.proposal && this.proposal.currentRound)
+      return round === 2 ? 2 : 1
+    },
     attachments() {
       const snapshot = this.proposal && this.proposal.formSnapshotJson ? this.proposal.formSnapshotJson : {}
       return Array.isArray(snapshot.files) ? snapshot.files : []
@@ -342,7 +348,7 @@ export default {
       if (!pid) return
 
       try {
-        const res = await Service.proposal.getMyReview(encodeURIComponent(pid), { roundNo: 1 })
+        const res = await Service.proposal.getMyReview(encodeURIComponent(pid), { roundNo: this.activeRoundNo })
         const review = res && res.data && res.data.data ? res.data.data : null
         if (!review) return
 
@@ -373,15 +379,25 @@ export default {
     },
     draftKey() {
       const pid = this.proposal ? (this.proposal._id || this.proposal.id) : ''
+      return pid ? `committeeDraft:${pid}:round:${this.activeRoundNo}` : ''
+    },
+    legacyDraftKey() {
+      const pid = this.proposal ? (this.proposal._id || this.proposal.id) : ''
       return pid ? `committeeDraft:${pid}` : ''
     },
     submissionKey() {
       const pid = this.proposal ? (this.proposal._id || this.proposal.id) : ''
-      return pid ? `committeeSubmission:${pid}` : ''
+      return pid ? `committeeSubmission:${pid}:round:${this.activeRoundNo}` : ''
     },
     loadDraft() {
       try {
-        const raw = localStorage.getItem(this.draftKey())
+        let raw = localStorage.getItem(this.draftKey())
+        if (!raw) {
+          raw = localStorage.getItem(this.legacyDraftKey())
+          if (raw) {
+            localStorage.setItem(this.draftKey(), raw)
+          }
+        }
         if (!raw) return
         const draft = JSON.parse(raw)
         const draftForm = (draft && typeof draft === 'object' && draft.form && typeof draft.form === 'object')
@@ -429,7 +445,7 @@ export default {
       }
 
       const payload = {
-        roundNo: 1,
+        roundNo: this.activeRoundNo,
         scoreItems,
         commentItems: this.buildCommentItems(),
         decision: decisionMap[this.form.decision] || null,
@@ -450,6 +466,7 @@ export default {
           form: { ...this.form }
         }))
         localStorage.removeItem(this.draftKey())
+        localStorage.removeItem(this.legacyDraftKey())
 
         this.submitted = true
         await this.loadSavedReview()
