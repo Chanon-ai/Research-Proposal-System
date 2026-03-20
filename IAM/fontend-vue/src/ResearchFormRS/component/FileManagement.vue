@@ -73,7 +73,7 @@
                     href="#"
                     @click.prevent="$emit('open', item)"
                     class="text-primary font-weight-bold"
-                    style="cursor:pointer;"
+                    style="cursor:pointer; display:inline-flex; align-items:center; justify-content:center;"
                   >
                     <CIcon name="cil-file" class="me-1"/>
                     {{ item.name }}
@@ -172,9 +172,65 @@ export default {
 </script>
 
 <style scoped>
+.card {
+  border: 1px solid rgba(234, 223, 206, 0.95);
+  border-radius: 12px;
+}
+
+.card-body {
+  background: #ffffff;
+}
+
+.btn-outline-dark {
+  border-color: rgba(139, 18, 18, 0.40);
+  color: #8b1212;
+  background: rgba(255, 255, 255, 0.90);
+}
+
+.btn-outline-dark:hover {
+  background: rgba(139, 18, 18, 0.08);
+}
+
 .table th {
   font-weight: 600;
   font-size: 14px;
+}
+
+.table th,
+.table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.table-bordered th,
+.table-bordered td {
+  border-color: rgba(139, 18, 18, 0.30) !important;
+  border-width: 1.5px !important;
+}
+
+.table-bordered {
+  border-color: rgba(139, 18, 18, 0.30) !important;
+}
+
+.table-responsive {
+  /* Fix corner artifacts: clip table header/background to rounded container */
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid rgba(139, 18, 18, 0.30);
+  background: #fff;
+}
+
+.table.table-bordered {
+  /* Outer border is handled by .table-responsive for clean rounded corners */
+  border: 0 !important;
+}
+
+.table tbody tr:not(:last-child) td {
+  border-bottom-color: rgba(139, 18, 18, 0.30) !important;
+}
+
+.table td .form-control {
+  text-align: center;
 }
 
 .btn-outline-info,
@@ -182,8 +238,26 @@ export default {
   padding: 2px 8px;
 }
 
+/* Light red header (force override against page-level table styles) */
+.thead-custom th,
 .table thead th {
-  background-color: #2f3dcf; 
-  color: #f5f5f5;   
+  background: rgba(139, 18, 18, 0.10) !important;
+  color: #111827 !important;
+  /* Match gridline color/weight with table body */
+  border-color: rgba(139, 18, 18, 0.30) !important;
+  border-width: 1.5px !important;
+  border-bottom: 1.5px solid rgba(139, 18, 18, 0.30) !important;
+}
+
+.table tbody tr:hover {
+  background: rgba(197, 155, 58, 0.08);
+}
+
+.text-primary {
+  color: #8b1212 !important;
+}
+
+.italic {
+  font-style: italic;
 }
 </style>

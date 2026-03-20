@@ -385,8 +385,10 @@ export default {
 }
 
 .month-cell.bg-success {
-  background-color: rgba(197, 155, 58, 0.32) !important;
-  box-shadow: inset 0 0 0 1px rgba(139, 18, 18, 0.18);
+  background-color: rgba(197, 155, 58, 0.34) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(139, 18, 18, 0.22),
+    inset 0 -10px 18px rgba(2, 6, 23, 0.06);
 }
 
 .custom-textarea {
@@ -460,7 +462,7 @@ thead .sticky-action {
   background-color: #ebedef;
 }
 .month-cell.bg-success {
-  background-color: #2eb85c !important;
+  background-color: rgba(197, 155, 58, 0.34) !important;
 }
 
 .custom-textarea {
@@ -478,6 +480,6 @@ thead .sticky-action {
   background-color: transparent; /* เอา hover effect ออก */
 }
 .month-cell.bg-success.read-only-cell:hover {
-  background-color: #2eb85c !important; /* คงสีเขียวไว้ถ้าถูกเลือกอยู่แล้ว */
+  background-color: rgba(197, 155, 58, 0.34) !important; /* keep selected state */
 }
 </style>

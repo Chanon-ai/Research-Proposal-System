@@ -3900,12 +3900,21 @@ export default {
 @media (max-width: 768px) {
   .research-form {
     padding: 10px;
+    /* Prevent horizontal scroll caused by fixed bars shifted by sidebar offsets */
+    overflow-x: hidden;
   }
 
   .btn {
     display: block;
     width: 100%;
     margin-bottom: 10px;
+  }
+
+  /* On small screens the sidebar becomes overlay; keep footer bar full-width. */
+  .footer-fixed {
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100vw;
   }
 
   .footer-fixed {
@@ -4049,6 +4058,36 @@ export default {
   background: var(--rf-surface);
   color: var(--rf-text);
   transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.research-form ::v-deep .form-control:disabled,
+.research-form ::v-deep textarea.form-control:disabled,
+.research-form ::v-deep select.form-control:disabled,
+.research-form ::v-deep .custom-select:disabled,
+.research-form ::v-deep .form-control[readonly],
+.research-form ::v-deep textarea.form-control[readonly],
+.research-form ::v-deep input[readonly].form-control,
+.research-form ::v-deep select[readonly].form-control {
+  background: #eef2f7 !important;
+  border-color: rgba(234, 223, 206, 0.95) !important;
+  color: rgba(15, 23, 42, 0.78) !important;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+.research-form ::v-deep .form-control:disabled::placeholder,
+.research-form ::v-deep .form-control[readonly]::placeholder {
+  color: rgba(100, 116, 139, 0.75);
+}
+
+.research-form ::v-deep .bg-light {
+  background: #eef2f7 !important;
+}
+
+.research-form ::v-deep input:disabled,
+.research-form ::v-deep textarea:disabled,
+.research-form ::v-deep select:disabled {
+  cursor: not-allowed;
 }
 
 .research-form ::v-deep .form-control:focus,
