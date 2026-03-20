@@ -1,5 +1,6 @@
 <template>
-  <AdminUsersManagement />
+  <div class="admin-users-page">
+    <AdminUsersManagement />
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap" style="gap: 8px;">
       <h2 class="mb-0">จัดการผู้ใช้ (Admin)</h2>
       <CButton color="primary" @click="openAddModal">+ เพิ่มผู้ใช้ใหม่</CButton>
@@ -291,6 +292,7 @@
         </div>
       </template>
     </CModal>
+  </div>
 </template>
 
 <script>

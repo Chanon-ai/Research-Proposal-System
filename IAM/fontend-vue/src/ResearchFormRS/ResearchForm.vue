@@ -489,8 +489,8 @@
             </button>
 
             <button v-if="showDraftActions" type="button" class="btn btn-lg text-white" :style="{
-              backgroundColor: isDraftSaved ? '#6c757d' : '#8b5cf6',
-              borderColor: isDraftSaved ? '#6c757d' : '#8b5cf6',
+              backgroundColor: isDraftSaved ? '#6c757d' : '#8b1212',
+              borderColor: isDraftSaved ? '#6c757d' : '#8b1212',
               cursor: isDraftSaved ? 'not-allowed' : 'pointer'
             }" :disabled="isDraftSaved" @click="saveDraft">
               <i class="cil-save me-2"></i>
@@ -498,7 +498,7 @@
             </button>
 
             <button v-if="showDraftActions" type="button" class="btn btn-lg text-white"
-              style="background-color: #1e40af; border-color: #1e40af;" @click="submitProject">
+              style="background-color: #8b1212; border-color: #8b1212;" @click="submitProject">
               <i class="cil-send me-2"></i>
               ยื่นโครงการ
             </button>
@@ -515,7 +515,7 @@
             </button>
 
             <button v-if="showExportPdfButton" type="button" class="btn btn-lg text-white"
-              style="background-color: #3b82f6; border-color: #3b82f6;" :disabled="isExportingPdf" @click="exportProposalPdf">
+              style="background-color: #b58522; border-color: #b58522;" :disabled="isExportingPdf" @click="exportProposalPdf">
               <i class="cil-file-pdf me-2"></i>
               {{ isExportingPdf ? 'กำลังสร้าง PDF...' : 'Export PDF' }}
             </button>
@@ -3632,7 +3632,7 @@ export default {
   font-weight: 800;
   text-align: center;
   padding: 18px 0;
-  background: #007bff;
+  background: linear-gradient(135deg, #8b1212 0%, #c59b3a 115%);
   margin: 0 0 20px 0;
   width: 100%;
   box-sizing: border-box;
@@ -3745,8 +3745,10 @@ export default {
 }
 
 .feedback-workspace-note {
-  border-left: 4px solid #3b82f6;
+  /* Keep the blue left bar for main headings only. Notes should look like formal sub-cards. */
+  border-left: none;
   background: #f8fafc;
+  border: 1px solid #e2e8f0;
   padding: 0.75rem 0.9rem;
   border-radius: 8px;
 }
@@ -3937,5 +3939,278 @@ export default {
     width: 100%;
     justify-content: space-between;
   }
+}
+
+/* =========================================================
+   Research Form Theme (CSS only)
+   - Do not change template/script structure or any functions
+   ========================================================= */
+.research-form {
+  /* MFU-inspired red/gold theme */
+  --rf-bg: #f7f2ea;
+  --rf-surface: #ffffff;
+  --rf-border: #eadfce;
+  --rf-text: #1f2937;
+  --rf-muted: #6b7280;
+  --rf-accent: #8b1212; /* deep red */
+  --rf-gold: #c59b3a;
+  --rf-accent-ring: rgba(139, 18, 18, 0.18);
+
+  background:
+    radial-gradient(1100px 460px at 12% -10%, rgba(139, 18, 18, 0.14), transparent 62%),
+    radial-gradient(980px 420px at 92% 4%, rgba(197, 155, 58, 0.14), transparent 58%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.00) 58%),
+    repeating-linear-gradient(0deg, rgba(31, 41, 55, 0.014) 0, rgba(31, 41, 55, 0.014) 1px, transparent 1px, transparent 22px);
+  color: var(--rf-text);
+}
+
+.research-form ::v-deep .card {
+  background: var(--rf-surface);
+  border: 1px solid var(--rf-border);
+  border-radius: 14px;
+  box-shadow: 0 14px 34px rgba(2, 6, 23, 0.08);
+}
+
+.research-form ::v-deep .card-header {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0.00));
+  border-bottom: 1px solid var(--rf-border);
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+
+.research-form ::v-deep .card-header:not(.text-white) h5,
+.research-form ::v-deep .card-header:not(.text-white) h6,
+.research-form ::v-deep .card-header:not(.text-white) strong {
+  color: var(--rf-text);
+  letter-spacing: 0.2px;
+}
+
+/* Blue bar only for main headings */
+.research-form ::v-deep .section-title {
+  background: linear-gradient(180deg, rgba(197, 155, 58, 0.10), rgba(15, 23, 42, 0.02));
+  border-left-color: var(--rf-accent) !important;
+  color: var(--rf-text);
+  border-radius: 10px;
+}
+
+/* Sub-headings and nested option blocks (formal, easy-to-scan) */
+.research-form ::v-deep .sub-section-title {
+  font-weight: 800;
+  color: var(--rf-text);
+  background: rgba(15, 23, 42, 0.035);
+  border: 1px solid var(--rf-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  letter-spacing: 0.15px;
+}
+
+.research-form ::v-deep .sub-options {
+  margin-left: 1.5rem;
+  margin-top: 10px;
+  background: var(--rf-surface);
+  border: 1px solid var(--rf-border);
+  border-left: none !important; /* no left color bar in sub blocks */
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 10px 22px rgba(2, 6, 23, 0.06);
+}
+
+/* Gold accents for small UI elements (not a left bar) */
+.research-form ::v-deep .badge,
+.research-form ::v-deep .cbadge,
+.research-form ::v-deep .c-badge {
+  border-radius: 999px;
+}
+
+.research-form ::v-deep .sub-options .form-check {
+  margin-bottom: 12px;
+  padding-left: 1.5rem;
+}
+
+.research-form ::v-deep .sub-options .form-check:last-child {
+  margin-bottom: 0;
+}
+
+.research-form ::v-deep .text-muted {
+  color: var(--rf-muted) !important;
+}
+
+.research-form ::v-deep label,
+.research-form ::v-deep .form-check-label {
+  color: var(--rf-text);
+}
+
+.research-form ::v-deep .form-control,
+.research-form ::v-deep textarea.form-control,
+.research-form ::v-deep select.form-control,
+.research-form ::v-deep .custom-select {
+  border: 1px solid var(--rf-border);
+  border-radius: 12px;
+  background: var(--rf-surface);
+  color: var(--rf-text);
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.research-form ::v-deep .form-control:focus,
+.research-form ::v-deep .custom-select:focus {
+  border-color: rgba(139, 18, 18, 0.55);
+  box-shadow: 0 0 0 4px var(--rf-accent-ring);
+}
+
+.research-form ::v-deep .form-control::placeholder {
+  color: rgba(100, 116, 139, 0.88);
+}
+
+.research-form ::v-deep .table {
+  background: var(--rf-surface);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.research-form ::v-deep .table thead th {
+  border-bottom: 1px solid var(--rf-border);
+  font-weight: 800;
+  letter-spacing: 0.25px;
+}
+
+.research-form ::v-deep .table thead:not(.bg-primary):not(.text-white) th {
+  background: rgba(15, 23, 42, 0.035);
+  color: var(--rf-text);
+}
+
+.research-form ::v-deep .table thead.bg-primary th,
+.research-form ::v-deep .table thead.text-white th {
+  color: #ffffff !important;
+}
+
+/* Keep complex tables readable */
+.research-form ::v-deep .table td,
+.research-form ::v-deep .table th {
+  vertical-align: middle;
+}
+
+.research-form ::v-deep .table td.text-left,
+.research-form ::v-deep .table th.text-left {
+  text-align: left !important;
+}
+
+.research-form ::v-deep .table td,
+.research-form ::v-deep .table th {
+  border-top: 1px solid var(--rf-border);
+}
+
+.research-form ::v-deep .table tbody tr:hover {
+  background: rgba(197, 155, 58, 0.10);
+}
+
+.research-form ::v-deep .alert {
+  border-radius: 12px;
+  border: 1px solid var(--rf-border);
+}
+
+/* TextEditor / Quill */
+.research-form ::v-deep .ql-toolbar,
+.research-form ::v-deep .ql-container {
+  border-color: var(--rf-border) !important;
+}
+
+.research-form ::v-deep .ql-toolbar {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.research-form ::v-deep .ql-container {
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  background: var(--rf-surface);
+}
+
+.research-form ::v-deep .ql-editor {
+  color: var(--rf-text);
+}
+
+/* Remove any remaining "blue/primary" look inside Research Form */
+.research-form ::v-deep a {
+  color: var(--rf-accent);
+}
+
+.research-form ::v-deep a:hover {
+  color: var(--rf-gold);
+}
+
+.research-form ::v-deep .text-primary {
+  color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .text-white {
+  color: #ffffff !important;
+}
+
+.research-form ::v-deep .bg-primary {
+  background-color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .border-primary,
+.research-form ::v-deep .border-info {
+  border-color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .border-left,
+.research-form ::v-deep .border-right,
+.research-form ::v-deep .border-top,
+.research-form ::v-deep .border-bottom {
+  border-color: var(--rf-border) !important;
+}
+
+.research-form ::v-deep .btn-primary,
+.research-form ::v-deep .btn-info {
+  background-color: var(--rf-accent) !important;
+  border-color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .btn-outline-primary,
+.research-form ::v-deep .btn-outline-info {
+  color: var(--rf-accent) !important;
+  border-color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .btn-outline-primary:hover,
+.research-form ::v-deep .btn-outline-info:hover {
+  background-color: var(--rf-accent) !important;
+  border-color: var(--rf-accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 18px rgba(2, 6, 23, 0.14) !important;
+}
+
+.research-form ::v-deep .badge-primary {
+  background-color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .spinner-border,
+.research-form ::v-deep .c-spinner {
+  color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .c-callout-primary {
+  border-left-color: var(--rf-accent) !important;
+}
+
+/* Ensure child scoped styles cannot re-introduce blue focus rings */
+.research-form ::v-deep .form-control:focus,
+.research-form ::v-deep textarea.form-control:focus,
+.research-form ::v-deep select.form-control:focus,
+.research-form ::v-deep .custom-select:focus {
+  border-color: rgba(139, 18, 18, 0.55) !important;
+  box-shadow: 0 0 0 4px var(--rf-accent-ring) !important;
+}
+
+.research-form ::v-deep .multiselect__tags:focus-within {
+  border-color: var(--rf-accent) !important;
+  box-shadow: 0 0 0 3px var(--rf-accent-ring) !important;
+}
+
+.research-form ::v-deep .signature-canvas-container {
+  border-color: var(--rf-gold) !important;
 }
 </style>

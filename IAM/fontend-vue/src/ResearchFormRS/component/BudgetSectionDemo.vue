@@ -1,8 +1,8 @@
 <template>
   <div class="budget-section-container">
-    <CCard v-for="(category, catIndex) in categories" :key="catIndex" class="mb-4 shadow-sm border-0">
-      
-      <CCardHeader class="text-white d-flex justify-content-between align-items-center" style="background-color: #3b24d6 !important;">
+      <CCard v-for="(category, catIndex) in categories" :key="catIndex" class="mb-4 shadow-sm border-0">
+        
+      <CCardHeader class="text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #8b1212 0%, #c59b3a 120%) !important;">
         <h5 class="mb-0 font-weight-bold">
           <i v-if="category.isOther" class="fa fa-money-bill-wave mr-2"></i> {{ category.name }}
         </h5>
@@ -18,7 +18,7 @@
 
       <CCardBody class="p-0 table-responsive">
         <table class="table table-bordered mb-0 text-center align-middle" style="min-width: 1000px;">
-          <thead class="bg-primary text-white" style="background-color: #4a38df !important; opacity: 0.95;">
+          <thead class="bg-primary text-white" style="background: linear-gradient(135deg, #7a0f0f 0%, #8b1212 65%, #c59b3a 140%) !important; opacity: 0.98;">
             <tr>
               <th width="25%" class="align-middle">รายการ</th>
               <th width="35%" class="align-middle">รายละเอียดตัวคูณ (เกณฑ์ มฟล. 2569)</th>
@@ -51,7 +51,7 @@
                   <div class="mb-2">
                     <small class="text-muted d-block mb-1">เลือกหมวดหมู่เอกสาร:</small>
                     <div class="d-flex" @click="handleAttachmentActionClick($event, item)">
-                      <select class="form-control form-control-sm mr-2 border-primary" v-model="item.attachment.docType" style="color: #3b24d6;" :disabled="isReadOnly" @change="handleAttachmentDocTypeChange(item)">
+                      <select class="form-control form-control-sm mr-2 border-primary" v-model="item.attachment.docType" style="color: #8b1212;" :disabled="isReadOnly" @change="handleAttachmentDocTypeChange(item)">
                         <option value="">-- เลือกหมวดหมู่ --</option>
                         <option value="TOR">TOR (Term of References)</option>
                         <option value="Quotation">ใบเสนอราคา / Quotation</option>
@@ -254,7 +254,7 @@
           <span class="text-muted small">คำนวณอัตโนมัติตามหลักเกณฑ์การตั้งงบประมาณมหาวิทยาลัยแม่ฟ้าหลวง</span>
         </div>
         <div class="text-right">
-          <h1 class="text-primary mb-0 font-weight-bold" style="color: #3b24d6 !important;">
+          <h1 class="text-primary mb-0 font-weight-bold" style="color: #8b1212 !important;">
             {{ formatNumber(grandTotal) }} <span class="h5 text-muted font-weight-normal">บาท</span>
           </h1>
         </div>
@@ -798,6 +798,68 @@ export default {
 .cursor-pointer {
   cursor: pointer;
 }
+
+/* Make header and table flush (no visible gap) and keep text readable on gradients */
+.budget-section-container ::v-deep .card-header {
+  border-bottom: 0 !important;
+  padding-bottom: 8px;
+  margin: 0;
+  width: 100%;
+}
+
+.budget-section-container ::v-deep .card-body.p-0 {
+  padding-top: 0 !important;
+}
+
+.budget-section-container ::v-deep .card {
+  overflow: hidden; /* let header + table share the same rounded corners */
+  border-radius: 14px;
+}
+
+.budget-section-container ::v-deep .table-responsive {
+  margin-top: 0 !important;
+}
+
+.budget-section-container ::v-deep .card-header {
+  border-top-left-radius: 14px !important;
+  border-top-right-radius: 14px !important;
+  background-clip: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+.budget-section-container ::v-deep .card-header:first-child {
+  border-top-left-radius: 14px !important;
+  border-top-right-radius: 14px !important;
+}
+
+.budget-section-container ::v-deep .table {
+  margin-bottom: 0;
+  border-top: 0 !important; /* remove the separator line below header */
+}
+
+.budget-section-container ::v-deep .table.table-bordered {
+  border: 0 !important; /* avoid square outer border fighting rounded corners */
+}
+
+.budget-section-container ::v-deep .table.table-bordered th,
+.budget-section-container ::v-deep .table.table-bordered td {
+  border-color: rgba(234, 223, 206, 0.95) !important;
+}
+
+.budget-section-container ::v-deep .table thead th {
+  border-top: 0 !important;
+}
+
+.budget-section-container ::v-deep thead.text-white th,
+.budget-section-container ::v-deep thead.bg-primary th {
+  color: #ffffff !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.budget-section-container ::v-deep thead.bg-primary tr {
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.22);
+}
 .multiplier-box {
   width: 105px; 
 }
@@ -842,8 +904,8 @@ export default {
   outline: none;
 }
 .input-floating-outline:focus {
-  border-color: #3b24d6;
-  box-shadow: 0 0 0 1px #3b24d6;
+  border-color: #8b1212;
+  box-shadow: 0 0 0 1px #8b1212;
 }
 
 .label-floating-outline {
@@ -872,7 +934,7 @@ export default {
 }
 
 .input-floating-outline:focus ~ .label-floating-outline {
-  color: #3b24d6;
+  color: #8b1212;
 }
 
 /* CSS สำหรับการแจ้งเตือน Error */
