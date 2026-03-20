@@ -8,6 +8,7 @@ import router from './router/index'
 import { iconsSet as icons } from './assets/icons/icons.js'
 import i18n from './i18n.js'
 import store from "@/store/store";
+import CSidebarNavDropdownTemplate from '@/components/coreui/CSidebarNavDropdownTemplate.vue'
 
 // เพิ่มการ import CIcon และ CSS ของ CoreUI Icons
 import { CIcon } from '@coreui/icons-vue'
@@ -22,6 +23,8 @@ import VueQRCodeComponent from 'vue-qrcode-component'
 Vue.component('qr-code', VueQRCodeComponent)
 
 Vue.use(CoreuiVuePro)
+// Custom dropdown renderer that supports mixed items (title/divider/nested dropdown).
+Vue.component('CSidebarNavDropdownTemplate', CSidebarNavDropdownTemplate)
 Vue.prototype.$log = console.log.bind(console)
 import moment from 'moment'
 Vue.prototype.moment = moment
