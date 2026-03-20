@@ -332,6 +332,397 @@
                     <template v-else-if="section.sectionKey === 'integration'">
                       <TextEditor :model-value="feedbackSectionSnapshot(section.sectionKey)" :is-read-only="true" />
                     </template>
+                    <template v-else-if="section.sectionKey === 'strategic_alignment'">
+                      <div class="funding-options">
+                        <div class="form-check mb-3">
+                          <input
+                            :id="`feedback-${section.sectionKey}-fund1`"
+                            :checked="feedbackStrategicFundingType(section.sectionKey) === 'new-researcher'"
+                            type="radio"
+                            class="form-check-input"
+                            value="new-researcher"
+                            :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                            @change="setFeedbackStrategicFundingType(section.sectionKey, 'new-researcher')"
+                          >
+                          <label
+                            class="form-check-label"
+                            :for="`feedback-${section.sectionKey}-fund1`"
+                            :class="{ 'text-muted': (effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)) && feedbackStrategicFundingType(section.sectionKey) !== 'new-researcher' }"
+                          >
+                            <strong>ทุนนักวิจัยรุ่นใหม่</strong>
+                          </label>
+
+                          <div v-if="feedbackStrategicFundingType(section.sectionKey) === 'new-researcher'" class="sub-options">
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-sub1-1`"
+                                :checked="feedbackStrategicFundingSubType(section.sectionKey) === 'basic-research'"
+                                type="radio"
+                                class="form-check-input"
+                                value="basic-research"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackStrategicFundingSubType(section.sectionKey, 'basic-research')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-sub1-1`">โครงการวิจัยพื้นฐาน (Basic Research) เพื่อสร้างองค์ความรู้ใหม่ในสาขาวิชาเฉพาะทาง</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-sub1-2`"
+                                :checked="feedbackStrategicFundingSubType(section.sectionKey) === 'applied-research'"
+                                type="radio"
+                                class="form-check-input"
+                                value="applied-research"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackStrategicFundingSubType(section.sectionKey, 'applied-research')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-sub1-2`">โครงการวิจัยประยุกต์ (Applied Research) เพื่อพัฒนาเทคโนโลยีหรือนวัตกรรมใหม่</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-sub1-3`"
+                                :checked="feedbackStrategicFundingSubType(section.sectionKey) === 'interdisciplinary'"
+                                type="radio"
+                                class="form-check-input"
+                                value="interdisciplinary"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackStrategicFundingSubType(section.sectionKey, 'interdisciplinary')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-sub1-3`">โครงการวิจัยข้ามสาขา (Interdisciplinary Research) เพื่อแก้ไขปัญหาซับซ้อนที่ต้องใช้ความรู้หลายสาขา</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                          <input
+                            :id="`feedback-${section.sectionKey}-fund2`"
+                            :checked="feedbackStrategicFundingType(section.sectionKey) === 'researcher-development'"
+                            type="radio"
+                            class="form-check-input"
+                            value="researcher-development"
+                            :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                            @change="setFeedbackStrategicFundingType(section.sectionKey, 'researcher-development')"
+                          >
+                          <label
+                            class="form-check-label"
+                            :for="`feedback-${section.sectionKey}-fund2`"
+                            :class="{ 'text-muted': (effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)) && feedbackStrategicFundingType(section.sectionKey) !== 'researcher-development' }"
+                          >
+                            <strong>ทุนพัฒนานักวิจัย</strong>
+                          </label>
+
+                          <div v-if="feedbackStrategicFundingType(section.sectionKey) === 'researcher-development'" class="sub-options">
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-sub2-1`"
+                                :checked="feedbackStrategicFundingSubType(section.sectionKey) === 'economic-development'"
+                                type="radio"
+                                class="form-check-input"
+                                value="economic-development"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackStrategicFundingSubType(section.sectionKey, 'economic-development')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-sub2-1`">การพัฒนาเศรษฐกิจไทยด้วยเศรษฐกิจสร้างคุณค่าและเศรษฐกิจสร้างสรรค์ ให้มีความสามารถในการแข่งขันและพึ่งพาตนเองได้อย่างยั่งยืน</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-sub2-2`"
+                                :checked="feedbackStrategicFundingSubType(section.sectionKey) === 'social-environment'"
+                                type="radio"
+                                class="form-check-input"
+                                value="social-environment"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackStrategicFundingSubType(section.sectionKey, 'social-environment')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-sub2-2`">การยกระดับสังคมและสิ่งแวดล้อม ให้มีการพัฒนาอย่างยั่งยืน สามารถแก้ไข ปัญหาท้าทายและปรับตัวให้ทันต่อพลวัตการเปลี่ยนแปลงของโลก</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-sub2-3`"
+                                :checked="feedbackStrategicFundingSubType(section.sectionKey) === 'science-technology'"
+                                type="radio"
+                                class="form-check-input"
+                                value="science-technology"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackStrategicFundingSubType(section.sectionKey, 'science-technology')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-sub2-3`">การพัฒนาวิทยาศาสตร์ เทคโนโลยี การวิจัยและนวัตกรรม ระดับขั้นแนวหน้าที่ก้าวหน้าล้ำยุค เพื่อสร้างโอกาสใหม่และความพร้อม ของประเทศในอนาคต</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-sub2-4`"
+                                :checked="feedbackStrategicFundingSubType(section.sectionKey) === 'human-resources'"
+                                type="radio"
+                                class="form-check-input"
+                                value="human-resources"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackStrategicFundingSubType(section.sectionKey, 'human-resources')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-sub2-4`">การพัฒนากำลังคนและสถาบัน ด้านวิทยาศาสตร์ วิจัยและนวัตกรรม ให้เป็นฐานการขับเคลื่อนการพัฒนาเศรษฐกิจและสังคมของประเทศ</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                          <input
+                            :id="`feedback-${section.sectionKey}-fund3`"
+                            :checked="feedbackStrategicFundingType(section.sectionKey) === 'strategic-research'"
+                            type="radio"
+                            class="form-check-input"
+                            value="strategic-research"
+                            :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                            @change="setFeedbackStrategicFundingType(section.sectionKey, 'strategic-research')"
+                          >
+                          <label
+                            class="form-check-label"
+                            :for="`feedback-${section.sectionKey}-fund3`"
+                            :class="{ 'text-muted': (effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)) && feedbackStrategicFundingType(section.sectionKey) !== 'strategic-research' }"
+                          >
+                            <strong>ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์</strong>
+                          </label>
+                        </div>
+
+                        <div class="form-check mb-3">
+                          <input
+                            :id="`feedback-${section.sectionKey}-fund4`"
+                            :checked="feedbackStrategicFundingType(section.sectionKey) === 'industry-extension'"
+                            type="radio"
+                            class="form-check-input"
+                            value="industry-extension"
+                            :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                            @change="setFeedbackStrategicFundingType(section.sectionKey, 'industry-extension')"
+                          >
+                          <label
+                            class="form-check-label"
+                            :for="`feedback-${section.sectionKey}-fund4`"
+                            :class="{ 'text-muted': (effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)) && feedbackStrategicFundingType(section.sectionKey) !== 'industry-extension' }"
+                          >
+                            <strong>ทุนต่อยอดสู่ภาคอุตสาหกรรม</strong>
+                          </label>
+
+                          <div v-if="feedbackStrategicFundingType(section.sectionKey) === 'industry-extension'" class="sub-options">
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-sub3-1`"
+                                :checked="feedbackStrategicFundingSubType(section.sectionKey) === 'product-development'"
+                                type="radio"
+                                class="form-check-input"
+                                value="product-development"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackStrategicFundingSubType(section.sectionKey, 'product-development')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-sub3-1`">การวิจัยและพัฒนาผลิตภัณฑ์ใหม่ (Product R&D) เพื่อเพิ่มมูลค่าทางการตลาด</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-sub3-2`"
+                                :checked="feedbackStrategicFundingSubType(section.sectionKey) === 'process-innovation'"
+                                type="radio"
+                                class="form-check-input"
+                                value="process-innovation"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackStrategicFundingSubType(section.sectionKey, 'process-innovation')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-sub3-2`">การพัฒนากระบวนการผลิต (Process Innovation) เพื่อเพิ่มประสิทธิภาพและลดต้นทุน</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-sub3-3`"
+                                :checked="feedbackStrategicFundingSubType(section.sectionKey) === 'technology-transfer'"
+                                type="radio"
+                                class="form-check-input"
+                                value="technology-transfer"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackStrategicFundingSubType(section.sectionKey, 'technology-transfer')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-sub3-3`">การถ่ายทอดเทคโนโลยี (Technology Transfer) เพื่อสร้างนวัตกรรมทางอุตสาหกรรม</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-sub3-4`"
+                                :checked="feedbackStrategicFundingSubType(section.sectionKey) === 'competitiveness'"
+                                type="radio"
+                                class="form-check-input"
+                                value="competitiveness"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackStrategicFundingSubType(section.sectionKey, 'competitiveness')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-sub3-4`">การวิจัยเพื่อเพิ่มขีดความสามารถการแข่งขัน (Competitiveness Enhancement)</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                    <template v-else-if="section.sectionKey === 'expected_outcomes'">
+                      <div class="funding-options">
+                        <div v-if="!feedbackExpectedOutcomesFundingType(section.sectionKey)" class="alert alert-warning">
+                          <i class="cil-info mr-2"></i> กรุณาเลือก "ประเภททุน" ในหัวข้อที่ 2 เพื่อเลือกผลลัพธ์
+                        </div>
+
+                        <div v-if="feedbackExpectedOutcomesFundingType(section.sectionKey) === 'new-researcher'" class="mb-3">
+                          <label class="form-check-label" :class="{ 'text-muted': (effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)) && feedbackExpectedOutcomesFundingType(section.sectionKey) !== 'new-researcher' }">
+                            <strong>14.1 ทุนนักวิจัยรุ่นใหม่</strong>
+                          </label>
+                          <div class="sub-options">
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-outcome1-1`"
+                                :checked="feedbackExpectedOutcomesSelection(section.sectionKey) === 'internationalConference'"
+                                type="radio"
+                                class="form-check-input"
+                                value="internationalConference"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackExpectedOutcomesSelection(section.sectionKey, 'internationalConference')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-outcome1-1`">นำเสนอในการประชุมวิชาการระดับนานาชาติ (Proceedings)</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-outcome1-2`"
+                                :checked="feedbackExpectedOutcomesSelection(section.sectionKey) === 'scopusJournal'"
+                                type="radio"
+                                class="form-check-input"
+                                value="scopusJournal"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackExpectedOutcomesSelection(section.sectionKey, 'scopusJournal')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-outcome1-2`">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-outcome1-3`"
+                                :checked="feedbackExpectedOutcomesSelection(section.sectionKey) === 'tciJournal'"
+                                type="radio"
+                                class="form-check-input"
+                                value="tciJournal"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackExpectedOutcomesSelection(section.sectionKey, 'tciJournal')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-outcome1-3`">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-outcome1-4`"
+                                :checked="feedbackExpectedOutcomesSelection(section.sectionKey) === 'patent'"
+                                type="radio"
+                                class="form-check-input"
+                                value="patent"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackExpectedOutcomesSelection(section.sectionKey, 'patent')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-outcome1-4`">อนุสิทธิบัตร/สิทธิบัตร</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div v-if="feedbackExpectedOutcomesFundingType(section.sectionKey) === 'researcher-development'" class="mb-3">
+                          <label class="form-check-label" :class="{ 'text-muted': (effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)) && feedbackExpectedOutcomesFundingType(section.sectionKey) !== 'researcher-development' }">
+                            <strong>14.2 ทุนพัฒนานักวิจัย</strong>
+                          </label>
+                          <div class="sub-options">
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-outcome2-1`"
+                                :checked="feedbackExpectedOutcomesSelection(section.sectionKey) === 'scopusJournal'"
+                                type="radio"
+                                class="form-check-input"
+                                value="scopusJournal"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackExpectedOutcomesSelection(section.sectionKey, 'scopusJournal')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-outcome2-1`">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-outcome2-2`"
+                                :checked="feedbackExpectedOutcomesSelection(section.sectionKey) === 'tciJournal'"
+                                type="radio"
+                                class="form-check-input"
+                                value="tciJournal"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackExpectedOutcomesSelection(section.sectionKey, 'tciJournal')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-outcome2-2`">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-outcome2-3`"
+                                :checked="feedbackExpectedOutcomesSelection(section.sectionKey) === 'patent'"
+                                type="radio"
+                                class="form-check-input"
+                                value="patent"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackExpectedOutcomesSelection(section.sectionKey, 'patent')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-outcome2-3`">อนุสิทธิบัตร/สิทธิบัตร</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div v-if="feedbackExpectedOutcomesFundingType(section.sectionKey) === 'strategic-research'" class="mb-3">
+                          <label class="form-check-label" :class="{ 'text-muted': (effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)) && feedbackExpectedOutcomesFundingType(section.sectionKey) !== 'strategic-research' }">
+                            <strong>14.3 ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์</strong>
+                          </label>
+                          <div class="sub-options">
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-outcome3-1`"
+                                :checked="feedbackExpectedOutcomesSelection(section.sectionKey) === 'scopusJournal'"
+                                type="radio"
+                                class="form-check-input"
+                                value="scopusJournal"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackExpectedOutcomesSelection(section.sectionKey, 'scopusJournal')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-outcome3-1`">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-outcome3-2`"
+                                :checked="feedbackExpectedOutcomesSelection(section.sectionKey) === 'tciJournal'"
+                                type="radio"
+                                class="form-check-input"
+                                value="tciJournal"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackExpectedOutcomesSelection(section.sectionKey, 'tciJournal')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-outcome3-2`">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
+                            </div>
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-outcome3-3`"
+                                :checked="feedbackExpectedOutcomesSelection(section.sectionKey) === 'patent'"
+                                type="radio"
+                                class="form-check-input"
+                                value="patent"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackExpectedOutcomesSelection(section.sectionKey, 'patent')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-outcome3-3`">อนุสิทธิบัตร/สิทธิบัตร</label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div v-if="feedbackExpectedOutcomesFundingType(section.sectionKey) === 'industry-extension'" class="mb-3">
+                          <label class="form-check-label" :class="{ 'text-muted': (effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)) && feedbackExpectedOutcomesFundingType(section.sectionKey) !== 'industry-extension' }">
+                            <strong>14.4 ทุนต่อยอดสู่ภาคอุตสาหกรรม</strong>
+                          </label>
+                          <div class="sub-options">
+                            <div class="form-check">
+                              <input
+                                :id="`feedback-${section.sectionKey}-outcome4-1`"
+                                :checked="feedbackExpectedOutcomesSelection(section.sectionKey) === 'ipRegistration'"
+                                type="radio"
+                                class="form-check-input"
+                                value="ipRegistration"
+                                :disabled="effectiveReadOnly || isFeedbackSectionSubmitted(section.sectionKey)"
+                                @change="setFeedbackExpectedOutcomesSelection(section.sectionKey, 'ipRegistration')"
+                              >
+                              <label class="form-check-label" :for="`feedback-${section.sectionKey}-outcome4-1`">การยื่นขอจดทะเบียนทรัพย์สินทางปัญญา (มีเลขคำขอฯ)</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
                     <template v-else-if="section.sectionKey === 'transfer_level' && !isFeedbackSectionSubmitted(section.sectionKey)">
                       <div class="feedback-inline-radio-group">
                         <label class="feedback-inline-radio">
@@ -1061,6 +1452,7 @@ export default {
         }
       } else {
         if (this.isRevisionRequested) {
+          await this.scrollToFeedbackIfNeeded({ behavior: 'auto' })
           await this.fetchUserFeedback(id)
           await this.scrollToFeedbackIfNeeded()
         }
@@ -1261,7 +1653,7 @@ export default {
         : null
     },
     isRevisionRequested () {
-      return String(this.currentStatus || '').toLowerCase() === 'revision_requested'
+      return String(this.currentStatus || '').trim().toLowerCase() === 'revision_requested'
     },
     isRejectedStatus () {
       return String(this.currentStatus || '').toLowerCase() === 'rejected'
@@ -1337,6 +1729,7 @@ export default {
             }
           } else {
             if (this.isRevisionRequested) {
+              await this.scrollToFeedbackIfNeeded({ behavior: 'auto' })
               await this.fetchUserFeedback(newId)
               await this.scrollToFeedbackIfNeeded()
             }
@@ -1758,17 +2151,29 @@ export default {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
     },
-    async scrollToFeedbackIfNeeded () {
+    async scrollToFeedbackIfNeeded (options = {}) {
       const query = this.$route && this.$route.query ? this.$route.query : {}
-      const isRevisionStatus = String(this.currentStatus || '').toLowerCase() === 'revision_requested'
+      const isRevisionStatus = String(this.currentStatus || '').trim().toLowerCase() === 'revision_requested'
       const requestedByQuery = query.scrollFeedback === '1' || query.scrollReviews === '1'
-      if (!isRevisionStatus && !requestedByQuery) return
+      if (!isRevisionStatus && !requestedByQuery) return false
 
-      await this.$nextTick()
-      const target = this.$refs.userFeedbackSection
-      if (target && typeof target.scrollIntoView === 'function') {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      const behavior = typeof options.behavior === 'string' ? options.behavior : 'smooth'
+      const maxRetries = Number.isFinite(options.maxRetries) ? Math.max(0, Number(options.maxRetries)) : 6
+      const retryDelayMs = Number.isFinite(options.retryDelayMs) ? Math.max(0, Number(options.retryDelayMs)) : 120
+
+      for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+        await this.$nextTick()
+        const target = this.$refs.userFeedbackSection
+        if (target && typeof target.scrollIntoView === 'function') {
+          target.scrollIntoView({ behavior, block: 'start' })
+          return true
+        }
+        if (attempt < maxRetries && retryDelayMs > 0) {
+          await new Promise(resolve => setTimeout(resolve, retryDelayMs))
+        }
       }
+
+      return false
     },
     reviewerName (review) {
       const u = review && review.reviewerUserId ? review.reviewerUserId : null
@@ -1876,6 +2281,18 @@ export default {
       if (sectionKey === 'work_plan') return this.projectDetailsData.workPlan || []
       if (sectionKey === 'budget') return this.projectDetailsData.budget || {}
       if (sectionKey === 'integration') return this.projectDetailsData.integration || ''
+      if (sectionKey === 'strategic_alignment') {
+        return this.normalizeStrategicAlignmentValue({
+          fundingType: this.projectDetailsData.fundingType,
+          fundingSubType: this.projectDetailsData.fundingSubType
+        })
+      }
+      if (sectionKey === 'expected_outcomes') {
+        return this.normalizeExpectedOutcomesValue({
+          fundingType: this.projectDetailsData.fundingType,
+          selectedOutcome: this.projectDetailsData.selectedOutcome
+        })
+      }
       if (sectionKey === 'transfer_level') return this.projectDetailsData.transferLevel || ''
       if (sectionKey === 'research_team') return this.researchTeamData.projectLeader || {}
       return null
@@ -1911,6 +2328,16 @@ export default {
         this.$refs.projectDetailsForm.form.budget = (draft && typeof draft === 'object') ? draft : {}
       } else if (sectionKey === 'integration' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
         this.$refs.projectDetailsForm.form.integration = draft || ''
+      } else if (sectionKey === 'strategic_alignment' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
+        const strategicDraft = this.normalizeStrategicAlignmentValue(draft)
+        this.$refs.projectDetailsForm.form.fundingType = strategicDraft.fundingType
+        this.$refs.projectDetailsForm.form.fundingSubType = strategicDraft.fundingSubType
+      } else if (sectionKey === 'expected_outcomes' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
+        const outcomesDraft = this.normalizeExpectedOutcomesValue(
+          draft,
+          this.$refs.projectDetailsForm.form.fundingType || this.projectDetailsData.fundingType
+        )
+        this.$refs.projectDetailsForm.form.selectedOutcome = outcomesDraft.selectedOutcome
       } else if (sectionKey === 'transfer_level' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
         this.$refs.projectDetailsForm.form.transferLevel = draft || ''
       } else if (sectionKey === 'research_team' && this.$refs.researchTeamForm && this.$refs.researchTeamForm.projectLeader) {
@@ -1929,10 +2356,112 @@ export default {
         return state.snapshot
       }
       const current = this.currentFeedbackSectionValue(sectionKey)
+      if (sectionKey === 'strategic_alignment') {
+        return this.normalizeStrategicAlignmentValue(current)
+      }
+      if (sectionKey === 'expected_outcomes') {
+        return this.normalizeExpectedOutcomesValue(current, this.projectDetailsData.fundingType)
+      }
       if (sectionKey === 'research_team') {
         return current || { name: '', affiliation: '', phone: '', email: '' }
       }
       return current
+    },
+    normalizeStrategicAlignmentValue (value) {
+      const source = value && typeof value === 'object' ? value : {}
+      return {
+        fundingType: String(source.fundingType || ''),
+        fundingSubType: String(source.fundingSubType || '')
+      }
+    },
+    normalizeExpectedOutcomesValue (value, fallbackFundingType = '') {
+      const source = value && typeof value === 'object' ? value : {}
+      return {
+        fundingType: String(source.fundingType || fallbackFundingType || ''),
+        selectedOutcome: String(source.selectedOutcome || '')
+      }
+    },
+    feedbackStrategicAlignmentState (sectionKey) {
+      const source = this.isFeedbackSectionSubmitted(sectionKey)
+        ? this.feedbackSectionSnapshot(sectionKey)
+        : this.feedbackSectionDraft(sectionKey)
+      return this.normalizeStrategicAlignmentValue(source)
+    },
+    feedbackStrategicFundingType (sectionKey) {
+      return this.feedbackStrategicAlignmentState(sectionKey).fundingType
+    },
+    feedbackStrategicFundingSubType (sectionKey) {
+      return this.feedbackStrategicAlignmentState(sectionKey).fundingSubType
+    },
+    setFeedbackStrategicFundingType (sectionKey, fundingType) {
+      if (this.effectiveReadOnly || this.isFeedbackSectionSubmitted(sectionKey)) return
+      const next = this.normalizeStrategicAlignmentValue(this.feedbackSectionDraft(sectionKey))
+      const previousFundingType = next.fundingType
+      if (next.fundingType !== String(fundingType || '')) {
+        next.fundingSubType = ''
+      }
+      next.fundingType = String(fundingType || '')
+      this.$set(this.feedbackSectionDrafts, sectionKey, next)
+      if (sectionKey === 'strategic_alignment' && previousFundingType !== next.fundingType) {
+        this.syncExpectedOutcomesDraftFromFundingType(next.fundingType)
+      }
+    },
+    setFeedbackStrategicFundingSubType (sectionKey, fundingSubType) {
+      if (this.effectiveReadOnly || this.isFeedbackSectionSubmitted(sectionKey)) return
+      const next = this.normalizeStrategicAlignmentValue(this.feedbackSectionDraft(sectionKey))
+      next.fundingSubType = String(fundingSubType || '')
+      this.$set(this.feedbackSectionDrafts, sectionKey, next)
+    },
+    syncExpectedOutcomesDraftFromFundingType (fundingType) {
+      const sectionKey = 'expected_outcomes'
+      const hasExpectedOutcomesSection = Array.isArray(this.feedbackEditableSections)
+        && this.feedbackEditableSections.some(section => section && section.sectionKey === sectionKey)
+      if (!hasExpectedOutcomesSection) return
+
+      if (this.isFeedbackSectionSubmitted(sectionKey)) {
+        this.reopenFeedbackSection(sectionKey)
+      }
+
+      const normalizedFundingType = String(fundingType || '')
+      const next = this.normalizeExpectedOutcomesValue(this.feedbackSectionDraft(sectionKey), normalizedFundingType)
+      if (next.fundingType !== normalizedFundingType) {
+        next.selectedOutcome = ''
+      }
+      next.fundingType = normalizedFundingType
+      this.$set(this.feedbackSectionDrafts, sectionKey, next)
+    },
+    feedbackExpectedOutcomesState (sectionKey) {
+      const source = this.isFeedbackSectionSubmitted(sectionKey)
+        ? this.feedbackSectionSnapshot(sectionKey)
+        : this.feedbackSectionDraft(sectionKey)
+      const strategicFundingType = String(this.feedbackStrategicFundingType('strategic_alignment') || '')
+      const fallbackFundingType = String(
+        strategicFundingType
+        || ((this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form && this.$refs.projectDetailsForm.form.fundingType) || this.projectDetailsData.fundingType || '')
+      )
+      const next = this.normalizeExpectedOutcomesValue(source, fallbackFundingType)
+      if (!this.isFeedbackSectionSubmitted(sectionKey)) {
+        next.fundingType = fallbackFundingType || next.fundingType
+      }
+      return next
+    },
+    feedbackExpectedOutcomesFundingType (sectionKey) {
+      return this.feedbackExpectedOutcomesState(sectionKey).fundingType
+    },
+    feedbackExpectedOutcomesSelection (sectionKey) {
+      return this.feedbackExpectedOutcomesState(sectionKey).selectedOutcome
+    },
+    setFeedbackExpectedOutcomesSelection (sectionKey, selectedOutcome) {
+      if (this.effectiveReadOnly || this.isFeedbackSectionSubmitted(sectionKey)) return
+      const strategicFundingType = String(this.feedbackStrategicFundingType('strategic_alignment') || '')
+      const fallbackFundingType = String(
+        strategicFundingType
+        || ((this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form && this.$refs.projectDetailsForm.form.fundingType) || this.projectDetailsData.fundingType || '')
+      )
+      const next = this.normalizeExpectedOutcomesValue(this.feedbackSectionDraft(sectionKey), fallbackFundingType)
+      next.fundingType = fallbackFundingType || next.fundingType
+      next.selectedOutcome = String(selectedOutcome || '')
+      this.$set(this.feedbackSectionDrafts, sectionKey, next)
     },
     transferLevelPreview (value) {
       if (value === 'national-international') return 'ระดับภูมิภาค/ประเทศ/นานาชาติ'
