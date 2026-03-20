@@ -352,17 +352,17 @@ export default {
     },
     totalPeriod1() {
       return this.categories.reduce((sum, cat) => {
-        return sum + cat.items.reduce((itemSum, item) => itemSum + (Number(item.periods[0]) || 0), 0);
+        return sum + cat.items.reduce((itemSum, item) => itemSum + this.toNumber(item.periods[0]), 0);
       }, 0);
     },
     totalPeriod2() {
       return this.categories.reduce((sum, cat) => {
-        return sum + cat.items.reduce((itemSum, item) => itemSum + (Number(item.periods[1]) || 0), 0);
+        return sum + cat.items.reduce((itemSum, item) => itemSum + this.toNumber(item.periods[1]), 0);
       }, 0);
     },
     totalPeriod3() {
       return this.categories.reduce((sum, cat) => {
-        return sum + cat.items.reduce((itemSum, item) => itemSum + (Number(item.periods[2]) || 0), 0);
+        return sum + cat.items.reduce((itemSum, item) => itemSum + this.toNumber(item.periods[2]), 0);
       }, 0);
     },
     expectedPeriod1() {
@@ -423,6 +423,7 @@ export default {
   methods: {
     applyModelValue(val) {
       if (!val || !Array.isArray(val.categories)) return
+      if (!this.shouldApplyIncomingModel(val.categories)) return
 
       this.suppressEmit = true
       const saved = val.categories
@@ -438,23 +439,95 @@ export default {
         }
       })
 
+      this.formatAllNumericInputs()
+
       this.$nextTick(() => {
         this.suppressEmit = false
       })
+    },
+    shouldApplyIncomingModel(incomingCategories) {
+      try {
+        const incomingSerialized = JSON.stringify(incomingCategories || [])
+        const localSerialized = JSON.stringify(this.getSanitizedCategories() || [])
+        return incomingSerialized !== localSerialized
+      } catch (_) {
+        return true
+      }
     },
     emitModelValue() {
       if (this.suppressEmit) return
       if (this.isReadOnly) return
       this.$emit('update:modelValue', {
-        categories: this.categories,
+        categories: this.getSanitizedCategories(),
         grandTotal: this.grandTotal
       })
     },
     getBudgetData() {
       return {
-        categories: JSON.parse(JSON.stringify(this.categories || [])),
+        categories: this.getSanitizedCategories(),
         grandTotal: this.grandTotal
       }
+    },
+    toNumber(value) {
+      if (value === null || value === undefined || value === '') return 0
+      const parsed = Number(this.toRawNumberString(value))
+      return Number.isFinite(parsed) ? parsed : 0
+    },
+    toRawNumberString(value) {
+      let cleanVal = value === null || value === undefined
+        ? ''
+        : String(value).replace(/\D/g, '')
+      if (cleanVal.length > 1 && cleanVal.startsWith('0')) {
+        cleanVal = cleanVal.replace(/^0+/, '')
+        if (cleanVal === '') cleanVal = '0'
+      }
+      return cleanVal
+    },
+    formatNumberInputValue(value) {
+      const raw = this.toRawNumberString(value)
+      if (!raw) return ''
+      return raw.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    },
+    formatAllNumericInputs() {
+      this.categories.forEach((category) => {
+        if (!category || !Array.isArray(category.items)) return
+        category.items.forEach((item) => {
+          this.formatItemNumericInputs(item)
+        })
+      })
+    },
+    formatItemNumericInputs(item) {
+      if (!item || typeof item !== 'object') return
+
+      if (Array.isArray(item.multipliers)) {
+        item.multipliers.forEach((multiplier) => {
+          if (!multiplier || typeof multiplier !== 'object') return
+          multiplier.value = this.formatNumberInputValue(multiplier.value)
+        })
+      }
+
+      if (Array.isArray(item.periods)) {
+        item.periods = item.periods.map(period => this.formatNumberInputValue(period))
+      }
+    },
+    getSanitizedCategories() {
+      const categories = JSON.parse(JSON.stringify(this.categories || []))
+      categories.forEach((category) => {
+        if (!category || !Array.isArray(category.items)) return
+        category.items.forEach((item) => {
+          if (!item || typeof item !== 'object') return
+          if (Array.isArray(item.multipliers)) {
+            item.multipliers.forEach((multiplier) => {
+              if (!multiplier || typeof multiplier !== 'object') return
+              multiplier.value = this.toRawNumberString(multiplier.value)
+            })
+          }
+          if (Array.isArray(item.periods)) {
+            item.periods = item.periods.map(period => this.toRawNumberString(period))
+          }
+        })
+      })
+      return categories
     },
     checkKeyword(catIndex, item) {
       const cat = this.categories[catIndex];
@@ -588,27 +661,17 @@ export default {
     },
     cleanNumber(obj, key) {
       if (obj[key] !== null && obj[key] !== undefined) {
-        let cleanVal = obj[key].toString().replace(/\D/g, ''); 
-        if (cleanVal.length > 1 && cleanVal.startsWith('0')) {
-          cleanVal = cleanVal.replace(/^0+/, '');
-          if (cleanVal === '') cleanVal = '0'; 
-        }
-        obj[key] = cleanVal;
+        obj[key] = this.formatNumberInputValue(obj[key]);
       }
     },
     cleanArrayNumber(arr, index) {
       if (arr[index] !== null && arr[index] !== undefined) {
-        let cleanVal = arr[index].toString().replace(/\D/g, '');
-        if (cleanVal.length > 1 && cleanVal.startsWith('0')) {
-          cleanVal = cleanVal.replace(/^0+/, '');
-          if (cleanVal === '') cleanVal = '0';
-        }
-        this.$set(arr, index, cleanVal);
+        this.$set(arr, index, this.formatNumberInputValue(arr[index]));
       }
     },
     createItem(category, attachment = null) {
       const multipliers = JSON.parse(JSON.stringify(category.defaultMultipliers));
-      return {
+      const item = {
         id: Date.now() + Math.random(),
         name: '',
         multipliers: multipliers,
@@ -617,6 +680,8 @@ export default {
         attachment: attachment,
         periodError: false // เพิ่มสถานะเช็คการเกินงบ
       };
+      this.formatItemNumericInputs(item);
+      return item;
     },
     addItem(catIndex) {
       const cat = this.categories[catIndex];
@@ -629,6 +694,7 @@ export default {
     },
     addMultiplier(item) {
       item.multipliers.push({ label: 'ตัวคูณใหม่', value: 1, isAdmin: false });
+      this.formatItemNumericInputs(item);
       this.calculateItemTotal(item);
     },
     removeMultiplier(item, mIndex) {
@@ -640,7 +706,7 @@ export default {
         item.total = 0;
       } else {
         item.total = item.multipliers.reduce((acc, curr) => {
-          const val = curr.value === '' ? 0 : Number(curr.value);
+          const val = this.toNumber(curr.value);
           return acc * val;
         }, 1);
       }
@@ -648,9 +714,9 @@ export default {
     },
     // อัปเดตฟังก์ชันเช็คยอดงวด
     validatePeriods(item) {
-      const sumPeriods = (Number(item.periods[0]) || 0) + 
-                         (Number(item.periods[1]) || 0) + 
-                         (Number(item.periods[2]) || 0);
+      const sumPeriods = this.toNumber(item.periods[0]) +
+                         this.toNumber(item.periods[1]) +
+                         this.toNumber(item.periods[2]);
       
       // ลบ Alert ออก และอัปเดตสถานะ periodError แทน
       item.periodError = sumPeriods > item.total;

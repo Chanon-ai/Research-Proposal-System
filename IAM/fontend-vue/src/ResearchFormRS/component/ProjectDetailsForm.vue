@@ -19,7 +19,7 @@
               @input="filterThaiInput"
               required
             >
-            <small class="form-text text-muted lang-hint">กรุณากรอกเป็นภาษาไทยเท่านั้น *</small>
+            <small class="form-text text-muted lang-hint">กรุณากรอกชื่อโครงการภาษาไทย (สามารถใช้ตัวเลขและสัญลักษณ์ได้) *</small>
           </div>
           <div class="form-group">
             <label class="sub-label">ชื่อโครงการ (ภาษาอังกฤษ)</label>
@@ -526,17 +526,45 @@ export default {
       }
     },
     filterThaiInput(event) {
-      const thaiRegex = /[^ก-๙\s\-\.]/g
-      this.form.projectNameThai = event.target.value.replace(thaiRegex, '')
+      this.form.projectNameThai = this.sanitizeThaiProjectTitle(event.target.value)
     },
     filterEnglishInput(event) {
-      const englishRegex = /[^a-zA-Z0-9\s\-\.\,\!\?\(\)\'\"]/g
-      this.form.projectNameEnglish = event.target.value.replace(englishRegex, '')
+      this.form.projectNameEnglish = this.sanitizeEnglishProjectTitle(event.target.value)
+    },
+    isAllowedSymbol(char) {
+      return /[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/.test(char)
+    },
+    sanitizeThaiProjectTitle(value) {
+      const source = String(value || '')
+      return Array.from(source).filter((char) => {
+        if (/[0-9]/.test(char)) return true
+        if (/\s/.test(char)) return true
+        if (/[\u0E00-\u0E7F]/.test(char)) return true
+        return this.isAllowedSymbol(char)
+      }).join('')
+    },
+    sanitizeEnglishProjectTitle(value) {
+      const source = String(value || '')
+      return Array.from(source).filter((char) => {
+        if (/[a-zA-Z0-9]/.test(char)) return true
+        if (/\s/.test(char)) return true
+        return this.isAllowedSymbol(char)
+      }).join('')
+    },
+    isSameBudget(left, right) {
+      try {
+        return JSON.stringify(left || {}) === JSON.stringify(right || {})
+      } catch (_) {
+        return left === right
+      }
     },
     handleBudgetUpdate(newBudget) {
-      this.form.budget = newBudget || { categories: [], grandTotal: 0 }
+      const nextBudget = this.cloneSerializable(newBudget) || { categories: [], grandTotal: 0 }
+      if (!this.isSameBudget(this.form.budget, nextBudget)) {
+        this.form.budget = nextBudget
+      }
       if (this.isHydrating) return
-      this.$emit('budget-changed', this.form.budget)
+      this.$emit('budget-changed', nextBudget)
       this.$emit('form-changed', this.getFormData())
     },
     sectionClass(sectionKey) {
@@ -585,12 +613,13 @@ export default {
       })
     },
     getFormData() {
+      const snapshot = this.cloneSerializable(this.form)
       const budgetSection = this.$refs.budgetSection
       const section = Array.isArray(budgetSection) ? budgetSection[0] : budgetSection
       if (!this.isHydrating && !this.isReadOnly && section && typeof section.getBudgetData === 'function') {
-        this.form.budget = section.getBudgetData()
+        snapshot.budget = section.getBudgetData()
       }
-      return this.cloneSerializable(this.form)
+      return snapshot
     },
     getBudgetValidationResult() {
       const budgetSection = this.$refs.budgetSection
@@ -786,3 +815,4 @@ export default {
   }
 }
 </style>
+
