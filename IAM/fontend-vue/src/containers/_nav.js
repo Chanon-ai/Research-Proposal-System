@@ -43,10 +43,6 @@ export default [{
           to: '/admin/dashboard'
         },
         {
-          name: 'Documents',
-          to: '/admin/documents'
-        },
-        {
           name: 'Meetings',
           to: '/admin/meetings'
         },
@@ -61,10 +57,6 @@ export default [{
         {
           name: 'Settings',
           to: '/admin/settings'
-        },
-        {
-          name: 'Users',
-          to: '/admin/users'
         }
       ]
     },
