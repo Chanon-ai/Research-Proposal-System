@@ -391,10 +391,26 @@ export default {
   margin-left: 1.5rem;
   margin-top: 10px;
   padding-left: 15px;
-  border-left: 4px solid #007bff;
-  background: white;
+  background: transparent;
   border-radius: 0 8px 8px 0;
   padding: 15px;
+}
+
+.sub-options .form-check {
+  margin-bottom: 12px;
+  padding-left: 1.5rem;
+}
+
+.sub-options .form-check-input {
+  margin-left: -1.5rem;
+  margin-top: 0.2rem;
+}
+
+.sub-options .form-check-label {
+  font-size: 0.9rem;
+  color: #495057;
+  line-height: 1.5;
+  cursor: pointer;
 }
 
 .form-check {

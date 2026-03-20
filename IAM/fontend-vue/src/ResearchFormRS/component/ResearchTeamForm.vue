@@ -56,13 +56,29 @@
                   <div class="col-md-6">
                     <div class="form-group">
                       <label>ชื่อ-สกุล <span v-if="!isReadOnly" class="text-danger">*</span></label>
-                      <input v-model="researcher.name" type="text" class="form-control" required :disabled="isReadOnly">
+                      <input
+                        v-model="researcher.name"
+                        type="text"
+                        class="form-control"
+                        :class="{ 'co-researcher-readonly': isCoResearcherProfileLocked(researcher) }"
+                        required
+                        :readonly="isCoResearcherProfileLocked(researcher)"
+                        :disabled="isReadOnly"
+                      >
                     </div>
                   </div>
                   <div class="col-md-6">
                     <div class="form-group">
                       <label>สังกัดหน่วยงาน <span v-if="!isReadOnly" class="text-danger">*</span></label>
-                      <input v-model="researcher.affiliation" type="text" class="form-control" required :disabled="isReadOnly">
+                      <input
+                        v-model="researcher.affiliation"
+                        type="text"
+                        class="form-control"
+                        :class="{ 'co-researcher-readonly': isCoResearcherProfileLocked(researcher) }"
+                        required
+                        :readonly="isCoResearcherProfileLocked(researcher)"
+                        :disabled="isReadOnly"
+                      >
                     </div>
                   </div>
                 </div>
@@ -70,16 +86,32 @@
                   <div class="col-md-4">
                     <div class="form-group">
                       <label>เบอร์โทรศัพท์ <span v-if="!isReadOnly" class="text-danger">*</span></label>
-                      <input v-model="researcher.phone" type="text" class="form-control" required :disabled="isReadOnly">
+                      <input
+                        v-model="researcher.phone"
+                        type="text"
+                        class="form-control"
+                        :class="{ 'co-researcher-readonly': isCoResearcherProfileLocked(researcher) }"
+                        required
+                        :readonly="isCoResearcherProfileLocked(researcher)"
+                        :disabled="isReadOnly"
+                      >
                     </div>
                   </div>
                   <div class="col-md-4">
                     <div class="form-group">
                       <label>E-mail <span v-if="!isReadOnly" class="text-danger">*</span></label>
-                      <input v-model="researcher.email" type="email" class="form-control" required :disabled="isReadOnly">
+                      <input
+                        v-model="researcher.email"
+                        type="email"
+                        class="form-control"
+                        :class="{ 'co-researcher-readonly': isCoResearcherProfileLocked(researcher) }"
+                        required
+                        :readonly="isCoResearcherProfileLocked(researcher)"
+                        :disabled="isReadOnly"
+                      >
                     </div>
                   </div>
-                  <div :class="isReadOnly ? 'col-md-4' : 'col-md-3'">
+                  <div :class="isReadOnly ? 'col-md-4' : 'col-md-2'">
                     <div class="form-group">
                       <label>สัดส่วนการวิจัย (%) <span v-if="!isReadOnly" class="text-danger">*</span></label>
                       <input 
@@ -95,11 +127,12 @@
                       >
                     </div>
                   </div>
-                  <div class="col-md-1" v-if="!isReadOnly">
+                  <div class="col-md-2" v-if="!isReadOnly">
                     <div class="form-group">
                       <label>&nbsp;</label>
-                      <button @click="removeCoResearcher(index)" title="ลบผู้ร่วมโครงการวิจัย" class="btn btn-danger btn-sm form-control">
-                        <CIcon name="cil-trash"/>
+                      <button @click="removeCoResearcher(index)" title="ลบผู้ร่วมโครงการวิจัย" class="btn btn-danger form-control delete-action-btn">
+                        <CIcon name="cil-trash" class="mr-1"/>
+                        <span>ลบ</span>
                       </button>
                     </div>
                   </div>
@@ -108,9 +141,61 @@
             </div>
           </div>
           
-          <button v-if="!isReadOnly" @click="addCoResearcher" class="btn btn-outline-primary w-100 mb-3">
+          <button v-if="!isReadOnly" @click="openCoResearcherPicker" class="btn btn-outline-primary w-100 mb-3">
             <CIcon name="cil-plus" class="mr-2" /> เพิ่มผู้ร่วม
           </button>
+
+          <CModal
+            :show.sync="showCoResearcherModal"
+            centered
+            :close-on-backdrop="false"
+            class="co-researcher-modal"
+            title="เพิ่มผู้ร่วมโครงการ"
+          >
+            <template #body-wrapper>
+              <div class="co-researcher-picker">
+                <label class="co-researcher-picker-label">ค้นหา / เลือกผู้ร่วมโครงการ (เลือกได้หลายคน)</label>
+                <multiselect
+                  v-model="selectedCoResearcherOptions"
+                  :options="coResearcherOptions"
+                  :searchable="true"
+                  :multiple="true"
+                  :close-on-select="false"
+                  :clear-on-select="false"
+                  :preserve-search="true"
+                  :allow-empty="true"
+                  :loading="coResearcherOptionsLoading"
+                  label="searchText"
+                  track-by="_optionKey"
+                  placeholder="ค้นหาชื่อ อีเมล หรือหน่วยงาน"
+                  :custom-label="formatCoResearcherOptionLabel"
+                >
+                  <template slot="option" slot-scope="{ option }">
+                    <div class="co-researcher-option">
+                      <div class="co-researcher-option__name">{{ option.fullName || option.email || '-' }}</div>
+                      <small class="text-muted">{{ option.email || option.affiliation || '-' }}</small>
+                    </div>
+                  </template>
+                </multiselect>
+                <small v-if="coResearcherOptionsError" class="text-danger co-researcher-picker-error">
+                  {{ coResearcherOptionsError }}
+                </small>
+              </div>
+            </template>
+            <template #footer-wrapper>
+              <div class="d-flex justify-content-end w-100 co-researcher-modal-actions">
+                <button type="button" class="btn btn-outline-danger co-researcher-action-btn" @click="closeCoResearcherPicker">ยกเลิก</button>
+                <button
+                  type="button"
+                  class="btn btn-primary co-researcher-action-btn"
+                  :disabled="coResearcherOptionsLoading || selectedCoResearcherOptions.length === 0"
+                  @click="confirmAddCoResearchers"
+                >
+                  เพิ่มผู้ร่วม
+                </button>
+              </div>
+            </template>
+          </CModal>
 
           <div 
             class="alert mb-0" 
@@ -148,7 +233,7 @@
                   </div>
                 </div>
                 <div class="row">
-                  <div :class="isReadOnly ? 'col-md-6' : 'col-md-5'">
+                  <div :class="isReadOnly ? 'col-md-6' : 'col-md-4'">
                     <div class="form-group">
                       <label>เบอร์โทรศัพท์ <span v-if="!isReadOnly" class="text-danger">*</span></label>
                       <input v-model="advisor.phone" type="text" class="form-control" required :disabled="isReadOnly">
@@ -160,11 +245,12 @@
                       <input v-model="advisor.email" type="email" class="form-control" required :disabled="isReadOnly">
                     </div>
                   </div>
-                  <div class="col-md-1" v-if="!isReadOnly">
+                  <div class="col-md-2" v-if="!isReadOnly">
                     <div class="form-group">
                       <label>&nbsp;</label>
-                      <button @click="removeAdvisor(index)" title="ลบที่ปรึกษาโครงการวิจัย" class="btn btn-danger btn-sm form-control">
-                        <CIcon name="cil-trash" />
+                      <button @click="removeAdvisor(index)" title="ลบที่ปรึกษาโครงการวิจัย" class="btn btn-danger form-control delete-action-btn">
+                        <CIcon name="cil-trash" class="mr-1" />
+                        <span>ลบ</span>
                       </button>
                     </div>
                   </div>
@@ -183,8 +269,13 @@
 </template>
 
 <script>
+import { instance as axios } from '@/service/api'
+import Multiselect from 'vue-multiselect'
+import 'vue-multiselect/dist/vue-multiselect.min.css'
+
 export default {
   name: 'ResearchTeamForm',
+  components: { Multiselect },
   props: {
     // รับค่ามาจาก ResearchForm.vue
     isReadOnly: {
@@ -213,7 +304,12 @@ export default {
         proportion: 100
       },
       coResearchers: [],
-      advisors: []
+      advisors: [],
+      showCoResearcherModal: false,
+      coResearcherOptions: [],
+      coResearcherOptionsLoading: false,
+      coResearcherOptionsError: '',
+      selectedCoResearcherOptions: []
     }
   },
   computed: {
@@ -389,16 +485,139 @@ export default {
         this.coResearchers[index].proportion = 1;
       }
     },
+    getAffiliationText(user) {
+      if (!user || typeof user !== 'object') return ''
+      const department = user.department && typeof user.department === 'object'
+        ? (user.department.name || user.department.title || user.department.departmentName)
+        : user.department
+      const faculty = user.faculty && typeof user.faculty === 'object'
+        ? (user.faculty.name || user.faculty.title || user.faculty.facultyName)
+        : user.faculty
+      const affiliation = user.affiliation || department || faculty || user.organization || user.unit || ''
+      return String(affiliation || '').trim()
+    },
+    getUserDisplayName(user) {
+      if (!user || typeof user !== 'object') return ''
+      const fullName = user.fullName || user.name || user.displayName
+      if (fullName) return String(fullName).trim()
+      const firstName = user.firstName || user.firstname || user.first_name || ''
+      const lastName = user.lastName || user.lastname || user.last_name || ''
+      return `${firstName} ${lastName}`.trim()
+    },
+    getUserIdentity(user) {
+      if (!user || typeof user !== 'object') return ''
+      const userId = user._id || user.id || ''
+      if (userId) return `id:${String(userId)}`
+      const email = String(user.email || '').trim().toLowerCase()
+      if (email) return `email:${email}`
+      const name = this.getUserDisplayName(user).toLowerCase()
+      const phone = String(user.phone || user.mobile || '').trim()
+      return name || phone ? `fallback:${name}:${phone}` : ''
+    },
+    formatCoResearcherOptionLabel(user) {
+      const name = this.getUserDisplayName(user)
+      const email = String((user && user.email) || '').trim()
+      if (name && email) return `${name} (${email})`
+      return name || email || '-'
+    },
+    isCoResearcherProfileLocked(researcher) {
+      if (!researcher || typeof researcher !== 'object') return false
+      return Boolean(researcher.lockedProfile || researcher.sourceUserId)
+    },
+    createCoResearcherFromUser(user) {
+      const name = this.getUserDisplayName(user)
+      const affiliation = this.getAffiliationText(user)
+      const phone = String((user && (user.phone || user.mobile)) || '').trim()
+      const email = String((user && user.email) || '').trim()
+      const sourceUserId = (user && (user._id || user.id)) ? String(user._id || user.id) : ''
+      return {
+        name,
+        affiliation,
+        phone,
+        email,
+        proportion: '',
+        sourceUserId,
+        lockedProfile: true
+      }
+    },
+    async fetchCoResearcherOptions() {
+      this.coResearcherOptionsLoading = true
+      this.coResearcherOptionsError = ''
+      try {
+        const response = await axios.get('/api/v1/users', { params: { page: 1, limit: 300 } })
+        const payload = (response && response.data && response.data.data) || {}
+        const list = Array.isArray(payload.users) ? payload.users : []
+        this.coResearcherOptions = list.map(user => {
+          const fullName = this.getUserDisplayName(user)
+          const email = String((user && user.email) || '').trim()
+          const affiliation = this.getAffiliationText(user)
+          const searchText = [fullName, email, affiliation].filter(Boolean).join(' ')
+          const optionKey = this.getUserIdentity(user) || `${fullName}-${email}-${affiliation}`
+          return {
+            ...user,
+            fullName,
+            affiliation,
+            searchText,
+            _optionKey: optionKey
+          }
+        })
+      } catch (err) {
+        console.error('[ResearchTeamForm] fetch co-researcher options failed:', err)
+        this.coResearcherOptions = []
+        this.coResearcherOptionsError = 'ไม่สามารถโหลดรายชื่อผู้ร่วมโครงการได้'
+      } finally {
+        this.coResearcherOptionsLoading = false
+      }
+    },
+    async openCoResearcherPicker() {
+      if (this.isReadOnly) return
+      this.selectedCoResearcherOptions = []
+      this.showCoResearcherModal = true
+
+      if (!this.coResearcherOptions.length && !this.coResearcherOptionsLoading) {
+        await this.fetchCoResearcherOptions()
+      }
+    },
+    closeCoResearcherPicker() {
+      this.showCoResearcherModal = false
+      this.selectedCoResearcherOptions = []
+    },
     addCoResearcher() {
-      if (this.isReadOnly) return;
-      this.coResearchers.push({
-        name: '',
-        affiliation: '',
-        phone: '',
-        email: '',
-        proportion: ''
-      });
-      this.emitTeamChanged();
+      this.openCoResearcherPicker()
+    },
+    confirmAddCoResearchers() {
+      if (this.isReadOnly) return
+      const selectedUsers = Array.isArray(this.selectedCoResearcherOptions)
+        ? this.selectedCoResearcherOptions
+        : []
+      if (!selectedUsers.length) return
+
+      const existingIdentity = new Set(
+        this.coResearchers
+          .map(researcher => this.getUserIdentity({
+            _id: researcher.sourceUserId || '',
+            email: researcher.email,
+            fullName: researcher.name,
+            phone: researcher.phone
+          }))
+          .filter(Boolean)
+      )
+
+      const newRows = []
+      selectedUsers.forEach(user => {
+        const identity = this.getUserIdentity(user)
+        if (!identity || existingIdentity.has(identity)) return
+        const row = this.createCoResearcherFromUser(user)
+        newRows.push(row)
+        existingIdentity.add(identity)
+      })
+
+      if (newRows.length > 0) {
+        this.coResearchers.push(...newRows)
+        this.emitTeamChanged()
+      }
+
+      this.closeCoResearcherPicker()
     },
     removeCoResearcher(index) {
       if (this.isReadOnly) return;
@@ -437,7 +656,14 @@ export default {
           : 100
       }
       this.coResearchers = Array.isArray(source.coResearchers)
-        ? source.coResearchers.map(item => ({ ...item }))
+        ? source.coResearchers.map(item => {
+          const researcher = item && typeof item === 'object' ? item : {}
+          return {
+            ...researcher,
+            sourceUserId: researcher.sourceUserId ? String(researcher.sourceUserId) : '',
+            lockedProfile: Boolean(researcher.lockedProfile || researcher.sourceUserId)
+          }
+        })
         : []
       this.advisors = Array.isArray(source.advisors)
         ? source.advisors.map(item => ({ ...item }))
@@ -537,7 +763,6 @@ export default {
 }
 
 .co-researcher-item, .advisor-item {
-  border-left: 4px solid #007bff;
   margin-bottom: 15px;
   border-radius: 8px;
   overflow: hidden;
@@ -584,6 +809,88 @@ export default {
   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
+.co-researcher-readonly {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+}
+
+.co-researcher-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 16px 8px;
+  background: #ffffff;
+}
+
+.co-researcher-picker-label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.co-researcher-option__name {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.co-researcher-picker-error {
+  display: block;
+  margin-top: 2px;
+  margin-bottom: 0;
+}
+
+.co-researcher-modal-actions {
+  gap: 8px;
+  padding: 8px 16px 16px;
+  border-top: 1px solid #f0f2f5;
+}
+
+.co-researcher-action-btn {
+  min-width: 104px;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 8px 14px;
+}
+
+.co-researcher-picker ::v-deep .multiselect {
+  margin-top: 2px;
+}
+
+.co-researcher-picker ::v-deep .multiselect__tags {
+  min-height: 46px;
+  border-radius: 10px;
+  border: 1px solid #d8dee6;
+  padding: 9px 40px 7px 12px;
+  box-shadow: none;
+}
+
+.co-researcher-picker ::v-deep .multiselect__tags:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.co-researcher-picker ::v-deep .multiselect__placeholder {
+  margin-bottom: 0;
+  color: #9aa3af;
+}
+
+.co-researcher-picker ::v-deep .multiselect__content-wrapper {
+  border-radius: 10px;
+  border: 1px solid #d8dee6;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.co-researcher-picker ::v-deep .multiselect__option {
+  padding: 10px 12px;
+}
+
+.co-researcher-picker ::v-deep .multiselect__option--highlight {
+  background: #f4f6fb;
+  color: #1f2937;
+}
+
 .text-danger {
   color: #dc3545 !important;
   font-weight: bold;
@@ -618,6 +925,28 @@ export default {
   background-color: #c82333;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.delete-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #ffffff !important;
+}
+
+.delete-action-btn:hover,
+.delete-action-btn:focus {
+  color: #ffffff !important;
+}
+
+.delete-action-btn .c-icon,
+.delete-action-btn span {
+  color: #ffffff !important;
 }
 
 .btn-sm {

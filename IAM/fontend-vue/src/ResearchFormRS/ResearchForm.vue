@@ -42,7 +42,7 @@
         :is-read-only="effectiveReadOnly"
         @upload="handleUpload"
         @open="openFile"
-        @update:files="files = $event"
+        @update:files="handleFilesUpdate"
         @remove="removeFile"
       />
 
@@ -952,6 +952,8 @@ export default {
       isExportingPdf: false,
       autoSavePending: false,
       lastAutoSavedAt: null,
+      lastSavedDraftFingerprint: null,
+      autoSaveDebounceMs: 120,
       savingRevision: false,
       submittingRevision: false,
       files: [],
@@ -1029,6 +1031,10 @@ export default {
     }
 
     this.$nextTick(() => {
+      this.updateDraftBaseline()
+      if (this.viewProposalId) {
+        this.isDraftSaved = true
+      }
       this.suppressAutoSave = false
     })
   },
@@ -2067,6 +2073,8 @@ export default {
       const budgetTotal = (form.budget && form.budget.grandTotal)
         || form.budgetTotal
         || 0
+      const collaborationAgency = String(form.collaborationAgency || '').trim()
+      const collaboration = collaborationAgency ? 'yes' : 'none'
 
       const projectLeader = teamData && teamData.projectLeader ? teamData.projectLeader : {}
       const projectLeaderName = projectLeader.name || form.projectLeaderName || ''
@@ -2102,8 +2110,8 @@ export default {
           researchType: form.researchType || null,
           keywords: form.keywords || '',
           fundingSubType: form.fundingSubType,
-          collaboration: form.collaboration,
-          collaborationAgency: form.collaborationAgency,
+          collaboration,
+          collaborationAgency,
           problemSignificance: form.problemSignificance,
           objectives: form.objectives,
           literatureReview: form.literatureReview,
@@ -2124,6 +2132,29 @@ export default {
        }
      },
 
+    buildDraftFingerprint (payload = null) {
+      const draftPayload = payload || this.normalizeApiPayload()
+      try {
+        return JSON.stringify(draftPayload)
+      } catch (err) {
+        return ''
+      }
+    },
+    hasPendingFileQueue () {
+      return Array.isArray(this.pendingFormFiles) && this.pendingFormFiles.length > 0
+    },
+    hasDraftChangedFromBaseline (payload = null) {
+      if (this.hasPendingFileQueue()) return true
+      const currentFingerprint = this.buildDraftFingerprint(payload)
+      if (!currentFingerprint) return true
+      if (!this.lastSavedDraftFingerprint) return true
+      return currentFingerprint !== this.lastSavedDraftFingerprint
+    },
+    updateDraftBaseline (payload = null) {
+      const currentFingerprint = this.buildDraftFingerprint(payload)
+      if (!currentFingerprint) return
+      this.lastSavedDraftFingerprint = currentFingerprint
+    },
     markAsEdited() {
       if (this.suppressAutoSave) return
       this.scheduleAutoSave()
@@ -2156,6 +2187,10 @@ export default {
       }
 
       await this.uploadFormFiles(selected)
+      this.markAsEdited()
+    },
+    handleFilesUpdate (updatedFiles) {
+      this.files = Array.isArray(updatedFiles) ? updatedFiles : []
       this.markAsEdited()
     },
     async ensureProposalDraftExistsForAttachments () {
@@ -2736,6 +2771,8 @@ export default {
         console.error('loadProposalById error:', err)
       } finally {
         this.$nextTick(() => {
+          this.updateDraftBaseline()
+          this.isDraftSaved = true
           this.suppressAutoSave = false
         })
       }
@@ -2752,11 +2789,13 @@ export default {
       this.budgetAutoSaveTimerId = null
     },
     async flushAutoSaveBeforeLeave () {
+      const hasUnsavedChanges = this.hasDraftChangedFromBaseline()
       const hasPendingDraftSave = Boolean(
         this.autoSaveTimerId ||
         this.budgetAutoSaveTimerId ||
         this.autoSavePending ||
-        (Array.isArray(this.pendingFormFiles) && this.pendingFormFiles.length)
+        (Array.isArray(this.pendingFormFiles) && this.pendingFormFiles.length) ||
+        hasUnsavedChanges
       )
 
       if (!hasPendingDraftSave || !this.canAutoSave()) return
@@ -2784,13 +2823,6 @@ export default {
       }
 
       this.markAsEdited()
-
-      if (!this.canAutoSave()) return
-
-      this.clearBudgetAutoSaveTimer()
-      this.budgetAutoSaveTimerId = setTimeout(() => {
-        this.autoSaveDraft()
-      }, 800)
     },
     canAutoSave () {
       if (this.suppressAutoSave) return false
@@ -2803,20 +2835,21 @@ export default {
       if (!this.canAutoSave()) return
       this.clearAutoSaveTimer()
       this.autoSaveTimerId = setTimeout(() => {
+        this.autoSaveTimerId = null
         this.autoSaveDraft()
-      }, 1500)
+      }, this.autoSaveDebounceMs)
     },
-    async persistDraft ({ silent = false } = {}) {
-      const payload = this.normalizeApiPayload()
-      payload.status = 'draft'
+    async persistDraft ({ silent = false, payload = null } = {}) {
+      const payloadToSave = payload || this.normalizeApiPayload()
+      payloadToSave.status = 'draft'
 
       try {
         if (this.viewProposalId) {
-          await Service.proposal.updateDraft(this.viewProposalId, payload)
+          await Service.proposal.updateDraft(this.viewProposalId, payloadToSave)
           this.setStoredDraftId(this.viewProposalId)
           await this.flushPendingFormFiles()
         } else {
-          const createRes = await Service.proposal.create(payload)
+          const createRes = await Service.proposal.create(payloadToSave)
           const created = createRes && createRes.data && createRes.data.data ? createRes.data.data : null
           const proposalId = created && (created._id || created.id)
           if (proposalId) {
@@ -2827,6 +2860,7 @@ export default {
           }
         }
 
+        this.updateDraftBaseline()
         this.isDraftSaved = true
         this.lastAutoSavedAt = new Date().toISOString()
 
@@ -2863,6 +2897,15 @@ export default {
       this.clearAutoSaveTimer()
       this.clearBudgetAutoSaveTimer()
       if (!this.canAutoSave()) return
+
+      const payload = this.normalizeApiPayload()
+      if (!this.hasDraftChangedFromBaseline(payload)) {
+        if (this.viewProposalId || this.lastAutoSavedAt) {
+          this.isDraftSaved = true
+        }
+        return
+      }
+
       if (this.isAutoSaving) {
         this.autoSavePending = true
         return
@@ -2870,7 +2913,7 @@ export default {
 
       this.isAutoSaving = true
       try {
-        await this.persistDraft({ silent: true })
+        await this.persistDraft({ silent: true, payload })
       } catch (err) {
         void err
       } finally {
@@ -3406,7 +3449,9 @@ export default {
           coResearchers,
           advisors
         },
-        cooperation: projectDetails.collaboration === 'yes' ? 'มี' : 'ไม่มี',
+        cooperation: String(projectDetails.collaborationAgency || '').trim()
+          ? 'มี'
+          : (projectDetails.collaboration === 'yes' ? 'มี' : 'ไม่มี'),
         cooperationDetail: projectDetails.collaborationAgency || '',
         researchType: this.reportResearchTypeLabel(projectDetails.researchType),
         keywords: projectDetails.keywords || '',
@@ -3652,30 +3697,45 @@ export default {
   gap: 1rem;
   align-items: flex-start;
   margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.feedback-workspace-card__header > div:first-child {
+  flex: 1 1 320px;
+  min-width: 0;
 }
 
 .feedback-workspace-card__title {
   font-weight: 800;
   color: #0f172a;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .feedback-workspace-card__subtitle {
   margin-top: 0.2rem;
   color: #64748b;
   font-size: 0.9rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .feedback-workspace-card__actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .feedback-workspace-card__status {
   color: #047857;
   font-size: 0.82rem;
   font-weight: 700;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .feedback-workspace-notes {
