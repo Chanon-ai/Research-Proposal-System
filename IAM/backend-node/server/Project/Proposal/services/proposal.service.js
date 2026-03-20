@@ -654,6 +654,8 @@ async function getProposalFeedback(proposalId, user) {
     throw new Error('Forbidden');
   }
 
+  const activeRoundNo = Number(proposal.currentRound) === 2 ? 2 : 1;
+
   const [latestDecisionLog, reviews] = await Promise.all([
     ProposalStatusLog.findOne({
       proposalId,
@@ -663,16 +665,17 @@ async function getProposalFeedback(proposalId, user) {
       .populate('changedBy', 'fullName email role'),
     ProposalReview.find({
       proposalId,
+      roundNo: activeRoundNo,
       reviewStatus: 'submitted'
     })
       .populate('reviewerUserId', 'fullName email role')
-      .sort({ roundNo: 1, submittedAt: -1, updatedAt: -1 })
+      .sort({ submittedAt: -1, updatedAt: -1 })
   ]);
 
   return {
     proposalId: proposal._id,
     currentStatus: proposal.currentStatus,
-    currentRound: proposal.currentRound || 1,
+    currentRound: activeRoundNo,
     latestDecision: latestDecisionLog ? {
       toStatus: latestDecisionLog.toStatus,
       remark: latestDecisionLog.remark || '',
