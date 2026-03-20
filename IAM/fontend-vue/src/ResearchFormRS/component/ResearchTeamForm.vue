@@ -1,12 +1,12 @@
 <template>
-  <div class="research-team-form">
+  <div class="research-team-form" :class="{ 'research-team-form--dark': isDarkTheme }">
     <div class="card">
       <div class="card-header bg-primary text-white">
         <h5 class="mb-0">คณะผู้วิจัย</h5>
       </div>
       <div class="card-body">
         
-        <div ref="research_team" :class="sectionClass('research_team')">
+        <div ref="research_team" :class="[sectionClass('research_team'), 'project-leader-section']">
           <h6 class="section-title">หัวหน้าโครงการวิจัย</h6>
           <div class="row">
             <div class="col-md-6">
@@ -313,6 +313,9 @@ export default {
     }
   },
   computed: {
+    isDarkTheme() {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
     currentUser() {
       const user = this.$store && this.$store.getters
         ? this.$store.getters['Authentication/currentUser']
@@ -766,6 +769,58 @@ export default {
   margin-bottom: 15px;
   border-radius: 8px;
   overflow: hidden;
+}
+
+.research-team-form--dark .project-leader-section {
+  background: #1a2432;
+  border: 1px solid #2d3b4e;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.research-team-form--dark .project-leader-section .section-title {
+  background: #152132;
+  color: #e8eef8;
+  border-left-color: #5aa9ff;
+}
+
+.research-team-form--dark .project-leader-section .form-group label {
+  color: #d5e1ef;
+}
+
+.research-team-form--dark .project-leader-section .form-control,
+.research-team-form--dark .project-leader-section .form-select,
+.research-team-form--dark .project-leader-section textarea {
+  background: #0f1b2a;
+  border-color: #33475f;
+  color: #f2f7ff !important;
+  -webkit-text-fill-color: #f2f7ff;
+  caret-color: #d7e9ff;
+}
+
+.research-team-form--dark .project-leader-section .form-control::placeholder,
+.research-team-form--dark .project-leader-section textarea::placeholder {
+  color: #adc0d5;
+  opacity: 1;
+}
+
+.research-team-form--dark .project-leader-section .form-control:focus,
+.research-team-form--dark .project-leader-section .form-select:focus,
+.research-team-form--dark .project-leader-section textarea:focus {
+  border-color: #6fb6ff;
+  box-shadow: 0 0 0 0.18rem rgba(111, 182, 255, 0.2);
+  background: #102033;
+  color: #f8fbff !important;
+  -webkit-text-fill-color: #f8fbff;
+  caret-color: #e5f1ff;
+}
+
+.research-team-form--dark .project-leader-section .form-control[readonly],
+.research-team-form--dark .project-leader-section .form-control:disabled {
+  background: #162636 !important;
+  color: #d6e3f1 !important;
+  -webkit-text-fill-color: #d6e3f1;
+  border-color: #2d3f55;
 }
 
 .card {

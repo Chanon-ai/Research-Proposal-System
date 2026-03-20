@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid p-0 mt-4">
+  <div class="container-fluid p-0 mt-4 file-management-section" :class="{ 'file-management-section--dark': isDarkTheme }">
     <div class="card shadow-sm border-0">
       <div class="card-body p-4 bg-white">
 
@@ -154,6 +154,12 @@ export default {
     'remove',
     'update:files'
   ],
+
+  computed: {
+    isDarkTheme() {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    }
+  },
 
   methods: {
     updateFile(index, key, value) {
@@ -354,5 +360,139 @@ export default {
 
 .italic {
   font-style: italic;
+}
+
+.file-management-section--dark .card {
+  border-color: #2d3b4e;
+  background: #182334;
+  box-shadow: 0 10px 28px rgba(5, 12, 22, 0.38);
+}
+
+.file-management-section--dark .card-body,
+.file-management-section--dark .bg-white {
+  background: #182334 !important;
+}
+
+.file-management-section--dark .text-dark,
+.file-management-section--dark h5,
+.file-management-section--dark .small,
+.file-management-section--dark .text-muted,
+.file-management-section--dark td,
+.file-management-section--dark th {
+  color: #d8e4f2 !important;
+}
+
+.file-management-section--dark .btn-outline-dark {
+  border-color: #5f83ad;
+  color: #e8f2ff;
+  background: #102035;
+}
+
+.file-management-section--dark .btn-outline-dark:hover {
+  background: #1f3a5a;
+  border-color: #76a8dd;
+  color: #f6fbff;
+}
+
+.file-management-section--dark .table-responsive {
+  border-color: #344a62;
+  background: #111d2c;
+}
+
+.file-management-section--dark .table,
+.file-management-section--dark .table.table-bordered,
+.file-management-section--dark .table tbody tr,
+.file-management-section--dark .table tbody td {
+  background: #111d2c !important;
+  color: #dbe6f4 !important;
+}
+
+.file-management-section--dark .table-bordered,
+.file-management-section--dark .table-bordered th,
+.file-management-section--dark .table-bordered td,
+.file-management-section--dark .table tbody tr:not(:last-child) td {
+  border-color: #32475f !important;
+}
+
+.file-management-section--dark .thead-custom th,
+.file-management-section--dark .table thead th {
+  background: #1b2a3c !important;
+  color: #eef5ff !important;
+  border-color: #3a516a !important;
+}
+
+.file-management-section--dark .table tbody tr:hover {
+  background: #1a2a3e !important;
+}
+
+.file-management-section--dark .table tbody tr:hover td {
+  background: #1a2a3e !important;
+}
+
+.file-management-section--dark .table .form-control,
+.file-management-section--dark .table select,
+.file-management-section--dark .table input,
+.file-management-section--dark .form-control,
+.file-management-section--dark .form-select {
+  background: #0f1b2a;
+  color: #e8eef8;
+  border-color: #33475f;
+}
+
+.file-management-section--dark .table .form-control::placeholder,
+.file-management-section--dark .table input::placeholder {
+  color: #95a9be;
+}
+
+.file-management-section--dark .table .form-control:focus,
+.file-management-section--dark .table select:focus,
+.file-management-section--dark .table input:focus,
+.file-management-section--dark .form-control:focus,
+.file-management-section--dark .form-select:focus {
+  background: #102033;
+  color: #f4f8ff;
+  border-color: #72b4ff;
+  box-shadow: 0 0 0 0.16rem rgba(114, 180, 255, 0.2);
+}
+
+.file-management-section--dark .table .form-control:disabled,
+.file-management-section--dark .table select:disabled,
+.file-management-section--dark .table input:disabled {
+  background: #162636;
+  color: #b9c8d8;
+  border-color: #2d4057;
+}
+
+.file-management-section--dark a.text-primary {
+  color: #9ec5ff !important;
+}
+
+.file-management-section--dark .btn-outline-info {
+  color: #80d4ff;
+  border-color: #2c8fb5;
+  background: rgba(27, 88, 114, 0.12);
+}
+
+.file-management-section--dark .btn-outline-info:hover {
+  color: #dff6ff;
+  border-color: #48b8e4;
+  background: rgba(42, 139, 177, 0.24);
+}
+
+.file-management-section--dark .btn-outline-danger {
+  color: #ffb4b4;
+  border-color: #b35f5f;
+  background: rgba(128, 33, 33, 0.12);
+}
+
+.file-management-section--dark .btn-outline-danger:hover {
+  color: #ffe8e8;
+  border-color: #d98282;
+  background: rgba(159, 52, 52, 0.28);
+}
+
+.file-management-section--dark .italic,
+.file-management-section--dark .table .italic {
+  color: #a9bbce !important;
 }
 </style>

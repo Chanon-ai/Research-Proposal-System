@@ -1,8 +1,8 @@
 <template>
-  <div class="budget-section-container">
+  <div class="budget-section-container" :class="{ 'is-dark': isDarkTheme }">
       <CCard v-for="(category, catIndex) in categories" :key="catIndex" class="mb-4 shadow-sm border-0">
         
-      <CCardHeader class="text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #8b1212 0%, #c59b3a 120%) !important;">
+      <CCardHeader class="text-white d-flex justify-content-between align-items-center" :style="categoryHeaderStyle">
         <h5 class="mb-0 font-weight-bold">
           <i v-if="category.isOther" class="fa fa-money-bill-wave mr-2"></i> {{ category.name }}
         </h5>
@@ -18,7 +18,7 @@
 
       <CCardBody class="p-0 table-responsive">
         <table class="table table-bordered mb-0 text-center align-middle" style="min-width: 1000px;">
-          <thead class="bg-primary text-white" style="background: linear-gradient(135deg, #7a0f0f 0%, #8b1212 65%, #c59b3a 140%) !important; opacity: 0.98;">
+          <thead class="bg-primary text-white" :style="tableHeadStyle">
             <tr>
               <th width="25%" class="align-middle">รายการ</th>
               <th width="35%" class="align-middle">รายละเอียดตัวคูณ (เกณฑ์ มฟล. 2569)</th>
@@ -195,7 +195,7 @@
       </ul>
     </div>
 
-    <CCard class="mb-2 shadow-sm border-0" style="background-color: #f8f9fa;">
+    <CCard class="mb-2 shadow-sm border-0 budget-summary-card" style="background-color: #f8f9fa;">
       <CCardBody class="p-3">
         <div class="row text-center align-items-center">
           
@@ -247,7 +247,7 @@
       </CCardBody>
     </CCard>
     
-    <CCard class="border-primary mt-4 shadow-sm" style="border-width: 2px !important;">
+    <CCard class="border-primary mt-4 shadow-sm budget-grand-total-card" style="border-width: 2px !important;">
       <CCardBody class="d-flex justify-content-between align-items-center p-4">
         <div>
           <h4 class="mb-1 font-weight-bold text-dark">สรุปงบประมาณรวมทั้งสิ้น (พ.ศ. 2569)</h4>
@@ -345,6 +345,21 @@ export default {
     };
   },
   computed: {
+    isDarkTheme() {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+    categoryHeaderStyle() {
+      if (this.isDarkTheme) {
+        return 'background: linear-gradient(135deg, #1a2330 0%, #233244 70%, #2e4056 120%) !important;'
+      }
+      return 'background: linear-gradient(135deg, #8b1212 0%, #c59b3a 120%) !important;'
+    },
+    tableHeadStyle() {
+      if (this.isDarkTheme) {
+        return 'background: linear-gradient(135deg, #17202c 0%, #1f2d3d 65%, #2c3f56 140%) !important; opacity: 0.98;'
+      }
+      return 'background: linear-gradient(135deg, #7a0f0f 0%, #8b1212 65%, #c59b3a 140%) !important; opacity: 0.98;'
+    },
     grandTotal() {
       return this.categories.reduce((sum, cat) => {
         return sum + cat.items.reduce((itemSum, item) => itemSum + item.total, 0);
@@ -797,6 +812,108 @@ export default {
 <style scoped>
 .cursor-pointer {
   cursor: pointer;
+}
+
+.budget-section-container.is-dark {
+  color: #e6edf7;
+}
+
+.budget-section-container.is-dark ::v-deep .card,
+.budget-section-container.is-dark ::v-deep .card-body,
+.budget-section-container.is-dark ::v-deep .table-responsive {
+  background: #1a2432;
+  border-color: #2f3f52;
+}
+
+.budget-section-container.is-dark ::v-deep .table,
+.budget-section-container.is-dark ::v-deep .table td,
+.budget-section-container.is-dark ::v-deep .table th,
+.budget-section-container.is-dark ::v-deep tbody tr,
+.budget-section-container.is-dark ::v-deep tr.bg-light,
+.budget-section-container.is-dark ::v-deep td.bg-white,
+.budget-section-container.is-dark ::v-deep .bg-white,
+.budget-section-container.is-dark ::v-deep .bg-light {
+  background: #1a2432 !important;
+  color: #e8eff8 !important;
+  border-color: #324357 !important;
+}
+
+.budget-section-container.is-dark ::v-deep .table.table-bordered th,
+.budget-section-container.is-dark ::v-deep .table.table-bordered td {
+  border-color: #324357 !important;
+}
+
+.budget-section-container.is-dark ::v-deep tbody tr:hover {
+  background: #223142 !important;
+}
+
+.budget-section-container.is-dark ::v-deep .text-muted {
+  color: #aebdce !important;
+}
+
+.budget-section-container.is-dark ::v-deep .text-dark {
+  color: #e6edf7 !important;
+}
+
+.budget-section-container.is-dark ::v-deep .form-control,
+.budget-section-container.is-dark .input-floating-outline,
+.budget-section-container.is-dark .auto-grow-textarea,
+.budget-section-container.is-dark ::v-deep select.form-control {
+  background: #223142 !important;
+  color: #edf4fc !important;
+  border-color: #3c4e63 !important;
+}
+
+.budget-section-container.is-dark .label-floating-outline {
+  background-color: #1a2432;
+  color: #afbfd0;
+}
+
+.budget-section-container.is-dark .input-floating-outline:focus {
+  border-color: #c59b3a;
+  box-shadow: 0 0 0 1px #c59b3a;
+}
+
+.budget-section-container.is-dark .input-floating-outline[readonly],
+.budget-section-container.is-dark .input-floating-outline[readonly] ~ .label-floating-outline {
+  background-color: #192331;
+}
+
+.budget-section-container.is-dark .attachment-box {
+  background-color: #1f2c3b;
+  border-color: #33485f !important;
+}
+
+.budget-section-container.is-dark ::v-deep .btn.btn-light,
+.budget-section-container.is-dark ::v-deep label.btn.btn-light {
+  background: #223142 !important;
+  color: #d7e4f3 !important;
+  border-color: #3c4e63 !important;
+}
+
+.budget-section-container.is-dark ::v-deep .btn-danger {
+  background-color: #7f1d1d !important;
+  border-color: #991b1b !important;
+}
+
+.budget-section-container.is-dark .budget-summary-card,
+.budget-section-container.is-dark .budget-grand-total-card {
+  background-color: #1f2b39 !important;
+  border-color: #33475c !important;
+}
+
+.budget-section-container.is-dark .border-left {
+  border-left-color: #324357 !important;
+}
+
+.budget-section-container.is-dark .alert.alert-danger {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #f6b0b0;
+  border-left-color: #ef5350 !important;
+}
+
+.budget-section-container.is-dark .alert.alert-danger .text-dark {
+  color: #e8eff8 !important;
 }
 
 /* Make header and table feel like one piece (no gaps), and keep it readable */

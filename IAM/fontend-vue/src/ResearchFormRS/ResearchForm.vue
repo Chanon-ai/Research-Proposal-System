@@ -3,14 +3,15 @@
     class="research-form"
     :class="{
       'research-form--has-admin-actions': showAdminFooterBar,
-      'research-form--draft': isDraftStatus && !isAdminView
+      'research-form--draft': isDraftStatus && !isAdminView,
+      'research-form--dark': isDarkTheme
     }"
   >
     <div class="container-fluid">
       <div class="row">
         <div class="col-12">
           <h2 class="mb-4">แบบฟอร์มข้อมูลการวิจัย</h2>
-          <div v-if="isAdminView"
+          <div v-if="isAdminView" class="admin-view-banner"
             style="background:#e8f4ff;border-left:4px solid #1a73e8;padding:10px 16px;margin-bottom:16px;border-radius:4px;font-size:14px;color:#1a73e8">
             โหมดดูข้อมูล (Admin View) - ไม่สามารถแก้ไขได้
           </div>
@@ -108,7 +109,7 @@
           </CAlert>
 
           <div v-else>
-            <div class="card mb-3" style="background: #f8fafc;">
+            <div class="card mb-3 review-summary-card" style="background: #f8fafc;">
               <div class="card-body">
                 <h6 class="mb-3">Admin Review Summary</h6>
                 <div class="row">
@@ -205,7 +206,7 @@
           </CAlert>
 
           <div v-else>
-            <div class="card mb-3" style="background: #f8fafc;">
+            <div class="card mb-3 review-summary-card" style="background: #f8fafc;">
               <div class="card-body">
                 <h6 class="mb-3">ข้อเสนอแนะสำหรับการแก้ไข</h6>
                 <div class="row">
@@ -1089,6 +1090,10 @@ export default {
     }
   },
   computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+
     effectiveReadOnly () {
       return Boolean(this.readOnly || this.isReadOnly)
     },
@@ -4443,5 +4448,195 @@ export default {
 
 .research-form ::v-deep .signature-canvas-container {
   border-color: var(--rf-gold) !important;
+}
+
+.research-form--dark {
+  --rf-bg: #0f1724;
+  --rf-surface: #1a2432;
+  --rf-border: #2f3f52;
+  --rf-text: #e8eef7;
+  --rf-muted: #aab9ca;
+  --rf-accent-ring: rgba(197, 155, 58, 0.22);
+
+  background:
+    radial-gradient(1100px 460px at 12% -10%, rgba(139, 18, 18, 0.16), transparent 62%),
+    radial-gradient(980px 420px at 92% 4%, rgba(197, 155, 58, 0.12), transparent 58%),
+    linear-gradient(180deg, rgba(10, 15, 24, 0.52), rgba(10, 15, 24, 0) 58%),
+    repeating-linear-gradient(0deg, rgba(148, 163, 184, 0.03) 0, rgba(148, 163, 184, 0.03) 1px, transparent 1px, transparent 22px);
+  box-shadow: 0 8px 30px rgba(2, 6, 23, 0.45);
+}
+
+.research-form--dark .admin-view-banner {
+  background: rgba(30, 64, 104, 0.32) !important;
+  border-left-color: #60a5fa !important;
+  color: #b9d6fb !important;
+}
+
+.research-form--dark .review-summary-card {
+  background: #202c3a !important;
+  border-color: #334458 !important;
+}
+
+.research-form--dark .footer-fixed {
+  background: rgba(16, 24, 36, 0.94);
+  border-top-color: #2f3f52;
+  box-shadow: 0 -8px 22px rgba(2, 6, 23, 0.5);
+}
+
+.research-form--dark .footer-fixed .save-indicator {
+  background: #1f2d3c;
+  border-color: #3c4d61;
+  color: #d7e2ef;
+}
+
+.research-form--dark .footer-fixed .save-hint,
+.research-form--dark .footer-fixed .text-muted,
+.research-form--dark .footer-fixed .fw-bold.text-muted {
+  color: #b2c1d1 !important;
+}
+
+.research-form--dark .footer-fixed .text-success.fw-bold {
+  background-color: rgba(34, 197, 94, 0.2) !important;
+  border: 1px solid rgba(74, 222, 128, 0.34) !important;
+  color: #8be2ad !important;
+}
+
+.research-form--dark ::v-deep .card,
+.research-form--dark ::v-deep .feedback-workspace,
+.research-form--dark ::v-deep .feedback-workspace-card,
+.research-form--dark ::v-deep .feedback-workspace-note,
+.research-form--dark ::v-deep .feedback-inline-radio,
+.research-form--dark ::v-deep .feedback-fix-card,
+.research-form--dark ::v-deep .committee-selection-panel,
+.research-form--dark .committee-user-row {
+  background: #1a2432 !important;
+  border-color: #2f3f52 !important;
+}
+
+.research-form--dark .committee-user-row.is-selected {
+  background: #213145 !important;
+  border-color: #3f5a75 !important;
+}
+
+.research-form--dark ::v-deep .card-header,
+.research-form--dark ::v-deep .section-title,
+.research-form--dark ::v-deep .sub-section-title {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.14), rgba(15, 23, 42, 0.06));
+  border-color: #2f3f52 !important;
+}
+
+.research-form--dark ::v-deep .card-header:not(.text-white) h5,
+.research-form--dark ::v-deep .card-header:not(.text-white) h6,
+.research-form--dark ::v-deep .card-header:not(.text-white) strong,
+.research-form--dark ::v-deep .feedback-workspace-card__title,
+.research-form--dark ::v-deep .feedback-workspace-note__body,
+.research-form--dark ::v-deep .feedback-fix-card__section,
+.research-form--dark ::v-deep label,
+.research-form--dark ::v-deep .form-check-label,
+.research-form--dark ::v-deep .font-weight-bold,
+.research-form--dark ::v-deep h6 {
+  color: #ecf3fb !important;
+}
+
+.research-form--dark ::v-deep .feedback-workspace-card__subtitle,
+.research-form--dark ::v-deep .feedback-workspace-note__meta,
+.research-form--dark ::v-deep .feedback-fix-card__meta,
+.research-form--dark ::v-deep .feedback-fix-card__body,
+.research-form--dark ::v-deep .feedback-workspace-card__status,
+.research-form--dark ::v-deep .text-muted,
+.research-form--dark ::v-deep .small,
+.research-form--dark ::v-deep .form-label {
+  color: #aab9ca !important;
+}
+
+.research-form--dark ::v-deep .form-control,
+.research-form--dark ::v-deep textarea.form-control,
+.research-form--dark ::v-deep select.form-control,
+.research-form--dark ::v-deep .custom-select,
+.research-form--dark ::v-deep .multiselect__tags,
+.research-form--dark ::v-deep .multiselect__content-wrapper {
+  background: #223142 !important;
+  color: #ecf3fb !important;
+  border-color: #3d4f64 !important;
+}
+
+.research-form--dark ::v-deep .form-control::placeholder,
+.research-form--dark ::v-deep textarea.form-control::placeholder,
+.research-form--dark ::v-deep input::placeholder {
+  color: #9caec2 !important;
+}
+
+.research-form--dark ::v-deep .form-control:disabled,
+.research-form--dark ::v-deep textarea.form-control:disabled,
+.research-form--dark ::v-deep select.form-control:disabled,
+.research-form--dark ::v-deep .custom-select:disabled,
+.research-form--dark ::v-deep .form-control[readonly],
+.research-form--dark ::v-deep textarea.form-control[readonly] {
+  background: #182433 !important;
+  color: #aebfd1 !important;
+  border-color: #2f3f52 !important;
+}
+
+.research-form--dark ::v-deep .form-control:focus,
+.research-form--dark ::v-deep textarea.form-control:focus,
+.research-form--dark ::v-deep select.form-control:focus,
+.research-form--dark ::v-deep .custom-select:focus,
+.research-form--dark ::v-deep .multiselect__tags:focus-within {
+  border-color: rgba(197, 155, 58, 0.78) !important;
+  box-shadow: 0 0 0 3px rgba(197, 155, 58, 0.22) !important;
+}
+
+.research-form--dark ::v-deep .table,
+.research-form--dark ::v-deep .table tbody tr,
+.research-form--dark ::v-deep .table td,
+.research-form--dark ::v-deep .table th {
+  background: #1a2432;
+  color: #deebf8;
+  border-color: #2f3f52 !important;
+}
+
+.research-form--dark ::v-deep .table thead:not(.bg-primary):not(.text-white) th {
+  background: #223142;
+  color: #eef4fc;
+}
+
+.research-form--dark ::v-deep .table tbody tr:hover {
+  background: #263749;
+}
+
+.research-form--dark ::v-deep .alert {
+  border-color: #3a4d63;
+}
+
+.research-form--dark ::v-deep .alert-warning {
+  background: rgba(245, 158, 11, 0.18);
+  color: #f9d48a;
+}
+
+.research-form--dark ::v-deep .alert-danger {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+}
+
+.research-form--dark ::v-deep .alert-success {
+  background: rgba(34, 197, 94, 0.16);
+  color: #9ae6b4;
+}
+
+.research-form--dark ::v-deep .ql-toolbar,
+.research-form--dark ::v-deep .ql-container,
+.research-form--dark ::v-deep .ql-editor,
+.research-form--dark ::v-deep .ql-snow .ql-picker-options {
+  background: #1d2a39 !important;
+  border-color: #324357 !important;
+  color: #e8eef7 !important;
+}
+
+.research-form--dark ::v-deep .ql-snow .ql-stroke {
+  stroke: #c7d4e2 !important;
+}
+
+.research-form--dark ::v-deep .ql-snow .ql-fill {
+  fill: #c7d4e2 !important;
 }
 </style>

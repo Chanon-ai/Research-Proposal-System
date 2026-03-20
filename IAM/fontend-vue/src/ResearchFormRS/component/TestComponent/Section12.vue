@@ -1,5 +1,5 @@
 <template>
-  <CCard>
+  <CCard :class="{ 'workplan-table--dark': isDarkTheme }">
     <CCardBody>
       <CButtonGroup v-if="!isReadOnly" class="mb-3 d-flex w-100 duration-selector">
         <CButton
@@ -144,6 +144,11 @@ export default {
           responsible: ''
         }
       ]
+    }
+  },
+  computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
     }
   },
   watch: {
@@ -483,5 +488,86 @@ thead .sticky-action {
 }
 .month-cell.bg-success.read-only-cell:hover {
   background-color: rgba(197, 155, 58, 0.34) !important; /* keep selected state */
+}
+
+.workplan-table--dark .table-wrapper {
+  border-color: #344a62;
+  box-shadow: 0 14px 28px rgba(2, 8, 18, 0.36);
+  background: linear-gradient(135deg, #1a2a3d, #1f344a);
+}
+
+.workplan-table--dark .plan-table tbody td {
+  background-color: #111d2c;
+  border-color: #334a63 !important;
+}
+
+.workplan-table--dark .sticky-left,
+.workplan-table--dark .sticky-right,
+.workplan-table--dark .sticky-action {
+  background-color: #162638 !important;
+}
+
+.workplan-table--dark .sticky-border-left {
+  border-left-color: #3b546f !important;
+}
+
+.workplan-table--dark .sticky-border-right {
+  border-right-color: #3b546f !important;
+}
+
+.workplan-table--dark .custom-textarea {
+  background-color: #0f1b2a !important;
+  color: #eef5ff !important;
+  border-color: #3a526b !important;
+  caret-color: #dcecff;
+}
+
+.workplan-table--dark .custom-textarea::placeholder {
+  color: #a8bdd2;
+  opacity: 1;
+}
+
+.workplan-table--dark .custom-textarea:focus {
+  background-color: #132338 !important;
+  color: #f7fbff !important;
+  border-color: #79b7ff !important;
+  box-shadow: 0 0 0 3px rgba(121, 183, 255, 0.2) !important;
+}
+
+.workplan-table--dark .month-cell:hover {
+  background-color: #21334a;
+}
+
+.workplan-table--dark .month-cell.read-only-cell:hover {
+  background-color: #111d2c;
+}
+
+.workplan-table--dark .sticky-action .btn-danger,
+.workplan-table--dark .sticky-action .btn.btn-danger {
+  border: 1px solid rgba(255, 132, 132, 0.38);
+  box-shadow: 0 6px 14px rgba(36, 8, 12, 0.35);
+  color: #fff4f4;
+}
+
+.workplan-table--dark .sticky-action .btn-danger:hover,
+.workplan-table--dark .sticky-action .btn.btn-danger:hover {
+  box-shadow: 0 8px 18px rgba(36, 8, 12, 0.45);
+}
+
+.workplan-table--dark .duration-selector .btn.btn-secondary {
+  background: #162638 !important;
+  color: #c9d9ea !important;
+  border-color: #324b66 !important;
+}
+
+.workplan-table--dark .duration-selector .btn.btn-primary,
+.workplan-table--dark .duration-selector .btn-primary {
+  border-color: rgba(123, 177, 242, 0.45) !important;
+  box-shadow: 0 10px 18px rgba(9, 20, 34, 0.35);
+}
+
+.workplan-table--dark .plan-table tbody tr td.bg-white,
+.workplan-table--dark .plan-table tbody td.bg-white {
+  background-color: #162638 !important;
 }
 </style>

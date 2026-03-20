@@ -1,5 +1,5 @@
 <template>
-  <div class="project-details-form">
+  <div class="project-details-form" :class="{ 'is-dark': isDarkTheme }">
     <div class="card">
       <div class="card-header bg-primary text-white">
         <h5 class="mb-0">1-19 รายละเอียดโครงการ</h5>
@@ -391,6 +391,10 @@ export default {
     }
   },
   computed: {
+    isDarkTheme() {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+
     isProjectTitleDisabled() {
       return this.isReadOnly || this.disableProjectTitleSection
     }
@@ -644,6 +648,71 @@ export default {
 <style scoped>
 .project-details-form {
   margin-bottom: 20px;
+}
+
+.project-details-form.is-dark {
+  color: #e6edf7;
+}
+
+.project-details-form.is-dark .section-title {
+  color: #eaf2fb;
+  background: #1f2b39;
+  border-left-color: #c59b3a;
+}
+
+.project-details-form.is-dark .section-highlight .section-title {
+  background: #2a3645;
+  border-left-color: #f2b94d;
+  box-shadow: 0 0 0 3px rgba(242, 185, 77, 0.16);
+}
+
+.project-details-form.is-dark .funding-options {
+  background: #1a2432;
+  border: 1px solid #2f3f52;
+}
+
+.project-details-form.is-dark .sub-options {
+  background: #223142;
+  border: 1px solid #35475c;
+}
+
+.project-details-form.is-dark .sub-section-title,
+.project-details-form.is-dark .sub-label,
+.project-details-form.is-dark .form-check-label,
+.project-details-form.is-dark .form-check-label strong {
+  color: #e6edf7;
+}
+
+.project-details-form.is-dark .sub-options .form-check-label,
+.project-details-form.is-dark .description,
+.project-details-form.is-dark .lang-hint,
+.project-details-form.is-dark .text-muted {
+  color: #aab9ca !important;
+}
+
+.project-details-form.is-dark .form-control {
+  background: #223142;
+  border-color: #3b4d62;
+  color: #edf4fc;
+}
+
+.project-details-form.is-dark .form-control::placeholder {
+  color: #9caec2;
+}
+
+.project-details-form.is-dark .form-control:focus {
+  border-color: #c59b3a;
+  box-shadow: 0 0 0 0.2rem rgba(197, 155, 58, 0.2);
+}
+
+.project-details-form.is-dark .form-check-input {
+  filter: brightness(1.08);
+}
+
+.project-details-form.is-dark .alert.alert-warning {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #f8d48a;
 }
 
 .section-title {
