@@ -1,7 +1,11 @@
 /.idea/
 /node_modules/
+/.runtime-packages/
 package-lock.json
 .env
 .md
+<<<<<<< HEAD
+=======
 .env.local
 .env.*.local
+>>>>>>> 738802f6d1e187a5500e98829b11bacc4d07e0e1
