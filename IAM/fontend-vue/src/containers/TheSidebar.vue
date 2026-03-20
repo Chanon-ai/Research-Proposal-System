@@ -47,10 +47,15 @@
 
 <script>
 import nav from './_nav'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'TheSidebar',
   computed: {
+    ...mapGetters({
+      currentLanguage: 'setting/lang'
+    }),
+
     show() {
       return this.$store.state.sidebarShow
     },
@@ -71,8 +76,9 @@ export default {
       }
     },
     navs() {
+      const _lang = this.currentLanguage
       const role = this.currentRole
-      if (!role) return nav
+      if (!role) return this.translateNavTree(nav)
 
       const filterByRole = (items) => {
         return (items || []).reduce((acc, item) => {
@@ -100,12 +106,47 @@ export default {
         }, [])
       }
 
-      return nav.map(section => {
+      const filtered = nav.map(section => {
         if (!section || !Array.isArray(section._children)) return section
         return {
           ...section,
           _children: filterByRole(section._children)
         }
+      })
+
+      return this.translateNavTree(filtered)
+    }
+  },
+  methods: {
+    translateLabel (label) {
+      const map = {
+        Dashboard: this.$t('nav.dashboard'),
+        'User Panel': this.$t('nav.userPanel'),
+        'User Dashboard': this.$t('nav.userDashboard'),
+        Profile: this.$t('nav.profile'),
+        History: this.$t('nav.history'),
+        'Research Form': this.$t('nav.researchForm')
+      }
+      return map[label] || label
+    },
+
+    translateNavTree (items) {
+      return (items || []).map(item => {
+        if (!item) return item
+        const next = { ...item }
+        if (typeof next.name === 'string') {
+          next.name = this.translateLabel(next.name)
+        }
+        if (Array.isArray(next.items)) {
+          next.items = this.translateNavTree(next.items)
+        }
+        if (Array.isArray(next._children)) {
+          next._children = next._children.map(child => {
+            if (typeof child === 'string') return this.translateLabel(child)
+            return this.translateNavTree([child])[0]
+          })
+        }
+        return next
       })
     }
   },

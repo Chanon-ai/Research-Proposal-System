@@ -11,13 +11,23 @@ import Accounts from './modules/Accounts/index'
 import Training from './modules/Training/index'
 import Organization from './modules/organization/index'
 
+const THEME_STORAGE_KEY = 'app-theme'
+
+function getInitialDarkMode () {
+  if (typeof window === 'undefined' || !window.localStorage) return false
+  const saved = (window.localStorage.getItem(THEME_STORAGE_KEY) || '').toLowerCase()
+  if (saved === 'dark') return true
+  if (saved === 'light') return false
+  return false
+}
+
 
 const state = {
   XAccessToken: '',
   sidebarShow: 'responsive',
   sidebarMinimize: false,
   asideShow: false,
-  darkMode: false
+  darkMode: getInitialDarkMode()
 }
 
 const mutations = {
@@ -34,6 +44,13 @@ const mutations = {
   },
   toggle (state, variable) {
     state[variable] = !state[variable]
+  },
+  setThemeMode (state, theme) {
+    const normalized = String(theme || '').toLowerCase() === 'dark' ? 'dark' : 'light'
+    state.darkMode = normalized === 'dark'
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(THEME_STORAGE_KEY, normalized)
+    }
   }
 }
 

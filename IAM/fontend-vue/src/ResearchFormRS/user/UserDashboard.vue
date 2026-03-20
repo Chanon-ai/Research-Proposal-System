@@ -11,7 +11,7 @@
             'is-dimmed': activeFilter && activeFilter !== 'draft'
           }"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-primary" :header="String(stats.draft || 0)" text="แบบร่าง">
+          <CWidgetDropdown class="user-widget-card" color="gradient-primary" :header="String(stats.draft || 0)" :text="$t('status.draft')">
             <template #footer>
               <div class="widget-footer-chart">
                 <CChartLine :datasets="[{ data: chartData.draft, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
@@ -30,7 +30,7 @@
             'is-dimmed': activeFilter && activeFilter !== 'submitted'
           }"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-info" :header="String(stats.submitted || 0)" text="กำลังดำเนินการ">
+          <CWidgetDropdown class="user-widget-card" color="gradient-info" :header="String(stats.submitted || 0)" :text="$t('status.inProgress')">
             <template #footer>
               <div class="widget-footer-chart">
                 <CChartLine :datasets="[{ data: chartData.submitted, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
@@ -49,7 +49,7 @@
             'is-dimmed': activeFilter && activeFilter !== 'revision'
           }"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-warning" :header="String(stats.revision || 0)" text="ขอแก้ไข">
+          <CWidgetDropdown class="user-widget-card" color="gradient-warning" :header="String(stats.revision || 0)" :text="$t('status.revision')">
             <template #footer>
               <div class="widget-footer-chart">
                 <CChartLine :datasets="[{ data: chartData.revision, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
@@ -68,7 +68,7 @@
             'is-dimmed': activeFilter && activeFilter !== 'approved'
           }"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-success" :header="String(stats.approved || 0)" text="อนุมัติแล้ว">
+          <CWidgetDropdown class="user-widget-card" color="gradient-success" :header="String(stats.approved || 0)" :text="$t('status.approved')">
             <template #footer>
               <div class="widget-footer-chart">
                 <CChartBar :datasets="[{ data: chartData.approved, backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'transparent' }]" :options="chartOptions"/>
@@ -90,7 +90,7 @@
           class="ml-2"
           style="font-size:12px"
         >
-          {{ filteredProposals.length }} รายการ
+          {{ $t('status.itemsCount', { count: filteredProposals.length }) }}
         </CBadge>
       </div>
 
@@ -177,7 +177,7 @@
                   color="info"
                   @click="$router.push('/research-form/' + item._id)"
                 >
-                  Show
+                  {{ $t('common.show') }}
                 </CButton>
               </td>
             </template>
@@ -336,15 +336,15 @@ export default {
 
     filterLabel() {
       const labels = {
-        draft: 'แบบร่าง',
-        submitted: 'กำลังดำเนินการ',
-        revision: 'ขอแก้ไข',
-        approved: 'อนุมัติแล้ว',
-        rejected: 'ปฏิเสธ',
+        draft: this.$t('status.draft'),
+        submitted: this.$t('status.inProgress'),
+        revision: this.$t('status.revision'),
+        approved: this.$t('status.approved'),
+        rejected: this.$t('status.rejected'),
       };
       return this.activeFilter
-        ? `กรองตาม: ${labels[this.activeFilter]}`
-        : 'โครงการทั้งหมด';
+        ? this.$t('status.filteredBy', { label: labels[this.activeFilter] })
+        : this.$t('status.allProjects');
     },
   },
 
@@ -426,8 +426,8 @@ export default {
     getStatusLabel(status) {
       const key = String(status || '').toLowerCase();
       const labels = {
-        draft: 'ร่าง',
-        submitted: 'ยื่นแล้ว',
+        draft: this.$t('status.draft'),
+        submitted: this.$t('status.inProgress'),
         faculty_review_pending: 'รอประธานพิจารณา',
         faculty_approved: 'ประธานอนุมัติ',
         office_received: 'ส่วนบริหารรับแล้ว',
@@ -438,11 +438,11 @@ export default {
         revision_requested: 'ขอแก้ไข',
         resubmitted: 'ส่งแก้ไขแล้ว',
         second_round_review: 'พิจารณารอบ 2',
-        approved: 'อนุมัติ',
-        rejected: 'ไม่อนุมัติ',
+        approved: this.$t('status.approved'),
+        rejected: this.$t('status.rejected'),
         announced: 'ประกาศผลแล้ว',
       };
-      return labels[key] || 'กำลังดำเนินการ';
+      return labels[key] || this.$t('status.inProgress');
     },
 
     getStatusColor(status) {

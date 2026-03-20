@@ -3,12 +3,20 @@ import VueI18n from 'vue-i18n'
 
 import en from './store/lang/en'
 import th from './store/lang/th'
+import enLocale from './locales/en.json'
+import thLocale from './locales/th.json'
 
 Vue.use(VueI18n)
 //
 const messages = {
-  en: en,
-  th: th
+  en: {
+    ...en,
+    ...enLocale
+  },
+  th: {
+    ...th,
+    ...thLocale
+  }
 }
 
 const SUPPORTED_LOCALES = ['en', 'th']
