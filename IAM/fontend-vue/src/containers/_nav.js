@@ -43,10 +43,6 @@ export default [{
           to: '/admin/dashboard'
         },
         {
-          name: 'Proposal List',
-          to: '/admin/proposals'
-        },
-        {
           name: 'Documents',
           to: '/admin/documents'
         },
