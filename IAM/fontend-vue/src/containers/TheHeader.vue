@@ -56,7 +56,7 @@
       <TheHeaderDropdownLang/>
       <TheHeaderDropdownTheme/>
 
-      <TheHeaderDropdownNotif class="ml-2"/>
+      <TheHeaderDropdownNotif class="ml-2 header-notification-dropdown"/>
 
       <TheHeaderDropdownAccnt class="pr-3"/>
     </CHeaderNav>

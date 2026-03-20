@@ -1,3 +1,4 @@
+require('./config/module-paths');
 var express = require('./config/express');
 var app = express();
 var http = require('http');

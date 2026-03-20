@@ -671,6 +671,50 @@ export default {
   color: #9fd4b3;
 }
 
+.page-wrapper.is-dark .notif-header {
+  border-bottom: 1px solid #334155;
+}
+
+.page-wrapper.is-dark .notif-group {
+  background: #1f2933;
+}
+
+.page-wrapper.is-dark .group-header {
+  border-top: 1px solid #334155;
+}
+
+.page-wrapper.is-dark .group-header:first-of-type {
+  border-top: none;
+}
+
+.page-wrapper.is-dark .notif-item {
+  border-bottom-color: #334155;
+}
+
+.page-wrapper.is-dark .notif-item:last-child {
+  border-bottom-color: transparent;
+}
+
+.page-wrapper.is-dark .icon-blue {
+  background: rgba(59, 130, 246, 0.2);
+  color: #8fc2ff;
+}
+
+.page-wrapper.is-dark .icon-orange {
+  background: rgba(251, 146, 60, 0.2);
+  color: #f9b87f;
+}
+
+.page-wrapper.is-dark .icon-green {
+  background: rgba(52, 211, 153, 0.2);
+  color: #80e7ba;
+}
+
+.page-wrapper.is-dark .icon-gray {
+  background: rgba(148, 163, 184, 0.2);
+  color: #c5d1df;
+}
+
 /* ══════════════════════════════════
    Notification Item
 ══════════════════════════════════ */

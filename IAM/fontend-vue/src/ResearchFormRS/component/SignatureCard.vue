@@ -1,5 +1,5 @@
 <template>
-  <div class="signature-card">
+  <div class="signature-card" :class="{ 'is-dark': isDarkTheme }">
     <div class="card">
       <div class="card-header bg-primary text-white">
         <h5 class="mb-0">ลงลายเซ็นต์</h5>
@@ -289,6 +289,11 @@ export default {
       deep: true
     }
   },
+  computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    }
+  },
   methods: {
     cloneSignatures(payload) {
       // Break shared references between parent (v-model) and internal state.
@@ -409,7 +414,7 @@ export default {
         canvas.width = canvas.parentElement.offsetWidth - 20; 
         canvas.height = 150;
         
-        ctx.strokeStyle = '#000000';
+        ctx.strokeStyle = this.isDarkTheme ? '#e6edf7' : '#000000';
         ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -492,6 +497,65 @@ export default {
 <style scoped>
 .signature-card {
   margin-bottom: 80px;
+}
+
+.signature-card.is-dark {
+  color: #e6edf7;
+}
+
+.signature-card.is-dark .section-title {
+  color: #eaf2fb;
+  background: #1f2b39;
+  border-left-color: #c59b3a;
+}
+
+.signature-card.is-dark .signature-box {
+  border-color: #33475b;
+  background: #1a2432;
+}
+
+.signature-card.is-dark .signature-canvas-container {
+  border-color: #4a617a;
+  background: #182231;
+}
+
+.signature-card.is-dark .signature-canvas {
+  background: #111a27;
+}
+
+.signature-card.is-dark .signature-canvas:hover {
+  background-color: #142031;
+}
+
+.signature-card.is-dark .upload-container {
+  border-color: #3d5167;
+  background: #1f2e3d !important;
+}
+
+.signature-card.is-dark .upload-container .form-control {
+  background: #223142;
+  color: #e8eff8;
+  border-color: #3b4f64;
+}
+
+.signature-card.is-dark .text-muted {
+  color: #aab9ca !important;
+}
+
+.signature-card.is-dark .btn-outline-primary {
+  color: #c8d8ea;
+  border-color: #46607b;
+}
+
+.signature-card.is-dark .btn-outline-primary:hover {
+  background: #2b3f54;
+  border-color: #5b7692;
+}
+
+.signature-card.is-dark .alert.alert-info {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(59, 130, 246, 0.32);
+  color: #bfd9fb;
 }
 
 .section-title {

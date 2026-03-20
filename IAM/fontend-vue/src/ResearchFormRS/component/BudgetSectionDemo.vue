@@ -1,8 +1,8 @@
 <template>
-  <div class="budget-section-container">
-    <CCard v-for="(category, catIndex) in categories" :key="catIndex" class="mb-4 shadow-sm border-0">
-      
-      <CCardHeader class="text-white d-flex justify-content-between align-items-center" style="background-color: #3b24d6 !important;">
+  <div class="budget-section-container" :class="{ 'is-dark': isDarkTheme }">
+      <CCard v-for="(category, catIndex) in categories" :key="catIndex" class="mb-4 shadow-sm border-0">
+        
+      <CCardHeader class="text-white d-flex justify-content-between align-items-center" :style="categoryHeaderStyle">
         <h5 class="mb-0 font-weight-bold">
           <i v-if="category.isOther" class="fa fa-money-bill-wave mr-2"></i> {{ category.name }}
         </h5>
@@ -18,7 +18,7 @@
 
       <CCardBody class="p-0 table-responsive">
         <table class="table table-bordered mb-0 text-center align-middle" style="min-width: 1000px;">
-          <thead class="bg-primary text-white" style="background-color: #4a38df !important; opacity: 0.95;">
+          <thead class="bg-primary text-white" :style="tableHeadStyle">
             <tr>
               <th width="25%" class="align-middle">รายการ</th>
               <th width="35%" class="align-middle">รายละเอียดตัวคูณ (เกณฑ์ มฟล. 2569)</th>
@@ -51,7 +51,7 @@
                   <div class="mb-2">
                     <small class="text-muted d-block mb-1">เลือกหมวดหมู่เอกสาร:</small>
                     <div class="d-flex" @click="handleAttachmentActionClick($event, item)">
-                      <select class="form-control form-control-sm mr-2 border-primary" v-model="item.attachment.docType" style="color: #3b24d6;" :disabled="isReadOnly" @change="handleAttachmentDocTypeChange(item)">
+                      <select class="form-control form-control-sm mr-2 border-primary" v-model="item.attachment.docType" style="color: #8b1212;" :disabled="isReadOnly" @change="handleAttachmentDocTypeChange(item)">
                         <option value="">-- เลือกหมวดหมู่ --</option>
                         <option value="TOR">TOR (Term of References)</option>
                         <option value="Quotation">ใบเสนอราคา / Quotation</option>
@@ -195,7 +195,7 @@
       </ul>
     </div>
 
-    <CCard class="mb-2 shadow-sm border-0" style="background-color: #f8f9fa;">
+    <CCard class="mb-2 shadow-sm border-0 budget-summary-card" style="background-color: #f8f9fa;">
       <CCardBody class="p-3">
         <div class="row text-center align-items-center">
           
@@ -247,14 +247,14 @@
       </CCardBody>
     </CCard>
     
-    <CCard class="border-primary mt-4 shadow-sm" style="border-width: 2px !important;">
+    <CCard class="border-primary mt-4 shadow-sm budget-grand-total-card" style="border-width: 2px !important;">
       <CCardBody class="d-flex justify-content-between align-items-center p-4">
         <div>
           <h4 class="mb-1 font-weight-bold text-dark">สรุปงบประมาณรวมทั้งสิ้น (พ.ศ. 2569)</h4>
           <span class="text-muted small">คำนวณอัตโนมัติตามหลักเกณฑ์การตั้งงบประมาณมหาวิทยาลัยแม่ฟ้าหลวง</span>
         </div>
         <div class="text-right">
-          <h1 class="text-primary mb-0 font-weight-bold" style="color: #3b24d6 !important;">
+          <h1 class="text-primary mb-0 font-weight-bold" style="color: #8b1212 !important;">
             {{ formatNumber(grandTotal) }} <span class="h5 text-muted font-weight-normal">บาท</span>
           </h1>
         </div>
@@ -345,6 +345,21 @@ export default {
     };
   },
   computed: {
+    isDarkTheme() {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+    categoryHeaderStyle() {
+      if (this.isDarkTheme) {
+        return 'background: linear-gradient(135deg, #1a2330 0%, #233244 70%, #2e4056 120%) !important;'
+      }
+      return 'background: linear-gradient(135deg, #8b1212 0%, #c59b3a 120%) !important;'
+    },
+    tableHeadStyle() {
+      if (this.isDarkTheme) {
+        return 'background: linear-gradient(135deg, #17202c 0%, #1f2d3d 65%, #2c3f56 140%) !important; opacity: 0.98;'
+      }
+      return 'background: linear-gradient(135deg, #7a0f0f 0%, #8b1212 65%, #c59b3a 140%) !important; opacity: 0.98;'
+    },
     grandTotal() {
       return this.categories.reduce((sum, cat) => {
         return sum + cat.items.reduce((itemSum, item) => itemSum + item.total, 0);
@@ -352,17 +367,17 @@ export default {
     },
     totalPeriod1() {
       return this.categories.reduce((sum, cat) => {
-        return sum + cat.items.reduce((itemSum, item) => itemSum + (Number(item.periods[0]) || 0), 0);
+        return sum + cat.items.reduce((itemSum, item) => itemSum + this.toNumber(item.periods[0]), 0);
       }, 0);
     },
     totalPeriod2() {
       return this.categories.reduce((sum, cat) => {
-        return sum + cat.items.reduce((itemSum, item) => itemSum + (Number(item.periods[1]) || 0), 0);
+        return sum + cat.items.reduce((itemSum, item) => itemSum + this.toNumber(item.periods[1]), 0);
       }, 0);
     },
     totalPeriod3() {
       return this.categories.reduce((sum, cat) => {
-        return sum + cat.items.reduce((itemSum, item) => itemSum + (Number(item.periods[2]) || 0), 0);
+        return sum + cat.items.reduce((itemSum, item) => itemSum + this.toNumber(item.periods[2]), 0);
       }, 0);
     },
     expectedPeriod1() {
@@ -423,6 +438,7 @@ export default {
   methods: {
     applyModelValue(val) {
       if (!val || !Array.isArray(val.categories)) return
+      if (!this.shouldApplyIncomingModel(val.categories)) return
 
       this.suppressEmit = true
       const saved = val.categories
@@ -438,23 +454,95 @@ export default {
         }
       })
 
+      this.formatAllNumericInputs()
+
       this.$nextTick(() => {
         this.suppressEmit = false
       })
+    },
+    shouldApplyIncomingModel(incomingCategories) {
+      try {
+        const incomingSerialized = JSON.stringify(incomingCategories || [])
+        const localSerialized = JSON.stringify(this.getSanitizedCategories() || [])
+        return incomingSerialized !== localSerialized
+      } catch (_) {
+        return true
+      }
     },
     emitModelValue() {
       if (this.suppressEmit) return
       if (this.isReadOnly) return
       this.$emit('update:modelValue', {
-        categories: this.categories,
+        categories: this.getSanitizedCategories(),
         grandTotal: this.grandTotal
       })
     },
     getBudgetData() {
       return {
-        categories: JSON.parse(JSON.stringify(this.categories || [])),
+        categories: this.getSanitizedCategories(),
         grandTotal: this.grandTotal
       }
+    },
+    toNumber(value) {
+      if (value === null || value === undefined || value === '') return 0
+      const parsed = Number(this.toRawNumberString(value))
+      return Number.isFinite(parsed) ? parsed : 0
+    },
+    toRawNumberString(value) {
+      let cleanVal = value === null || value === undefined
+        ? ''
+        : String(value).replace(/\D/g, '')
+      if (cleanVal.length > 1 && cleanVal.startsWith('0')) {
+        cleanVal = cleanVal.replace(/^0+/, '')
+        if (cleanVal === '') cleanVal = '0'
+      }
+      return cleanVal
+    },
+    formatNumberInputValue(value) {
+      const raw = this.toRawNumberString(value)
+      if (!raw) return ''
+      return raw.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    },
+    formatAllNumericInputs() {
+      this.categories.forEach((category) => {
+        if (!category || !Array.isArray(category.items)) return
+        category.items.forEach((item) => {
+          this.formatItemNumericInputs(item)
+        })
+      })
+    },
+    formatItemNumericInputs(item) {
+      if (!item || typeof item !== 'object') return
+
+      if (Array.isArray(item.multipliers)) {
+        item.multipliers.forEach((multiplier) => {
+          if (!multiplier || typeof multiplier !== 'object') return
+          multiplier.value = this.formatNumberInputValue(multiplier.value)
+        })
+      }
+
+      if (Array.isArray(item.periods)) {
+        item.periods = item.periods.map(period => this.formatNumberInputValue(period))
+      }
+    },
+    getSanitizedCategories() {
+      const categories = JSON.parse(JSON.stringify(this.categories || []))
+      categories.forEach((category) => {
+        if (!category || !Array.isArray(category.items)) return
+        category.items.forEach((item) => {
+          if (!item || typeof item !== 'object') return
+          if (Array.isArray(item.multipliers)) {
+            item.multipliers.forEach((multiplier) => {
+              if (!multiplier || typeof multiplier !== 'object') return
+              multiplier.value = this.toRawNumberString(multiplier.value)
+            })
+          }
+          if (Array.isArray(item.periods)) {
+            item.periods = item.periods.map(period => this.toRawNumberString(period))
+          }
+        })
+      })
+      return categories
     },
     checkKeyword(catIndex, item) {
       const cat = this.categories[catIndex];
@@ -588,27 +676,17 @@ export default {
     },
     cleanNumber(obj, key) {
       if (obj[key] !== null && obj[key] !== undefined) {
-        let cleanVal = obj[key].toString().replace(/\D/g, ''); 
-        if (cleanVal.length > 1 && cleanVal.startsWith('0')) {
-          cleanVal = cleanVal.replace(/^0+/, '');
-          if (cleanVal === '') cleanVal = '0'; 
-        }
-        obj[key] = cleanVal;
+        obj[key] = this.formatNumberInputValue(obj[key]);
       }
     },
     cleanArrayNumber(arr, index) {
       if (arr[index] !== null && arr[index] !== undefined) {
-        let cleanVal = arr[index].toString().replace(/\D/g, '');
-        if (cleanVal.length > 1 && cleanVal.startsWith('0')) {
-          cleanVal = cleanVal.replace(/^0+/, '');
-          if (cleanVal === '') cleanVal = '0';
-        }
-        this.$set(arr, index, cleanVal);
+        this.$set(arr, index, this.formatNumberInputValue(arr[index]));
       }
     },
     createItem(category, attachment = null) {
       const multipliers = JSON.parse(JSON.stringify(category.defaultMultipliers));
-      return {
+      const item = {
         id: Date.now() + Math.random(),
         name: '',
         multipliers: multipliers,
@@ -617,6 +695,8 @@ export default {
         attachment: attachment,
         periodError: false // เพิ่มสถานะเช็คการเกินงบ
       };
+      this.formatItemNumericInputs(item);
+      return item;
     },
     addItem(catIndex) {
       const cat = this.categories[catIndex];
@@ -629,6 +709,7 @@ export default {
     },
     addMultiplier(item) {
       item.multipliers.push({ label: 'ตัวคูณใหม่', value: 1, isAdmin: false });
+      this.formatItemNumericInputs(item);
       this.calculateItemTotal(item);
     },
     removeMultiplier(item, mIndex) {
@@ -640,7 +721,7 @@ export default {
         item.total = 0;
       } else {
         item.total = item.multipliers.reduce((acc, curr) => {
-          const val = curr.value === '' ? 0 : Number(curr.value);
+          const val = this.toNumber(curr.value);
           return acc * val;
         }, 1);
       }
@@ -648,9 +729,9 @@ export default {
     },
     // อัปเดตฟังก์ชันเช็คยอดงวด
     validatePeriods(item) {
-      const sumPeriods = (Number(item.periods[0]) || 0) + 
-                         (Number(item.periods[1]) || 0) + 
-                         (Number(item.periods[2]) || 0);
+      const sumPeriods = this.toNumber(item.periods[0]) +
+                         this.toNumber(item.periods[1]) +
+                         this.toNumber(item.periods[2]);
       
       // ลบ Alert ออก และอัปเดตสถานะ periodError แทน
       item.periodError = sumPeriods > item.total;
@@ -732,6 +813,194 @@ export default {
 .cursor-pointer {
   cursor: pointer;
 }
+
+.budget-section-container.is-dark {
+  color: #e6edf7;
+}
+
+.budget-section-container.is-dark ::v-deep .card,
+.budget-section-container.is-dark ::v-deep .card-body,
+.budget-section-container.is-dark ::v-deep .table-responsive {
+  background: #1a2432;
+  border-color: #2f3f52;
+}
+
+.budget-section-container.is-dark ::v-deep .table,
+.budget-section-container.is-dark ::v-deep .table td,
+.budget-section-container.is-dark ::v-deep .table th,
+.budget-section-container.is-dark ::v-deep tbody tr,
+.budget-section-container.is-dark ::v-deep tr.bg-light,
+.budget-section-container.is-dark ::v-deep td.bg-white,
+.budget-section-container.is-dark ::v-deep .bg-white,
+.budget-section-container.is-dark ::v-deep .bg-light {
+  background: #1a2432 !important;
+  color: #e8eff8 !important;
+  border-color: #324357 !important;
+}
+
+.budget-section-container.is-dark ::v-deep .table.table-bordered th,
+.budget-section-container.is-dark ::v-deep .table.table-bordered td {
+  border-color: #324357 !important;
+}
+
+.budget-section-container.is-dark ::v-deep tbody tr:hover {
+  background: #223142 !important;
+}
+
+.budget-section-container.is-dark ::v-deep .text-muted {
+  color: #aebdce !important;
+}
+
+.budget-section-container.is-dark ::v-deep .text-dark {
+  color: #e6edf7 !important;
+}
+
+.budget-section-container.is-dark ::v-deep .form-control,
+.budget-section-container.is-dark .input-floating-outline,
+.budget-section-container.is-dark .auto-grow-textarea,
+.budget-section-container.is-dark ::v-deep select.form-control {
+  background: #223142 !important;
+  color: #edf4fc !important;
+  border-color: #3c4e63 !important;
+}
+
+.budget-section-container.is-dark .label-floating-outline {
+  background-color: #1a2432;
+  color: #afbfd0;
+}
+
+.budget-section-container.is-dark .input-floating-outline:focus {
+  border-color: #c59b3a;
+  box-shadow: 0 0 0 1px #c59b3a;
+}
+
+.budget-section-container.is-dark .input-floating-outline[readonly],
+.budget-section-container.is-dark .input-floating-outline[readonly] ~ .label-floating-outline {
+  background-color: #192331;
+}
+
+.budget-section-container.is-dark .attachment-box {
+  background-color: #1f2c3b;
+  border-color: #33485f !important;
+}
+
+.budget-section-container.is-dark ::v-deep .btn.btn-light,
+.budget-section-container.is-dark ::v-deep label.btn.btn-light {
+  background: #223142 !important;
+  color: #d7e4f3 !important;
+  border-color: #3c4e63 !important;
+}
+
+.budget-section-container.is-dark ::v-deep .btn-danger {
+  background-color: #7f1d1d !important;
+  border-color: #991b1b !important;
+}
+
+.budget-section-container.is-dark .budget-summary-card,
+.budget-section-container.is-dark .budget-grand-total-card {
+  background-color: #1f2b39 !important;
+  border-color: #33475c !important;
+}
+
+.budget-section-container.is-dark .border-left {
+  border-left-color: #324357 !important;
+}
+
+.budget-section-container.is-dark .alert.alert-danger {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #f6b0b0;
+  border-left-color: #ef5350 !important;
+}
+
+.budget-section-container.is-dark .alert.alert-danger .text-dark {
+  color: #e8eff8 !important;
+}
+
+/* Make header and table feel like one piece (no gaps), and keep it readable */
+.budget-section-container ::v-deep .card {
+  overflow: hidden; /* clip the table header to the card's corners */
+  border-radius: 12px;
+}
+
+.budget-section-container ::v-deep .budget-category-header {
+  margin: 0 !important;
+  width: 100%;
+  padding: 12px 16px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(234, 223, 206, 0.95) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 242, 234, 0.94)) !important;
+}
+
+.budget-section-container ::v-deep .budget-category-title {
+  color: #111827 !important;
+  letter-spacing: 0.15px;
+}
+
+.budget-section-container ::v-deep .budget-category-title i {
+  color: var(--rf-gold, #c59b3a);
+}
+
+.budget-section-container ::v-deep .budget-category-header > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.budget-section-container ::v-deep .budget-category-header .btn,
+.budget-section-container ::v-deep .budget-category-header label.btn {
+  border-radius: 10px;
+  font-weight: 800;
+  border: 1px solid rgba(234, 223, 206, 0.98);
+  box-shadow: 0 8px 14px rgba(2, 6, 23, 0.08);
+}
+
+.budget-section-container ::v-deep .budget-category-header .btn.btn-light,
+.budget-section-container ::v-deep .budget-category-header label.btn.btn-light {
+  background: rgba(255, 255, 255, 0.94) !important;
+}
+
+.budget-section-container ::v-deep .card-body.p-0 {
+  padding-top: 0 !important;
+}
+
+/* No rounding from the table itself; the card handles corners */
+.budget-section-container ::v-deep table,
+.budget-section-container ::v-deep thead,
+.budget-section-container ::v-deep thead th {
+  border-radius: 0 !important;
+}
+
+.budget-section-container ::v-deep .table-responsive {
+  margin-top: 0 !important;
+}
+
+.budget-section-container ::v-deep .table {
+  margin-bottom: 0;
+  border-top: 0 !important; /* remove the separator line below header */
+}
+
+.budget-section-container ::v-deep .table.table-bordered {
+  border: 0 !important; /* avoid square outer border fighting rounded corners */
+}
+
+.budget-section-container ::v-deep .table.table-bordered th,
+.budget-section-container ::v-deep .table.table-bordered td {
+  border-color: rgba(234, 223, 206, 0.95) !important;
+}
+
+.budget-section-container ::v-deep .table thead th {
+  border-top: 0 !important;
+}
+
+.budget-section-container ::v-deep thead.text-white th,
+.budget-section-container ::v-deep thead.bg-primary th {
+  color: #ffffff !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.budget-section-container ::v-deep thead.bg-primary tr {
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.22);
+}
 .multiplier-box {
   width: 105px; 
 }
@@ -758,6 +1027,54 @@ export default {
   min-height: 38px;
 }
 
+/* =========================================================
+   Responsive: Summary box (installments) on small screens
+   - Align title/criteria/amounts to the left
+   - Stack each period with a top divider instead of left divider
+   ========================================================= */
+@media (max-width: 768px) {
+  .budget-section-container ::v-deep .row.text-center.align-items-center {
+    text-align: left !important;
+  }
+
+  .budget-section-container ::v-deep .row.text-center.align-items-center .text-right {
+    text-align: left !important;
+  }
+
+  .budget-section-container ::v-deep .row.text-center.align-items-center > [class*="col-"] {
+    text-align: left !important;
+  }
+
+  .budget-section-container ::v-deep .row.text-center.align-items-center .border-left {
+    border-left: 0 !important;
+    border-top: 1px solid rgba(234, 223, 206, 0.95) !important;
+    padding-top: 10px;
+    margin-top: 10px;
+  }
+
+  /* First period column is the 2nd child in this row (after the title column). */
+  .budget-section-container ::v-deep .row.text-center.align-items-center > div.border-left:nth-child(2) {
+    border-top: 0 !important;
+    padding-top: 0;
+    margin-top: 0;
+  }
+}
+
+/* Category header actions: on small screens stack buttons (1 per line) aligned to the right */
+@media (max-width: 576px) {
+  .budget-section-container ::v-deep .card-header.text-white.d-flex.justify-content-between.align-items-center > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .budget-section-container ::v-deep .card-header.text-white.d-flex.justify-content-between.align-items-center > div .mr-2 {
+    margin-right: 0 !important;
+  }
+}
+
 /* Floating Label Outline CSS */
 .floating-outline-wrap {
   position: relative;
@@ -776,8 +1093,8 @@ export default {
   outline: none;
 }
 .input-floating-outline:focus {
-  border-color: #3b24d6;
-  box-shadow: 0 0 0 1px #3b24d6;
+  border-color: #8b1212;
+  box-shadow: 0 0 0 1px #8b1212;
 }
 
 .label-floating-outline {
@@ -806,7 +1123,7 @@ export default {
 }
 
 .input-floating-outline:focus ~ .label-floating-outline {
-  color: #3b24d6;
+  color: #8b1212;
 }
 
 /* CSS สำหรับการแจ้งเตือน Error */

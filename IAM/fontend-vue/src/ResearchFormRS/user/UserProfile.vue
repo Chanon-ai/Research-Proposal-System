@@ -2,7 +2,7 @@
   <div class="app-layout">
 
       <!-- ───────────── PROFILE PAGE ───────────── -->
-      <div class="page-wrapper">
+      <div class="page-wrapper" :class="{ 'is-dark': isDarkTheme }">
         <div class="profile-container">
 
           <!-- ── Left card: Avatar + name ── -->
@@ -175,6 +175,10 @@ export default {
   },
 
   computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+
     profileName () {
       return this.form.name || '-'
     },
@@ -852,4 +856,106 @@ export default {
 .dropdown-leave-active { transition: opacity 0.12s ease, transform 0.12s ease; }
 .dropdown-enter-from,
 .dropdown-leave-to { opacity: 0; transform: translateY(-8px) scale(0.97); }
+
+.page-wrapper.is-dark {
+  background: transparent;
+}
+
+.page-wrapper.is-dark .profile-left-card,
+.page-wrapper.is-dark .profile-right {
+  background: #1f2933;
+  border: 1px solid #334155;
+  box-shadow: 0 1px 0 rgba(148, 163, 184, 0.08);
+}
+
+.page-wrapper.is-dark .profile-name,
+.page-wrapper.is-dark .section-title,
+.page-wrapper.is-dark .stat-num,
+.page-wrapper.is-dark .history-title {
+  color: #e5edf5;
+}
+
+.page-wrapper.is-dark .profile-role {
+  color: #9fd4b3;
+}
+
+.page-wrapper.is-dark .profile-dept,
+.page-wrapper.is-dark .stat-label,
+.page-wrapper.is-dark .form-group label,
+.page-wrapper.is-dark .history-code,
+.page-wrapper.is-dark .history-date,
+.page-wrapper.is-dark .tab-btn {
+  color: #9fb0c3;
+}
+
+.page-wrapper.is-dark .profile-stats {
+  background: #253240;
+  border: 1px solid #334155;
+}
+
+.page-wrapper.is-dark .stat-divider,
+.page-wrapper.is-dark .profile-tabs,
+.page-wrapper.is-dark .section-title,
+.page-wrapper.is-dark .history-item {
+  border-color: #334155;
+}
+
+.page-wrapper.is-dark .avatar-circle {
+  background: #253240;
+}
+
+.page-wrapper.is-dark .btn-edit-avatar {
+  border-color: #3f5267;
+  background: #253240;
+  color: #d9e5f2;
+}
+
+.page-wrapper.is-dark .btn-edit-avatar:hover {
+  border-color: #5f7d98;
+  background: #2a3949;
+  color: #ecf3fb;
+}
+
+.page-wrapper.is-dark .tab-btn:hover,
+.page-wrapper.is-dark .tab-btn.active {
+  color: #dce7f3;
+  border-bottom-color: #5f7d98;
+}
+
+.page-wrapper.is-dark .form-input {
+  background: #253240;
+  border-color: #3c4d61;
+  color: #ecf3fb;
+}
+
+.page-wrapper.is-dark .form-input::placeholder {
+  color: #8fa3b8;
+}
+
+.page-wrapper.is-dark .form-input:focus:not(:disabled) {
+  border-color: #6d8bad;
+}
+
+.page-wrapper.is-dark .form-input:disabled {
+  background: #1b2633;
+  border-color: #334155;
+  color: #9fb0c3;
+}
+
+.page-wrapper.is-dark .btn-cancel {
+  background: #2a3949;
+  color: #d0deed;
+}
+
+.page-wrapper.is-dark .btn-cancel:hover {
+  background: #334659;
+}
+
+.page-wrapper.is-dark .history-item {
+  background: #1f2933;
+}
+
+.page-wrapper.is-dark .history-item:hover {
+  background: #253240;
+}
 </style>

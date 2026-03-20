@@ -1,5 +1,5 @@
 <template>
-  <div class="project-details-form">
+  <div class="project-details-form" :class="{ 'is-dark': isDarkTheme }">
     <div class="card">
       <div class="card-header bg-primary text-white">
         <h5 class="mb-0">1-19 รายละเอียดโครงการ</h5>
@@ -19,7 +19,7 @@
               @input="filterThaiInput"
               required
             >
-            <small class="form-text text-muted lang-hint">กรุณากรอกเป็นภาษาไทยเท่านั้น *</small>
+            <small class="form-text text-muted lang-hint">กรุณากรอกชื่อโครงการภาษาไทย (สามารถใช้ตัวเลขและสัญลักษณ์ได้) *</small>
           </div>
           <div class="form-group">
             <label class="sub-label">ชื่อโครงการ (ภาษาอังกฤษ)</label>
@@ -117,28 +117,63 @@
         </div>
 
         <div class="section mb-4">
-          <h6 class="section-title">3. ความร่วมมือ <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">3. หน่วยงานที่ร่วมมือ</h6>
           <div class="form-group">
-            <select v-model="form.collaboration" class="form-control" required :disabled="isReadOnly">
-              <option value="none">ไม่มี</option>
-              <option value="yes">มี</option>
-            </select>
-          </div>
-          <div v-if="form.collaboration === 'yes'" class="form-group mt-3">
-            <label>ระบุหน่วยงานที่ร่วมมือ <span v-if="!isReadOnly" class="text-danger">*</span></label>
-            <input v-model="form.collaborationAgency" type="text" class="form-control" placeholder="กรุณาระบุหน่วยงานที่ร่วมมือ" required :disabled="isReadOnly">
+            <input
+              v-model="form.collaborationAgency"
+              type="text"
+              class="form-control"
+              placeholder="กรอกหน่วยงานที่ร่วมมือ (ไม่บังคับ)"
+              :disabled="isReadOnly"
+            >
           </div>
         </div>
 
         <div class="section mb-4">
           <h6 class="section-title">4. ประเภทงานวิจัย <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <div class="form-group">
-            <select v-model="form.researchType" class="form-control" required :disabled="isReadOnly">
-              <option value="">-- กรุณาเลือก --</option>
-              <option value="science-technology">ด้านวิทยาศาสตร์และเทคโนโลยี</option>
-              <option value="health-science">ด้านวิทยาศาสตร์สุขภาพ</option>
-              <option value="social-humanities">ด้านสังคมศาสตร์และมนุษย์ศาสตร์</option>
-            </select>
+          <div class="funding-options">
+            <div class="form-check mb-3">
+              <input
+                id="research-type-science-technology"
+                v-model="form.researchType"
+                type="radio"
+                class="form-check-input"
+                name="researchType"
+                value="science-technology"
+                :disabled="isReadOnly"
+              >
+              <label for="research-type-science-technology" :class="{'text-muted': isReadOnly && form.researchType !== 'science-technology'}">
+                <strong>ด้านวิทยาศาสตร์และเทคโนโลยี</strong>
+              </label>
+            </div>
+            <div class="form-check mb-3">
+              <input
+                id="research-type-health-science"
+                v-model="form.researchType"
+                type="radio"
+                class="form-check-input"
+                name="researchType"
+                value="health-science"
+                :disabled="isReadOnly"
+              >
+              <label for="research-type-health-science" :class="{'text-muted': isReadOnly && form.researchType !== 'health-science'}">
+                <strong>ด้านวิทยาศาสตร์สุขภาพ</strong>
+              </label>
+            </div>
+            <div class="form-check mb-3">
+              <input
+                id="research-type-social-humanities"
+                v-model="form.researchType"
+                type="radio"
+                class="form-check-input"
+                name="researchType"
+                value="social-humanities"
+                :disabled="isReadOnly"
+              >
+              <label for="research-type-social-humanities" :class="{'text-muted': isReadOnly && form.researchType !== 'social-humanities'}">
+                <strong>ด้านสังคมศาสตร์และมนุษย์ศาสตร์</strong>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -189,69 +224,87 @@
 
         <div ref="expected_outcomes" :class="sectionClass('expected_outcomes')">
           <h6 class="section-title">14. ผลลัพธ์ที่คาดว่าจะได้รับ <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <div class="funding-options">
 
           <div v-if="!form.fundingType" class="alert alert-warning">
             <i class="cil-info me-2"></i> กรุณาเลือก "ประเภททุน" ในหัวข้อที่ 2 เพื่อเลือกผลลัพธ์
           </div>
 
-          <div v-if="form.fundingType === 'new-researcher'" class="sub-options">
-            <h6 class="sub-section-title">14.1 ทุนนักวิจัยรุ่นใหม่</h6>
-            <div class="form-check mb-2">
-              <input v-model="form.selectedOutcome" type="radio" value="internationalConference" class="form-check-input" id="outcome1-1" :disabled="isReadOnly">
-              <label class="form-check-label" for="outcome1-1">นำเสนอในการประชุมวิชาการระดับนานาชาติ (Proceedings)</label>
-            </div>
-            <div class="form-check mb-2">
-              <input v-model="form.selectedOutcome" type="radio" value="scopusJournal" class="form-check-input" id="outcome1-2" :disabled="isReadOnly">
-              <label class="form-check-label" for="outcome1-2">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
-            </div>
-            <div class="form-check mb-2">
-              <input v-model="form.selectedOutcome" type="radio" value="tciJournal" class="form-check-input" id="outcome1-3" :disabled="isReadOnly">
-              <label class="form-check-label" for="outcome1-3">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
-            </div>
-            <div class="form-check mb-2">
-              <input v-model="form.selectedOutcome" type="radio" value="patent" class="form-check-input" id="outcome1-4" :disabled="isReadOnly">
-              <label class="form-check-label" for="outcome1-4">อนุสิทธิบัตร/สิทธิบัตร</label>
-            </div>
-          </div>
-
-          <div v-if="form.fundingType === 'researcher-development'" class="sub-options">
-            <h6 class="sub-section-title">14.2 ทุนพัฒนานักวิจัย</h6>
-            <div class="form-check mb-2">
-              <input v-model="form.selectedOutcome" type="radio" value="scopusJournal" class="form-check-input" id="outcome2-1" :disabled="isReadOnly">
-              <label class="form-check-label" for="outcome2-1">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
-            </div>
-            <div class="form-check mb-2">
-              <input v-model="form.selectedOutcome" type="radio" value="tciJournal" class="form-check-input" id="outcome2-2" :disabled="isReadOnly">
-              <label class="form-check-label" for="outcome2-2">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
-            </div>
-            <div class="form-check mb-2">
-              <input v-model="form.selectedOutcome" type="radio" value="patent" class="form-check-input" id="outcome2-3" :disabled="isReadOnly">
-              <label class="form-check-label" for="outcome2-3">อนุสิทธิบัตร/สิทธิบัตร</label>
+          <div v-if="form.fundingType === 'new-researcher'" class="mb-3">
+            <label class="form-check-label" :class="{'text-muted': isReadOnly && form.fundingType !== 'new-researcher'}">
+              <strong>14.1 ทุนนักวิจัยรุ่นใหม่</strong>
+            </label>
+            <div class="sub-options">
+              <div class="form-check">
+                <input v-model="form.selectedOutcome" type="radio" value="internationalConference" class="form-check-input" id="outcome1-1" :disabled="isReadOnly">
+                <label class="form-check-label" for="outcome1-1">นำเสนอในการประชุมวิชาการระดับนานาชาติ (Proceedings)</label>
+              </div>
+              <div class="form-check">
+                <input v-model="form.selectedOutcome" type="radio" value="scopusJournal" class="form-check-input" id="outcome1-2" :disabled="isReadOnly">
+                <label class="form-check-label" for="outcome1-2">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
+              </div>
+              <div class="form-check">
+                <input v-model="form.selectedOutcome" type="radio" value="tciJournal" class="form-check-input" id="outcome1-3" :disabled="isReadOnly">
+                <label class="form-check-label" for="outcome1-3">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
+              </div>
+              <div class="form-check">
+                <input v-model="form.selectedOutcome" type="radio" value="patent" class="form-check-input" id="outcome1-4" :disabled="isReadOnly">
+                <label class="form-check-label" for="outcome1-4">อนุสิทธิบัตร/สิทธิบัตร</label>
+              </div>
             </div>
           </div>
 
-          <div v-if="form.fundingType === 'strategic-research'" class="sub-options">
-            <h6 class="sub-section-title">14.3 ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์</h6>
-            <div class="form-check mb-2">
-              <input v-model="form.selectedOutcome" type="radio" value="scopusJournal" class="form-check-input" id="outcome3-1" :disabled="isReadOnly">
-              <label class="form-check-label" for="outcome3-1">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
-            </div>
-            <div class="form-check mb-2">
-              <input v-model="form.selectedOutcome" type="radio" value="tciJournal" class="form-check-input" id="outcome3-2" :disabled="isReadOnly">
-              <label class="form-check-label" for="outcome3-2">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
-            </div>
-            <div class="form-check mb-2">
-              <input v-model="form.selectedOutcome" type="radio" value="patent" class="form-check-input" id="outcome3-3" :disabled="isReadOnly">
-              <label class="form-check-label" for="outcome3-3">อนุสิทธิบัตร/สิทธิบัตร</label>
+          <div v-if="form.fundingType === 'researcher-development'" class="mb-3">
+            <label class="form-check-label" :class="{'text-muted': isReadOnly && form.fundingType !== 'researcher-development'}">
+              <strong>14.2 ทุนพัฒนานักวิจัย</strong>
+            </label>
+            <div class="sub-options">
+              <div class="form-check">
+                <input v-model="form.selectedOutcome" type="radio" value="scopusJournal" class="form-check-input" id="outcome2-1" :disabled="isReadOnly">
+                <label class="form-check-label" for="outcome2-1">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
+              </div>
+              <div class="form-check">
+                <input v-model="form.selectedOutcome" type="radio" value="tciJournal" class="form-check-input" id="outcome2-2" :disabled="isReadOnly">
+                <label class="form-check-label" for="outcome2-2">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
+              </div>
+              <div class="form-check">
+                <input v-model="form.selectedOutcome" type="radio" value="patent" class="form-check-input" id="outcome2-3" :disabled="isReadOnly">
+                <label class="form-check-label" for="outcome2-3">อนุสิทธิบัตร/สิทธิบัตร</label>
+              </div>
             </div>
           </div>
 
-          <div v-if="form.fundingType === 'industry-extension'" class="sub-options">
-            <h6 class="sub-section-title">14.4 ทุนต่อยอดสู่ภาคอุตสาหกรรม</h6>
-            <div class="form-check mb-2">
-              <input v-model="form.selectedOutcome" type="radio" value="ipRegistration" class="form-check-input" id="outcome4-1" :disabled="isReadOnly">
-              <label class="form-check-label" for="outcome4-1">การยื่นขอจดทะเบียนทรัพย์สินทางปัญญา (มีเลขคำขอฯ)</label>
+          <div v-if="form.fundingType === 'strategic-research'" class="mb-3">
+            <label class="form-check-label" :class="{'text-muted': isReadOnly && form.fundingType !== 'strategic-research'}">
+              <strong>14.3 ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์</strong>
+            </label>
+            <div class="sub-options">
+              <div class="form-check">
+                <input v-model="form.selectedOutcome" type="radio" value="scopusJournal" class="form-check-input" id="outcome3-1" :disabled="isReadOnly">
+                <label class="form-check-label" for="outcome3-1">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
+              </div>
+              <div class="form-check">
+                <input v-model="form.selectedOutcome" type="radio" value="tciJournal" class="form-check-input" id="outcome3-2" :disabled="isReadOnly">
+                <label class="form-check-label" for="outcome3-2">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
+              </div>
+              <div class="form-check">
+                <input v-model="form.selectedOutcome" type="radio" value="patent" class="form-check-input" id="outcome3-3" :disabled="isReadOnly">
+                <label class="form-check-label" for="outcome3-3">อนุสิทธิบัตร/สิทธิบัตร</label>
+              </div>
             </div>
+          </div>
+
+          <div v-if="form.fundingType === 'industry-extension'" class="mb-3">
+            <label class="form-check-label" :class="{'text-muted': isReadOnly && form.fundingType !== 'industry-extension'}">
+              <strong>14.4 ทุนต่อยอดสู่ภาคอุตสาหกรรม</strong>
+            </label>
+            <div class="sub-options">
+              <div class="form-check">
+                <input v-model="form.selectedOutcome" type="radio" value="ipRegistration" class="form-check-input" id="outcome4-1" :disabled="isReadOnly">
+                <label class="form-check-label" for="outcome4-1">การยื่นขอจดทะเบียนทรัพย์สินทางปัญญา (มีเลขคำขอฯ)</label>
+              </div>
+            </div>
+          </div>
           </div>
         </div>
 
@@ -265,15 +318,21 @@
           <div class="funding-options">
             <div class="form-check mb-3">
               <input v-model="form.transferLevel" type="radio" class="form-check-input" id="transfer1" value="national-international" :disabled="isReadOnly">
-              <label class="form-check-label" for="transfer1">สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้ในระดับภูมิภาค ประเทศ หรือ นานาชาติ</label>
+              <label for="transfer1" :class="{'text-muted': isReadOnly && form.transferLevel !== 'national-international'}">
+                <strong>สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้ในระดับภูมิภาค ประเทศ หรือ นานาชาติ</strong>
+              </label>
             </div>
             <div class="form-check mb-3">
               <input v-model="form.transferLevel" type="radio" class="form-check-input" id="transfer2" value="community-provincial" :disabled="isReadOnly">
-              <label class="form-check-label" for="transfer2">สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้เฉพาะกลุ่มอาชีพ ชุมชน หรือจังหวัด</label>
+              <label for="transfer2" :class="{'text-muted': isReadOnly && form.transferLevel !== 'community-provincial'}">
+                <strong>สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้เฉพาะกลุ่มอาชีพ ชุมชน หรือจังหวัด</strong>
+              </label>
             </div>
             <div class="form-check mb-3">
               <input v-model="form.transferLevel" type="radio" class="form-check-input" id="transfer3" value="none" :disabled="isReadOnly">
-              <label class="form-check-label" for="transfer3">ไม่มีการนำไปถ่ายทอดสู่สังคม</label>
+              <label for="transfer3" :class="{'text-muted': isReadOnly && form.transferLevel !== 'none'}">
+                <strong>ไม่มีการนำไปถ่ายทอดสู่สังคม</strong>
+              </label>
             </div>
           </div>
         </div>
@@ -332,6 +391,10 @@ export default {
     }
   },
   computed: {
+    isDarkTheme() {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+
     isProjectTitleDisabled() {
       return this.isReadOnly || this.disableProjectTitleSection
     }
@@ -467,17 +530,45 @@ export default {
       }
     },
     filterThaiInput(event) {
-      const thaiRegex = /[^ก-๙\s\-\.]/g
-      this.form.projectNameThai = event.target.value.replace(thaiRegex, '')
+      this.form.projectNameThai = this.sanitizeThaiProjectTitle(event.target.value)
     },
     filterEnglishInput(event) {
-      const englishRegex = /[^a-zA-Z0-9\s\-\.\,\!\?\(\)\'\"]/g
-      this.form.projectNameEnglish = event.target.value.replace(englishRegex, '')
+      this.form.projectNameEnglish = this.sanitizeEnglishProjectTitle(event.target.value)
+    },
+    isAllowedSymbol(char) {
+      return /[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/.test(char)
+    },
+    sanitizeThaiProjectTitle(value) {
+      const source = String(value || '')
+      return Array.from(source).filter((char) => {
+        if (/[0-9]/.test(char)) return true
+        if (/\s/.test(char)) return true
+        if (/[\u0E00-\u0E7F]/.test(char)) return true
+        return this.isAllowedSymbol(char)
+      }).join('')
+    },
+    sanitizeEnglishProjectTitle(value) {
+      const source = String(value || '')
+      return Array.from(source).filter((char) => {
+        if (/[a-zA-Z0-9]/.test(char)) return true
+        if (/\s/.test(char)) return true
+        return this.isAllowedSymbol(char)
+      }).join('')
+    },
+    isSameBudget(left, right) {
+      try {
+        return JSON.stringify(left || {}) === JSON.stringify(right || {})
+      } catch (_) {
+        return left === right
+      }
     },
     handleBudgetUpdate(newBudget) {
-      this.form.budget = newBudget || { categories: [], grandTotal: 0 }
+      const nextBudget = this.cloneSerializable(newBudget) || { categories: [], grandTotal: 0 }
+      if (!this.isSameBudget(this.form.budget, nextBudget)) {
+        this.form.budget = nextBudget
+      }
       if (this.isHydrating) return
-      this.$emit('budget-changed', this.form.budget)
+      this.$emit('budget-changed', nextBudget)
       this.$emit('form-changed', this.getFormData())
     },
     sectionClass(sectionKey) {
@@ -526,12 +617,13 @@ export default {
       })
     },
     getFormData() {
+      const snapshot = this.cloneSerializable(this.form)
       const budgetSection = this.$refs.budgetSection
       const section = Array.isArray(budgetSection) ? budgetSection[0] : budgetSection
       if (!this.isHydrating && !this.isReadOnly && section && typeof section.getBudgetData === 'function') {
-        this.form.budget = section.getBudgetData()
+        snapshot.budget = section.getBudgetData()
       }
-      return this.cloneSerializable(this.form)
+      return snapshot
     },
     getBudgetValidationResult() {
       const budgetSection = this.$refs.budgetSection
@@ -558,6 +650,71 @@ export default {
   margin-bottom: 20px;
 }
 
+.project-details-form.is-dark {
+  color: #e6edf7;
+}
+
+.project-details-form.is-dark .section-title {
+  color: #eaf2fb;
+  background: #1f2b39;
+  border-left-color: #c59b3a;
+}
+
+.project-details-form.is-dark .section-highlight .section-title {
+  background: #2a3645;
+  border-left-color: #f2b94d;
+  box-shadow: 0 0 0 3px rgba(242, 185, 77, 0.16);
+}
+
+.project-details-form.is-dark .funding-options {
+  background: #1a2432;
+  border: 1px solid #2f3f52;
+}
+
+.project-details-form.is-dark .sub-options {
+  background: #223142;
+  border: 1px solid #35475c;
+}
+
+.project-details-form.is-dark .sub-section-title,
+.project-details-form.is-dark .sub-label,
+.project-details-form.is-dark .form-check-label,
+.project-details-form.is-dark .form-check-label strong {
+  color: #e6edf7;
+}
+
+.project-details-form.is-dark .sub-options .form-check-label,
+.project-details-form.is-dark .description,
+.project-details-form.is-dark .lang-hint,
+.project-details-form.is-dark .text-muted {
+  color: #aab9ca !important;
+}
+
+.project-details-form.is-dark .form-control {
+  background: #223142;
+  border-color: #3b4d62;
+  color: #edf4fc;
+}
+
+.project-details-form.is-dark .form-control::placeholder {
+  color: #9caec2;
+}
+
+.project-details-form.is-dark .form-control:focus {
+  border-color: #c59b3a;
+  box-shadow: 0 0 0 0.2rem rgba(197, 155, 58, 0.2);
+}
+
+.project-details-form.is-dark .form-check-input {
+  filter: brightness(1.08);
+}
+
+.project-details-form.is-dark .alert.alert-warning {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #f8d48a;
+}
+
 .section-title {
   font-weight: bold;
   color: #2c3e50;
@@ -566,6 +723,9 @@ export default {
   background: #f8f9fa;
   border-left: 4px solid #007bff;
   border-radius: 4px;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .section-highlight .section-title {
@@ -613,8 +773,7 @@ export default {
   margin-left: 1.5rem;
   margin-top: 10px;
   padding-left: 15px;
-  border-left: 4px solid #007bff;
-  background: white;
+  background: transparent;
   border-radius: 0 8px 8px 0;
   padding: 15px;
 }
@@ -706,7 +865,8 @@ export default {
     padding: 10px 15px;
   }
   .project-details-form {
-    padding-bottom: 140px;
+    /* Footer spacing is handled by ResearchForm page; avoid large blank gap before next section */
+    padding-bottom: 0 !important;
   }
   .footer-fixed .btn {
     font-size: 0.9rem;
@@ -725,3 +885,4 @@ export default {
   }
 }
 </style>
+

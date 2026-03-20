@@ -1,7 +1,5 @@
 <template>
-  <!-- Simple wrapper that re-uses the notification component content -->
-  <div>
-    <!-- Content copied from original notification file -->
+  <div class="user-notification-wrapper">
     <NotificationPage />
   </div>
 </template>
@@ -16,5 +14,12 @@ export default {
 </script>
 
 <style scoped>
-/* wrapper has no styles */
+.user-notification-wrapper {
+  width: 100%;
+}
+
+:deep([data-coreui-theme='dark']) .user-notification-wrapper,
+:deep(.c-dark-theme) .user-notification-wrapper {
+  background: transparent;
+}
 </style>

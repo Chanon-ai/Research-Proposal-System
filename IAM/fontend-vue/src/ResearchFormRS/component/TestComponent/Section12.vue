@@ -1,5 +1,5 @@
 <template>
-  <CCard>
+  <CCard :class="{ 'workplan-table--dark': isDarkTheme }">
     <CCardBody>
       <CButtonGroup v-if="!isReadOnly" class="mb-3 d-flex w-100 duration-selector">
         <CButton
@@ -144,6 +144,11 @@ export default {
           responsible: ''
         }
       ]
+    }
+  },
+  computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
     }
   },
   watch: {
@@ -310,6 +315,100 @@ export default {
 }
 
 /* =========================================
+   MFU red/gold theme tweaks (style-only)
+   ========================================= */
+.duration-selector .btn {
+  font-weight: 800;
+  letter-spacing: 0.15px;
+  border-radius: 8px !important;
+  border-color: rgba(234, 223, 206, 0.95) !important;
+}
+
+.duration-selector .btn.btn-primary,
+.duration-selector .btn-primary {
+  background: linear-gradient(135deg, var(--rf-accent, #8b1212) 0%, rgba(139, 18, 18, 0.92) 70%, var(--rf-gold, #c59b3a) 160%) !important;
+  border-color: rgba(139, 18, 18, 0.55) !important;
+  box-shadow: 0 10px 18px rgba(2, 6, 23, 0.14);
+}
+
+.duration-selector .btn.btn-secondary {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #6b7280 !important;
+}
+
+.table-wrapper {
+  border-radius: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(234, 223, 206, 0.95);
+  box-shadow: 0 14px 28px rgba(2, 6, 23, 0.08);
+  background: linear-gradient(135deg, var(--rf-accent, #8b1212), rgba(139, 18, 18, 0.92));
+}
+
+.plan-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  background: transparent;
+}
+
+.plan-table.table-bordered {
+  border: 0 !important; /* remove square outer border so rounded wrapper is clean */
+}
+
+.plan-table.table-bordered th,
+.plan-table.table-bordered td {
+  border-color: rgba(234, 223, 206, 0.95) !important;
+}
+
+.plan-table thead {
+  background: linear-gradient(135deg, var(--rf-accent, #8b1212), rgba(139, 18, 18, 0.92)) !important;
+}
+
+.plan-table thead tr.bg-primary {
+  background: transparent !important;
+}
+
+.plan-table thead th {
+  background: transparent !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
+}
+
+.plan-table thead tr > th:first-child {
+  border-top-left-radius: 10px;
+}
+
+.plan-table thead tr > th:last-child {
+  border-top-right-radius: 10px;
+}
+
+.plan-table thead th {
+  border-color: rgba(234, 223, 206, 0.95) !important;
+}
+
+.month-cell:hover {
+  background-color: rgba(197, 155, 58, 0.16);
+}
+
+.month-cell.bg-success {
+  background-color: rgba(197, 155, 58, 0.34) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(139, 18, 18, 0.22),
+    inset 0 -10px 18px rgba(2, 6, 23, 0.06);
+}
+
+.custom-textarea {
+  border-radius: 10px;
+  border-color: rgba(234, 223, 206, 0.95) !important;
+}
+
+.custom-textarea:focus {
+  border-color: rgba(139, 18, 18, 0.55) !important;
+  box-shadow: 0 0 0 4px rgba(139, 18, 18, 0.14) !important;
+}
+
+/* =========================================
    Sticky Columns & Backgrounds (แก้ปัญหาพื้นหลังโปร่งใส)
    ========================================= */
 /* ตรึงคอลัมน์ซ้าย (กิจกรรม) */
@@ -354,7 +453,8 @@ thead .sticky-left,
 thead .sticky-right,
 thead .sticky-action {
   z-index: 3;
-  background-color: #321fdb !important; /* สีน้ำเงิน Primary ของ CoreUI */
+  /* Match Research Form's red/gold theme and keep header readable while scrolling */
+  background: inherit !important;
   color: #ffffff;
 }
 
@@ -369,7 +469,7 @@ thead .sticky-action {
   background-color: #ebedef;
 }
 .month-cell.bg-success {
-  background-color: #2eb85c !important;
+  background-color: rgba(197, 155, 58, 0.34) !important;
 }
 
 .custom-textarea {
@@ -387,6 +487,87 @@ thead .sticky-action {
   background-color: transparent; /* เอา hover effect ออก */
 }
 .month-cell.bg-success.read-only-cell:hover {
-  background-color: #2eb85c !important; /* คงสีเขียวไว้ถ้าถูกเลือกอยู่แล้ว */
+  background-color: rgba(197, 155, 58, 0.34) !important; /* keep selected state */
+}
+
+.workplan-table--dark .table-wrapper {
+  border-color: #344a62;
+  box-shadow: 0 14px 28px rgba(2, 8, 18, 0.36);
+  background: linear-gradient(135deg, #1a2a3d, #1f344a);
+}
+
+.workplan-table--dark .plan-table tbody td {
+  background-color: #111d2c;
+  border-color: #334a63 !important;
+}
+
+.workplan-table--dark .sticky-left,
+.workplan-table--dark .sticky-right,
+.workplan-table--dark .sticky-action {
+  background-color: #162638 !important;
+}
+
+.workplan-table--dark .sticky-border-left {
+  border-left-color: #3b546f !important;
+}
+
+.workplan-table--dark .sticky-border-right {
+  border-right-color: #3b546f !important;
+}
+
+.workplan-table--dark .custom-textarea {
+  background-color: #0f1b2a !important;
+  color: #eef5ff !important;
+  border-color: #3a526b !important;
+  caret-color: #dcecff;
+}
+
+.workplan-table--dark .custom-textarea::placeholder {
+  color: #a8bdd2;
+  opacity: 1;
+}
+
+.workplan-table--dark .custom-textarea:focus {
+  background-color: #132338 !important;
+  color: #f7fbff !important;
+  border-color: #79b7ff !important;
+  box-shadow: 0 0 0 3px rgba(121, 183, 255, 0.2) !important;
+}
+
+.workplan-table--dark .month-cell:hover {
+  background-color: #21334a;
+}
+
+.workplan-table--dark .month-cell.read-only-cell:hover {
+  background-color: #111d2c;
+}
+
+.workplan-table--dark .sticky-action .btn-danger,
+.workplan-table--dark .sticky-action .btn.btn-danger {
+  border: 1px solid rgba(255, 132, 132, 0.38);
+  box-shadow: 0 6px 14px rgba(36, 8, 12, 0.35);
+  color: #fff4f4;
+}
+
+.workplan-table--dark .sticky-action .btn-danger:hover,
+.workplan-table--dark .sticky-action .btn.btn-danger:hover {
+  box-shadow: 0 8px 18px rgba(36, 8, 12, 0.45);
+}
+
+.workplan-table--dark .duration-selector .btn.btn-secondary {
+  background: #162638 !important;
+  color: #c9d9ea !important;
+  border-color: #324b66 !important;
+}
+
+.workplan-table--dark .duration-selector .btn.btn-primary,
+.workplan-table--dark .duration-selector .btn-primary {
+  border-color: rgba(123, 177, 242, 0.45) !important;
+  box-shadow: 0 10px 18px rgba(9, 20, 34, 0.35);
+}
+
+.workplan-table--dark .plan-table tbody tr td.bg-white,
+.workplan-table--dark .plan-table tbody td.bg-white {
+  background-color: #162638 !important;
 }
 </style>

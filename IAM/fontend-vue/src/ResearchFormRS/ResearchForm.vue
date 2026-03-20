@@ -1,10 +1,17 @@
 <template>
-  <div class="research-form" :class="{ 'research-form--has-admin-actions': showAdminFooterBar }">
+  <div
+    class="research-form"
+    :class="{
+      'research-form--has-admin-actions': showAdminFooterBar,
+      'research-form--draft': isDraftStatus && !isAdminView,
+      'research-form--dark': isDarkTheme
+    }"
+  >
     <div class="container-fluid">
       <div class="row">
         <div class="col-12">
           <h2 class="mb-4">แบบฟอร์มข้อมูลการวิจัย</h2>
-          <div v-if="isAdminView"
+          <div v-if="isAdminView" class="admin-view-banner"
             style="background:#e8f4ff;border-left:4px solid #1a73e8;padding:10px 16px;margin-bottom:16px;border-radius:4px;font-size:14px;color:#1a73e8">
             โหมดดูข้อมูล (Admin View) - ไม่สามารถแก้ไขได้
           </div>
@@ -42,7 +49,7 @@
         :is-read-only="effectiveReadOnly"
         @upload="handleUpload"
         @open="openFile"
-        @update:files="files = $event"
+        @update:files="handleFilesUpdate"
         @remove="removeFile"
       />
 
@@ -102,7 +109,7 @@
           </CAlert>
 
           <div v-else>
-            <div class="card mb-3" style="background: #f8fafc;">
+            <div class="card mb-3 review-summary-card" style="background: #f8fafc;">
               <div class="card-body">
                 <h6 class="mb-3">Admin Review Summary</h6>
                 <div class="row">
@@ -199,7 +206,7 @@
           </CAlert>
 
           <div v-else>
-            <div class="card mb-3" style="background: #f8fafc;">
+            <div class="card mb-3 review-summary-card" style="background: #f8fafc;">
               <div class="card-body">
                 <h6 class="mb-3">ข้อเสนอแนะสำหรับการแก้ไข</h6>
                 <div class="row">
@@ -463,11 +470,34 @@
 
       <!-- Footer with action buttons -->
       <div v-if="showFooterBar" class="footer-fixed" :style="{ left: isSidebarOpen ? '256px' : '0px' }">
-        <div class="d-flex justify-content-between align-items-center w-100 px-3">
+        <div class="d-flex justify-content-between align-items-center w-100 px-2">
 
           <div class="d-flex align-items-center" style="gap: 12px;">
             <span class="me-2 fw-bold text-muted">สถานะ:</span>
             <StatusBadge :status="currentStatus" role="researcher" />
+            <span
+              v-if="isAutoSaving || isDraftSaving"
+              class="save-indicator save-indicator--saving"
+              title="Saving"
+              aria-label="Saving"
+            >
+              <CSpinner size="sm" />
+            </span>
+            <span
+              v-else-if="isDraftSaved"
+              class="save-indicator save-indicator--saved"
+              title="Saved"
+              aria-label="Saved"
+            >
+              <i class="cil-check-circle"></i>
+            </span>
+            <span
+              v-if="isAutoSaving || isDraftSaving"
+              class="save-hint"
+              title="บันทึกอัตโนมัติ"
+            >
+              กำลังเซฟ
+            </span>
           </div>
 
           <div class="d-flex justify-content-end" style="gap: 12px;">
@@ -488,17 +518,8 @@
               ลบโครงการ
             </button>
 
-            <button v-if="showDraftActions" type="button" class="btn btn-lg text-white" :style="{
-              backgroundColor: isDraftSaved ? '#6c757d' : '#8b5cf6',
-              borderColor: isDraftSaved ? '#6c757d' : '#8b5cf6',
-              cursor: isDraftSaved ? 'not-allowed' : 'pointer'
-            }" :disabled="isDraftSaved" @click="saveDraft">
-              <i class="cil-save me-2"></i>
-              {{ isDraftSaved ? 'บันทึกแล้ว' : 'บันทึกฉบับร่าง' }}
-            </button>
-
             <button v-if="showDraftActions" type="button" class="btn btn-lg text-white"
-              style="background-color: #1e40af; border-color: #1e40af;" @click="submitProject">
+              style="background-color: #8b1212; border-color: #8b1212;" @click="submitProject">
               <i class="cil-send me-2"></i>
               ยื่นโครงการ
             </button>
@@ -515,7 +536,7 @@
             </button>
 
             <button v-if="showExportPdfButton" type="button" class="btn btn-lg text-white"
-              style="background-color: #3b82f6; border-color: #3b82f6;" :disabled="isExportingPdf" @click="exportProposalPdf">
+              style="background-color: #b58522; border-color: #b58522;" :disabled="isExportingPdf" @click="exportProposalPdf">
               <i class="cil-file-pdf me-2"></i>
               {{ isExportingPdf ? 'กำลังสร้าง PDF...' : 'Export PDF' }}
             </button>
@@ -526,7 +547,7 @@
 
       <!-- Admin footer actions (Detail view) -->
       <div v-if="showAdminFooterBar" class="footer-fixed admin-footer-fixed" :style="{ left: isSidebarOpen ? '256px' : '0px' }">
-        <div class="d-flex justify-content-between align-items-center w-100 px-3 flex-wrap" style="gap: 12px;">
+        <div class="d-flex justify-content-between align-items-center w-100 px-2 flex-wrap" style="gap: 12px;">
           <div class="d-flex align-items-center" style="gap: 12px;">
             <span class="fw-bold text-muted">การดำเนินการ:</span>
             <StatusBadge :status="currentStatus" role="admin" />
@@ -898,10 +919,12 @@ export default {
     ReportView
   },
   data() {
-    return {
-      isReadOnly: false,
-      viewProposalId: null,
-      isAdminView: false,
+      return {
+        // Used to determine "responsive" sidebar behavior across all viewport sizes.
+        windowWidth: (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1200,
+        isReadOnly: false,
+        viewProposalId: null,
+        isAdminView: false,
       adminShowStatusModal: false,
       adminNewStatus: '',
       adminStatusRemark: '',
@@ -932,6 +955,7 @@ export default {
         status: 'scheduled'
       },
       isDraftSaved: false,
+      isDraftSaving: false,
       currentStatus: 'draft',
       showSubmitButton: false,
       reviewsLoading: false,
@@ -952,6 +976,8 @@ export default {
       isExportingPdf: false,
       autoSavePending: false,
       lastAutoSavedAt: null,
+      lastSavedDraftFingerprint: null,
+      autoSaveDebounceMs: 120,
       savingRevision: false,
       submittingRevision: false,
       files: [],
@@ -1000,6 +1026,19 @@ export default {
     }
   },
   async mounted() {
+    // Keep windowWidth reactive so computed sidebar behavior updates on resize.
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      this._rfResizeHandler = () => {
+        this.windowWidth = window.innerWidth || this.windowWidth
+      }
+      this._rfResizeHandler()
+      try {
+        window.addEventListener('resize', this._rfResizeHandler, { passive: true })
+      } catch (_) {
+        window.addEventListener('resize', this._rfResizeHandler)
+      }
+    }
+
     // Sync research team data when component is mounted
     this.syncResearchTeamData();
 
@@ -1029,6 +1068,10 @@ export default {
     }
 
     this.$nextTick(() => {
+      this.updateDraftBaseline()
+      if (this.viewProposalId) {
+        this.isDraftSaved = true
+      }
       this.suppressAutoSave = false
     })
   },
@@ -1041,8 +1084,16 @@ export default {
   beforeDestroy () {
     this.clearAutoSaveTimer()
     this.clearBudgetAutoSaveTimer()
+    if (typeof window !== 'undefined' && window.removeEventListener && this._rfResizeHandler) {
+      window.removeEventListener('resize', this._rfResizeHandler)
+      this._rfResizeHandler = null
+    }
   },
   computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+
     effectiveReadOnly () {
       return Boolean(this.readOnly || this.isReadOnly)
     },
@@ -1246,7 +1297,10 @@ export default {
       // ดึงสถานะเปิด/ปิด Sidebar มาจากตัวแปรส่วนกลาง
       const show = this.$store.state.sidebarShow;
       // CoreUI มักจะเก็บค่าเป็น boolean (true/false) หรือสตริง 'responsive'
-      return show === true || show === 'responsive';
+      if (show === true) return true
+      if (show === false) return false
+      // 'responsive' means: show on desktop, overlay/hidden on smaller screens.
+      return show === 'responsive' && Number(this.windowWidth) >= 992
     }
   },
   watch: {
@@ -2067,6 +2121,8 @@ export default {
       const budgetTotal = (form.budget && form.budget.grandTotal)
         || form.budgetTotal
         || 0
+      const collaborationAgency = String(form.collaborationAgency || '').trim()
+      const collaboration = collaborationAgency ? 'yes' : 'none'
 
       const projectLeader = teamData && teamData.projectLeader ? teamData.projectLeader : {}
       const projectLeaderName = projectLeader.name || form.projectLeaderName || ''
@@ -2102,8 +2158,8 @@ export default {
           researchType: form.researchType || null,
           keywords: form.keywords || '',
           fundingSubType: form.fundingSubType,
-          collaboration: form.collaboration,
-          collaborationAgency: form.collaborationAgency,
+          collaboration,
+          collaborationAgency,
           problemSignificance: form.problemSignificance,
           objectives: form.objectives,
           literatureReview: form.literatureReview,
@@ -2124,6 +2180,29 @@ export default {
        }
      },
 
+    buildDraftFingerprint (payload = null) {
+      const draftPayload = payload || this.normalizeApiPayload()
+      try {
+        return JSON.stringify(draftPayload)
+      } catch (err) {
+        return ''
+      }
+    },
+    hasPendingFileQueue () {
+      return Array.isArray(this.pendingFormFiles) && this.pendingFormFiles.length > 0
+    },
+    hasDraftChangedFromBaseline (payload = null) {
+      if (this.hasPendingFileQueue()) return true
+      const currentFingerprint = this.buildDraftFingerprint(payload)
+      if (!currentFingerprint) return true
+      if (!this.lastSavedDraftFingerprint) return true
+      return currentFingerprint !== this.lastSavedDraftFingerprint
+    },
+    updateDraftBaseline (payload = null) {
+      const currentFingerprint = this.buildDraftFingerprint(payload)
+      if (!currentFingerprint) return
+      this.lastSavedDraftFingerprint = currentFingerprint
+    },
     markAsEdited() {
       if (this.suppressAutoSave) return
       this.scheduleAutoSave()
@@ -2156,6 +2235,10 @@ export default {
       }
 
       await this.uploadFormFiles(selected)
+      this.markAsEdited()
+    },
+    handleFilesUpdate (updatedFiles) {
+      this.files = Array.isArray(updatedFiles) ? updatedFiles : []
       this.markAsEdited()
     },
     async ensureProposalDraftExistsForAttachments () {
@@ -2736,6 +2819,8 @@ export default {
         console.error('loadProposalById error:', err)
       } finally {
         this.$nextTick(() => {
+          this.updateDraftBaseline()
+          this.isDraftSaved = true
           this.suppressAutoSave = false
         })
       }
@@ -2752,11 +2837,13 @@ export default {
       this.budgetAutoSaveTimerId = null
     },
     async flushAutoSaveBeforeLeave () {
+      const hasUnsavedChanges = this.hasDraftChangedFromBaseline()
       const hasPendingDraftSave = Boolean(
         this.autoSaveTimerId ||
         this.budgetAutoSaveTimerId ||
         this.autoSavePending ||
-        (Array.isArray(this.pendingFormFiles) && this.pendingFormFiles.length)
+        (Array.isArray(this.pendingFormFiles) && this.pendingFormFiles.length) ||
+        hasUnsavedChanges
       )
 
       if (!hasPendingDraftSave || !this.canAutoSave()) return
@@ -2784,13 +2871,6 @@ export default {
       }
 
       this.markAsEdited()
-
-      if (!this.canAutoSave()) return
-
-      this.clearBudgetAutoSaveTimer()
-      this.budgetAutoSaveTimerId = setTimeout(() => {
-        this.autoSaveDraft()
-      }, 800)
     },
     canAutoSave () {
       if (this.suppressAutoSave) return false
@@ -2803,20 +2883,21 @@ export default {
       if (!this.canAutoSave()) return
       this.clearAutoSaveTimer()
       this.autoSaveTimerId = setTimeout(() => {
+        this.autoSaveTimerId = null
         this.autoSaveDraft()
-      }, 1500)
+      }, this.autoSaveDebounceMs)
     },
-    async persistDraft ({ silent = false } = {}) {
-      const payload = this.normalizeApiPayload()
-      payload.status = 'draft'
+    async persistDraft ({ silent = false, payload = null } = {}) {
+      const payloadToSave = payload || this.normalizeApiPayload()
+      payloadToSave.status = 'draft'
 
       try {
         if (this.viewProposalId) {
-          await Service.proposal.updateDraft(this.viewProposalId, payload)
+          await Service.proposal.updateDraft(this.viewProposalId, payloadToSave)
           this.setStoredDraftId(this.viewProposalId)
           await this.flushPendingFormFiles()
         } else {
-          const createRes = await Service.proposal.create(payload)
+          const createRes = await Service.proposal.create(payloadToSave)
           const created = createRes && createRes.data && createRes.data.data ? createRes.data.data : null
           const proposalId = created && (created._id || created.id)
           if (proposalId) {
@@ -2827,6 +2908,7 @@ export default {
           }
         }
 
+        this.updateDraftBaseline()
         this.isDraftSaved = true
         this.lastAutoSavedAt = new Date().toISOString()
 
@@ -2863,6 +2945,15 @@ export default {
       this.clearAutoSaveTimer()
       this.clearBudgetAutoSaveTimer()
       if (!this.canAutoSave()) return
+
+      const payload = this.normalizeApiPayload()
+      if (!this.hasDraftChangedFromBaseline(payload)) {
+        if (this.viewProposalId || this.lastAutoSavedAt) {
+          this.isDraftSaved = true
+        }
+        return
+      }
+
       if (this.isAutoSaving) {
         this.autoSavePending = true
         return
@@ -2870,7 +2961,7 @@ export default {
 
       this.isAutoSaving = true
       try {
-        await this.persistDraft({ silent: true })
+        await this.persistDraft({ silent: true, payload })
       } catch (err) {
         void err
       } finally {
@@ -2885,9 +2976,12 @@ export default {
       this.clearAutoSaveTimer()
       this.clearBudgetAutoSaveTimer()
       try {
+        this.isDraftSaving = true
         await this.persistDraft({ silent: false })
       } catch (err) {
         void err
+      } finally {
+        this.isDraftSaving = false
       }
     },
 
@@ -3406,7 +3500,9 @@ export default {
           coResearchers,
           advisors
         },
-        cooperation: projectDetails.collaboration === 'yes' ? 'มี' : 'ไม่มี',
+        cooperation: String(projectDetails.collaborationAgency || '').trim()
+          ? 'มี'
+          : (projectDetails.collaboration === 'yes' ? 'มี' : 'ไม่มี'),
         cooperationDetail: projectDetails.collaborationAgency || '',
         researchType: this.reportResearchTypeLabel(projectDetails.researchType),
         keywords: projectDetails.keywords || '',
@@ -3582,12 +3678,17 @@ export default {
   padding-bottom: 110px;
 }
 
+/* Draft: hide the bottom "note" block in SignatureCard (shown just above the status footer) */
+.research-form--draft ::v-deep .signature-card .alert.alert-info {
+  display: none;
+}
+
 .research-form h2 {
   color: white;
   font-weight: 800;
   text-align: center;
   padding: 18px 0;
-  background: #007bff;
+  background: linear-gradient(135deg, #8b1212 0%, #c59b3a 115%);
   margin: 0 0 20px 0;
   width: 100%;
   box-sizing: border-box;
@@ -3652,30 +3753,45 @@ export default {
   gap: 1rem;
   align-items: flex-start;
   margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.feedback-workspace-card__header > div:first-child {
+  flex: 1 1 320px;
+  min-width: 0;
 }
 
 .feedback-workspace-card__title {
   font-weight: 800;
   color: #0f172a;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .feedback-workspace-card__subtitle {
   margin-top: 0.2rem;
   color: #64748b;
   font-size: 0.9rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .feedback-workspace-card__actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .feedback-workspace-card__status {
   color: #047857;
   font-size: 0.82rem;
   font-weight: 700;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .feedback-workspace-notes {
@@ -3685,8 +3801,10 @@ export default {
 }
 
 .feedback-workspace-note {
-  border-left: 4px solid #3b82f6;
+  /* Keep the blue left bar for main headings only. Notes should look like formal sub-cards. */
+  border-left: none;
   background: #f8fafc;
+  border: 1px solid #e2e8f0;
   padding: 0.75rem 0.9rem;
   border-radius: 8px;
 }
@@ -3790,6 +3908,9 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
+  /* Footer button rhythm (desktop defaults) */
+  --rf-footer-btn-gap: 0.55rem;
+  --rf-footer-btn-px: 16px;
   z-index: 1000;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -3802,6 +3923,81 @@ export default {
 
 .footer-fixed .btn {
   white-space: nowrap;
+}
+
+.footer-fixed .btn.btn-lg {
+  /* Make label vertically centered and keep top/bottom padding visually equal */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rf-footer-btn-gap);
+  line-height: 1.05;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: var(--rf-footer-btn-px);
+  padding-right: var(--rf-footer-btn-px);
+}
+
+.footer-fixed .btn.btn-lg i {
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  align-self: center;
+  vertical-align: middle;
+}
+
+.footer-fixed .btn.btn-lg .me-2 {
+  /* Use flex gap for spacing; neutralize bootstrap margin so left/right feels balanced */
+  margin-right: 0 !important;
+}
+
+.footer-fixed .btn.btn-lg svg,
+.footer-fixed .btn.btn-lg .c-icon {
+  height: 1em;
+  width: 1em;
+  flex: 0 0 auto;
+  align-self: center;
+  vertical-align: middle;
+}
+
+.footer-fixed .save-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(139, 18, 18, 0.22);
+  color: #8b1212;
+}
+
+.footer-fixed .save-indicator .spinner-border {
+  width: 14px;
+  height: 14px;
+  border-width: 0.14em;
+}
+
+.footer-fixed .save-indicator--saved {
+  background: rgba(197, 155, 58, 0.14);
+  border-color: rgba(197, 155, 58, 0.42);
+  color: #8b1212;
+}
+
+.footer-fixed .save-hint {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-left: -4px;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .footer-fixed .save-hint {
+    display: none;
+  }
 }
 
 .admin-footer-fixed {
@@ -3838,6 +4034,15 @@ export default {
 @media (max-width: 768px) {
   .research-form {
     padding: 10px;
+    /* Prevent horizontal scroll caused by fixed bars shifted by sidebar offsets */
+    overflow-x: hidden;
+  }
+
+  /* Give modals a bit more outer left/right breathing room on small screens */
+  .research-form ::v-deep .modal-dialog {
+    margin-left: 14px;
+    margin-right: 14px;
+    max-width: calc(100% - 28px);
   }
 
   .btn {
@@ -3846,23 +4051,60 @@ export default {
     margin-bottom: 10px;
   }
 
+  /* On small screens the sidebar becomes overlay; keep footer bar full-width. */
+  .footer-fixed {
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100vw;
+  }
+
   .footer-fixed {
     padding: 10px 12px;
+    --rf-footer-btn-gap: 0.44rem;
+    --rf-footer-btn-px: 10px;
+  }
+
+  /* Status badge: scale down on small screens to match the compact buttons */
+  .footer-fixed ::v-deep .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    line-height: 1.05;
+    padding: 6px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
   }
 
   .footer-fixed .btn {
     display: inline-flex;
     width: auto;
     margin-bottom: 0;
+    justify-content: center;
+    text-align: center;
   }
 
   .footer-fixed .btn.btn-lg {
-    padding: 8px 12px;
-    font-size: 0.95rem;
+    padding: 7px 10px;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    line-height: 1.05;
+    padding-top: 7px;
+    padding-bottom: 7px;
   }
 
   .footer-fixed .d-flex {
     flex-wrap: wrap;
+  }
+
+  /* Tighten spacing between action buttons on mobile */
+  .footer-fixed .d-flex.justify-content-end {
+    gap: 8px !important;
+  }
+
+  /* Reduce icon gap a bit (bootstrap .me-2) */
+  .footer-fixed .btn.btn-lg .me-2 {
+    margin-right: 0 !important;
   }
 
   .feedback-fix-card__head {
@@ -3877,5 +4119,524 @@ export default {
     width: 100%;
     justify-content: space-between;
   }
+}
+
+@media (max-width: 520px) {
+  .footer-fixed .btn.btn-lg {
+    padding: 6px 8px;
+    font-size: 0.84rem;
+    border-radius: 9px;
+    line-height: 1.05;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .footer-fixed .btn.btn-lg .me-2 {
+    margin-right: 0 !important;
+  }
+
+  .footer-fixed {
+    --rf-footer-btn-gap: 0.38rem;
+    --rf-footer-btn-px: 8px;
+  }
+
+  .footer-fixed ::v-deep .badge {
+    font-size: 0.74rem;
+    padding: 5px 7px;
+    border-radius: 9px;
+  }
+}
+
+/* =========================================================
+   Research Form Theme (CSS only)
+   - Do not change template/script structure or any functions
+   ========================================================= */
+.research-form {
+  /* MFU-inspired red/gold theme */
+  --rf-bg: #f7f2ea;
+  --rf-surface: #ffffff;
+  --rf-border: #eadfce;
+  --rf-text: #1f2937;
+  --rf-muted: #6b7280;
+  --rf-accent: #8b1212; /* deep red */
+  --rf-gold: #c59b3a;
+  --rf-accent-ring: rgba(139, 18, 18, 0.18);
+
+  background:
+    radial-gradient(1100px 460px at 12% -10%, rgba(139, 18, 18, 0.14), transparent 62%),
+    radial-gradient(980px 420px at 92% 4%, rgba(197, 155, 58, 0.14), transparent 58%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.00) 58%),
+    repeating-linear-gradient(0deg, rgba(31, 41, 55, 0.014) 0, rgba(31, 41, 55, 0.014) 1px, transparent 1px, transparent 22px);
+  color: var(--rf-text);
+}
+
+.research-form ::v-deep .card {
+  background: var(--rf-surface);
+  border: 1px solid var(--rf-border);
+  border-radius: 14px;
+  box-shadow: 0 14px 34px rgba(2, 6, 23, 0.08);
+}
+
+.research-form ::v-deep .card-header {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0.00));
+  border-bottom: 1px solid var(--rf-border);
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+}
+
+.research-form ::v-deep .card-header:not(.text-white) h5,
+.research-form ::v-deep .card-header:not(.text-white) h6,
+.research-form ::v-deep .card-header:not(.text-white) strong {
+  color: var(--rf-text);
+  letter-spacing: 0.2px;
+}
+
+/* Blue bar only for main headings */
+.research-form ::v-deep .section-title {
+  background: linear-gradient(180deg, rgba(197, 155, 58, 0.10), rgba(15, 23, 42, 0.02));
+  border-left-color: var(--rf-accent) !important;
+  color: var(--rf-text);
+  border-radius: 10px;
+}
+
+/* Sub-headings and nested option blocks (formal, easy-to-scan) */
+.research-form ::v-deep .sub-section-title {
+  font-weight: 800;
+  color: var(--rf-text);
+  background: rgba(15, 23, 42, 0.035);
+  border: 1px solid var(--rf-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  letter-spacing: 0.15px;
+}
+
+.research-form ::v-deep .sub-options {
+  margin-left: 1.5rem;
+  margin-top: 10px;
+  background: var(--rf-surface);
+  border: 1px solid var(--rf-border);
+  border-left: none !important; /* no left color bar in sub blocks */
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 10px 22px rgba(2, 6, 23, 0.06);
+}
+
+/* Gold accents for small UI elements (not a left bar) */
+.research-form ::v-deep .badge,
+.research-form ::v-deep .cbadge,
+.research-form ::v-deep .c-badge {
+  border-radius: 999px;
+}
+
+.research-form ::v-deep .sub-options .form-check {
+  margin-bottom: 12px;
+  padding-left: 1.5rem;
+}
+
+.research-form ::v-deep .sub-options .form-check:last-child {
+  margin-bottom: 0;
+}
+
+.research-form ::v-deep .text-muted {
+  color: var(--rf-muted) !important;
+}
+
+.research-form ::v-deep label,
+.research-form ::v-deep .form-check-label {
+  color: var(--rf-text);
+}
+
+.research-form ::v-deep .form-control,
+.research-form ::v-deep textarea.form-control,
+.research-form ::v-deep select.form-control,
+.research-form ::v-deep .custom-select {
+  border: 1px solid var(--rf-border);
+  border-radius: 12px;
+  background: var(--rf-surface);
+  color: var(--rf-text);
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.research-form ::v-deep .form-control:disabled,
+.research-form ::v-deep textarea.form-control:disabled,
+.research-form ::v-deep select.form-control:disabled,
+.research-form ::v-deep .custom-select:disabled,
+.research-form ::v-deep .form-control[readonly],
+.research-form ::v-deep textarea.form-control[readonly],
+.research-form ::v-deep input[readonly].form-control,
+.research-form ::v-deep select[readonly].form-control {
+  background: #eef2f7 !important;
+  border-color: rgba(234, 223, 206, 0.95) !important;
+  color: rgba(15, 23, 42, 0.78) !important;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+.research-form ::v-deep .form-control:disabled::placeholder,
+.research-form ::v-deep .form-control[readonly]::placeholder {
+  color: rgba(100, 116, 139, 0.75);
+}
+
+.research-form ::v-deep .bg-light {
+  background: #eef2f7 !important;
+}
+
+.research-form ::v-deep input:disabled,
+.research-form ::v-deep textarea:disabled,
+.research-form ::v-deep select:disabled {
+  cursor: not-allowed;
+}
+
+.research-form ::v-deep .form-control:focus,
+.research-form ::v-deep .custom-select:focus {
+  border-color: rgba(139, 18, 18, 0.55);
+  box-shadow: 0 0 0 4px var(--rf-accent-ring);
+}
+
+.research-form ::v-deep .form-control::placeholder {
+  color: rgba(100, 116, 139, 0.88);
+}
+
+.research-form ::v-deep .table {
+  background: var(--rf-surface);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.research-form ::v-deep .table thead th {
+  border-bottom: 1px solid var(--rf-border);
+  font-weight: 800;
+  letter-spacing: 0.25px;
+}
+
+.research-form ::v-deep .table thead:not(.bg-primary):not(.text-white) th {
+  background: rgba(15, 23, 42, 0.035);
+  color: var(--rf-text);
+}
+
+.research-form ::v-deep .table thead.bg-primary th,
+.research-form ::v-deep .table thead.text-white th {
+  color: #ffffff !important;
+}
+
+/* Keep complex tables readable */
+.research-form ::v-deep .table td,
+.research-form ::v-deep .table th {
+  vertical-align: middle;
+}
+
+.research-form ::v-deep .table td.text-left,
+.research-form ::v-deep .table th.text-left {
+  text-align: left !important;
+}
+
+.research-form ::v-deep .table td,
+.research-form ::v-deep .table th {
+  border-top: 1px solid var(--rf-border);
+}
+
+.research-form ::v-deep .table tbody tr:hover {
+  background: rgba(197, 155, 58, 0.10);
+}
+
+.research-form ::v-deep .alert {
+  border-radius: 12px;
+  border: 1px solid var(--rf-border);
+}
+
+/* TextEditor / Quill */
+.research-form ::v-deep .ql-toolbar,
+.research-form ::v-deep .ql-container {
+  border-color: var(--rf-border) !important;
+}
+
+.research-form ::v-deep .ql-toolbar {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.research-form ::v-deep .ql-container {
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  background: var(--rf-surface);
+}
+
+.research-form ::v-deep .ql-editor {
+  color: var(--rf-text);
+}
+
+/* Remove any remaining "blue/primary" look inside Research Form */
+.research-form ::v-deep a {
+  color: var(--rf-accent);
+}
+
+.research-form ::v-deep a:hover {
+  color: var(--rf-gold);
+}
+
+.research-form ::v-deep .text-primary {
+  color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .text-white {
+  color: #ffffff !important;
+}
+
+.research-form ::v-deep .bg-primary {
+  background-color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .border-primary,
+.research-form ::v-deep .border-info {
+  border-color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .border-left,
+.research-form ::v-deep .border-right,
+.research-form ::v-deep .border-top,
+.research-form ::v-deep .border-bottom {
+  border-color: var(--rf-border) !important;
+}
+
+.research-form ::v-deep .btn-primary,
+.research-form ::v-deep .btn-info {
+  background-color: var(--rf-accent) !important;
+  border-color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .btn-outline-primary,
+.research-form ::v-deep .btn-outline-info {
+  color: var(--rf-accent) !important;
+  border-color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .btn-outline-primary:hover,
+.research-form ::v-deep .btn-outline-info:hover {
+  background-color: var(--rf-accent) !important;
+  border-color: var(--rf-accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 18px rgba(2, 6, 23, 0.14) !important;
+}
+
+.research-form ::v-deep .badge-primary {
+  background-color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .spinner-border,
+.research-form ::v-deep .c-spinner {
+  color: var(--rf-accent) !important;
+}
+
+.research-form ::v-deep .c-callout-primary {
+  border-left-color: var(--rf-accent) !important;
+}
+
+/* Ensure child scoped styles cannot re-introduce blue focus rings */
+.research-form ::v-deep .form-control:focus,
+.research-form ::v-deep textarea.form-control:focus,
+.research-form ::v-deep select.form-control:focus,
+.research-form ::v-deep .custom-select:focus {
+  border-color: rgba(139, 18, 18, 0.55) !important;
+  box-shadow: 0 0 0 4px var(--rf-accent-ring) !important;
+}
+
+.research-form ::v-deep .multiselect__tags:focus-within {
+  border-color: var(--rf-accent) !important;
+  box-shadow: 0 0 0 3px var(--rf-accent-ring) !important;
+}
+
+.research-form ::v-deep .signature-canvas-container {
+  border-color: var(--rf-gold) !important;
+}
+
+.research-form--dark {
+  --rf-bg: #0f1724;
+  --rf-surface: #1a2432;
+  --rf-border: #2f3f52;
+  --rf-text: #e8eef7;
+  --rf-muted: #aab9ca;
+  --rf-accent-ring: rgba(197, 155, 58, 0.22);
+
+  background:
+    radial-gradient(1100px 460px at 12% -10%, rgba(139, 18, 18, 0.16), transparent 62%),
+    radial-gradient(980px 420px at 92% 4%, rgba(197, 155, 58, 0.12), transparent 58%),
+    linear-gradient(180deg, rgba(10, 15, 24, 0.52), rgba(10, 15, 24, 0) 58%),
+    repeating-linear-gradient(0deg, rgba(148, 163, 184, 0.03) 0, rgba(148, 163, 184, 0.03) 1px, transparent 1px, transparent 22px);
+  box-shadow: 0 8px 30px rgba(2, 6, 23, 0.45);
+}
+
+.research-form--dark .admin-view-banner {
+  background: rgba(30, 64, 104, 0.32) !important;
+  border-left-color: #60a5fa !important;
+  color: #b9d6fb !important;
+}
+
+.research-form--dark .review-summary-card {
+  background: #202c3a !important;
+  border-color: #334458 !important;
+}
+
+.research-form--dark .footer-fixed {
+  background: rgba(16, 24, 36, 0.94);
+  border-top-color: #2f3f52;
+  box-shadow: 0 -8px 22px rgba(2, 6, 23, 0.5);
+}
+
+.research-form--dark .footer-fixed .save-indicator {
+  background: #1f2d3c;
+  border-color: #3c4d61;
+  color: #d7e2ef;
+}
+
+.research-form--dark .footer-fixed .save-hint,
+.research-form--dark .footer-fixed .text-muted,
+.research-form--dark .footer-fixed .fw-bold.text-muted {
+  color: #b2c1d1 !important;
+}
+
+.research-form--dark .footer-fixed .text-success.fw-bold {
+  background-color: rgba(34, 197, 94, 0.2) !important;
+  border: 1px solid rgba(74, 222, 128, 0.34) !important;
+  color: #8be2ad !important;
+}
+
+.research-form--dark ::v-deep .card,
+.research-form--dark ::v-deep .feedback-workspace,
+.research-form--dark ::v-deep .feedback-workspace-card,
+.research-form--dark ::v-deep .feedback-workspace-note,
+.research-form--dark ::v-deep .feedback-inline-radio,
+.research-form--dark ::v-deep .feedback-fix-card,
+.research-form--dark ::v-deep .committee-selection-panel,
+.research-form--dark .committee-user-row {
+  background: #1a2432 !important;
+  border-color: #2f3f52 !important;
+}
+
+.research-form--dark .committee-user-row.is-selected {
+  background: #213145 !important;
+  border-color: #3f5a75 !important;
+}
+
+.research-form--dark ::v-deep .card-header,
+.research-form--dark ::v-deep .section-title,
+.research-form--dark ::v-deep .sub-section-title {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.14), rgba(15, 23, 42, 0.06));
+  border-color: #2f3f52 !important;
+}
+
+.research-form--dark ::v-deep .card-header:not(.text-white) h5,
+.research-form--dark ::v-deep .card-header:not(.text-white) h6,
+.research-form--dark ::v-deep .card-header:not(.text-white) strong,
+.research-form--dark ::v-deep .feedback-workspace-card__title,
+.research-form--dark ::v-deep .feedback-workspace-note__body,
+.research-form--dark ::v-deep .feedback-fix-card__section,
+.research-form--dark ::v-deep label,
+.research-form--dark ::v-deep .form-check-label,
+.research-form--dark ::v-deep .font-weight-bold,
+.research-form--dark ::v-deep h6 {
+  color: #ecf3fb !important;
+}
+
+.research-form--dark ::v-deep .feedback-workspace-card__subtitle,
+.research-form--dark ::v-deep .feedback-workspace-note__meta,
+.research-form--dark ::v-deep .feedback-fix-card__meta,
+.research-form--dark ::v-deep .feedback-fix-card__body,
+.research-form--dark ::v-deep .feedback-workspace-card__status,
+.research-form--dark ::v-deep .text-muted,
+.research-form--dark ::v-deep .small,
+.research-form--dark ::v-deep .form-label {
+  color: #aab9ca !important;
+}
+
+.research-form--dark ::v-deep .form-control,
+.research-form--dark ::v-deep textarea.form-control,
+.research-form--dark ::v-deep select.form-control,
+.research-form--dark ::v-deep .custom-select,
+.research-form--dark ::v-deep .multiselect__tags,
+.research-form--dark ::v-deep .multiselect__content-wrapper {
+  background: #223142 !important;
+  color: #ecf3fb !important;
+  border-color: #3d4f64 !important;
+}
+
+.research-form--dark ::v-deep .form-control::placeholder,
+.research-form--dark ::v-deep textarea.form-control::placeholder,
+.research-form--dark ::v-deep input::placeholder {
+  color: #9caec2 !important;
+}
+
+.research-form--dark ::v-deep .form-control:disabled,
+.research-form--dark ::v-deep textarea.form-control:disabled,
+.research-form--dark ::v-deep select.form-control:disabled,
+.research-form--dark ::v-deep .custom-select:disabled,
+.research-form--dark ::v-deep .form-control[readonly],
+.research-form--dark ::v-deep textarea.form-control[readonly] {
+  background: #182433 !important;
+  color: #aebfd1 !important;
+  border-color: #2f3f52 !important;
+}
+
+.research-form--dark ::v-deep .form-control:focus,
+.research-form--dark ::v-deep textarea.form-control:focus,
+.research-form--dark ::v-deep select.form-control:focus,
+.research-form--dark ::v-deep .custom-select:focus,
+.research-form--dark ::v-deep .multiselect__tags:focus-within {
+  border-color: rgba(197, 155, 58, 0.78) !important;
+  box-shadow: 0 0 0 3px rgba(197, 155, 58, 0.22) !important;
+}
+
+.research-form--dark ::v-deep .table,
+.research-form--dark ::v-deep .table tbody tr,
+.research-form--dark ::v-deep .table td,
+.research-form--dark ::v-deep .table th {
+  background: #1a2432;
+  color: #deebf8;
+  border-color: #2f3f52 !important;
+}
+
+.research-form--dark ::v-deep .table thead:not(.bg-primary):not(.text-white) th {
+  background: #223142;
+  color: #eef4fc;
+}
+
+.research-form--dark ::v-deep .table tbody tr:hover {
+  background: #263749;
+}
+
+.research-form--dark ::v-deep .alert {
+  border-color: #3a4d63;
+}
+
+.research-form--dark ::v-deep .alert-warning {
+  background: rgba(245, 158, 11, 0.18);
+  color: #f9d48a;
+}
+
+.research-form--dark ::v-deep .alert-danger {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+}
+
+.research-form--dark ::v-deep .alert-success {
+  background: rgba(34, 197, 94, 0.16);
+  color: #9ae6b4;
+}
+
+.research-form--dark ::v-deep .ql-toolbar,
+.research-form--dark ::v-deep .ql-container,
+.research-form--dark ::v-deep .ql-editor,
+.research-form--dark ::v-deep .ql-snow .ql-picker-options {
+  background: #1d2a39 !important;
+  border-color: #324357 !important;
+  color: #e8eef7 !important;
+}
+
+.research-form--dark ::v-deep .ql-snow .ql-stroke {
+  stroke: #c7d4e2 !important;
+}
+
+.research-form--dark ::v-deep .ql-snow .ql-fill {
+  fill: #c7d4e2 !important;
 }
 </style>

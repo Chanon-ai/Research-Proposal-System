@@ -38,10 +38,6 @@
       />
     </CSidebarBrand>
     <CRenderFunction flat :contentToRender="navs"/>
-    <CSidebarMinimizer
-        class="c-d-md-down-none"
-        @click.native="$store.commit('toggle', 'sidebarMinimize')"
-    />
   </CSidebar>
 </template>
 

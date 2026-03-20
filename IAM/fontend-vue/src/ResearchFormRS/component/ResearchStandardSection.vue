@@ -1,5 +1,5 @@
 <template>
-  <div class="section mb-4">
+  <div class="section mb-4 research-standard-section" :class="{ 'is-dark': isDarkTheme }">
     <h6 class="section-title">18. มาตรฐานการวิจัย <span v-if="!isReadOnly" class="text-danger">*</span></h6>
     <div class="funding-options">
       <input
@@ -236,6 +236,10 @@ export default {
     }
   },
   computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+
     mainType: {
       get () { return this.value.mainType },
       set (val) { this.updateValue('mainType', val) }
@@ -391,10 +395,26 @@ export default {
   margin-left: 1.5rem;
   margin-top: 10px;
   padding-left: 15px;
-  border-left: 4px solid #007bff;
-  background: white;
+  background: transparent;
   border-radius: 0 8px 8px 0;
   padding: 15px;
+}
+
+.sub-options .form-check {
+  margin-bottom: 12px;
+  padding-left: 1.5rem;
+}
+
+.sub-options .form-check-input {
+  margin-left: -1.5rem;
+  margin-top: 0.2rem;
+}
+
+.sub-options .form-check-label {
+  font-size: 0.9rem;
+  color: #495057;
+  line-height: 1.5;
+  cursor: pointer;
 }
 
 .form-check {
@@ -437,5 +457,44 @@ export default {
 
 .attachment-card__actions {
   flex-shrink: 0;
+}
+
+.research-standard-section.is-dark .section-title {
+  color: #eaf2fb;
+  background: #1f2b39;
+  border-left-color: #c59b3a;
+}
+
+.research-standard-section.is-dark .funding-options {
+  background: #1a2432;
+  border: 1px solid #2f3f52;
+}
+
+.research-standard-section.is-dark .sub-options {
+  background: #223142;
+  border: 1px solid #35475c;
+}
+
+.research-standard-section.is-dark .form-check-label,
+.research-standard-section.is-dark .form-check-label strong {
+  color: #e7eef7;
+}
+
+.research-standard-section.is-dark .text-muted,
+.research-standard-section.is-dark .helper-text {
+  color: #aab9ca !important;
+}
+
+.research-standard-section.is-dark .form-check-input {
+  filter: brightness(1.08);
+}
+
+.research-standard-section.is-dark .attachment-card {
+  border-color: #36506a;
+  background: #1f2e3d;
+}
+
+.research-standard-section.is-dark .attachment-card__name {
+  color: #e7eef7;
 }
 </style>
