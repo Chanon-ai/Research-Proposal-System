@@ -1,2 +1,74 @@
 @import "@/projects/views/setting/components/setting-modal.shared.scss";
 @import "@/projects/views/accounts/account-edit-modal.shared.scss";
+
+[data-coreui-theme='dark'] .notification-menu,
+body.c-dark-theme .notification-menu {
+	background: #1b2431 !important;
+	border: 1px solid #2a3747 !important;
+	box-shadow: 0 20px 44px rgba(2, 6, 23, 0.5) !important;
+}
+
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__header,
+body.c-dark-theme .notification-menu .notification-dropdown__header {
+	background: #151e2a !important;
+	color: #e8eef7 !important;
+	border-bottom: 1px solid #2a3747 !important;
+}
+
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__list,
+body.c-dark-theme .notification-menu .notification-dropdown__list {
+	max-height: 418px;
+	background: #1b2431 !important;
+	scrollbar-color: #324355 #17212d;
+}
+
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__item,
+body.c-dark-theme .notification-menu .notification-dropdown__item {
+	background: transparent !important;
+	color: #e8eef7 !important;
+	border-bottom: 1px solid rgba(42, 55, 71, 0.65) !important;
+}
+
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__item:hover,
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__item:focus,
+body.c-dark-theme .notification-menu .notification-dropdown__item:hover,
+body.c-dark-theme .notification-menu .notification-dropdown__item:focus {
+	background: #223040 !important;
+}
+
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__title,
+body.c-dark-theme .notification-menu .notification-dropdown__title {
+	color: #f5f8ff !important;
+}
+
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__sender,
+body.c-dark-theme .notification-menu .notification-dropdown__sender {
+	color: #c9d7e6 !important;
+}
+
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__time,
+body.c-dark-theme .notification-menu .notification-dropdown__time {
+	color: #b3c1d0 !important;
+}
+
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__message,
+[data-coreui-theme='dark'] .notification-menu .notification-empty,
+body.c-dark-theme .notification-menu .notification-dropdown__message,
+body.c-dark-theme .notification-menu .notification-empty {
+	color: #a3b2c3 !important;
+}
+
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__footer,
+body.c-dark-theme .notification-menu .notification-dropdown__footer {
+	background: #1b2431 !important;
+	color: #e7eef7 !important;
+	border-top: 1px solid #2a3747 !important;
+}
+
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__footer:hover,
+[data-coreui-theme='dark'] .notification-menu .notification-dropdown__footer:focus,
+body.c-dark-theme .notification-menu .notification-dropdown__footer:hover,
+body.c-dark-theme .notification-menu .notification-dropdown__footer:focus {
+	background: #223040 !important;
+	color: #f5f8ff !important;
+}

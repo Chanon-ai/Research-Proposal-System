@@ -259,6 +259,35 @@ export default {
   background: #2a3645;
 }
 
+.history-page.is-dark .history-list {
+  background: transparent;
+}
+
+.history-page.is-dark .history-badge.s-waiting {
+  background: rgba(251, 191, 36, 0.18);
+  color: #f6d67a;
+}
+
+.history-page.is-dark .history-badge.s-fix {
+  background: rgba(251, 146, 60, 0.18);
+  color: #fdba74;
+}
+
+.history-page.is-dark .history-badge.s-approved {
+  background: rgba(52, 211, 153, 0.18);
+  color: #7ce3b3;
+}
+
+.history-page.is-dark .history-badge.s-rejected {
+  background: rgba(248, 113, 113, 0.18);
+  color: #fca5a5;
+}
+
+.history-page.is-dark .history-badge.s-reviewing {
+  background: rgba(56, 189, 248, 0.18);
+  color: #7dd3fc;
+}
+
 /* Responsive: mobile adjustments */
 @media (max-width: 768px) {
   .page-wrapper { padding: 12px 14px; }
