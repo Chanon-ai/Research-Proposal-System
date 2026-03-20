@@ -2,6 +2,9 @@ const { execSync, spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+require('../config/module-paths');
+require('dotenv').config();
+
 function log(message) {
   console.log(`[start-backend] ${message}`);
 }
@@ -22,10 +25,16 @@ function extractLocalPort(localAddress) {
 }
 
 function getWindowsPidsByPort(port) {
-  const output = execSync('netstat -ano -p tcp', {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore']
-  });
+  let output = '';
+  try {
+    output = execSync('netstat -ano -p tcp', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    });
+  } catch (error) {
+    log(`Port inspection skipped: ${error && error.message ? error.message : error}`);
+    return [];
+  }
 
   const pids = new Set();
   const lines = output.split(/\r?\n/);
@@ -84,11 +93,39 @@ async function waitUntilPortFree(port, timeoutMs) {
 
 function resolveNodemonCommand(projectRoot) {
   const isWin = process.platform === 'win32';
-  if (isWin) {
+  const runtimeRoot = path.join(projectRoot, '.runtime-packages');
+  const useNodemon = process.env.USE_NODEMON === '1';
+
+  if (!useNodemon) {
     return {
-      command: 'npx.cmd',
-      args: ['nodemon', '-r', 'dotenv/config', 'server.js'],
-      shell: true
+      command: 'node',
+      args: ['server.js'],
+      shell: false
+    };
+  }
+
+  const runtimeNodemon = isWin
+    ? path.join(runtimeRoot, 'node_modules', '.bin', 'nodemon.cmd')
+    : path.join(runtimeRoot, 'node_modules', '.bin', 'nodemon');
+
+  if (fs.existsSync(runtimeNodemon)) {
+    return {
+      command: runtimeNodemon,
+      args: ['server.js'],
+      shell: false
+    };
+  }
+
+  if (isWin) {
+    const localNodemon = path.join(projectRoot, 'node_modules', '.bin', 'nodemon.cmd');
+    if (fs.existsSync(localNodemon)) {
+      return { command: localNodemon, args: ['server.js'], shell: false };
+    }
+
+    return {
+      command: 'node',
+      args: ['server.js'],
+      shell: false
     };
   }
 
@@ -97,12 +134,12 @@ function resolveNodemonCommand(projectRoot) {
     : path.join(projectRoot, 'node_modules', '.bin', 'nodemon');
 
   if (fs.existsSync(cmd)) {
-    return { command: cmd, args: ['-r', 'dotenv/config', 'server.js'], shell: false };
+    return { command: cmd, args: ['server.js'], shell: false };
   }
 
   return {
-    command: 'npx',
-    args: ['nodemon', '-r', 'dotenv/config', 'server.js'],
+    command: 'node',
+    args: ['server.js'],
     shell: false
   };
 }

@@ -1,5 +1,6 @@
 /.idea/
 /node_modules/
+/.runtime-packages/
 package-lock.json
 .env
 .md

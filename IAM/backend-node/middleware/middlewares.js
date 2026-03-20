@@ -6,7 +6,6 @@ const xssFilter = require("x-xss-protection");
 const ienoopen = require("ienoopen");
 const compression = require("compression");
 const morgan = require("morgan");
-const sass = require("node-sass-middleware");
 const expressValidator = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const path = require("path");
@@ -17,6 +16,13 @@ const { limiter, blockMiddleware } = require('../config/rateLimit');
 
 // Import logger
 const  loggerMiddleware  = require('../config/logger');
+
+let sass = null;
+try {
+    sass = require("node-sass-middleware");
+} catch (error) {
+    console.warn('[middlewares] node-sass-middleware is unavailable, skipping Sass compilation.');
+}
 
 module.exports = function (app) {
 
@@ -48,7 +54,9 @@ module.exports = function (app) {
     app.use(nosniff());
     app.use(xssFilter());
 
-    app.use(sass({ src: "./sass", dest: "./public/css", debug: true, outputStyle: "compressed" }));
+    if (sass) {
+        app.use(sass({ src: "./sass", dest: "./public/css", debug: true, outputStyle: "compressed" }));
+    }
     app.use(express.static(path.join(__dirname, "./public")));
     app.use(express.static(path.join(__dirname, "../node_modules/bootstrap/dist")));
 
