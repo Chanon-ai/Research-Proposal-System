@@ -9,7 +9,8 @@
         </p>
       </div>
       <div class="meetings-hero__action">
-        <CButton color="primary" size="lg" class="hero-action-btn" @click="openCreateModal">+ สร้างการประชุมใหม่</CButton>
+        <CButton color="primary" size="lg" class="hero-action-btn" @click="openCreateModal">+ สร้างการประชุมใหม่
+        </CButton>
       </div>
     </section>
 
@@ -47,32 +48,20 @@
         </div>
         <CRow class="align-items-end">
           <CCol md="4" class="mb-2 mb-md-0">
-            <CSelect
-              label="สถานะ"
-              :value="filterStatus"
-              :options="statusFilterOptions"
-              @change="onFilterStatusChange"
-            />
+            <CSelect label="สถานะ" :value="filterStatus" :options="statusFilterOptions"
+              @change="onFilterStatusChange" />
           </CCol>
         </CRow>
 
         <div class="filter-card__bottom-actions">
-          <small v-if="!selectedMeetingForActions" class="text-muted mr-3">เลือกการประชุมด้านล่างเพื่อใช้งานปุ่มแก้ไข/ลบ</small>
-          <CButton
-            size="sm"
-            color="warning"
-            class="mr-2"
-            :disabled="!selectedMeetingForActions"
-            @click="selectedMeetingForActions && openEditModal(selectedMeetingForActions)"
-          >
+          <small v-if="!selectedMeetingForActions"
+            class="text-muted mr-3">เลือกการประชุมด้านล่างเพื่อใช้งานปุ่มแก้ไข/ลบ</small>
+          <CButton size="sm" color="warning" class="mr-2" :disabled="!selectedMeetingForActions"
+            @click="selectedMeetingForActions && openEditModal(selectedMeetingForActions)">
             แก้ไข
           </CButton>
-          <CButton
-            size="sm"
-            color="danger"
-            :disabled="!selectedMeetingForActions"
-            @click="selectedMeetingForActions && deleteMeeting(selectedMeetingForActions)"
-          >
+          <CButton size="sm" color="danger" :disabled="!selectedMeetingForActions"
+            @click="selectedMeetingForActions && deleteMeeting(selectedMeetingForActions)">
             ลบ
           </CButton>
         </div>
@@ -92,79 +81,64 @@
       </div>
 
       <div v-else class="meeting-grid">
-        <div
-          v-for="meeting in meetings"
-          :key="meeting._id"
-          class="meeting-card"
+        <div v-for="meeting in meetings" :key="meeting._id" class="meeting-card"
           :class="[getMeetingCardClass(meeting), isSelectedMeeting(meeting) ? 'meeting-card--selected' : '']"
-          @click="selectMeetingForActions(meeting)"
-          @keydown.enter.prevent="selectMeetingForActions(meeting)"
-          @keydown.space.prevent="selectMeetingForActions(meeting)"
-          role="button"
-          tabindex="0"
-        >
-          <div class="meeting-card__top">
-            <CBadge class="meeting-card__badge" :color="getStatusMeta(meeting.status).color">{{ getStatusMeta(meeting.status).label }}</CBadge>
-            <span class="meeting-card__participant-pill">
-              <CIcon name="cil-people" width="16" class="meeting-card__participant-ic" aria-hidden="true" />
-              {{ Array.isArray(meeting.participantIds) ? meeting.participantIds.length : 0 }} ผู้เข้าร่วม
-            </span>
-          </div>
-
-          <div class="meeting-card__content">
-            <div class="meeting-card__body">
-              <h5 class="meeting-card__title">{{ meeting.title || '-' }}</h5>
-              <div class="meeting-card__meta">
-                <CWidgetIcon
-                  class="meeting-card__meta-widget"
-                  :header="formatDate(meeting.meetingDate)"
-                  text="วันที่ประชุม"
-                  color="gradient-primary"
-                  :icon-padding="false"
-                >
-                  <CIcon name="cil-calendar" width="24" />
-                </CWidgetIcon>
-                <CWidgetIcon
-                  class="meeting-card__meta-widget"
-                  :header="`${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`"
-                  text="เวลา"
-                  color="gradient-info"
-                  :icon-padding="false"
-                >
-                  <CIcon name="cil-clock" width="24" />
-                </CWidgetIcon>
-              </div>
-
-              <div class="meeting-card__detail-list">
-                <div class="meeting-card__detail">
-                  <span class="meeting-card__detail-key">รูปแบบ</span>
-                  <span class="meeting-card__detail-value">{{ getMeetingModeLabel(meeting) }}</span>
-                </div>
-                <div class="meeting-card__detail">
-                  <span class="meeting-card__detail-key">สถานที่</span>
-                  <span class="meeting-card__detail-value">{{ meeting.location || '-' }}</span>
-                </div>
-                <div class="meeting-card__detail">
-                  <span class="meeting-card__detail-key">ลิงก์ประชุม</span>
-                  <span class="meeting-card__detail-value">
-                    <template v-if="meeting.videoLink">
-                      <a :href="meeting.videoLink" target="_blank" rel="noopener noreferrer">{{ meeting.videoLink }}</a>
-                    </template>
-                    <template v-else>-</template>
-                  </span>
-                </div>
-              </div>
+          @click="selectMeetingForActions(meeting)" @keydown.enter.prevent="selectMeetingForActions(meeting)"
+          @keydown.space.prevent="selectMeetingForActions(meeting)" role="button" tabindex="0">
+          <div class="meeting-card__left-bar" aria-hidden="true"></div>
+          <div class="meeting-card__surface">
+            <div class="meeting-card__top">
+              <CBadge class="meeting-card__badge" :color="getStatusMeta(meeting.status).color">{{
+                getStatusMeta(meeting.status).label }}</CBadge>
+              <span class="meeting-card__participant-pill">
+                <CIcon name="cil-people" width="16" class="meeting-card__participant-ic" aria-hidden="true" />
+                {{ Array.isArray(meeting.participantIds) ? meeting.participantIds.length : 0 }} ผู้เข้าร่วม
+              </span>
             </div>
 
-            <div class="meeting-card__footer">
-              <CButton
-                size="sm"
-                block
-                :color="meeting.status === 'completed' ? 'secondary' : 'primary'"
-                @click.stop="openMinutesModal(meeting)"
-              >
-                {{ meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม' }}
-              </CButton>
+            <div class="meeting-card__content">
+              <div class="meeting-card__body">
+                <h5 class="meeting-card__title">{{ meeting.title || '-' }}</h5>
+                <div class="meeting-card__meta">
+                  <CWidgetIcon class="meeting-card__meta-widget" :header="formatDate(meeting.meetingDate)"
+                    text="วันที่ประชุม" color="gradient-primary" :icon-padding="false">
+                    <CIcon name="cil-calendar" width="24" />
+                  </CWidgetIcon>
+                  <CWidgetIcon class="meeting-card__meta-widget"
+                    :header="`${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`" text="เวลา"
+                    color="gradient-info" :icon-padding="false">
+                    <CIcon name="cil-clock" width="24" />
+                  </CWidgetIcon>
+                </div>
+
+                <div class="meeting-card__detail-list">
+                  <div class="meeting-card__detail">
+                    <span class="meeting-card__detail-key">รูปแบบ</span>
+                    <span class="meeting-card__detail-value">{{ getMeetingModeLabel(meeting) }}</span>
+                  </div>
+                  <div class="meeting-card__detail">
+                    <span class="meeting-card__detail-key">สถานที่</span>
+                    <span class="meeting-card__detail-value">{{ meeting.location || '-' }}</span>
+                  </div>
+                  <div class="meeting-card__detail">
+                    <span class="meeting-card__detail-key">ลิงก์ประชุม</span>
+                    <span class="meeting-card__detail-value">
+                      <template v-if="meeting.videoLink">
+                        <a :href="meeting.videoLink" target="_blank" rel="noopener noreferrer">{{ meeting.videoLink
+                          }}</a>
+                      </template>
+                      <template v-else>-</template>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="meeting-card__footer">
+                <CButton size="sm" block :color="meeting.status === 'completed' ? 'secondary' : 'primary'"
+                  @click.stop="openMinutesModal(meeting)">
+                  {{ meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม' }}
+                </CButton>
+              </div>
             </div>
           </div>
         </div>
@@ -173,56 +147,28 @@
       <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap" style="gap: 8px;">
         <small class="text-muted">หน้าที่ {{ page }} / {{ totalPages }} | ทั้งหมด {{ total }} รายการ</small>
         <div>
-          <CButton
-            size="sm"
-            color="secondary"
-            variant="outline"
-            class="mr-2"
-            :disabled="page <= 1 || loading"
-            @click="onPageChange(page - 1)"
-          >
+          <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="page <= 1 || loading"
+            @click="onPageChange(page - 1)">
             ก่อนหน้า
           </CButton>
-          <CButton
-            size="sm"
-            color="secondary"
-            variant="outline"
-            :disabled="page >= totalPages || loading"
-            @click="onPageChange(page + 1)"
-          >
+          <CButton size="sm" color="secondary" variant="outline" :disabled="page >= totalPages || loading"
+            @click="onPageChange(page + 1)">
             ถัดไป
           </CButton>
         </div>
       </div>
     </div>
 
-    <CModal
-      :show.sync="showMeetingModal"
-      :close-on-backdrop="false"
-      centered
-      size="xl"
-      class="meeting-modal"
-      :title="isEditMode ? 'แก้ไขการประชุม' : 'สร้างการประชุมใหม่'"
-    >
+    <CModal :show.sync="showMeetingModal" :close-on-backdrop="false" centered size="xl" class="meeting-modal"
+      :title="isEditMode ? 'แก้ไขการประชุม' : 'สร้างการประชุมใหม่'">
       <template #body-wrapper>
         <div class="meeting-form">
           <div class="field full-field">
             <label class="form-label">โครงการที่เกี่ยวข้อง</label>
-            <multiselect
-              v-model="selectedProposalOption"
-              :options="proposalOptions"
-              :searchable="true"
-              :clear-on-select="false"
-              :close-on-select="true"
-              :preserve-search="true"
-              :allow-empty="true"
-              :loading="proposalOptionsLoading"
-              label="searchText"
-              track-by="_id"
-              placeholder="พิมพ์เพื่อค้นหาโครงการ..."
-              :custom-label="formatProposalTitle"
-              @input="onProposalSelected"
-            >
+            <multiselect v-model="selectedProposalOption" :options="proposalOptions" :searchable="true"
+              :clear-on-select="false" :close-on-select="true" :preserve-search="true" :allow-empty="true"
+              :loading="proposalOptionsLoading" label="searchText" track-by="_id"
+              placeholder="พิมพ์เพื่อค้นหาโครงการ..." :custom-label="formatProposalTitle" @input="onProposalSelected">
               <template slot="singleLabel" slot-scope="{ option }">
                 <span>{{ formatProposalTitle(option) }}</span>
               </template>
@@ -233,25 +179,15 @@
               </template>
             </multiselect>
             <small class="text-muted d-block mt-1">ระบบจะแสดงโครงการที่เลือกจากหน้าจัดการโครงการโดยอัตโนมัติ</small>
-            <small v-if="proposalOptionsError" class="text-warning d-block mt-1">โหลดรายชื่อโครงการไม่สำเร็จ: {{ proposalOptionsError }}</small>
+            <small v-if="proposalOptionsError" class="text-warning d-block mt-1">โหลดรายชื่อโครงการไม่สำเร็จ: {{
+              proposalOptionsError }}</small>
           </div>
           <div class="field full-field">
             <label class="form-label">ผู้เข้าร่วมเพิ่มเติม (ไม่บังคับ)</label>
-            <multiselect
-              v-model="selectedParticipantOptions"
-              :options="participantOptions"
-              :searchable="true"
-              :multiple="true"
-              :close-on-select="false"
-              :clear-on-select="false"
-              :preserve-search="true"
-              :allow-empty="true"
-              :loading="participantOptionsLoading"
-              label="searchText"
-              track-by="_id"
-              placeholder="พิมพ์เพื่อค้นหาผู้ใช้..."
-              :custom-label="formatParticipantLabel"
-            >
+            <multiselect v-model="selectedParticipantOptions" :options="participantOptions" :searchable="true"
+              :multiple="true" :close-on-select="false" :clear-on-select="false" :preserve-search="true"
+              :allow-empty="true" :loading="participantOptionsLoading" label="searchText" track-by="_id"
+              placeholder="พิมพ์เพื่อค้นหาผู้ใช้..." :custom-label="formatParticipantLabel">
               <template slot="option" slot-scope="{ option }">
                 <div>
                   <div class="font-weight-bold">{{ option.fullName || '-' }}</div>
@@ -259,7 +195,8 @@
                 </div>
               </template>
             </multiselect>
-            <small v-if="participantOptionsError" class="text-warning d-block mt-1">โหลดรายชื่อผู้ใช้ไม่สำเร็จ: {{ participantOptionsError }}</small>
+            <small v-if="participantOptionsError" class="text-warning d-block mt-1">โหลดรายชื่อผู้ใช้ไม่สำเร็จ: {{
+              participantOptionsError }}</small>
           </div>
           <div class="field full-field">
             <label class="form-label">ชื่อการประชุม <span class="required">*</span></label>
@@ -269,98 +206,145 @@
           <div class="small-row">
             <div class="field small-field">
               <label class="form-label">วันที่ประชุม <span class="required">*</span></label>
-              <CInput type="date" v-model="meetingForm.meetingDate" />
+              <v-date-picker v-model="meetingDatePickerValue" :min-date="enforceMinDateTime ? minMeetingDateObj : null"
+                :popover="{ visibility: 'click', placement: 'bottom-start' }">
+                <template #default="{ inputValue, inputEvents }">
+                  <div class="input-icon__wrap" data-tone="primary">
+                    <input
+                      ref="meetingDateInput"
+                      class="form-control input-icon__control"
+                      :value="meetingDatePickerValue ? meetingDatePickerValue.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : ''"
+                      v-on="inputEvents"
+                      readonly
+                      placeholder="เลือกวันที่"
+                    >
+                    <button type="button" class="input-icon__suffix" @mousedown.prevent
+                      @click="focusPicker('meetingDateInput')">
+                      <CIcon name="cil-calendar" width="16" class="input-icon__ic" aria-hidden="true" />
+                    </button>
+                  </div>
+                </template>
+              </v-date-picker>
             </div>
             <div class="field small-field">
               <label class="form-label">เวลาเริ่ม <span class="required">*</span></label>
-              <CInput type="time" v-model="meetingForm.startTime" />
+              <div class="input-icon__wrap" data-tone="info">
+                <button
+                  ref="startTimeTrigger"
+                  type="button"
+                  class="form-control input-icon__control time-trigger"
+                  @click="toggleTimeDropdown('start')"
+                >
+                  {{ meetingForm.startTime ? formatTime12h(meetingForm.startTime) : 'เลือกเวลาเริ่ม' }}
+                </button>
+                <button type="button" class="input-icon__suffix" @mousedown.prevent
+                  @click="toggleTimeDropdown('start')">
+                  <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
+                </button>
+              </div>
             </div>
             <div class="field small-field">
               <label class="form-label">เวลาสิ้นสุด</label>
-              <CInput type="time" v-model="meetingForm.endTime" />
+              <div class="input-icon__wrap" data-tone="info">
+                <button
+                  ref="endTimeTrigger"
+                  type="button"
+                  class="form-control input-icon__control time-trigger"
+                  @click="toggleTimeDropdown('end')"
+                >
+                  {{ meetingForm.endTime ? formatTime12h(meetingForm.endTime) : '-' }}
+                </button>
+                <button type="button" class="input-icon__suffix" @mousedown.prevent
+                  @click="toggleTimeDropdown('end')">
+                  <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field full-field">
+            <label class="form-label">ประเภทการประชุม</label>
+            <div class="meeting-type-toggle" role="radiogroup" aria-label="ประเภทการประชุม">
+              <input id="meeting-type-online" class="meeting-type-toggle__input" type="radio" value="online"
+                v-model="meetingForm.meetingType">
+              <label class="meeting-type-toggle__label" for="meeting-type-online">ออนไลน์</label>
+              <input id="meeting-type-onsite" class="meeting-type-toggle__input" type="radio" value="onsite"
+                v-model="meetingForm.meetingType">
+              <label class="meeting-type-toggle__label" for="meeting-type-onsite">ออนไซต์</label>
             </div>
           </div>
 
           <div class="field full-field">
             <label class="form-label">สถานที่</label>
-            <CInput class="full" v-model="meetingForm.location" />
+            <input type="text" class="form-control full" v-model="meetingForm.location"
+              :disabled="meetingForm.meetingType === 'online'"
+              :placeholder="meetingForm.meetingType === 'online' ? 'ออนไลน์: ไม่ต้องกรอกสถานที่' : ''" />
           </div>
 
           <div class="field full-field">
             <label class="form-label">ลิงก์วิดีโอประชุม</label>
-            <CInput
-              class="full"
-              type="url"
-              placeholder="https://zoom.us/... หรือ https://meet.google.com/..."
-              v-model="meetingForm.videoLink"
-            />
-            <small class="form-text">ตัวอย่าง: https://zoom.us/meeting/xxx หรือ https://meet.google.com/xxx</small>
+            <CInput class="full" type="url" placeholder="เช่น https://meet.google.com/..."
+              v-model="meetingForm.videoLink" />
           </div>
 
           <div class="field full-field">
             <label class="form-label">วาระการประชุม</label>
-            <CTextarea class="full" rows="4" v-model="meetingForm.agenda" />
-            <small class="form-text">ใส่หัวข้อย่อยหรือประเด็นหลักที่ต้องหารือ (ถ้ามี)</small>
+            <CTextarea class="full" rows="4" placeholder="ใส่หัวข้อย่อยหรือประเด็นหลักที่ต้องหารือ (ถ้ามี)" v-model="meetingForm.agenda" />
           </div>
 
-          <CSelect
-            class="full"
-            label="สถานะ"
-            :value="meetingForm.status"
-            :options="statusSelectOptions"
-            @change="meetingForm.status = getSelectValue($event)"
-          />
+          <CSelect class="full" label="สถานะ" :value="meetingForm.status" :options="statusSelectOptions"
+            @change="meetingForm.status = getSelectValue($event)" />
         </div>
       </template>
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton
-            color="secondary"
-            class="mr-2 floating-action"
-            @click="closeMeetingModal"
-          >ยกเลิก</CButton>
-          <CButton
-            color="primary"
-            class="floating-action btn-save"
-            :disabled="savingMeeting"
-            @click="saveMeeting"
-          >
+          <CButton color="secondary" class="mr-2 floating-action" @click="closeMeetingModal">ยกเลิก</CButton>
+          <CButton color="primary" class="floating-action btn-save" :disabled="savingMeeting" @click="saveMeeting">
             {{ savingMeeting ? 'กำลังบันทึก...' : 'บันทึก' }}
           </CButton>
         </div>
       </template>
     </CModal>
 
-    <CModal
-      :show.sync="showMinutesModal"
-      :close-on-backdrop="false"
-      centered
-      size="xl"
-      class="minutes-modal"
-      :title="`บันทึกผลการประชุม — ${minutesMeeting ? (minutesMeeting.title || '-') : '-'}`"
+    <div v-if="timeDropdown.openFor" class="time-dropdown__backdrop" @mousedown="closeTimeDropdown"></div>
+    <div
+      v-if="timeDropdown.openFor"
+      class="time-dropdown"
+      :style="{
+        top: timeDropdown.top + 'px',
+        left: timeDropdown.left + 'px',
+        width: timeDropdown.width + 'px',
+        maxHeight: timeDropdown.maxHeight + 'px'
+      }"
+      @mousedown.stop
     >
+      <button
+        v-for="opt in (timeDropdown.openFor === 'start' ? startTimeOptions : endTimeOptions)"
+        :key="(timeDropdown.openFor || '') + '-' + (opt.value || 'empty')"
+        type="button"
+        class="time-dropdown__item"
+        :class="{ 'is-selected': isTimeSelected(timeDropdown.openFor, opt.value) }"
+        @click="selectTimeOption(timeDropdown.openFor, opt.value)"
+      >
+        {{ opt.label }}
+      </button>
+    </div>
+
+    <CModal :show.sync="showMinutesModal" :close-on-backdrop="false" centered size="xl" class="minutes-modal"
+      :title="`บันทึกผลการประชุม — ${minutesMeeting ? (minutesMeeting.title || '-') : '-'}`">
       <template #body-wrapper>
         <div class="minutes-form">
           <div v-if="minutesMeeting" class="mb-3">
-            <small class="text-muted">📅 {{ formatDate(minutesMeeting.meetingDate) }} | 📍 {{ minutesMeeting.location || '-' }}</small>
+            <small class="text-muted">📅 {{ formatDate(minutesMeeting.meetingDate) }} | 📍 {{ minutesMeeting.location ||
+              '-' }}</small>
           </div>
 
-          <CTextarea
-            label="บันทึกการประชุม"
-            rows="5"
-            placeholder="บันทึกสิ่งที่เกิดขึ้นในการประชุม..."
-            v-model="minutesForm.minutes"
-            :disabled="isReadOnly(minutesMeeting)"
-          />
+          <CTextarea label="บันทึกการประชุม" rows="5" placeholder="บันทึกสิ่งที่เกิดขึ้นในการประชุม..."
+            v-model="minutesForm.minutes" :disabled="isReadOnly(minutesMeeting)" />
 
-          <CTextarea
-            label="มติที่ประชุม"
-            rows="4"
-            placeholder="มติหรือข้อสรุปสำคัญจากที่ประชุม..."
-            v-model="minutesForm.decisions"
-            :disabled="isReadOnly(minutesMeeting)"
-          />
+          <CTextarea label="มติที่ประชุม" rows="4" placeholder="มติหรือข้อสรุปสำคัญจากที่ประชุม..."
+            v-model="minutesForm.decisions" :disabled="isReadOnly(minutesMeeting)" />
 
           <div class="table-responsive">
             <table class="table table-bordered table-sm">
@@ -374,16 +358,18 @@
               </thead>
               <tbody>
                 <tr v-for="(item, index) in minutesForm.actionItems" :key="index">
-                  <td><CInput v-model="item.task" :disabled="isReadOnly(minutesMeeting)" /></td>
-                  <td><CInput v-model="item.assignee" :disabled="isReadOnly(minutesMeeting)" /></td>
-                  <td><CInput type="date" v-model="item.deadline" :disabled="isReadOnly(minutesMeeting)" /></td>
                   <td>
-                    <CButton
-                      size="sm"
-                      color="danger"
-                      :disabled="isReadOnly(minutesMeeting)"
-                      @click="removeActionItem(index)"
-                    >
+                    <CInput v-model="item.task" :disabled="isReadOnly(minutesMeeting)" />
+                  </td>
+                  <td>
+                    <CInput v-model="item.assignee" :disabled="isReadOnly(minutesMeeting)" />
+                  </td>
+                  <td>
+                    <CInput type="date" v-model="item.deadline" :disabled="isReadOnly(minutesMeeting)" />
+                  </td>
+                  <td>
+                    <CButton size="sm" color="danger" :disabled="isReadOnly(minutesMeeting)"
+                      @click="removeActionItem(index)">
                       X
                     </CButton>
                   </td>
@@ -395,13 +381,8 @@
             </table>
           </div>
 
-          <CButton
-            v-if="!isReadOnly(minutesMeeting)"
-            size="sm"
-            color="primary"
-            variant="outline"
-            @click="addActionItem"
-          >
+          <CButton v-if="!isReadOnly(minutesMeeting)" size="sm" color="primary" variant="outline"
+            @click="addActionItem">
             + เพิ่ม Action Item
           </CButton>
         </div>
@@ -410,13 +391,8 @@
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
           <CButton color="secondary" class="mr-2 floating-action" @click="closeMinutesModal">ยกเลิก</CButton>
-          <CButton
-            v-if="!isReadOnly(minutesMeeting)"
-            color="primary"
-            class="floating-action btn-save"
-            :disabled="savingMinutes"
-            @click="saveMinutes"
-          >
+          <CButton v-if="!isReadOnly(minutesMeeting)" color="primary" class="floating-action btn-save"
+            :disabled="savingMinutes" @click="saveMinutes">
             {{ savingMinutes ? 'กำลังบันทึก...' : 'บันทึกผลประชุม' }}
           </CButton>
         </div>
@@ -429,6 +405,7 @@
 import { instance as axios } from '@/service/api'
 import Swal from 'sweetalert2'
 import Multiselect from 'vue-multiselect'
+import { DatePicker } from 'v-calendar'
 import 'vue-multiselect/dist/vue-multiselect.min.css'
 
 const MEETING_STATUS = {
@@ -439,8 +416,8 @@ const MEETING_STATUS = {
 
 export default {
   name: 'AdminMeetings',
-  components: { Multiselect },
-  data () {
+  components: { Multiselect, 'v-date-picker': DatePicker },
+  data() {
     return {
       meetings: [],
       total: 0,
@@ -472,6 +449,7 @@ export default {
         meetingDate: '',
         startTime: '',
         endTime: '',
+        meetingType: 'online',
         location: '',
         videoLink: '',
         agenda: '',
@@ -485,11 +463,74 @@ export default {
         minutes: '',
         decisions: '',
         actionItems: []
+      },
+
+      timeDropdown: {
+        openFor: null,
+        top: 0,
+        left: 0,
+        width: 0,
+        maxHeight: 320
       }
     }
   },
   computed: {
-    statusFilterOptions () {
+    meetingDatePickerValue: {
+      get() {
+        return this.parseLocalYmd(this.meetingForm && this.meetingForm.meetingDate ? this.meetingForm.meetingDate : '')
+      },
+      set(val) {
+        this.meetingForm.meetingDate = val ? this.formatYmd(val) : ''
+      }
+    },
+    enforceMinDateTime() {
+      return this.meetingForm && this.meetingForm.status === 'scheduled'
+    },
+    minMeetingDateObj() {
+      const now = new Date()
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    },
+    minStartTime() {
+      const selected = this.parseLocalYmd(this.meetingForm && this.meetingForm.meetingDate ? this.meetingForm.meetingDate : '')
+      if (!selected) return '00:00'
+      const today = new Date()
+      const sameDay = selected.getFullYear() === today.getFullYear()
+        && selected.getMonth() === today.getMonth()
+        && selected.getDate() === today.getDate()
+      if (!sameDay) return '00:00'
+      const minutes = (today.getHours() * 60) + today.getMinutes()
+      return this.minutesToTime(this.ceilMinutesToStep(minutes, 15))
+    },
+    minEndTime() {
+      const start = this.meetingForm && this.meetingForm.startTime ? String(this.meetingForm.startTime) : ''
+      if (start) return start
+      return this.enforceMinDateTime ? this.minStartTime : '00:00'
+    },
+    startTimeOptions() {
+      return this.buildTimeOptions({
+        min: this.enforceMinDateTime ? this.minStartTime : '00:00',
+        step: 15,
+        includeEmpty: false,
+        formatLabel: (value) => this.formatTime12h(value)
+      })
+    },
+    endTimeOptions() {
+      const start = this.meetingForm && this.meetingForm.startTime ? String(this.meetingForm.startTime) : ''
+      return this.buildTimeOptions({
+        min: this.minEndTime,
+        step: 15,
+        includeEmpty: true,
+        formatLabel: (value) => {
+          if (!value) return '-'
+          const label = this.formatTime12h(value)
+          if (!start) return label
+          const duration = this.timeToMinutes(value) - this.timeToMinutes(start)
+          if (!Number.isFinite(duration) || duration <= 0) return label
+          return `${label} (${this.formatDuration(duration)})`
+        }
+      })
+    },
+    statusFilterOptions() {
       return [
         { value: '', label: 'ทั้งหมด' },
         { value: 'scheduled', label: MEETING_STATUS.scheduled.label },
@@ -497,7 +538,7 @@ export default {
         { value: 'cancelled', label: MEETING_STATUS.cancelled.label }
       ]
     },
-    statusSelectOptions () {
+    statusSelectOptions() {
       return [
         { value: 'scheduled', label: MEETING_STATUS.scheduled.label },
         { value: 'completed', label: MEETING_STATUS.completed.label },
@@ -505,27 +546,248 @@ export default {
       ]
     }
   },
-  mounted () {
+  mounted() {
     this.fetchMeetings()
     this.fetchProposalOptions()
     this.fetchParticipantOptions()
     this.consumeProposalContext()
   },
   watch: {
-    '$route.query' () {
+    '$route.query'() {
       this.consumeProposalContext()
+    },
+    'meetingForm.meetingType'(next) {
+      if (next === 'online') {
+        this.meetingForm.location = ''
+      }
+    },
+    'meetingForm.meetingDate'() {
+      if (!this.enforceMinDateTime) return
+      if (this.meetingForm && this.meetingForm.startTime && this.meetingForm.startTime < this.minStartTime) {
+        this.meetingForm.startTime = ''
+      }
+      if (this.meetingForm && this.meetingForm.endTime && this.meetingForm.endTime < this.minEndTime) {
+        this.meetingForm.endTime = ''
+      }
+    },
+    'meetingForm.startTime'(next) {
+      if (!next) return
+      if (this.enforceMinDateTime && next < this.minStartTime) {
+        this.meetingForm.startTime = ''
+        return
+      }
+      if (this.meetingForm && this.meetingForm.endTime && this.meetingForm.endTime < next) {
+        this.meetingForm.endTime = ''
+      }
     }
   },
   methods: {
-    formatProposalTitle (p) {
+    focusPicker(refName) {
+      this.$nextTick(() => {
+        const el = this.$refs && this.$refs[refName] ? this.$refs[refName] : null
+        if (!el) return
+        try {
+          el.focus && el.focus()
+          el.click && el.click()
+        } catch (err) {
+          // ignore
+        }
+      })
+    },
+    isTimeSelected(kind, value) {
+      if (!kind) return false
+      const v = String(value || '')
+      if (kind === 'start') return String(this.meetingForm.startTime || '') === v
+      if (kind === 'end') return String(this.meetingForm.endTime || '') === v
+      return false
+    },
+    selectTimeOption(kind, value) {
+      if (kind === 'start') {
+        this.meetingForm.startTime = String(value || '')
+      } else if (kind === 'end') {
+        this.meetingForm.endTime = String(value || '')
+      }
+      this.closeTimeDropdown()
+    },
+    toggleTimeDropdown(kind) {
+      if (this.timeDropdown.openFor === kind) {
+        this.closeTimeDropdown()
+        return
+      }
+      this.openTimeDropdown(kind)
+    },
+    openTimeDropdown(kind) {
+      const refName = kind === 'start' ? 'startTimeTrigger' : 'endTimeTrigger'
+      this.$nextTick(() => {
+        const el = this.$refs && this.$refs[refName] ? this.$refs[refName] : null
+        if (!el || !el.getBoundingClientRect) return
+        const rect = el.getBoundingClientRect()
+        const desiredLeft = rect.left
+        const desiredTop = rect.bottom + 6
+        const width = rect.width
+        const padding = 12
+        const left = Math.max(padding, Math.min(desiredLeft, window.innerWidth - width - padding))
+        const maxHeight = Math.max(160, Math.min(320, window.innerHeight - desiredTop - padding))
+
+        this.timeDropdown = {
+          openFor: kind,
+          top: desiredTop,
+          left,
+          width,
+          maxHeight
+        }
+
+        window.addEventListener('resize', this.closeTimeDropdown, { once: true })
+        document.addEventListener('keydown', this.onTimeDropdownKeydown)
+        document.addEventListener('scroll', this.closeTimeDropdown, true)
+      })
+    },
+    onTimeDropdownKeydown(e) {
+      if (e && e.key === 'Escape') this.closeTimeDropdown()
+    },
+    closeTimeDropdown() {
+      if (!this.timeDropdown.openFor) return
+      this.timeDropdown.openFor = null
+      document.removeEventListener('keydown', this.onTimeDropdownKeydown)
+      document.removeEventListener('scroll', this.closeTimeDropdown, true)
+    },
+    openNativePicker(event) {
+      const el = event && event.target ? event.target : null
+      if (el && typeof el.showPicker === 'function') {
+        try {
+          el.showPicker()
+        } catch (err) {
+          // ignore; focus will still open pickers on most browsers
+        }
+      }
+    },
+    formatYmd(d) {
+      const date = d instanceof Date ? d : new Date(d)
+      if (Number.isNaN(date.getTime())) return ''
+      const y = String(date.getFullYear()).padStart(4, '0')
+      const m = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${y}-${m}-${day}`
+    },
+    formatHm(d) {
+      const date = d instanceof Date ? d : new Date(d)
+      if (Number.isNaN(date.getTime())) return '00:00'
+      const hh = String(date.getHours()).padStart(2, '0')
+      const mm = String(date.getMinutes()).padStart(2, '0')
+      return `${hh}:${mm}`
+    },
+    timeToMinutes(hhmm) {
+      const str = String(hhmm || '').trim()
+      const [hhRaw, mmRaw] = str.split(':')
+      const hh = parseInt(hhRaw, 10)
+      const mm = parseInt(mmRaw, 10)
+      if (Number.isNaN(hh) || Number.isNaN(mm)) return NaN
+      return (hh * 60) + mm
+    },
+    minutesToTime(minutes) {
+      const mins = Math.max(0, Math.min(23 * 60 + 59, parseInt(minutes, 10) || 0))
+      const hh = String(Math.floor(mins / 60)).padStart(2, '0')
+      const mm = String(mins % 60).padStart(2, '0')
+      return `${hh}:${mm}`
+    },
+    ceilMinutesToStep(minutes, step) {
+      const m = parseInt(minutes, 10)
+      const s = Math.max(parseInt(step, 10) || 1, 1)
+      if (Number.isNaN(m)) return 0
+      return Math.min(23 * 60 + 59, Math.ceil(m / s) * s)
+    },
+    buildTimeOptions({ min = '00:00', step = 5, includeEmpty = false, formatLabel = null } = {}) {
+      const minMinutes = this.timeToMinutes(min)
+      const start = Number.isFinite(minMinutes) ? this.ceilMinutesToStep(minMinutes, step) : 0
+      const options = []
+      if (includeEmpty) options.push({ value: '', label: '-' })
+      for (let m = start; m <= (23 * 60 + 59); m += step) {
+        const value = this.minutesToTime(m)
+        const label = typeof formatLabel === 'function' ? formatLabel(value) : value
+        options.push({ value, label })
+      }
+      return options
+    },
+    formatTime12h(hhmm) {
+      const minutes = this.timeToMinutes(hhmm)
+      if (!Number.isFinite(minutes)) return String(hhmm || '')
+      let hours = Math.floor(minutes / 60)
+      const mins = minutes % 60
+      const suffix = hours >= 12 ? 'pm' : 'am'
+      hours = hours % 12
+      if (hours === 0) hours = 12
+      return `${hours}:${String(mins).padStart(2, '0')}${suffix}`
+    },
+    formatDuration(minutes) {
+      const mins = parseInt(minutes, 10)
+      if (!Number.isFinite(mins) || mins <= 0) return ''
+      if (mins < 60) return `${mins} mins`
+      const hours = mins / 60
+      if (mins % 60 === 0) return `${hours} ${hours === 1 ? 'hr' : 'hrs'}`
+      return `${parseFloat(hours.toFixed(1))} hrs`
+    },
+    parseLocalYmd(ymd) {
+      if (!ymd) return null
+      const parts = String(ymd).split('-').map(v => parseInt(v, 10))
+      if (parts.length !== 3 || parts.some(n => Number.isNaN(n))) return null
+      const [year, month, day] = parts
+      return new Date(year, month - 1, day)
+    },
+    getMeetingStartTimestamp(meeting) {
+      const base = this.parseLocalYmd(meeting && meeting.meetingDate ? meeting.meetingDate : '')
+      if (!base) return NaN
+      const timeStr = meeting && meeting.startTime ? String(meeting.startTime) : ''
+      const [hhRaw, mmRaw] = timeStr.split(':')
+      const hours = parseInt(hhRaw, 10)
+      const minutes = parseInt(mmRaw, 10)
+      base.setHours(Number.isNaN(hours) ? 0 : hours, Number.isNaN(minutes) ? 0 : minutes, 0, 0)
+      return base.getTime()
+    },
+    sortMeetingsForDisplay(meetings) {
+      const list = Array.isArray(meetings) ? meetings.slice() : []
+      const statusRank = (status) => {
+        if (status === 'scheduled') return 0
+        if (status === 'completed') return 1
+        if (status === 'cancelled') return 2
+        return 3
+      }
+      const nowTs = Date.now()
+
+      return list.sort((a, b) => {
+        const rankDiff = statusRank(a && a.status) - statusRank(b && b.status)
+        if (rankDiff !== 0) return rankDiff
+
+        const aRank = statusRank(a && a.status)
+        const aTime = this.getMeetingStartTimestamp(a)
+        const bTime = this.getMeetingStartTimestamp(b)
+
+        if (aRank === 0) {
+          const ta = Number.isFinite(aTime) ? aTime : Number.POSITIVE_INFINITY
+          const tb = Number.isFinite(bTime) ? bTime : Number.POSITIVE_INFINITY
+          const aFuture = ta >= nowTs
+          const bFuture = tb >= nowTs
+          if (aFuture !== bFuture) return aFuture ? -1 : 1
+          if (ta !== tb) return aFuture ? (ta - tb) : (tb - ta)
+        } else {
+          const ta = Number.isFinite(aTime) ? aTime : Number.NEGATIVE_INFINITY
+          const tb = Number.isFinite(bTime) ? bTime : Number.NEGATIVE_INFINITY
+          if (ta !== tb) return tb - ta
+        }
+
+        const aId = a && a._id ? String(a._id) : ''
+        const bId = b && b._id ? String(b._id) : ''
+        return aId.localeCompare(bId)
+      })
+    },
+    formatProposalTitle(p) {
       if (!p) return '-'
       return p.projectTitleTh || p.projectTitleEn || p.projectTitle || '-'
     },
-    formatParticipantLabel (u) {
+    formatParticipantLabel(u) {
       if (!u) return '-'
       return u.fullName || u.email || '-'
     },
-    async fetchProposalOptions () {
+    async fetchProposalOptions() {
       this.proposalOptionsLoading = true
       this.proposalOptionsError = null
       try {
@@ -550,7 +812,7 @@ export default {
         this.proposalOptionsLoading = false
       }
     },
-    async fetchParticipantOptions () {
+    async fetchParticipantOptions() {
       this.participantOptionsLoading = true
       this.participantOptionsError = null
       try {
@@ -574,14 +836,14 @@ export default {
         this.participantOptionsLoading = false
       }
     },
-    resolveSelectedParticipantOptions () {
+    resolveSelectedParticipantOptions() {
       const ids = (Array.isArray(this.pendingParticipantIds) && this.pendingParticipantIds.length)
         ? this.pendingParticipantIds
         : (this.isEditMode && this.selectedMeeting && Array.isArray(this.selectedMeeting.participantIds) ? this.selectedMeeting.participantIds.map(String) : [])
       if (!ids.length || !Array.isArray(this.participantOptions) || !this.participantOptions.length) return
       this.selectedParticipantOptions = this.participantOptions.filter(u => ids.includes(String(u && u._id)))
     },
-    resolveSelectedProposalOption () {
+    resolveSelectedProposalOption() {
       const id = (this.pendingProposalIds && this.pendingProposalIds[0])
         || (this.selectedMeeting && Array.isArray(this.selectedMeeting.proposalIds) && this.selectedMeeting.proposalIds[0])
         || ''
@@ -593,7 +855,7 @@ export default {
         if (title) this.applyProjectToForm(title)
       }
     },
-    applyProjectToForm (projectTitle) {
+    applyProjectToForm(projectTitle) {
       const title = String(projectTitle || '').trim()
       if (!title) return
 
@@ -610,7 +872,7 @@ export default {
 
       this.autoProjectTitle = title
     },
-    onProposalSelected (opt) {
+    onProposalSelected(opt) {
       if (!opt) {
         this.selectedProposalOption = null
         this.pendingProposalIds = []
@@ -624,7 +886,7 @@ export default {
       this.pendingProjectTitle = title
       if (title) this.applyProjectToForm(title)
     },
-    consumeProposalContext () {
+    consumeProposalContext() {
       const q = (this.$route && this.$route.query) ? this.$route.query : {}
       const proposalId = q.fromProposalId || q.proposalId || ''
       const projectTitle = q.fromProjectTitle || q.projectTitle || ''
@@ -655,34 +917,37 @@ export default {
       delete nextQuery.projectTitle
       this.$router.replace({ path: this.$route.path, query: nextQuery })
     },
-    getSelectValue (val) {
+    getSelectValue(val) {
       return val && val.target ? val.target.value : val
     },
-    getStatusMeta (status) {
+    getStatusMeta(status) {
       return MEETING_STATUS[status] || { label: status || '-', color: 'secondary' }
     },
-    getMeetingCardClass (meeting) {
+    getMeetingCardClass(meeting) {
       return {
         scheduled: meeting.status === 'scheduled',
         completed: meeting.status === 'completed',
         cancelled: meeting.status === 'cancelled'
       }
     },
-    selectMeetingForActions (meeting) {
+    selectMeetingForActions(meeting) {
       this.selectedMeetingForActions = meeting || null
     },
-    isSelectedMeeting (meeting) {
+    isSelectedMeeting(meeting) {
       if (!meeting || !this.selectedMeetingForActions) return false
       return String(meeting._id) === String(this.selectedMeetingForActions._id)
     },
-    getMeetingModeLabel (meeting) {
+    getMeetingModeLabel(meeting) {
       if (!meeting) return '-'
+      const type = meeting.meetingType ? String(meeting.meetingType).trim().toLowerCase() : ''
+      if (type === 'online') return 'ออนไลน์'
+      if (type === 'onsite') return 'ออนไซต์'
       const videoLink = meeting.videoLink ? String(meeting.videoLink).trim() : ''
       const location = meeting.location ? String(meeting.location).trim() : ''
       const locationLooksOnline = /online|zoom|teams|meet|webex/i.test(location) || /^https?:\/\//i.test(location)
       return (videoLink || locationLooksOnline) ? 'ออนไลน์' : 'ออนไซต์'
     },
-    async fetchMeetings () {
+    async fetchMeetings() {
       this.loading = true
       try {
         const params = {
@@ -697,7 +962,7 @@ export default {
           ? payload.meetings
           : (Array.isArray(payload.data) ? payload.data : [])
 
-        this.meetings = list
+        this.meetings = this.sortMeetingsForDisplay(list)
         this.total = Number(payload.total) || list.length
         this.page = Number(payload.page) || this.page
         this.totalPages = Number(payload.totalPages) || Math.max(1, Math.ceil(this.total / this.limit))
@@ -718,22 +983,22 @@ export default {
         this.loading = false
       }
     },
-    onFilterStatusChange (val) {
+    onFilterStatusChange(val) {
       this.filterStatus = this.getSelectValue(val)
       this.page = 1
       this.fetchMeetings()
     },
-    onReset () {
+    onReset() {
       this.filterStatus = ''
       this.page = 1
       this.fetchMeetings()
     },
-    onPageChange (nextPage) {
+    onPageChange(nextPage) {
       if (nextPage < 1 || nextPage > this.totalPages) return
       this.page = nextPage
       this.fetchMeetings()
     },
-    openCreateModal () {
+    openCreateModal() {
       this.isEditMode = false
       this.selectedMeeting = null
       this.pendingProposalIds = []
@@ -747,6 +1012,7 @@ export default {
         meetingDate: '',
         startTime: '',
         endTime: '',
+        meetingType: 'online',
         location: '',
         videoLink: '',
         agenda: '',
@@ -757,7 +1023,7 @@ export default {
         this.fetchParticipantOptions()
       }
     },
-    openEditModal (meeting) {
+    openEditModal(meeting) {
       this.isEditMode = true
       this.selectedMeeting = meeting
       this.pendingProposalIds = []
@@ -766,11 +1032,15 @@ export default {
       this.autoProjectTitle = ''
       this.pendingParticipantIds = Array.isArray(meeting && meeting.participantIds) ? meeting.participantIds.map(String) : []
       this.selectedParticipantOptions = []
+      const inferredType = meeting && meeting.meetingType
+        ? String(meeting.meetingType)
+        : (this.getMeetingModeLabel(meeting) === 'ออนไลน์' ? 'online' : 'onsite')
       this.meetingForm = {
         title: meeting.title || '',
         meetingDate: meeting.meetingDate || '',
         startTime: meeting.startTime || '',
         endTime: meeting.endTime || '',
+        meetingType: inferredType,
         location: meeting.location || '',
         videoLink: meeting.videoLink || '',
         agenda: meeting.agenda || '',
@@ -785,14 +1055,25 @@ export default {
         this.fetchParticipantOptions()
       }
     },
-    closeMeetingModal () {
+    closeMeetingModal() {
       this.showMeetingModal = false
       this.savingMeeting = false
+      this.closeTimeDropdown()
     },
-    async saveMeeting () {
+    async saveMeeting() {
       if (!this.meetingForm.title || !this.meetingForm.meetingDate || !this.meetingForm.startTime) {
         await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'ชื่อการประชุม วันที่ประชุม และเวลาเริ่ม เป็นข้อมูลบังคับ' })
         return
+      }
+      if (this.enforceMinDateTime) {
+        const startTs = this.getMeetingStartTimestamp({
+          meetingDate: this.meetingForm.meetingDate,
+          startTime: this.meetingForm.startTime
+        })
+        if (Number.isFinite(startTs) && startTs < Date.now()) {
+          await Swal.fire({ icon: 'warning', title: 'วัน/เวลาไม่ถูกต้อง', text: 'ไม่สามารถเลือกวันหรือเวลาที่ต่ำกว่าปัจจุบันได้' })
+          return
+        }
       }
 
       this.savingMeeting = true
@@ -815,7 +1096,8 @@ export default {
           meetingDate: this.meetingForm.meetingDate,
           startTime: this.meetingForm.startTime,
           endTime: this.meetingForm.endTime,
-          location: this.meetingForm.location,
+          meetingType: this.meetingForm.meetingType,
+          location: this.meetingForm.meetingType === 'online' ? '' : this.meetingForm.location,
           videoLink: this.meetingForm.videoLink,
           proposalIds,
           participantIds,
@@ -839,7 +1121,7 @@ export default {
         this.savingMeeting = false
       }
     },
-    async deleteMeeting (meeting) {
+    async deleteMeeting(meeting) {
       const result = await Swal.fire({
         icon: 'warning',
         title: 'ยืนยันการลบ',
@@ -860,7 +1142,7 @@ export default {
         await Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: 'API การประชุมยังไม่พร้อมใช้งาน' })
       }
     },
-    openMinutesModal (meeting) {
+    openMinutesModal(meeting) {
       this.minutesMeeting = meeting
       this.minutesForm = {
         minutes: meeting.minutes || '',
@@ -872,7 +1154,7 @@ export default {
       }
       this.showMinutesModal = true
     },
-    closeMinutesModal () {
+    closeMinutesModal() {
       this.showMinutesModal = false
       this.minutesMeeting = null
       this.savingMinutes = false
@@ -882,13 +1164,13 @@ export default {
         actionItems: []
       }
     },
-    addActionItem () {
+    addActionItem() {
       this.minutesForm.actionItems.push({ task: '', assignee: '', deadline: '' })
     },
-    removeActionItem (index) {
+    removeActionItem(index) {
       this.minutesForm.actionItems.splice(index, 1)
     },
-    async saveMinutes () {
+    async saveMinutes() {
       if (!this.minutesMeeting || !this.minutesMeeting._id) return
 
       this.savingMinutes = true
@@ -913,10 +1195,10 @@ export default {
         this.savingMinutes = false
       }
     },
-    getSummaryCount (status) {
+    getSummaryCount(status) {
       return this.meetings.filter(m => m.status === status).length
     },
-    formatDate (dateStr) {
+    formatDate(dateStr) {
       if (!dateStr) return '-'
       const d = new Date(dateStr)
       if (Number.isNaN(d.getTime())) return '-'
@@ -925,10 +1207,10 @@ export default {
       const yearBE = d.getFullYear() + 543
       return `${day}/${month}/${yearBE}`
     },
-    formatTime (time) {
+    formatTime(time) {
       return time || '-'
     },
-    isReadOnly (meeting) {
+    isReadOnly(meeting) {
       return meeting && meeting.status === 'completed'
     }
   }
@@ -937,8 +1219,25 @@ export default {
 
 <style scoped>
 .admin-meetings-page {
+  /* Theme tokens (match Research Form vibe, but keep readable vs sidebar) */
+  --am-bg: #fffaf2;
+  --am-surface: #ffffff;
+  --am-border: #eadfce;
+  --am-text: #1f2937;
+  --am-muted: #6b7280;
+  --am-accent: #8b1212;
+  /* deep red */
+  --am-gold: #c59b3a;
+  --am-accent-ring: rgba(139, 18, 18, 0.18);
+
   width: 100%;
-  padding-bottom: 24px;
+  padding: 22px 22px 28px;
+  background:
+    radial-gradient(1100px 460px at 12% -10%, rgba(139, 18, 18, 0.12), transparent 62%),
+    radial-gradient(980px 420px at 92% 4%, rgba(197, 155, 58, 0.12), transparent 58%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.00) 58%),
+    repeating-linear-gradient(0deg, rgba(31, 41, 55, 0.012) 0, rgba(31, 41, 55, 0.012) 1px, transparent 1px, transparent 22px);
+  color: var(--am-text);
 }
 
 .meetings-hero {
@@ -951,7 +1250,7 @@ export default {
   border-radius: 22px;
   background:
     radial-gradient(circle at top right, rgba(255, 255, 255, 0.28), transparent 30%),
-    linear-gradient(135deg, #1d4ed8, #0f766e);
+    linear-gradient(135deg, var(--am-accent) 0%, var(--am-gold) 115%);
   color: #ffffff;
   box-shadow: 0 20px 45px rgba(15, 23, 42, 0.16);
 }
@@ -991,16 +1290,43 @@ export default {
   min-width: 210px;
   border-radius: 14px;
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+  background: linear-gradient(135deg, rgba(197, 155, 58, 0.98), rgba(139, 18, 18, 0.98)) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+}
+
+.hero-action-btn:hover {
+  filter: brightness(1.03);
 }
 
 .summary-row {
   margin-bottom: 8px;
 }
 
+.summary-row--filters {
+  margin-bottom: 22px;
+}
+
+.summary-row--filters .summary-card {
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.summary-row--filters .summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.09);
+}
+
+.summary-card--active {
+  border-color: rgba(139, 18, 18, 0.42) !important;
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 18px 48px rgba(15, 23, 42, 0.09) !important;
+}
+
 /* vue-multiselect: remove default green highlight/selected background */
 ::v-deep .multiselect__option--highlight {
-  background: #eef2f7;
-  color: #0f172a;
+  background: rgba(197, 155, 58, 0.14);
+  color: var(--am-text);
 }
 
 ::v-deep .multiselect__option--highlight::after {
@@ -1009,8 +1335,8 @@ export default {
 }
 
 ::v-deep .multiselect__option--selected {
-  background: #f8fafc;
-  color: #0f172a;
+  background: rgba(139, 18, 18, 0.08);
+  color: var(--am-text);
   font-weight: 600;
 }
 
@@ -1022,14 +1348,14 @@ export default {
 .summary-card {
   height: 100%;
   padding: 20px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--am-border);
   border-radius: 20px;
-  background: #ffffff;
+  background: var(--am-surface);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
 }
 
 .summary-card--info {
-  border-top: 4px solid #3b82f6;
+  border-top: 4px solid var(--am-gold);
 }
 
 .summary-card--success {
@@ -1041,98 +1367,158 @@ export default {
 }
 
 .summary-label {
-  color: #6b7280;
+  color: var(--am-muted);
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 .summary-number {
   margin: 10px 0 8px;
-  color: #111827;
+  color: var(--am-text);
   font-size: 2rem;
   font-weight: 700;
   line-height: 1;
 }
 
 .summary-caption {
-  color: #6b7280;
+  color: var(--am-muted);
   font-size: 0.88rem;
   line-height: 1.5;
 }
 
+/* Filters card */
 .filter-card {
-  border: none;
   border-radius: 20px;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--am-border);
+  background: var(--am-surface);
 }
 
-.filter-card__header {
+/* Meeting type segmented control */
+.meeting-type-toggle {
+  position: relative;
   display: flex;
-  justify-content: space-between;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--am-border);
+  background: linear-gradient(180deg, rgba(197, 155, 58, 0.10), rgba(15, 23, 42, 0.00));
+  min-height: 44px;
   align-items: center;
-  margin-bottom: 18px;
 }
 
-.filter-card__title {
-  color: #111827;
-  font-size: 1rem;
-  font-weight: 700;
+.meeting-type-toggle__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.filter-card__subtitle {
-  margin-top: 4px;
-  color: #6b7280;
-  font-size: 0.88rem;
+.meeting-type-toggle__label {
+  flex: 1;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--am-muted);
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
-.filter-card__bottom-actions {
-  margin-top: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
+.meeting-type-toggle__input:checked+.meeting-type-toggle__label {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--am-accent), var(--am-gold));
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.16);
+}
+
+.meeting-type-toggle__label:active {
+  transform: translateY(1px);
 }
 
 .meeting-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
+}
+
+@media (max-width: 1199px) {
+  .meeting-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .meeting-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .meeting-card {
   --status-rgb: 59, 130, 246;
+  --accent-offset: 8px;
+  --accent-width: 30px;
   position: relative;
-  display: flex;
-  flex-direction: column;
+  isolation: isolate;
+  display: block;
   height: 480px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  border-radius: 26px;
+  border: 0;
+  border-radius: 16px;
   padding: 0;
-  background: linear-gradient(90deg, rgba(var(--status-rgb), 0.92), rgba(var(--status-rgb), 0.74));
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-  overflow: hidden;
+  overflow: visible;
   outline: none;
 }
 
-.meeting-card::before {
-  content: none;
+.meeting-card__left-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--accent-offset) * -1);
+  width: calc(var(--accent-width) + var(--accent-offset));
+  background: rgb(var(--status-rgb));
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.meeting-card__surface {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: inherit;
+  background: #ffffff;
+  overflow: hidden;
+  border: 1px solid var(--am-border);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
 }
 
 .meeting-card--selected {
-  border-color: rgba(var(--status-rgb), 0.65);
-  box-shadow: 0 0 0 3px rgba(var(--status-rgb), 0.16), 0 14px 30px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
+}
+
+.meeting-card--selected .meeting-card__surface {
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 30px rgba(15, 23, 42, 0.08);
 }
 
 .meeting-card:focus,
 .meeting-card:focus-visible {
-  border-color: rgba(var(--status-rgb), 0.65);
-  box-shadow: 0 0 0 3px rgba(var(--status-rgb), 0.16), 0 14px 30px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
+}
+
+.meeting-card:focus .meeting-card__surface,
+.meeting-card:focus-visible .meeting-card__surface {
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 30px rgba(15, 23, 42, 0.08);
 }
 
 .meeting-card:hover {
   transform: translateY(-3px);
+}
+
+.meeting-card:hover .meeting-card__surface {
   box-shadow: 0 20px 42px rgba(15, 23, 42, 0.1);
 }
 
@@ -1146,8 +1532,8 @@ export default {
   min-height: 42px;
   padding: 14px 18px 14px;
   background: transparent;
-  border-top-left-radius: 26px;
-  border-top-right-radius: 26px;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
 }
 
 .meeting-card__top::before {
@@ -1155,15 +1541,10 @@ export default {
 }
 
 .meeting-card__top::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(1200px 260px at 12% 0%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 60%);
-  z-index: 1;
-  pointer-events: none;
+  content: none;
 }
 
-.meeting-card__top > * {
+.meeting-card__top>* {
   position: relative;
   z-index: 2;
 }
@@ -1173,10 +1554,7 @@ export default {
   display: flex;
   flex-direction: column;
   background: #ffffff;
-  border-top-left-radius: 26px;
-  border-top-right-radius: 26px;
-  border-bottom-left-radius: 26px;
-  border-bottom-right-radius: 26px;
+  border-radius: 0;
   margin-top: 0;
   padding: 18px;
   box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.35);
@@ -1190,19 +1568,25 @@ export default {
 .meeting-card__badge {
   padding: 6px 10px;
   border-radius: 999px;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
-  background-color: rgba(255, 255, 255, 0.22) !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  color: #ffffff !important;
-  text-shadow: 0 1px 1px rgba(15, 23, 42, 0.25);
+  background: rgba(var(--status-rgb), 0.12) !important;
+  border: 1px solid rgba(var(--status-rgb), 0.24) !important;
+  color: rgb(var(--status-rgb)) !important;
+  font-weight: 800;
+}
+
+.meeting-card__top-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .meeting-card__participant-pill {
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #ffffff;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
   font-size: 0.85rem;
   font-weight: 600;
   line-height: 1;
@@ -1210,16 +1594,28 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
-  text-shadow: 0 1px 1px rgba(15, 23, 42, 0.25);
 }
 
 .meeting-card__participant-ic {
-  color: rgba(255, 255, 255, 0.95);
+  color: #334155;
+}
+
+.meeting-card__select-btn {
+  border-radius: 999px !important;
+  padding: 6px 12px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  border-color: rgba(197, 155, 58, 0.42) !important;
+  color: var(--am-accent) !important;
+  background: rgba(197, 155, 58, 0.1) !important;
+}
+
+.meeting-card__select-btn:hover {
+  background: rgba(197, 155, 58, 0.16) !important;
 }
 
 .meeting-card.scheduled {
-  --status-rgb: 59, 130, 246;
+  --status-rgb: 197, 155, 58;
 }
 
 .meeting-card.completed {
@@ -1271,7 +1667,7 @@ export default {
   align-items: stretch !important;
 }
 
-.meeting-card__meta-widget::v-deep .card-body > .mr-3 {
+.meeting-card__meta-widget::v-deep .card-body>.mr-3 {
   margin: 0 !important;
   padding: 0 !important;
   width: 54px;
@@ -1280,7 +1676,7 @@ export default {
   justify-content: center;
 }
 
-.meeting-card__meta-widget::v-deep .card-body > div:not(.mr-3) {
+.meeting-card__meta-widget::v-deep .card-body>div:not(.mr-3) {
   padding: 10px 12px !important;
   display: flex;
   flex-direction: column;
@@ -1337,7 +1733,7 @@ export default {
 }
 
 .meeting-card__detail-value a {
-  color: #2563eb;
+  color: var(--am-accent);
   display: inline-block;
   max-width: 100%;
   overflow: hidden;
@@ -1452,6 +1848,65 @@ export default {
   gap: 12px;
 }
 
+.input-icon__wrap {
+  display: flex;
+  align-items: stretch;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: #ffffff;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+}
+
+.input-icon__control {
+  flex: 1;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: 1.05rem;
+}
+
+.input-icon__suffix {
+  width: 52px;
+  border: 0;
+  border-left: 1px solid rgba(148, 163, 184, 0.22);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0;
+  cursor: pointer;
+}
+
+.input-icon__wrap[data-tone="primary"] .input-icon__suffix {
+  background: linear-gradient(135deg, var(--am-accent), var(--am-gold));
+}
+
+.input-icon__wrap[data-tone="info"] .input-icon__suffix {
+  background: linear-gradient(135deg, var(--am-gold), var(--am-accent));
+}
+
+.input-icon__wrap[data-tone="primary"] {
+  border-color: rgba(197, 155, 58, 0.32);
+}
+
+.input-icon__wrap[data-tone="info"] {
+  border-color: rgba(139, 18, 18, 0.22);
+}
+
+.input-icon__suffix:hover {
+  filter: brightness(1.03);
+}
+
+.input-icon__suffix:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--am-accent-ring);
+}
+
+.input-icon__ic {
+  opacity: 0.88;
+}
+
 .meeting-modal input,
 .meeting-modal textarea,
 .meeting-modal select,
@@ -1461,6 +1916,63 @@ export default {
   min-height: 44px;
   padding: 10px 12px;
   border-radius: 10px;
+}
+
+.time-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.05rem;
+  padding: 10px 12px;
+  min-height: 44px;
+}
+
+.time-trigger:disabled {
+  cursor: not-allowed;
+}
+
+.time-dropdown__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+}
+
+.time-dropdown {
+  position: fixed;
+  z-index: 20001;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.2);
+  padding: 6px;
+  overflow: auto;
+}
+
+.time-dropdown__item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  line-height: 1.25;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.time-dropdown__item:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.time-dropdown__item.is-selected {
+  background: linear-gradient(135deg, rgba(139, 18, 18, 0.14), rgba(197, 155, 58, 0.14));
+  color: var(--am-accent);
+  font-weight: 800;
 }
 
 .meeting-modal input,
@@ -1503,13 +2015,23 @@ export default {
 }
 
 .meeting-modal .required,
-.minutes-modal .required { color: #e11d48; margin-left: 0; }
+.minutes-modal .required {
+  color: #e11d48;
+  margin-left: 0;
+}
 
 .meeting-modal .full-field,
-.minutes-modal .full-field { grid-column: 1 / -1; }
+.minutes-modal .full-field {
+  grid-column: 1 / -1;
+}
 
 .meeting-modal .form-text,
-.minutes-modal .form-text { display:block; color:#6b7280; margin-top:6px; font-size:0.92rem; }
+.minutes-modal .form-text {
+  display: block;
+  color: #6b7280;
+  margin-top: 6px;
+  font-size: 0.92rem;
+}
 
 .meeting-modal .meeting-form .form-text,
 .minutes-modal .minutes-form .form-text {
@@ -1522,18 +2044,28 @@ export default {
 }
 
 @media (max-width: 767px) {
+
   .meeting-modal .meeting-form,
   .minutes-modal .minutes-form {
     gap: 10px;
   }
+
+  .meeting-modal .meeting-form .small-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
+
 /* Footer buttons: make both floating buttons equal and aligned with documents modal */
-.meeting-modal .modal-actions-wrapper { padding-right: 48px !important; justify-content: flex-end !important; }
-.meeting-modal .modal-actions-wrapper > .floating-action,
-.meeting-modal .modal-actions-wrapper > .floating-action + .floating-action,
-.meeting-modal .modal-footer .d-flex.justify-content-end > * {
+.meeting-modal .modal-actions-wrapper {
+  padding-right: 48px !important;
+  justify-content: flex-end !important;
+}
+
+.meeting-modal .modal-actions-wrapper>.floating-action,
+.meeting-modal .modal-actions-wrapper>.floating-action+.floating-action,
+.meeting-modal .modal-footer .d-flex.justify-content-end>* {
   transform: translateY(-8px) scale(1) !important;
-  box-shadow: 0 8px 20px rgba(15,23,42,0.12) !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12) !important;
   position: relative !important;
   z-index: 11000 !important;
   padding: 8px 14px !important;
@@ -1541,21 +2073,40 @@ export default {
   min-width: 110px !important;
   border-radius: 8px !important;
 }
-.meeting-modal .btn-save { min-width: 110px !important; }
+
+.meeting-modal .btn-save {
+  min-width: 110px !important;
+}
 </style>
 
 <style>
 /* Global modal footer/button + required asterisk rules (apply to teleported modals) */
+.meeting-modal,
+.minutes-modal {
+  --am-bg: #fffaf2;
+  --am-surface: #ffffff;
+  --am-border: #eadfce;
+  --am-text: #1f2937;
+  --am-muted: #6b7280;
+  --am-accent: #8b1212;
+  --am-gold: #c59b3a;
+  --am-accent-ring: rgba(139, 18, 18, 0.18);
+}
+
 .meeting-modal .modal-actions-wrapper,
-.minutes-modal .modal-actions-wrapper { padding-right: 48px !important; justify-content: flex-end !important; }
-.meeting-modal .modal-actions-wrapper > .floating-action,
-.minutes-modal .modal-actions-wrapper > .floating-action,
-.meeting-modal .modal-actions-wrapper > .floating-action + .floating-action,
-.minutes-modal .modal-actions-wrapper > .floating-action + .floating-action,
-.meeting-modal .modal-footer .d-flex.justify-content-end > *,
-.minutes-modal .modal-footer .d-flex.justify-content-end > * {
+.minutes-modal .modal-actions-wrapper {
+  padding-right: 48px !important;
+  justify-content: flex-end !important;
+}
+
+.meeting-modal .modal-actions-wrapper>.floating-action,
+.minutes-modal .modal-actions-wrapper>.floating-action,
+.meeting-modal .modal-actions-wrapper>.floating-action+.floating-action,
+.minutes-modal .modal-actions-wrapper>.floating-action+.floating-action,
+.meeting-modal .modal-footer .d-flex.justify-content-end>*,
+.minutes-modal .modal-footer .d-flex.justify-content-end>* {
   transform: translateY(-8px) !important;
-  box-shadow: 0 8px 20px rgba(15,23,42,0.12) !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12) !important;
   position: relative !important;
   z-index: 11000 !important;
   padding: 8px 14px !important;
@@ -1563,8 +2114,78 @@ export default {
   min-width: 110px !important;
   border-radius: 8px !important;
 }
+
 .meeting-modal .btn-save,
-.minutes-modal .btn-save { min-width: 110px !important; }
+.minutes-modal .btn-save {
+  min-width: 110px !important;
+}
+
 .meeting-modal .required,
-.minutes-modal .required { color: #e11d48 !important; margin-left: 0; }
+.minutes-modal .required {
+  color: #e11d48 !important;
+  margin-left: 0;
+}
+
+.meeting-modal .input-icon__wrap,
+.minutes-modal .input-icon__wrap {
+  display: flex;
+  align-items: stretch;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: #ffffff;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+}
+
+.meeting-modal .input-icon__control,
+.minutes-modal .input-icon__control {
+  flex: 1;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: 1.05rem;
+}
+
+.meeting-modal .input-icon__suffix,
+.minutes-modal .input-icon__suffix {
+  width: 52px;
+  border: 0;
+  border-left: 1px solid rgba(148, 163, 184, 0.22);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0;
+  cursor: pointer;
+}
+
+.meeting-modal .input-icon__wrap[data-tone="primary"] .input-icon__suffix,
+.minutes-modal .input-icon__wrap[data-tone="primary"] .input-icon__suffix {
+  background: linear-gradient(135deg, var(--am-accent), var(--am-gold));
+}
+
+.meeting-modal .input-icon__wrap[data-tone="info"] .input-icon__suffix,
+.minutes-modal .input-icon__wrap[data-tone="info"] .input-icon__suffix {
+  background: linear-gradient(135deg, var(--am-gold), var(--am-accent));
+}
+
+.meeting-modal .input-icon__wrap[data-tone="primary"],
+.minutes-modal .input-icon__wrap[data-tone="primary"] {
+  border-color: rgba(197, 155, 58, 0.32);
+}
+
+.meeting-modal .input-icon__wrap[data-tone="info"],
+.minutes-modal .input-icon__wrap[data-tone="info"] {
+  border-color: rgba(139, 18, 18, 0.22);
+}
+
+.meeting-modal .input-icon__suffix:hover,
+.minutes-modal .input-icon__suffix:hover {
+  filter: brightness(1.03);
+}
+
+.meeting-modal .input-icon__ic,
+.minutes-modal .input-icon__ic {
+  opacity: 0.88;
+}
 </style>

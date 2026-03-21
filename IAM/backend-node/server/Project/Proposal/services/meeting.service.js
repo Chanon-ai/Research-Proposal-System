@@ -58,6 +58,10 @@ async function resolveMeetingParticipants(proposalIds = [], participantIds = [])
 
 function mapMeeting(row) {
   const meeting = row && row.toObject ? row.toObject() : { ...(row || {}) };
+  const normalizedVideoLink = meeting.videoLink ? String(meeting.videoLink).trim() : '';
+  const normalizedLocation = meeting.location ? String(meeting.location).trim() : '';
+  const locationLooksOnline = /online|zoom|teams|meet|webex/i.test(normalizedLocation) || /^https?:\/\//i.test(normalizedLocation);
+  const inferredType = (normalizedVideoLink || locationLooksOnline) ? 'online' : 'onsite';
   return {
     _id: meeting._id,
     title: meeting.title || '',
@@ -66,6 +70,7 @@ function mapMeeting(row) {
     endTime: meeting.endTime || '',
     location: meeting.location || '',
     videoLink: meeting.videoLink || '',
+    meetingType: meeting.meetingType || inferredType,
     agenda: meeting.agenda || '',
     status: meeting.status || 'scheduled',
     proposalIds: Array.isArray(meeting.proposalIds) ? meeting.proposalIds.map(item => String(item)) : [],
@@ -76,6 +81,15 @@ function mapMeeting(row) {
     createdAt: meeting.createdAt || null,
     updatedAt: meeting.updatedAt || null
   };
+}
+
+function normalizeMeetingType(value, meeting) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'online' || raw === 'onsite') return raw;
+  const videoLink = meeting && meeting.videoLink ? String(meeting.videoLink).trim() : '';
+  const location = meeting && meeting.location ? String(meeting.location).trim() : '';
+  const locationLooksOnline = /online|zoom|teams|meet|webex/i.test(location) || /^https?:\/\//i.test(location);
+  return (videoLink || locationLooksOnline) ? 'online' : 'onsite';
 }
 
 async function listMeetings(query = {}, user) {
@@ -250,6 +264,7 @@ async function createMeeting(payload = {}, user) {
     endTime: payload.endTime || '',
     location: payload.location || '',
     videoLink: payload.videoLink || '',
+    meetingType: normalizeMeetingType(payload.meetingType, payload),
     agenda: payload.agenda || '',
     status: payload.status || 'scheduled',
     proposalIds,
@@ -307,6 +322,7 @@ async function updateMeeting(id, payload = {}, user) {
   meeting.endTime = payload.endTime !== undefined ? payload.endTime : meeting.endTime;
   meeting.location = payload.location !== undefined ? payload.location : meeting.location;
   meeting.videoLink = payload.videoLink !== undefined ? payload.videoLink : meeting.videoLink;
+  meeting.meetingType = payload.meetingType !== undefined ? normalizeMeetingType(payload.meetingType, payload) : normalizeMeetingType(meeting.meetingType, meeting);
   meeting.agenda = payload.agenda !== undefined ? payload.agenda : meeting.agenda;
   meeting.status = payload.status !== undefined ? payload.status : meeting.status;
 
