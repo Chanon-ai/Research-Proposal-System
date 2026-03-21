@@ -297,7 +297,8 @@ export default {
       const user = this.$store && this.$store.getters
         ? this.$store.getters['Authentication/currentUser']
         : null;
-      return user && user._id ? String(user._id) : null;
+      const userId = user && (user._id || user.id);
+      return userId ? String(userId) : null;
     },
 
     proposals() {
@@ -367,16 +368,24 @@ export default {
       try {
         const response = await Service.research.list();
         const payload = response && response.data ? response.data : null;
-        const data = Array.isArray(payload)
-          ? payload
-          : (payload && payload.data && Array.isArray(payload.data.items)
-            ? payload.data.items
-            : (payload && payload.data && Array.isArray(payload.data)
-              ? payload.data
-              : []));
+        let data = [];
+        if (Array.isArray(payload)) {
+          data = payload;
+        } else if (payload && payload.data) {
+          const wrapped = payload.data;
+          if (Array.isArray(wrapped.items)) {
+            data = wrapped.items;
+          } else if (Array.isArray(wrapped.proposals)) {
+            data = wrapped.proposals;
+          } else if (Array.isArray(wrapped.data)) {
+            data = wrapped.data;
+          } else if (Array.isArray(wrapped)) {
+            data = wrapped;
+          }
+        }
 
         const mine = this.currentUserId
-          ? data.filter(item => String(item && item.applicantUserId) === this.currentUserId)
+          ? data.filter(item => this.extractApplicantUserId(item) === this.currentUserId)
           : data;
 
         const deduped = Array.from(
@@ -398,13 +407,29 @@ export default {
       this.fetchResearch();
     },
 
+    extractApplicantUserId(item) {
+      const applicant = item && item.applicantUserId ? item.applicantUserId : null;
+      if (!applicant) return '';
+      if (typeof applicant === 'string' || typeof applicant === 'number') {
+        return String(applicant);
+      }
+      if (typeof applicant === 'object') {
+        if (applicant._id) return String(applicant._id);
+        if (applicant.id) return String(applicant.id);
+      }
+      return '';
+    },
+
     mapItem(item) {
+      const applicant = item && item.applicantUserId && typeof item.applicantUserId === 'object'
+        ? item.applicantUserId
+        : null;
       return {
         _id: item._id,
         proposalCode: item.proposalCode || '-',
         projectTitleTh: item.projectTitleTh || '',
         projectTitleEn: item.projectTitleEn || '',
-        projectLeaderName: item.projectLeaderName || '-',
+        projectLeaderName: item.projectLeaderName || (applicant && applicant.fullName ? applicant.fullName : '-'),
         submittedAt: item.submittedAt,
         updatedAt: item.updatedAt,
         createdAt: item.createdAt,

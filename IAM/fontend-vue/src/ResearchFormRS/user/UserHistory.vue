@@ -75,7 +75,8 @@ export default {
       const user = this.$store && this.$store.getters
         ? this.$store.getters['Authentication/currentUser']
         : null
-      return user && user._id ? String(user._id) : null
+      const userId = user && (user._id || user.id)
+      return userId ? String(userId) : null
     },
     filteredProjects() {
       if (this.activeFilter === 'all') return this.projectHistory
@@ -96,14 +97,24 @@ export default {
       try {
         const res = await Service.proposal.list()
         const payload = res && res.data ? res.data : null
-        const rows = Array.isArray(payload)
-          ? payload
-          : (payload && payload.data && Array.isArray(payload.data.items)
-            ? payload.data.items
-            : (payload && payload.data && Array.isArray(payload.data) ? payload.data : []))
+        let rows = []
+        if (Array.isArray(payload)) {
+          rows = payload
+        } else if (payload && payload.data) {
+          const wrapped = payload.data
+          if (Array.isArray(wrapped.items)) {
+            rows = wrapped.items
+          } else if (Array.isArray(wrapped.proposals)) {
+            rows = wrapped.proposals
+          } else if (Array.isArray(wrapped.data)) {
+            rows = wrapped.data
+          } else if (Array.isArray(wrapped)) {
+            rows = wrapped
+          }
+        }
 
         const mine = this.currentUserId
-          ? rows.filter(r => String(r && r.applicantUserId) === this.currentUserId)
+          ? rows.filter(r => this.extractApplicantUserId(r) === this.currentUserId)
           : rows
 
         const deduped = Array.from(
@@ -118,6 +129,19 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+
+    extractApplicantUserId (item) {
+      const applicant = item && item.applicantUserId ? item.applicantUserId : null
+      if (!applicant) return ''
+      if (typeof applicant === 'string' || typeof applicant === 'number') {
+        return String(applicant)
+      }
+      if (typeof applicant === 'object') {
+        if (applicant._id) return String(applicant._id)
+        if (applicant.id) return String(applicant.id)
+      }
+      return ''
     },
 
     toHistoryItem (item) {
