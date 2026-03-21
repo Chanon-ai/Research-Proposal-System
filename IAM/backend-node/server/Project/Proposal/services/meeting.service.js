@@ -92,6 +92,18 @@ function normalizeMeetingType(value, meeting) {
   return (videoLink || locationLooksOnline) ? 'online' : 'onsite';
 }
 
+function validateMeetingTypeRequirements({ meetingType, location, videoLink }) {
+  const type = String(meetingType || '').trim().toLowerCase();
+  const loc = location ? String(location).trim() : '';
+  const link = videoLink ? String(videoLink).trim() : '';
+  if (type === 'onsite' && !loc) {
+    throw new Error('การประชุมแบบออนไซต์ต้องระบุสถานที่');
+  }
+  if (type === 'online' && !link) {
+    throw new Error('การประชุมแบบออนไลน์ต้องระบุลิงก์วิดีโอประชุม');
+  }
+}
+
 async function listMeetings(query = {}, user) {
   const filter = {
     isDeleted: { $ne: true }
@@ -256,6 +268,8 @@ async function createMeeting(payload = {}, user) {
   const proposalIds = normalizeIds(payload.proposalIds);
   const providedParticipantIds = normalizeIds(payload.participantIds);
   const { participantIds } = await resolveMeetingParticipants(proposalIds, providedParticipantIds);
+  const meetingType = normalizeMeetingType(payload.meetingType, payload);
+  validateMeetingTypeRequirements({ meetingType, location: payload.location, videoLink: payload.videoLink });
 
   const meeting = new Meeting({
     title: payload.title,
@@ -264,7 +278,7 @@ async function createMeeting(payload = {}, user) {
     endTime: payload.endTime || '',
     location: payload.location || '',
     videoLink: payload.videoLink || '',
-    meetingType: normalizeMeetingType(payload.meetingType, payload),
+    meetingType,
     agenda: payload.agenda || '',
     status: payload.status || 'scheduled',
     proposalIds,
@@ -323,6 +337,7 @@ async function updateMeeting(id, payload = {}, user) {
   meeting.location = payload.location !== undefined ? payload.location : meeting.location;
   meeting.videoLink = payload.videoLink !== undefined ? payload.videoLink : meeting.videoLink;
   meeting.meetingType = payload.meetingType !== undefined ? normalizeMeetingType(payload.meetingType, payload) : normalizeMeetingType(meeting.meetingType, meeting);
+  validateMeetingTypeRequirements({ meetingType: meeting.meetingType, location: meeting.location, videoLink: meeting.videoLink });
   meeting.agenda = payload.agenda !== undefined ? payload.agenda : meeting.agenda;
   meeting.status = payload.status !== undefined ? payload.status : meeting.status;
 

@@ -3,9 +3,9 @@
     <section class="meetings-hero">
       <div class="meetings-hero__content">
         <div class="meetings-hero__eyebrow">Meeting Management</div>
-        <h2 class="meetings-hero__title">จัดการการประชุมให้เป็นระเบียบ ดูง่าย และพร้อมติดตามผล</h2>
+        <h2 class="meetings-hero__title">จัดการการประชุม พร้อมติดตามผลได้ทันที</h2>
         <p class="meetings-hero__subtitle mb-0">
-          รวมกำหนดการประชุม สถานะ และบันทึกผลไว้ในหน้าเดียว เพื่อให้ทีมแอดมินทำงานต่อเนื่องได้เร็วขึ้น
+          รวมกำหนดการ ผู้เข้าร่วม สถานะ และบันทึกผลไว้ในหน้าเดียว
         </p>
       </div>
       <div class="meetings-hero__action">
@@ -159,12 +159,12 @@
       </div>
     </div>
 
-    <CModal :show.sync="showMeetingModal" :close-on-backdrop="false" centered size="xl" class="meeting-modal"
+    <CModal :show.sync="showMeetingModal" :close-on-backdrop="false" centered size="lg" class="meeting-modal"
       :title="isEditMode ? 'แก้ไขการประชุม' : 'สร้างการประชุมใหม่'">
       <template #body-wrapper>
         <div class="meeting-form">
           <div class="field full-field">
-            <label class="form-label">โครงการที่เกี่ยวข้อง</label>
+            <label class="form-label mt-3">โครงการที่เกี่ยวข้อง <span class="required">*</span></label>
             <multiselect v-model="selectedProposalOption" :options="proposalOptions" :searchable="true"
               :clear-on-select="false" :close-on-select="true" :preserve-search="true" :allow-empty="true"
               :loading="proposalOptionsLoading" label="searchText" track-by="_id"
@@ -200,7 +200,7 @@
           </div>
           <div class="field full-field">
             <label class="form-label">ชื่อการประชุม <span class="required">*</span></label>
-            <CInput class="full" v-model="meetingForm.title" />
+            <CInput class="full" placeholder="กรอกชื่อการประชุม" v-model="meetingForm.title" />
           </div>
 
           <div class="small-row">
@@ -229,14 +229,15 @@
             <div class="field small-field">
               <label class="form-label">เวลาเริ่ม <span class="required">*</span></label>
               <div class="input-icon__wrap" data-tone="info">
-                <button
+                <input
                   ref="startTimeTrigger"
-                  type="button"
                   class="form-control input-icon__control time-trigger"
+                  type="text"
+                  :value="meetingForm.startTime ? formatTime12h(meetingForm.startTime) : ''"
+                  placeholder="เลือกเวลาเริ่ม"
+                  readonly
                   @click="toggleTimeDropdown('start')"
-                >
-                  {{ meetingForm.startTime ? formatTime12h(meetingForm.startTime) : 'เลือกเวลาเริ่ม' }}
-                </button>
+                />
                 <button type="button" class="input-icon__suffix" @mousedown.prevent
                   @click="toggleTimeDropdown('start')">
                   <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
@@ -246,14 +247,15 @@
             <div class="field small-field">
               <label class="form-label">เวลาสิ้นสุด</label>
               <div class="input-icon__wrap" data-tone="info">
-                <button
+                <input
                   ref="endTimeTrigger"
-                  type="button"
                   class="form-control input-icon__control time-trigger"
+                  type="text"
+                  :value="meetingForm.endTime ? formatTime12h(meetingForm.endTime) : ''"
+                  placeholder="-"
+                  readonly
                   @click="toggleTimeDropdown('end')"
-                >
-                  {{ meetingForm.endTime ? formatTime12h(meetingForm.endTime) : '-' }}
-                </button>
+                />
                 <button type="button" class="input-icon__suffix" @mousedown.prevent
                   @click="toggleTimeDropdown('end')">
                   <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
@@ -273,16 +275,16 @@
               <label class="meeting-type-toggle__label" for="meeting-type-onsite">ออนไซต์</label>
             </div>
           </div>
-
+ 
           <div class="field full-field">
-            <label class="form-label">สถานที่</label>
-            <input type="text" class="form-control full" v-model="meetingForm.location"
+            <label class="form-label">สถานที่ <span v-if="meetingForm.meetingType === 'onsite'" class="required">*</span></label>
+            <input type="text" class="form-control full"  v-model="meetingForm.location"
               :disabled="meetingForm.meetingType === 'online'"
-              :placeholder="meetingForm.meetingType === 'online' ? 'ออนไลน์: ไม่ต้องกรอกสถานที่' : ''" />
+              :placeholder="meetingForm.meetingType === 'online' ? 'ออนไลน์: ไม่ต้องกรอกสถานที่' : 'เช่น C1 101'" />
           </div>
 
           <div class="field full-field">
-            <label class="form-label">ลิงก์วิดีโอประชุม</label>
+            <label class="form-label">ลิงก์วิดีโอประชุม <span v-if="meetingForm.meetingType === 'online'" class="required">*</span></label>
             <CInput class="full" type="url" placeholder="เช่น https://meet.google.com/..."
               v-model="meetingForm.videoLink" />
           </div>
@@ -292,8 +294,6 @@
             <CTextarea class="full" rows="4" placeholder="ใส่หัวข้อย่อยหรือประเด็นหลักที่ต้องหารือ (ถ้ามี)" v-model="meetingForm.agenda" />
           </div>
 
-          <CSelect class="full" label="สถานะ" :value="meetingForm.status" :options="statusSelectOptions"
-            @change="meetingForm.status = getSelectValue($event)" />
         </div>
       </template>
 
@@ -1065,6 +1065,21 @@ export default {
         await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'ชื่อการประชุม วันที่ประชุม และเวลาเริ่ม เป็นข้อมูลบังคับ' })
         return
       }
+
+      const meetingType = this.meetingForm && this.meetingForm.meetingType ? String(this.meetingForm.meetingType) : 'online'
+      const location = this.meetingForm && this.meetingForm.location ? String(this.meetingForm.location).trim() : ''
+      const videoLink = this.meetingForm && this.meetingForm.videoLink ? String(this.meetingForm.videoLink).trim() : ''
+
+      if (meetingType === 'onsite' && !location) {
+        await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'การประชุมแบบออนไซต์ต้องระบุสถานที่' })
+        return
+      }
+
+      if (meetingType === 'online' && !videoLink) {
+        await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'การประชุมแบบออนไลน์ต้องระบุลิงก์วิดีโอประชุม' })
+        return
+      }
+
       if (this.enforceMinDateTime) {
         const startTs = this.getMeetingStartTimestamp({
           meetingDate: this.meetingForm.meetingDate,
@@ -1097,8 +1112,8 @@ export default {
           startTime: this.meetingForm.startTime,
           endTime: this.meetingForm.endTime,
           meetingType: this.meetingForm.meetingType,
-          location: this.meetingForm.meetingType === 'online' ? '' : this.meetingForm.location,
-          videoLink: this.meetingForm.videoLink,
+          location: meetingType === 'online' ? '' : location,
+          videoLink: videoLink,
           proposalIds,
           participantIds,
           agenda: this.meetingForm.agenda,
@@ -1228,16 +1243,12 @@ export default {
   --am-accent: #8b1212;
   /* deep red */
   --am-gold: #c59b3a;
+  --am-gold-rgb: 197, 155, 58;
   --am-accent-ring: rgba(139, 18, 18, 0.18);
 
   width: 100%;
   padding: 22px 22px 28px;
-  background:
-    radial-gradient(1100px 460px at 12% -10%, rgba(139, 18, 18, 0.12), transparent 62%),
-    radial-gradient(980px 420px at 92% 4%, rgba(197, 155, 58, 0.12), transparent 58%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.00) 58%),
-    repeating-linear-gradient(0deg, rgba(31, 41, 55, 0.012) 0, rgba(31, 41, 55, 0.012) 1px, transparent 1px, transparent 22px);
-  color: var(--am-text);
+ 
 }
 
 .meetings-hero {
@@ -1464,7 +1475,7 @@ export default {
   display: block;
   height: 480px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 22px;
   padding: 0;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   overflow: visible;
@@ -1853,7 +1864,7 @@ export default {
   align-items: stretch;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid rgba(var(--am-gold-rgb), 0.55);
   background: #ffffff;
   box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
 }
@@ -1863,13 +1874,18 @@ export default {
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  font-size: 1.05rem;
+  font-size: 1rem;
+  background: transparent !important;
+}
+
+.input-icon__control[readonly] {
+  cursor: pointer;
 }
 
 .input-icon__suffix {
   width: 52px;
   border: 0;
-  border-left: 1px solid rgba(148, 163, 184, 0.22);
+  border-left: 1px solid rgba(var(--am-gold-rgb), 0.55);
   color: #ffffff;
   display: inline-flex;
   align-items: center;
@@ -1887,11 +1903,11 @@ export default {
 }
 
 .input-icon__wrap[data-tone="primary"] {
-  border-color: rgba(197, 155, 58, 0.32);
+  border-color: rgba(var(--am-gold-rgb), 0.65);
 }
 
 .input-icon__wrap[data-tone="info"] {
-  border-color: rgba(139, 18, 18, 0.22);
+  border-color: rgba(var(--am-gold-rgb), 0.65);
 }
 
 .input-icon__suffix:hover {
@@ -1913,26 +1929,21 @@ export default {
 .minutes-modal input,
 .minutes-modal textarea,
 .minutes-modal select {
-  min-height: 44px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  min-height: var(--am-control-height);
+  padding: var(--am-control-pad-y) var(--am-control-pad-x);
+  border-radius: var(--am-radius);
 }
 
 .time-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  text-align: left;
-  background: transparent;
   cursor: pointer;
-  font-size: 1.05rem;
-  padding: 10px 12px;
-  min-height: 44px;
 }
 
 .time-trigger:disabled {
   cursor: not-allowed;
+}
+
+.time-trigger[readonly] {
+  cursor: pointer;
 }
 
 .time-dropdown__backdrop {
@@ -1959,7 +1970,7 @@ export default {
   text-align: left;
   padding: 10px 12px;
   border-radius: 10px;
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1.25;
   color: #0f172a;
   cursor: pointer;
@@ -1996,6 +2007,10 @@ export default {
   overflow: hidden;
 }
 
+.meeting-modal .modal-dialog {
+  max-width: 1400px;
+}
+
 .meeting-modal .meeting-form,
 .minutes-modal .minutes-form {
   max-width: 100%;
@@ -2004,6 +2019,15 @@ export default {
   padding-left: 12px;
   padding-right: 12px;
   box-sizing: border-box;
+}
+
+.meeting-modal .modal-body {
+  padding: 18px 22px !important;
+}
+
+.meeting-modal .meeting-form {
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 .meeting-modal .form-label,
@@ -2090,7 +2114,42 @@ export default {
   --am-muted: #6b7280;
   --am-accent: #8b1212;
   --am-gold: #c59b3a;
+  --am-gold-rgb: 197, 155, 58;
   --am-accent-ring: rgba(139, 18, 18, 0.18);
+  --am-control-font: 0.95rem;
+  --am-control-line: 1.35;
+  --am-control-weight: 500;
+  --am-control-height: 42px;
+  --am-control-pad-y: 9px;
+  --am-control-pad-x: 12px;
+  --am-icon-width: 50px;
+  --am-radius: 11px;
+  --am-placeholder: rgba(100, 116, 139, 0.92);
+}
+
+.meeting-modal input,
+.meeting-modal select,
+.minutes-modal input,
+.minutes-modal select {
+  height: var(--am-control-height) !important;
+  min-height: var(--am-control-height) !important;
+  padding: var(--am-control-pad-y) var(--am-control-pad-x) !important;
+  border-radius: var(--am-radius) !important;
+  font-size: var(--am-control-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-control-weight) !important;
+  box-sizing: border-box !important;
+}
+
+.meeting-modal textarea,
+.minutes-modal textarea {
+  min-height: var(--am-control-height) !important;
+  padding: var(--am-control-pad-y) var(--am-control-pad-x) !important;
+  border-radius: var(--am-radius) !important;
+  font-size: var(--am-control-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-control-weight) !important;
+  box-sizing: border-box !important;
 }
 
 .meeting-modal .modal-actions-wrapper,
@@ -2120,6 +2179,60 @@ export default {
   min-width: 110px !important;
 }
 
+.meeting-modal .modal-header,
+.minutes-modal .modal-header {
+  background: linear-gradient(135deg, var(--am-accent) 0%, var(--am-gold) 115%);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+.meeting-modal .modal-content,
+.minutes-modal .modal-content {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.meeting-modal .modal-header .modal-title,
+.minutes-modal .modal-header .modal-title {
+  color: #ffffff !important;
+  font-weight: 900;
+}
+
+.meeting-modal .close,
+.minutes-modal .close,
+.meeting-modal .modal-header .close,
+.minutes-modal .modal-header .close,
+.meeting-modal .modal-header button.close,
+.minutes-modal .modal-header button.close {
+  color: #ffffff !important;
+  opacity: 0.92 !important;
+  text-shadow: none !important;
+}
+
+.meeting-modal .close:hover,
+.minutes-modal .close:hover,
+.meeting-modal .modal-header button.close:hover,
+.minutes-modal .modal-header button.close:hover {
+  opacity: 1 !important;
+}
+
+.meeting-modal .btn-save,
+.minutes-modal .btn-save {
+  background: linear-gradient(135deg, var(--am-accent) 0%, var(--am-gold) 115%) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+
+.meeting-modal .btn-save:hover,
+.minutes-modal .btn-save:hover {
+  filter: brightness(1.04);
+}
+
+.meeting-modal .floating-action:not(.btn-save),
+.minutes-modal .floating-action:not(.btn-save) {
+  border-color: rgba(139, 18, 18, 0.24) !important;
+}
+
 .meeting-modal .required,
 .minutes-modal .required {
   color: #e11d48 !important;
@@ -2130,9 +2243,10 @@ export default {
 .minutes-modal .input-icon__wrap {
   display: flex;
   align-items: stretch;
-  border-radius: 12px;
+  min-height: var(--am-control-height);
+  border-radius: var(--am-radius);
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid rgba(var(--am-gold-rgb), 0.55);
   background: #ffffff;
   box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
 }
@@ -2143,14 +2257,20 @@ export default {
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  font-size: 1.05rem;
+  font-size: 1rem;
+  background: transparent !important;
+}
+
+.meeting-modal .input-icon__control[readonly],
+.minutes-modal .input-icon__control[readonly] {
+  cursor: pointer;
 }
 
 .meeting-modal .input-icon__suffix,
 .minutes-modal .input-icon__suffix {
-  width: 52px;
+  width: var(--am-icon-width);
   border: 0;
-  border-left: 1px solid rgba(148, 163, 184, 0.22);
+  border-left: 1px solid rgba(var(--am-gold-rgb), 0.55);
   color: #ffffff;
   display: inline-flex;
   align-items: center;
@@ -2171,12 +2291,112 @@ export default {
 
 .meeting-modal .input-icon__wrap[data-tone="primary"],
 .minutes-modal .input-icon__wrap[data-tone="primary"] {
-  border-color: rgba(197, 155, 58, 0.32);
+  border-color: rgba(var(--am-gold-rgb), 0.65);
 }
 
 .meeting-modal .input-icon__wrap[data-tone="info"],
 .minutes-modal .input-icon__wrap[data-tone="info"] {
-  border-color: rgba(139, 18, 18, 0.22);
+  border-color: rgba(var(--am-gold-rgb), 0.65);
+}
+
+.meeting-modal .form-control,
+.minutes-modal .form-control,
+.meeting-modal input.form-control,
+.minutes-modal input.form-control,
+.meeting-modal textarea.form-control,
+.minutes-modal textarea.form-control,
+.meeting-modal select.form-control,
+.minutes-modal select.form-control {
+  border-color: rgba(var(--am-gold-rgb), 0.55) !important;
+}
+
+.meeting-modal .form-control:focus,
+.minutes-modal .form-control:focus,
+.meeting-modal input.form-control:focus,
+.minutes-modal input.form-control:focus,
+.meeting-modal textarea.form-control:focus,
+.minutes-modal textarea.form-control:focus,
+.meeting-modal select.form-control:focus,
+.minutes-modal select.form-control:focus {
+  border-color: rgba(var(--am-gold-rgb), 0.88) !important;
+  box-shadow: 0 0 0 3px rgba(var(--am-gold-rgb), 0.18) !important;
+}
+
+.meeting-modal .form-control::placeholder,
+.minutes-modal .form-control::placeholder,
+.meeting-modal input.form-control::placeholder,
+.minutes-modal input.form-control::placeholder,
+.meeting-modal textarea.form-control::placeholder,
+.minutes-modal textarea.form-control::placeholder,
+.meeting-modal .input-icon__control::placeholder,
+.minutes-modal .input-icon__control::placeholder {
+  color: var(--am-placeholder) !important;
+}
+
+.meeting-modal .multiselect__placeholder,
+.minutes-modal .multiselect__placeholder {
+  color: var(--am-placeholder) !important;
+}
+
+.meeting-modal .multiselect__tags,
+.minutes-modal .multiselect__tags {
+  min-height: var(--am-control-height) !important;
+  padding: var(--am-control-pad-y) calc(var(--am-icon-width) + var(--am-control-pad-x)) var(--am-control-pad-y) var(--am-control-pad-x) !important;
+  border-color: rgba(var(--am-gold-rgb), 0.55) !important;
+  border-radius: var(--am-radius) !important;
+  color: var(--am-text) !important;
+  background: #ffffff !important;
+  box-sizing: border-box !important;
+}
+
+.meeting-modal .multiselect:not(.multiselect--multiple) .multiselect__tags,
+.minutes-modal .multiselect:not(.multiselect--multiple) .multiselect__tags {
+  height: var(--am-control-height) !important;
+}
+
+.meeting-modal .multiselect,
+.minutes-modal .multiselect {
+  font-size: var(--am-control-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-control-weight) !important;
+}
+
+.meeting-modal .multiselect__single,
+.minutes-modal .multiselect__single,
+.meeting-modal .multiselect__input,
+.minutes-modal .multiselect__input {
+  font-size: inherit !important;
+  line-height: inherit !important;
+  font-weight: inherit !important;
+  color: var(--am-text) !important;
+}
+
+.meeting-modal .multiselect__select,
+.minutes-modal .multiselect__select {
+  width: var(--am-icon-width) !important;
+  height: calc(100% - 2px) !important;
+  top: 1px !important;
+  right: 1px !important;
+  border-left: 1px solid rgba(var(--am-gold-rgb), 0.55) !important;
+  background: linear-gradient(135deg, var(--am-accent), var(--am-gold)) !important;
+  border-radius: 0 calc(var(--am-radius) - 1px) calc(var(--am-radius) - 1px) 0 !important;
+  box-sizing: border-box !important;
+}
+
+.meeting-modal .multiselect__select::before,
+.minutes-modal .multiselect__select::before {
+  border-color: rgba(255, 255, 255, 0.92) transparent transparent !important;
+}
+
+.meeting-modal .multiselect--active .multiselect__select::before,
+.minutes-modal .multiselect--active .multiselect__select::before {
+  border-color: transparent transparent rgba(255, 255, 255, 0.92) !important;
+}
+
+.meeting-modal .multiselect--active .multiselect__tags,
+.minutes-modal .multiselect--active .multiselect__tags {
+  border-color: rgba(var(--am-gold-rgb), 0.88) !important;
+  box-shadow: 0 0 0 3px rgba(var(--am-gold-rgb), 0.18) !important;
 }
 
 .meeting-modal .input-icon__suffix:hover,
