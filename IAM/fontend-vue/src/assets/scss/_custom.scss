@@ -1,1 +1,334 @@
 // Here you can add other styles
+
+// Admin Meetings: meeting/minutes modals are rendered via portal/teleport in some cases.
+// Keep their styling global (bundled in main CSS) to avoid FOUC on hard-refresh.
+.meeting-modal,
+.minutes-modal {
+  --am-bg: #fffaf2;
+  --am-surface: #ffffff;
+  --am-border: #eadfce;
+  --am-text: #1f2937;
+  --am-muted: #6b7280;
+  --am-accent: #8b1212;
+  --am-gold: #c59b3a;
+  --am-gold-rgb: 197, 155, 58;
+  --am-accent-ring: rgba(139, 18, 18, 0.18);
+  --am-control-font: 0.95rem;
+  --am-control-line: 1.35;
+  --am-control-weight: 500;
+  --am-control-height: 42px;
+  --am-control-pad-y: 9px;
+  --am-control-pad-x: 12px;
+  --am-icon-width: 50px;
+  --am-radius: 11px;
+  --am-placeholder: rgba(100, 116, 139, 0.92);
+  --am-placeholder-font: 0.88rem;
+  --am-placeholder-weight: 400;
+}
+
+.meeting-modal input.form-control,
+.meeting-modal select.form-control,
+.minutes-modal input.form-control,
+.minutes-modal select.form-control {
+  height: var(--am-control-height) !important;
+  min-height: var(--am-control-height) !important;
+  padding: var(--am-control-pad-y) var(--am-control-pad-x) !important;
+  border-radius: var(--am-radius) !important;
+  font-size: var(--am-control-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-control-weight) !important;
+  box-sizing: border-box !important;
+}
+
+.meeting-modal textarea.form-control,
+.minutes-modal textarea.form-control {
+  min-height: var(--am-control-height) !important;
+  padding: var(--am-control-pad-y) var(--am-control-pad-x) !important;
+  border-radius: var(--am-radius) !important;
+  font-size: var(--am-control-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-control-weight) !important;
+  box-sizing: border-box !important;
+}
+
+.meeting-modal .modal-actions-wrapper,
+.minutes-modal .modal-actions-wrapper {
+  padding-right: 0 !important;
+  margin-right: -24px !important;
+  justify-content: flex-end !important;
+}
+
+.meeting-modal .modal-actions-wrapper > .floating-action,
+.minutes-modal .modal-actions-wrapper > .floating-action,
+.meeting-modal .modal-actions-wrapper > .floating-action + .floating-action,
+.minutes-modal .modal-actions-wrapper > .floating-action + .floating-action,
+.meeting-modal .modal-footer .d-flex.justify-content-end > *,
+.minutes-modal .modal-footer .d-flex.justify-content-end > * {
+  transform: translateY(-8px) !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12) !important;
+  position: relative !important;
+  z-index: 11000 !important;
+  padding: 8px 14px !important;
+  font-size: 0.9rem !important;
+  min-width: 110px !important;
+  border-radius: 8px !important;
+}
+
+.meeting-modal .btn-save {
+  min-width: 110px !important;
+}
+
+.meeting-modal .btn-cancel,
+.minutes-modal .btn-cancel {
+  background: rgba(var(--am-gold-rgb), 0.18) !important;
+  border: 1px solid rgba(var(--am-gold-rgb), 0.78) !important;
+  color: var(--am-accent) !important;
+}
+
+.meeting-modal .btn-cancel:hover,
+.minutes-modal .btn-cancel:hover {
+  background: rgba(var(--am-gold-rgb), 0.26) !important;
+}
+
+.meeting-modal .btn-save,
+.minutes-modal .btn-save {
+  background: linear-gradient(135deg, var(--am-accent) 0%, var(--am-gold) 115%);
+  border: 0 !important;
+  color: #fff !important;
+  min-width: 110px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+}
+
+.meeting-modal .btn-save:hover,
+.minutes-modal .btn-save:hover {
+  filter: brightness(1.02);
+}
+
+.meeting-modal .btn-save:focus,
+.minutes-modal .btn-save:focus {
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 18px 48px rgba(15, 23, 42, 0.09) !important;
+}
+
+.meeting-modal .required,
+.minutes-modal .required {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.meeting-modal input.form-control::placeholder,
+.meeting-modal textarea.form-control::placeholder,
+.meeting-modal select.form-control::placeholder,
+.meeting-modal .input-icon__control::placeholder,
+.minutes-modal input.form-control::placeholder,
+.minutes-modal textarea.form-control::placeholder,
+.minutes-modal select.form-control::placeholder,
+.minutes-modal .input-icon__control::placeholder {
+  color: var(--am-placeholder) !important;
+  opacity: 1 !important;
+  font-size: var(--am-placeholder-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-placeholder-weight) !important;
+}
+
+// input + icon suffix (calendar/clock)
+.meeting-modal .input-icon__wrap,
+.minutes-modal .input-icon__wrap {
+  display: flex;
+  align-items: stretch;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--am-gold-rgb), 0.55);
+  background: #ffffff;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+}
+
+.meeting-modal .input-icon__control,
+.minutes-modal .input-icon__control {
+  flex: 1;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: 1rem;
+  background: transparent !important;
+}
+
+.meeting-modal .input-icon__control[readonly],
+.minutes-modal .input-icon__control[readonly] {
+  cursor: pointer;
+}
+
+.meeting-modal .input-icon__suffix,
+.minutes-modal .input-icon__suffix {
+  width: 52px;
+  border: 0;
+  border-left: 1px solid rgba(var(--am-gold-rgb), 0.55);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0;
+  cursor: pointer;
+}
+
+.meeting-modal .input-icon__wrap[data-tone="primary"] .input-icon__suffix,
+.minutes-modal .input-icon__wrap[data-tone="primary"] .input-icon__suffix {
+  background: linear-gradient(135deg, var(--am-accent), var(--am-gold));
+}
+
+.meeting-modal .input-icon__wrap[data-tone="info"] .input-icon__suffix,
+.minutes-modal .input-icon__wrap[data-tone="info"] .input-icon__suffix {
+  background: linear-gradient(135deg, var(--am-gold), var(--am-accent));
+}
+
+.meeting-modal .input-icon__suffix:hover,
+.minutes-modal .input-icon__suffix:hover {
+  filter: brightness(1.03);
+}
+
+.meeting-modal .input-icon__suffix:focus,
+.minutes-modal .input-icon__suffix:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--am-accent-ring);
+}
+
+.meeting-modal .input-icon__ic,
+.minutes-modal .input-icon__ic {
+  opacity: 0.88;
+}
+
+// vue-multiselect (project + participants)
+.meeting-modal .multiselect__placeholder,
+.minutes-modal .multiselect__placeholder {
+  color: var(--am-placeholder) !important;
+  opacity: 1 !important;
+  font-size: var(--am-placeholder-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-placeholder-weight) !important;
+}
+
+.meeting-modal .multiselect__input::placeholder,
+.minutes-modal .multiselect__input::placeholder {
+  color: var(--am-placeholder) !important;
+  opacity: 1 !important;
+  font-size: var(--am-placeholder-font) !important;
+  line-height: inherit !important;
+  font-weight: var(--am-placeholder-weight) !important;
+}
+
+.meeting-modal .multiselect__tags,
+.minutes-modal .multiselect__tags {
+  min-height: var(--am-control-height) !important;
+  // Keep the text clear of the right select button without leaving a white gap.
+  padding: var(--am-control-pad-y) calc(var(--am-icon-width) + 2px) var(--am-control-pad-y) var(--am-control-pad-x) !important;
+  border-color: rgba(var(--am-gold-rgb), 0.55) !important;
+  border-radius: var(--am-radius) !important;
+  color: var(--am-text) !important;
+  background: #ffffff !important;
+  background-image: none !important;
+  box-sizing: border-box !important;
+}
+
+.meeting-modal .multiselect:not(.multiselect--multiple) .multiselect__tags,
+.minutes-modal .multiselect:not(.multiselect--multiple) .multiselect__tags {
+  height: var(--am-control-height) !important;
+}
+
+.meeting-modal .multiselect__input,
+.minutes-modal .multiselect__input {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+.meeting-modal .multiselect__single,
+.minutes-modal .multiselect__single {
+  background-image: none !important;
+}
+
+.meeting-modal .multiselect,
+.minutes-modal .multiselect {
+  font-size: var(--am-control-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-control-weight) !important;
+}
+
+.meeting-modal .multiselect__single,
+.minutes-modal .multiselect__single,
+.meeting-modal .multiselect__input,
+.minutes-modal .multiselect__input {
+  font-size: inherit !important;
+  line-height: inherit !important;
+  font-weight: inherit !important;
+  color: var(--am-text) !important;
+}
+
+.meeting-modal .multiselect__select,
+.minutes-modal .multiselect__select {
+  width: var(--am-icon-width) !important;
+  height: calc(100% - 2px) !important;
+  top: 1px !important;
+  right: 1px !important;
+  border-left: 1px solid rgba(var(--am-gold-rgb), 0.55) !important;
+  background: linear-gradient(135deg, var(--am-accent), var(--am-gold)) !important;
+  border-radius: 0 calc(var(--am-radius) - 1px) calc(var(--am-radius) - 1px) 0 !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+}
+
+.meeting-modal .multiselect--active .multiselect__tags,
+.minutes-modal .multiselect--active .multiselect__tags {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-color: rgba(var(--am-gold-rgb), 0.88) !important;
+  box-shadow: 0 0 0 3px rgba(var(--am-gold-rgb), 0.18) !important;
+}
+
+.meeting-modal .multiselect--active .multiselect__select,
+.minutes-modal .multiselect--active .multiselect__select {
+  border-bottom-right-radius: 0 !important;
+}
+
+.meeting-modal .multiselect__content-wrapper,
+.minutes-modal .multiselect__content-wrapper {
+  z-index: 12000 !important;
+  max-height: 260px !important;
+  overflow-y: auto !important;
+  border: 1px solid rgba(var(--am-gold-rgb), 0.55) !important;
+  border-top: 0 !important;
+  border-radius: 0 0 var(--am-radius) var(--am-radius) !important;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14) !important;
+}
+
+.meeting-modal .multiselect__select::before,
+.minutes-modal .multiselect__select::before {
+  content: "" !important;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 6px 6px 0;
+  border-color: rgba(255, 255, 255, 0.92) transparent transparent !important;
+  transition: transform 0.14s ease;
+  transform: translate(-50%, -90%) rotate(0deg);
+  pointer-events: none;
+}
+
+.meeting-modal .multiselect--active .multiselect__select::before,
+.minutes-modal .multiselect--active .multiselect__select::before {
+  transform: translate(-50%, -90%) rotate(180deg);
+}
+
+.meeting-modal .multiselect:not(.multiselect--active) .multiselect__select:active::before,
+.minutes-modal .multiselect:not(.multiselect--active) .multiselect__select:active::before {
+  transform: translate(-50%, -90%) rotate(180deg);
+}
+
+.meeting-modal .multiselect.multiselect--active .multiselect__select:active::before,
+.minutes-modal .multiselect.multiselect--active .multiselect__select:active::before {
+  transform: translate(-50%, -90%) rotate(0deg);
+}

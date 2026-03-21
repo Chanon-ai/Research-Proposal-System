@@ -86,29 +86,64 @@
           @click="selectMeetingForActions(meeting)" @keydown.enter.prevent="selectMeetingForActions(meeting)"
           @keydown.space.prevent="selectMeetingForActions(meeting)" role="button" tabindex="0">
           <div class="meeting-card__left-bar" aria-hidden="true"></div>
-          <div class="meeting-card__surface">
-            <div class="meeting-card__top">
+          <div class="meeting-card__surface ">
+            <div class="meeting-card__top mt-2 ">
               <CBadge class="meeting-card__badge" :color="getStatusMeta(meeting.status).color">{{
                 getStatusMeta(meeting.status).label }}</CBadge>
               <span class="meeting-card__participant-pill">
                 <CIcon name="cil-people" width="16" class="meeting-card__participant-ic" aria-hidden="true" />
-                {{ Array.isArray(meeting.participantIds) ? meeting.participantIds.length : 0 }} ผู้เข้าร่วม
+                <span class="meeting-card__participant-text">
+                  {{ Array.isArray(meeting.participantIds) ? meeting.participantIds.length : 0 }} ผู้เข้าร่วม
+                </span>
               </span>
             </div>
 
             <div class="meeting-card__content">
               <div class="meeting-card__body">
-                <h5 class="meeting-card__title">{{ meeting.title || '-' }}</h5>
+                <div class="meeting-card__title-wrap">
+                  <h5 class="meeting-card__title" :aria-label="meeting.title || '-'" tabindex="0"
+                    @mouseenter="maybeOpenTitleTooltip($event, meeting)" @mouseleave="closeTitleTooltip()"
+                    @focus="maybeOpenTitleTooltip($event, meeting)" @blur="closeTitleTooltip()"
+                    @click.stop="toggleTitleTooltip($event, meeting)">
+                    {{ meeting.title || '-' }}
+                  </h5>
+                  <div v-if="isTitleTooltipOpen(meeting)" class="meeting-card__title-tooltip" role="tooltip">
+                    {{ meeting.title || '-' }}
+                  </div>
+                </div>
                 <div class="meeting-card__meta">
-                  <CWidgetIcon class="meeting-card__meta-widget" :header="formatDate(meeting.meetingDate)"
-                    text="วันที่ประชุม" color="gradient-primary" :icon-padding="false">
-                    <CIcon name="cil-calendar" width="24" />
-                  </CWidgetIcon>
-                  <CWidgetIcon class="meeting-card__meta-widget"
-                    :header="`${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`" text="เวลา"
-                    color="gradient-info" :icon-padding="false">
-                    <CIcon name="cil-clock" width="24" />
-                  </CWidgetIcon>
+                  <div class="meeting-card__meta-item" tabindex="0"
+                    @mouseenter="maybeOpenMetaTooltip($event, `${meeting._id}-date`, formatDate(meeting.meetingDate))"
+                    @mouseleave="closeMetaTooltip()"
+                    @focus="maybeOpenMetaTooltip($event, `${meeting._id}-date`, formatDate(meeting.meetingDate))"
+                    @blur="closeMetaTooltip()"
+                    @click.stop="toggleMetaTooltip($event, `${meeting._id}-date`, formatDate(meeting.meetingDate))">
+                    <CWidgetIcon class="meeting-card__meta-widget" :header="formatDate(meeting.meetingDate)"
+                      text="วันที่" color="gradient-primary" :icon-padding="false">
+                      <CIcon name="cil-calendar" width="24" />
+                    </CWidgetIcon>
+                    <div v-if="isMetaTooltipOpen(`${meeting._id}-date`)" class="meeting-card__meta-tooltip"
+                      role="tooltip">
+                      {{ metaTooltip.text }}
+                    </div>
+                  </div>
+
+                  <div class="meeting-card__meta-item" tabindex="0"
+                    @mouseenter="maybeOpenMetaTooltip($event, `${meeting._id}-time`, `${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)"
+                    @mouseleave="closeMetaTooltip()"
+                    @focus="maybeOpenMetaTooltip($event, `${meeting._id}-time`, `${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)"
+                    @blur="closeMetaTooltip()"
+                    @click.stop="toggleMetaTooltip($event, `${meeting._id}-time`, `${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)">
+                    <CWidgetIcon class="meeting-card__meta-widget"
+                      :header="`${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`" text="เวลา"
+                      color="gradient-info" :icon-padding="false">
+                      <CIcon name="cil-clock" width="24" />
+                    </CWidgetIcon>
+                    <div v-if="isMetaTooltipOpen(`${meeting._id}-time`)" class="meeting-card__meta-tooltip"
+                      role="tooltip">
+                      {{ metaTooltip.text }}
+                    </div>
+                  </div>
                 </div>
 
                 <div class="meeting-card__detail-list">
@@ -122,13 +157,25 @@
                   </div>
                   <div class="meeting-card__detail">
                     <span class="meeting-card__detail-key">ลิงก์ประชุม</span>
-                    <span class="meeting-card__detail-value">
-                      <template v-if="meeting.videoLink">
-                        <a :href="meeting.videoLink" target="_blank" rel="noopener noreferrer">{{ meeting.videoLink
-                          }}</a>
-                      </template>
-                      <template v-else>-</template>
+                    <span class="meeting-card__detail-value is-link">
+                      <a v-if="meeting.videoLink" class="meeting-card__link-btn" :href="meeting.videoLink"
+                        target="_blank" rel="noopener noreferrer" :aria-label="`เปิดลิงก์ประชุม: ${meeting.videoLink}`"
+                        @click.stop>
+                        <CIcon name="cil-link" width="18" aria-hidden="true" />
+                      </a>
+                      <button v-else type="button" class="meeting-card__link-btn is-disabled" disabled
+                        aria-disabled="true" @click.stop.prevent>
+                        <CIcon name="cil-link-broken" width="16" aria-hidden="true" />
+                      </button>
                     </span>
+                  </div>
+                </div>
+
+                <div class="meeting-card__agenda">
+                  <div class="meeting-card__agenda-label">วาระการประชุม</div>
+                  <div class="meeting-card__agenda-body">
+                    {{ (meeting && typeof meeting.agenda === 'string' && meeting.agenda.trim()) ? meeting.agenda : '-'
+                    }}
                   </div>
                 </div>
               </div>
@@ -210,14 +257,9 @@
                 :popover="{ visibility: 'focus', placement: 'bottom-start' }">
                 <template #default="{ inputValue, inputEvents }">
                   <div class="input-icon__wrap" data-tone="primary">
-                    <input
-                      ref="meetingDateInput"
-                      class="form-control input-icon__control"
+                    <input ref="meetingDateInput" class="form-control input-icon__control"
                       :value="meetingDatePickerValue ? formatThaiDateExampleShort(meetingDatePickerValue) : ''"
-                      v-on="inputEvents"
-                      readonly
-                      placeholder="เลือกวันที่"
-                    >
+                      v-on="inputEvents" readonly placeholder="เลือกวันที่">
                     <button type="button" class="input-icon__suffix" @mousedown.prevent
                       @click="focusPicker('meetingDateInput')">
                       <CIcon name="cil-calendar" width="16" class="input-icon__ic" aria-hidden="true" />
@@ -225,20 +267,16 @@
                   </div>
                 </template>
               </v-date-picker>
-              <small v-if="meetingDatePickerValue" class="text-muted d-block mt-1">{{ formatThaiDateBelow(meetingDatePickerValue) }}</small>
+              <small v-if="meetingDatePickerValue" class="text-muted d-block mt-1">{{
+                formatThaiDateBelow(meetingDatePickerValue)
+                }}</small>
             </div>
             <div class="field small-field">
               <label class="form-label">เวลาเริ่ม <span class="required">*</span></label>
               <div class="input-icon__wrap" data-tone="info">
-                <input
-                  ref="startTimeTrigger"
-                  class="form-control input-icon__control time-trigger"
-                  type="text"
+                <input ref="startTimeTrigger" class="form-control input-icon__control time-trigger" type="text"
                   :value="meetingForm.startTime ? formatTime12h(meetingForm.startTime) : ''"
-                  placeholder="เลือกเวลาเริ่ม"
-                  readonly
-                  @click="toggleTimeDropdown('start')"
-                />
+                  placeholder="เลือกเวลาเริ่ม" readonly @click="toggleTimeDropdown('start')" />
                 <button type="button" class="input-icon__suffix" @mousedown.prevent
                   @click="toggleTimeDropdown('start')">
                   <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
@@ -248,22 +286,15 @@
             <div class="field small-field">
               <label class="form-label">เวลาสิ้นสุด</label>
               <div class="input-icon__wrap" data-tone="info">
-                  <input
-                    ref="endTimeTrigger"
-                    class="form-control input-icon__control time-trigger"
-                    type="text"
-                    :value="meetingForm.endTime ? formatTime12h(meetingForm.endTime) : ''"
-                    :placeholder="meetingForm.startTime ? '-' : 'เลือกเวลาสิ้นสุด'"
-                    readonly
-                    :disabled="!meetingForm.startTime"
-                    @click="toggleTimeDropdown('end')"
-                  />
-                  <button type="button" class="input-icon__suffix" @mousedown.prevent
-                    :disabled="!meetingForm.startTime"
-                    @click="toggleTimeDropdown('end')">
-                    <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
-                  </button>
-                </div>
+                <input ref="endTimeTrigger" class="form-control input-icon__control time-trigger" type="text"
+                  :value="meetingForm.endTime ? formatTime12h(meetingForm.endTime) : ''"
+                  :placeholder="meetingForm.startTime ? '-' : 'เลือกเวลาสิ้นสุด'" readonly
+                  :disabled="!meetingForm.startTime" @click="toggleTimeDropdown('end')" />
+                <button type="button" class="input-icon__suffix" @mousedown.prevent :disabled="!meetingForm.startTime"
+                  @click="toggleTimeDropdown('end')">
+                  <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -278,23 +309,26 @@
               <label class="meeting-type-toggle__label" for="meeting-type-onsite">ออนไซต์</label>
             </div>
           </div>
- 
+
           <div class="field full-field">
-            <label class="form-label">สถานที่ <span v-if="meetingForm.meetingType === 'onsite'" class="required">*</span></label>
-            <input type="text" class="form-control full"  v-model="meetingForm.location"
+            <label class="form-label">สถานที่ <span v-if="meetingForm.meetingType === 'onsite'"
+                class="required">*</span></label>
+            <input type="text" class="form-control full" v-model="meetingForm.location"
               :disabled="meetingForm.meetingType === 'online'"
               :placeholder="meetingForm.meetingType === 'online' ? 'ออนไลน์: ไม่ต้องกรอกสถานที่' : 'เช่น C1 101'" />
           </div>
 
           <div class="field full-field">
-            <label class="form-label">ลิงก์วิดีโอประชุม <span v-if="meetingForm.meetingType === 'online'" class="required">*</span></label>
+            <label class="form-label">ลิงก์วิดีโอประชุม <span v-if="meetingForm.meetingType === 'online'"
+                class="required">*</span></label>
             <CInput class="full" type="url" placeholder="เช่น https://meet.google.com/..."
               v-model="meetingForm.videoLink" />
           </div>
 
           <div class="field full-field">
             <label class="form-label">วาระการประชุม</label>
-            <CTextarea class="full" rows="4" placeholder="ใส่หัวข้อย่อยหรือประเด็นหลักที่ต้องหารือ (ถ้ามี)" v-model="meetingForm.agenda" />
+            <CTextarea class="full" rows="4" placeholder="ใส่หัวข้อย่อยหรือประเด็นหลักที่ต้องหารือ (ถ้ามี)"
+              v-model="meetingForm.agenda" />
           </div>
 
         </div>
@@ -311,26 +345,16 @@
     </CModal>
 
     <div v-if="timeDropdown.openFor" class="time-dropdown__backdrop" @mousedown="closeTimeDropdown"></div>
-    <div
-      v-if="timeDropdown.openFor"
-      class="time-dropdown"
-      ref="timeDropdownPanel"
-      :style="{
-        top: timeDropdown.top + 'px',
-        left: timeDropdown.left + 'px',
-        width: timeDropdown.width + 'px',
-        maxHeight: timeDropdown.maxHeight + 'px'
-      }"
-      @mousedown.stop
-    >
-      <button
-        v-for="opt in (timeDropdown.openFor === 'start' ? startTimeOptions : endTimeOptions)"
-        :key="(timeDropdown.openFor || '') + '-' + (opt.value || 'empty')"
-        type="button"
-        class="time-dropdown__item"
+    <div v-if="timeDropdown.openFor" class="time-dropdown" ref="timeDropdownPanel" :style="{
+      top: timeDropdown.top + 'px',
+      left: timeDropdown.left + 'px',
+      width: timeDropdown.width + 'px',
+      maxHeight: timeDropdown.maxHeight + 'px'
+    }" @mousedown.stop>
+      <button v-for="opt in (timeDropdown.openFor === 'start' ? startTimeOptions : endTimeOptions)"
+        :key="(timeDropdown.openFor || '') + '-' + (opt.value || 'empty')" type="button" class="time-dropdown__item"
         :class="{ 'is-selected': isTimeSelected(timeDropdown.openFor, opt.value) }"
-        @click="selectTimeOption(timeDropdown.openFor, opt.value)"
-      >
+        @click="selectTimeOption(timeDropdown.openFor, opt.value)">
         {{ opt.label }}
       </button>
     </div>
@@ -418,6 +442,8 @@ const MEETING_STATUS = {
   cancelled: { label: 'ยกเลิก', color: 'danger' }
 }
 
+const BASE_MEETING_START_TIME = '06:00'
+
 export default {
   name: 'AdminMeetings',
   components: { Multiselect, 'v-date-picker': DatePicker },
@@ -475,6 +501,17 @@ export default {
         left: 0,
         width: 0,
         maxHeight: 320
+      },
+
+      titleTooltip: {
+        openForId: null,
+        closeTimer: null
+      },
+
+      metaTooltip: {
+        openKey: null,
+        text: '',
+        closeTimer: null
       }
     }
   },
@@ -496,23 +533,26 @@ export default {
     },
     minStartTime() {
       const selected = this.parseLocalYmd(this.meetingForm && this.meetingForm.meetingDate ? this.meetingForm.meetingDate : '')
-      if (!selected) return '00:00'
+      const baseMinutes = this.timeToMinutes(BASE_MEETING_START_TIME)
+      if (!selected) return BASE_MEETING_START_TIME
       const today = new Date()
       const sameDay = selected.getFullYear() === today.getFullYear()
         && selected.getMonth() === today.getMonth()
         && selected.getDate() === today.getDate()
-      if (!sameDay) return '00:00'
+      if (!sameDay) return BASE_MEETING_START_TIME
       const minutes = (today.getHours() * 60) + today.getMinutes()
-      return this.minutesToTime(this.ceilMinutesToStep(minutes, 15))
+      const nowCeil = this.ceilMinutesToStep(minutes, 15)
+      const minMinutes = Number.isFinite(baseMinutes) ? Math.max(baseMinutes, nowCeil) : nowCeil
+      return this.minutesToTime(minMinutes)
     },
     minEndTime() {
       const start = this.meetingForm && this.meetingForm.startTime ? String(this.meetingForm.startTime) : ''
       if (start) return start
-      return this.enforceMinDateTime ? this.minStartTime : '00:00'
+      return this.enforceMinDateTime ? this.minStartTime : BASE_MEETING_START_TIME
     },
     startTimeOptions() {
       return this.buildTimeOptions({
-        min: this.enforceMinDateTime ? this.minStartTime : '00:00',
+        min: this.enforceMinDateTime ? this.minStartTime : BASE_MEETING_START_TIME,
         step: 15,
         includeEmpty: false,
         formatLabel: (value) => this.formatTime12h(value)
@@ -693,6 +733,146 @@ export default {
       document.removeEventListener('keydown', this.onTimeDropdownKeydown)
       document.removeEventListener('scroll', this.onTimeDropdownScroll, true)
     },
+    isTitleTooltipOpen(meeting) {
+      const id = meeting && meeting._id ? String(meeting._id) : ''
+      return !!id && this.titleTooltip && String(this.titleTooltip.openForId || '') === id
+    },
+    isTitleTruncated(el) {
+      if (!el) return false
+      try {
+        return (el.scrollWidth || 0) > ((el.clientWidth || 0) + 1)
+      } catch (e) {
+        return false
+      }
+    },
+    maybeOpenTitleTooltip(event, meeting) {
+      const el = event && event.currentTarget ? event.currentTarget : null
+      if (!this.isTitleTruncated(el)) {
+        this.closeTitleTooltip()
+        return
+      }
+      this.openTitleTooltip(meeting)
+    },
+    openTitleTooltip(meeting, { autoCloseMs = 0, attachOutsideClick = false } = {}) {
+      const id = meeting && meeting._id ? String(meeting._id) : ''
+      if (!id || !this.titleTooltip) return
+
+      if (this.titleTooltip.closeTimer) {
+        clearTimeout(this.titleTooltip.closeTimer)
+      }
+
+      this.titleTooltip.openForId = id
+      this.titleTooltip.closeTimer = null
+
+      if (attachOutsideClick) {
+        this.$nextTick(() => {
+          setTimeout(() => {
+            document.addEventListener('click', this.closeTitleTooltip, { once: true })
+          }, 0)
+        })
+      }
+
+      const ms = parseInt(autoCloseMs, 10)
+      if (Number.isFinite(ms) && ms > 0) {
+        this.titleTooltip.closeTimer = setTimeout(() => {
+          this.closeTitleTooltip()
+        }, ms)
+      }
+    },
+    closeTitleTooltip() {
+      if (!this.titleTooltip) return
+      if (this.titleTooltip.closeTimer) {
+        clearTimeout(this.titleTooltip.closeTimer)
+      }
+      this.titleTooltip.openForId = null
+      this.titleTooltip.closeTimer = null
+    },
+    toggleTitleTooltip(event, meeting) {
+      const el = event && event.currentTarget ? event.currentTarget : null
+      if (!this.isTitleTruncated(el)) return
+
+      const id = meeting && meeting._id ? String(meeting._id) : ''
+      if (!id) return
+
+      if (this.titleTooltip && String(this.titleTooltip.openForId || '') === id) {
+        this.closeTitleTooltip()
+        return
+      }
+
+      this.closeTitleTooltip()
+      this.openTitleTooltip(meeting, { autoCloseMs: 2600, attachOutsideClick: true })
+    },
+    isMetaTruncated(rootEl) {
+      if (!rootEl || !rootEl.querySelectorAll) return false
+      const nodes = rootEl.querySelectorAll('.text-value, .small')
+      if (!nodes || !nodes.length) return false
+      try {
+        return Array.from(nodes).some(el => (el.scrollWidth || 0) > ((el.clientWidth || 0) + 1))
+      } catch (e) {
+        return false
+      }
+    },
+    isMetaTooltipOpen(key) {
+      const k = String(key || '')
+      return !!k && this.metaTooltip && String(this.metaTooltip.openKey || '') === k
+    },
+    closeMetaTooltip() {
+      if (!this.metaTooltip) return
+      if (this.metaTooltip.closeTimer) {
+        clearTimeout(this.metaTooltip.closeTimer)
+      }
+      this.metaTooltip.openKey = null
+      this.metaTooltip.text = ''
+      this.metaTooltip.closeTimer = null
+    },
+    openMetaTooltip(key, text, { autoCloseMs = 0, attachOutsideClick = false } = {}) {
+      const k = String(key || '')
+      if (!k || !this.metaTooltip) return
+
+      if (this.metaTooltip.closeTimer) {
+        clearTimeout(this.metaTooltip.closeTimer)
+      }
+
+      this.metaTooltip.openKey = k
+      this.metaTooltip.text = String(text || '')
+      this.metaTooltip.closeTimer = null
+
+      window.addEventListener('resize', this.closeMetaTooltip, { once: true })
+
+      if (attachOutsideClick) {
+        this.$nextTick(() => {
+          setTimeout(() => {
+            document.addEventListener('click', this.closeMetaTooltip, { once: true })
+          }, 0)
+        })
+      }
+
+      const ms = parseInt(autoCloseMs, 10)
+      if (Number.isFinite(ms) && ms > 0) {
+        this.metaTooltip.closeTimer = setTimeout(() => {
+          this.closeMetaTooltip()
+        }, ms)
+      }
+    },
+    maybeOpenMetaTooltip(event, key, text) {
+      const rootEl = event && event.currentTarget ? event.currentTarget : null
+      if (!this.isMetaTruncated(rootEl)) {
+        this.closeMetaTooltip()
+        return
+      }
+      this.openMetaTooltip(key, text)
+    },
+    toggleMetaTooltip(event, key, text) {
+      const rootEl = event && event.currentTarget ? event.currentTarget : null
+      if (!this.isMetaTruncated(rootEl)) return
+
+      if (this.isMetaTooltipOpen(key)) {
+        this.closeMetaTooltip()
+        return
+      }
+      this.closeMetaTooltip()
+      this.openMetaTooltip(key, text, { autoCloseMs: 2600, attachOutsideClick: true })
+    },
     openNativePicker(event) {
       const el = event && event.target ? event.target : null
       if (el && typeof el.showPicker === 'function') {
@@ -755,7 +935,7 @@ export default {
       if (!Number.isFinite(minutes)) return String(hhmm || '')
       const hours = String(Math.floor(minutes / 60)).padStart(2, '0')
       const mins = String(minutes % 60).padStart(2, '0')
-      return `${hours}:${mins} น.`
+      return `${hours}:${mins}น.`
     },
     formatDuration(minutes) {
       const mins = parseInt(minutes, 10)
@@ -900,14 +1080,9 @@ export default {
       if (!title) return
 
       const nextAutoTitle = `ประชุมพิจารณาโครงการ: ${title}`
-      const nextAutoPrefix = `โครงการ: ${title}`
 
       if (!this.meetingForm.title || (this.autoProjectTitle && this.meetingForm.title === `ประชุมพิจารณาโครงการ: ${this.autoProjectTitle}`)) {
         this.meetingForm.title = nextAutoTitle
-      }
-
-      if (!this.meetingForm.agenda || (this.autoProjectTitle && this.meetingForm.agenda.trim().startsWith(`โครงการ: ${this.autoProjectTitle}`))) {
-        this.meetingForm.agenda = nextAutoPrefix
       }
 
       this.autoProjectTitle = title
@@ -1288,7 +1463,7 @@ export default {
 
   width: 100%;
   padding: 22px 22px 28px;
- 
+
 }
 
 .meetings-hero {
@@ -1489,20 +1664,32 @@ export default {
 }
 
 .meeting-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  --meeting-grid-gap: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--meeting-grid-gap);
+}
+
+.meeting-grid .meeting-card {
+  flex: 1 1 calc((100% - (2 * var(--meeting-grid-gap))) / 3);
+  max-width: calc((100% - (2 * var(--meeting-grid-gap))) / 3);
 }
 
 @media (max-width: 1199px) {
   .meeting-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    --meeting-grid-gap: 16px;
+  }
+
+  .meeting-grid .meeting-card {
+    flex-basis: calc((100% - var(--meeting-grid-gap)) / 2);
+    max-width: calc((100% - var(--meeting-grid-gap)) / 2);
   }
 }
 
 @media (max-width: 767px) {
-  .meeting-grid {
-    grid-template-columns: 1fr;
+  .meeting-grid .meeting-card {
+    flex-basis: 100%;
+    max-width: 100%;
   }
 }
 
@@ -1513,7 +1700,7 @@ export default {
   position: relative;
   isolation: isolate;
   display: block;
-  height: 480px;
+  height: 520px;
   border: 0;
   border-radius: 22px;
   padding: 0;
@@ -1579,6 +1766,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 12px;
   min-height: 42px;
   padding: 14px 18px 14px;
@@ -1623,6 +1811,11 @@ export default {
   border: 1px solid rgba(var(--status-rgb), 0.24) !important;
   color: rgb(var(--status-rgb)) !important;
   font-weight: 800;
+  min-width: 0;
+  max-width: 44%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .meeting-card__top-actions {
@@ -1645,10 +1838,20 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  max-width: 56%;
+  overflow: hidden;
 }
 
 .meeting-card__participant-ic {
   color: #334155;
+}
+
+.meeting-card__participant-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .meeting-card__select-btn {
@@ -1666,7 +1869,7 @@ export default {
 }
 
 .meeting-card.scheduled {
-  --status-rgb: 197, 155, 58;
+  --status-rgb: 241, 165, 0;
 }
 
 .meeting-card.completed {
@@ -1681,6 +1884,9 @@ export default {
   flex: 1;
   position: relative;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .meeting-card__title {
@@ -1689,46 +1895,130 @@ export default {
   font-size: 1.18rem;
   font-weight: 800;
   line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  display: block;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meeting-card__title-wrap {
+  position: relative;
+  display: block;
+}
+
+.meeting-card__title:focus {
+  outline: none;
+}
+
+.meeting-card__title:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--am-accent-ring);
+  border-radius: 10px;
+}
+
+.meeting-card__title-tooltip {
+  position: absolute;
+  top: calc(100% - 6px);
+  left: 0;
+  max-width: 420px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(2, 6, 23, 0.14);
+  color: #0f172a;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  z-index: 10;
+  pointer-events: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.meeting-card__title-tooltip::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 18px;
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  border-left: 1px solid rgba(148, 163, 184, 0.36);
+  border-top: 1px solid rgba(148, 163, 184, 0.36);
+  transform: rotate(45deg);
 }
 
 .meeting-card__meta {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   gap: 12px;
   margin-bottom: 16px;
+  align-items: stretch;
+}
+
+.meeting-card__meta-item {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  outline: none;
+}
+
+.meeting-card__meta-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--am-accent-ring);
+  border-radius: 10px;
+}
+
+.meeting-card__meta-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  max-width: 440px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(2, 6, 23, 0.14);
+  color: #0f172a;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  z-index: 12;
+  pointer-events: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .meeting-card__meta-widget {
   margin-bottom: 0;
+  width: 100%;
 }
 
 .meeting-card__meta-widget::v-deep.card {
-  border-radius: 6px;
+  border-radius: 5px;
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 8px 14px rgba(15, 23, 42, 0.05);
+  width: 100%;
+  height: 64px;
 }
 
 .meeting-card__meta-widget::v-deep .card-body {
   padding: 0 !important;
   align-items: stretch !important;
+  height: 100%;
 }
 
 .meeting-card__meta-widget::v-deep .card-body>.mr-3 {
   margin: 0 !important;
   padding: 0 !important;
-  width: 54px;
+  width: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .meeting-card__meta-widget::v-deep .card-body>div:not(.mr-3) {
-  padding: 10px 12px !important;
+  padding: 7px 9px !important;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1738,10 +2028,18 @@ export default {
 .meeting-card__meta-widget::v-deep .text-value {
   line-height: 1.1;
   margin-bottom: 2px;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meeting-card__meta-widget::v-deep .small {
   line-height: 1.1;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meeting-card__detail-list {
@@ -1753,6 +2051,7 @@ export default {
 .meeting-card__detail {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
   margin-bottom: 10px;
   padding-bottom: 10px;
@@ -1770,16 +2069,31 @@ export default {
   color: #6b7280;
   font-size: 0.86rem;
   flex: 0 0 auto;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .meeting-card__detail-value {
   color: #111827;
   font-size: 0.9rem;
-  text-align: right;
-  flex: 1 1 auto;
-  max-width: 70%;
+  text-align: center;
+  margin-left: auto;
+  flex: 0 1 clamp(140px, 48%, 220px);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.meeting-card__detail-value.is-link {
+  display: flex;
+  margin-left: auto;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  overflow: visible;
+  text-overflow: unset;
   white-space: nowrap;
 }
 
@@ -1790,6 +2104,103 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.meeting-card__detail-value a.meeting-card__link-btn {
+  display: inline-flex;
+  max-width: none;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: unset;
+}
+
+
+.meeting-card__link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 32px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(var(--am-gold-rgb), 0.45);
+  background: rgba(var(--am-gold-rgb), 0.12);
+  color: #334155;
+  text-decoration: none;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+  max-width: none;
+  overflow: visible;
+  cursor: pointer;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.meeting-card__link-btn .c-icon {
+  display: block;
+}
+
+.meeting-card__link-btn:hover {
+  background: rgba(var(--am-gold-rgb), 0.18);
+  border-color: rgba(var(--am-gold-rgb), 0.7);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.meeting-card__link-btn:active {
+  transform: translateY(0);
+}
+
+.meeting-card__link-btn.is-disabled {
+  background: #e5e7eb;
+  border-color: #e5e7eb;
+  color: #6b7280;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.meeting-card__link-btn.is-disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.meeting-card__link-btn:focus {
+  outline: none;
+}
+
+.meeting-card__link-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 10px 20px rgba(15, 23, 42, 0.08);
+}
+
+.meeting-card__agenda {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 4px;
+}
+
+.meeting-card__agenda-label {
+  font-size: 0.86rem;
+  color: #6b7280;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.meeting-card__agenda-body {
+  flex: 0 0 auto;
+  height: 96px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(248, 250, 252, 0.9);
+  color: #111827;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .meeting-card__footer {
@@ -1855,25 +2266,6 @@ export default {
 
   .meetings-hero__title {
     font-size: 1.5rem;
-  }
-
-  .meeting-card__top,
-  .meeting-card__detail {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .meeting-card__actions {
-    width: 100%;
-  }
-
-  .meeting-card__meta {
-    grid-template-columns: 1fr;
-  }
-
-  .meeting-card__detail-value {
-    text-align: left;
-    max-width: 100%;
   }
 }
 
@@ -2440,7 +2832,7 @@ export default {
 .meeting-modal .multiselect__tags,
 .minutes-modal .multiselect__tags {
   min-height: var(--am-control-height) !important;
-  padding: var(--am-control-pad-y) calc(var(--am-icon-width) + var(--am-control-pad-x)) var(--am-control-pad-y) var(--am-control-pad-x) !important;
+  padding: var(--am-control-pad-y) calc(var(--am-icon-width) + 2px) var(--am-control-pad-y) var(--am-control-pad-x) !important;
   border-color: rgba(var(--am-gold-rgb), 0.55) !important;
   border-radius: var(--am-radius) !important;
   color: var(--am-text) !important;
