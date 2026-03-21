@@ -207,13 +207,13 @@
             <div class="field small-field">
               <label class="form-label">วันที่ประชุม <span class="required">*</span></label>
               <v-date-picker v-model="meetingDatePickerValue" :min-date="enforceMinDateTime ? minMeetingDateObj : null"
-                :popover="{ visibility: 'click', placement: 'bottom-start' }">
+                :popover="{ visibility: 'focus', placement: 'bottom-start' }">
                 <template #default="{ inputValue, inputEvents }">
                   <div class="input-icon__wrap" data-tone="primary">
                     <input
                       ref="meetingDateInput"
                       class="form-control input-icon__control"
-                      :value="meetingDatePickerValue ? meetingDatePickerValue.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : ''"
+                      :value="meetingDatePickerValue ? formatThaiDateExampleShort(meetingDatePickerValue) : ''"
                       v-on="inputEvents"
                       readonly
                       placeholder="เลือกวันที่"
@@ -225,6 +225,7 @@
                   </div>
                 </template>
               </v-date-picker>
+              <small v-if="meetingDatePickerValue" class="text-muted d-block mt-1">{{ formatThaiDateBelow(meetingDatePickerValue) }}</small>
             </div>
             <div class="field small-field">
               <label class="form-label">เวลาเริ่ม <span class="required">*</span></label>
@@ -247,20 +248,22 @@
             <div class="field small-field">
               <label class="form-label">เวลาสิ้นสุด</label>
               <div class="input-icon__wrap" data-tone="info">
-                <input
-                  ref="endTimeTrigger"
-                  class="form-control input-icon__control time-trigger"
-                  type="text"
-                  :value="meetingForm.endTime ? formatTime12h(meetingForm.endTime) : ''"
-                  placeholder="-"
-                  readonly
-                  @click="toggleTimeDropdown('end')"
-                />
-                <button type="button" class="input-icon__suffix" @mousedown.prevent
-                  @click="toggleTimeDropdown('end')">
-                  <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
-                </button>
-              </div>
+                  <input
+                    ref="endTimeTrigger"
+                    class="form-control input-icon__control time-trigger"
+                    type="text"
+                    :value="meetingForm.endTime ? formatTime12h(meetingForm.endTime) : ''"
+                    :placeholder="meetingForm.startTime ? '-' : 'เลือกเวลาสิ้นสุด'"
+                    readonly
+                    :disabled="!meetingForm.startTime"
+                    @click="toggleTimeDropdown('end')"
+                  />
+                  <button type="button" class="input-icon__suffix" @mousedown.prevent
+                    :disabled="!meetingForm.startTime"
+                    @click="toggleTimeDropdown('end')">
+                    <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
+                  </button>
+                </div>
             </div>
           </div>
 
@@ -299,7 +302,7 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton color="secondary" class="mr-2 floating-action" @click="closeMeetingModal">ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-3 floating-action btn-cancel" @click="closeMeetingModal">ยกเลิก</CButton>
           <CButton color="primary" class="floating-action btn-save" :disabled="savingMeeting" @click="saveMeeting">
             {{ savingMeeting ? 'กำลังบันทึก...' : 'บันทึก' }}
           </CButton>
@@ -311,6 +314,7 @@
     <div
       v-if="timeDropdown.openFor"
       class="time-dropdown"
+      ref="timeDropdownPanel"
       :style="{
         top: timeDropdown.top + 'px',
         left: timeDropdown.left + 'px',
@@ -390,7 +394,7 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton color="secondary" class="mr-2 floating-action" @click="closeMinutesModal">ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-2 floating-action btn-cancel" @click="closeMinutesModal">ยกเลิก</CButton>
           <CButton v-if="!isReadOnly(minutesMeeting)" color="primary" class="floating-action btn-save"
             :disabled="savingMinutes" @click="saveMinutes">
             {{ savingMinutes ? 'กำลังบันทึก...' : 'บันทึกผลประชุม' }}
@@ -582,6 +586,34 @@ export default {
     }
   },
   methods: {
+    formatThaiDateBelow(date) {
+      const d = date instanceof Date ? date : new Date(date)
+      if (Number.isNaN(d.getTime())) return ''
+      try {
+        return d.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      } catch (err) {
+        return this.formatThaiDateExampleShort(d)
+      }
+    },
+    formatThaiDateExampleShort(date) {
+      const d = date instanceof Date ? date : new Date(date)
+      if (Number.isNaN(d.getTime())) return ''
+      try {
+        const parts = new Intl.DateTimeFormat('th-TH', { weekday: 'short', month: 'short', day: 'numeric' }).formatToParts(d)
+        const weekday = (parts.find(p => p.type === 'weekday') || {}).value || ''
+        const day = (parts.find(p => p.type === 'day') || {}).value || ''
+        const month = (parts.find(p => p.type === 'month') || {}).value || ''
+        const w = weekday ? `${weekday.replace(/\s+/g, '')},` : ''
+        return `${w} ${day} ${month}`.trim()
+      } catch (err) {
+        const thaiWeekdays = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
+        const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+        const weekday = thaiWeekdays[d.getDay()] || ''
+        const day = String(d.getDate())
+        const month = thaiMonths[d.getMonth()] || ''
+        return `${weekday}, ${day} ${month}`.trim()
+      }
+    },
     focusPicker(refName) {
       this.$nextTick(() => {
         const el = this.$refs && this.$refs[refName] ? this.$refs[refName] : null
@@ -605,11 +637,15 @@ export default {
       if (kind === 'start') {
         this.meetingForm.startTime = String(value || '')
       } else if (kind === 'end') {
-        this.meetingForm.endTime = String(value || '')
+        const nextValue = String(value || '')
+        const start = this.meetingForm && this.meetingForm.startTime ? String(this.meetingForm.startTime) : ''
+        if (nextValue && start && this.timeToMinutes(nextValue) < this.timeToMinutes(start)) return
+        this.meetingForm.endTime = nextValue
       }
       this.closeTimeDropdown()
     },
     toggleTimeDropdown(kind) {
+      if (kind === 'end' && !(this.meetingForm && this.meetingForm.startTime)) return
       if (this.timeDropdown.openFor === kind) {
         this.closeTimeDropdown()
         return
@@ -639,17 +675,23 @@ export default {
 
         window.addEventListener('resize', this.closeTimeDropdown, { once: true })
         document.addEventListener('keydown', this.onTimeDropdownKeydown)
-        document.addEventListener('scroll', this.closeTimeDropdown, true)
+        document.addEventListener('scroll', this.onTimeDropdownScroll, true)
       })
     },
     onTimeDropdownKeydown(e) {
       if (e && e.key === 'Escape') this.closeTimeDropdown()
     },
+    onTimeDropdownScroll(e) {
+      const panel = this.$refs && this.$refs.timeDropdownPanel ? this.$refs.timeDropdownPanel : null
+      const target = e && e.target ? e.target : null
+      if (panel && target && (target === panel || panel.contains(target))) return
+      this.closeTimeDropdown()
+    },
     closeTimeDropdown() {
       if (!this.timeDropdown.openFor) return
       this.timeDropdown.openFor = null
       document.removeEventListener('keydown', this.onTimeDropdownKeydown)
-      document.removeEventListener('scroll', this.closeTimeDropdown, true)
+      document.removeEventListener('scroll', this.onTimeDropdownScroll, true)
     },
     openNativePicker(event) {
       const el = event && event.target ? event.target : null
@@ -711,20 +753,18 @@ export default {
     formatTime12h(hhmm) {
       const minutes = this.timeToMinutes(hhmm)
       if (!Number.isFinite(minutes)) return String(hhmm || '')
-      let hours = Math.floor(minutes / 60)
-      const mins = minutes % 60
-      const suffix = hours >= 12 ? 'pm' : 'am'
-      hours = hours % 12
-      if (hours === 0) hours = 12
-      return `${hours}:${String(mins).padStart(2, '0')}${suffix}`
+      const hours = String(Math.floor(minutes / 60)).padStart(2, '0')
+      const mins = String(minutes % 60).padStart(2, '0')
+      return `${hours}:${mins} น.`
     },
     formatDuration(minutes) {
       const mins = parseInt(minutes, 10)
       if (!Number.isFinite(mins) || mins <= 0) return ''
-      if (mins < 60) return `${mins} mins`
-      const hours = mins / 60
-      if (mins % 60 === 0) return `${hours} ${hours === 1 ? 'hr' : 'hrs'}`
-      return `${parseFloat(hours.toFixed(1))} hrs`
+      if (mins < 60) return `${mins} นาที`
+      const hrs = Math.floor(mins / 60)
+      const rem = mins % 60
+      if (rem === 0) return `${hrs} ชม.`
+      return `${hrs} ชม. ${rem} นาที`
     },
     parseLocalYmd(ymd) {
       if (!ymd) return null
@@ -1223,7 +1263,7 @@ export default {
       return `${day}/${month}/${yearBE}`
     },
     formatTime(time) {
-      return time || '-'
+      return time ? this.formatTime12h(time) : '-'
     },
     isReadOnly(meeting) {
       return meeting && meeting.status === 'completed'
@@ -1961,6 +2001,8 @@ export default {
   box-shadow: 0 24px 60px rgba(2, 6, 23, 0.2);
   padding: 6px;
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .time-dropdown__item {
@@ -2125,12 +2167,14 @@ export default {
   --am-icon-width: 50px;
   --am-radius: 11px;
   --am-placeholder: rgba(100, 116, 139, 0.92);
+  --am-placeholder-font: 0.88rem;
+  --am-placeholder-weight: 400;
 }
 
-.meeting-modal input,
-.meeting-modal select,
-.minutes-modal input,
-.minutes-modal select {
+.meeting-modal input.form-control,
+.meeting-modal select.form-control,
+.minutes-modal input.form-control,
+.minutes-modal select.form-control {
   height: var(--am-control-height) !important;
   min-height: var(--am-control-height) !important;
   padding: var(--am-control-pad-y) var(--am-control-pad-x) !important;
@@ -2141,8 +2185,8 @@ export default {
   box-sizing: border-box !important;
 }
 
-.meeting-modal textarea,
-.minutes-modal textarea {
+.meeting-modal textarea.form-control,
+.minutes-modal textarea.form-control {
   min-height: var(--am-control-height) !important;
   padding: var(--am-control-pad-y) var(--am-control-pad-x) !important;
   border-radius: var(--am-radius) !important;
@@ -2154,7 +2198,8 @@ export default {
 
 .meeting-modal .modal-actions-wrapper,
 .minutes-modal .modal-actions-wrapper {
-  padding-right: 48px !important;
+  padding-right: 0 !important;
+  margin-right: -24px !important;
   justify-content: flex-end !important;
 }
 
@@ -2177,6 +2222,21 @@ export default {
 .meeting-modal .btn-save,
 .minutes-modal .btn-save {
   min-width: 110px !important;
+}
+
+.meeting-modal .btn-cancel,
+.minutes-modal .btn-cancel {
+  background: rgba(var(--am-gold-rgb), 0.18) !important;
+  border: 1px solid rgba(var(--am-gold-rgb), 0.78) !important;
+  color: var(--am-accent) !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+}
+
+.meeting-modal .btn-cancel:hover,
+.minutes-modal .btn-cancel:hover {
+  background: rgba(var(--am-gold-rgb), 0.26) !important;
+  filter: none !important;
 }
 
 .meeting-modal .modal-header,
@@ -2331,11 +2391,50 @@ export default {
 .meeting-modal .input-icon__control::placeholder,
 .minutes-modal .input-icon__control::placeholder {
   color: var(--am-placeholder) !important;
+  opacity: 1 !important;
+  font-size: var(--am-placeholder-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-placeholder-weight) !important;
+}
+
+.meeting-modal .form-control::-webkit-input-placeholder,
+.minutes-modal .form-control::-webkit-input-placeholder,
+.meeting-modal .input-icon__control::-webkit-input-placeholder,
+.minutes-modal .input-icon__control::-webkit-input-placeholder {
+  color: var(--am-placeholder) !important;
+  opacity: 1 !important;
+  font-size: var(--am-placeholder-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-placeholder-weight) !important;
+}
+
+.meeting-modal .form-control:-ms-input-placeholder,
+.minutes-modal .form-control:-ms-input-placeholder,
+.meeting-modal .input-icon__control:-ms-input-placeholder,
+.minutes-modal .input-icon__control:-ms-input-placeholder {
+  color: var(--am-placeholder) !important;
+  opacity: 1 !important;
+  font-size: var(--am-placeholder-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-placeholder-weight) !important;
 }
 
 .meeting-modal .multiselect__placeholder,
 .minutes-modal .multiselect__placeholder {
   color: var(--am-placeholder) !important;
+  opacity: 1 !important;
+  font-size: var(--am-placeholder-font) !important;
+  line-height: var(--am-control-line) !important;
+  font-weight: var(--am-placeholder-weight) !important;
+}
+
+.meeting-modal .multiselect__input::placeholder,
+.minutes-modal .multiselect__input::placeholder {
+  color: var(--am-placeholder) !important;
+  opacity: 1 !important;
+  font-size: var(--am-placeholder-font) !important;
+  line-height: inherit !important;
+  font-weight: var(--am-placeholder-weight) !important;
 }
 
 .meeting-modal .multiselect__tags,
@@ -2346,12 +2445,27 @@ export default {
   border-radius: var(--am-radius) !important;
   color: var(--am-text) !important;
   background: #ffffff !important;
+  background-image: none !important;
   box-sizing: border-box !important;
 }
 
 .meeting-modal .multiselect:not(.multiselect--multiple) .multiselect__tags,
 .minutes-modal .multiselect:not(.multiselect--multiple) .multiselect__tags {
   height: var(--am-control-height) !important;
+}
+
+.meeting-modal .multiselect__input,
+.minutes-modal .multiselect__input {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+.meeting-modal .multiselect__single,
+.minutes-modal .multiselect__single {
+  background-image: none !important;
 }
 
 .meeting-modal .multiselect,
@@ -2383,14 +2497,64 @@ export default {
   box-sizing: border-box !important;
 }
 
+.meeting-modal .multiselect--active .multiselect__tags,
+.minutes-modal .multiselect--active .multiselect__tags {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.meeting-modal .multiselect--active .multiselect__select,
+.minutes-modal .multiselect--active .multiselect__select {
+  border-bottom-right-radius: 0 !important;
+}
+
+.meeting-modal .multiselect__content-wrapper,
+.minutes-modal .multiselect__content-wrapper {
+  z-index: 12000 !important;
+  max-height: 260px !important;
+  overflow-y: auto !important;
+  border: 1px solid rgba(var(--am-gold-rgb), 0.55) !important;
+  border-top: 0 !important;
+  border-radius: 0 0 var(--am-radius) var(--am-radius) !important;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14) !important;
+}
+
 .meeting-modal .multiselect__select::before,
 .minutes-modal .multiselect__select::before {
+  content: "" !important;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 6px 6px 0;
   border-color: rgba(255, 255, 255, 0.92) transparent transparent !important;
+  transition: transform 0.14s ease;
+  transform: translate(-50%, -90%) rotate(0deg);
+  pointer-events: none;
 }
 
 .meeting-modal .multiselect--active .multiselect__select::before,
 .minutes-modal .multiselect--active .multiselect__select::before {
-  border-color: transparent transparent rgba(255, 255, 255, 0.92) !important;
+  transform: translate(-50%, -90%) rotate(180deg);
+}
+
+/* On press, preview the next state (prevents "rotate back the wrong way" feel) */
+.meeting-modal .multiselect:not(.multiselect--active) .multiselect__select:active::before,
+.minutes-modal .multiselect:not(.multiselect--active) .multiselect__select:active::before {
+  transform: translate(-50%, -90%) rotate(180deg);
+}
+
+.meeting-modal .multiselect.multiselect--active .multiselect__select:active::before,
+.minutes-modal .multiselect.multiselect--active .multiselect__select:active::before {
+  transform: translate(-50%, -90%) rotate(0deg);
+}
+
+/* vue-multiselect default rotates the whole select button; keep gradient fixed and rotate only the arrow */
+.meeting-modal .multiselect__select,
+.minutes-modal .multiselect__select {
+  transform: none !important;
 }
 
 .meeting-modal .multiselect--active .multiselect__tags,
