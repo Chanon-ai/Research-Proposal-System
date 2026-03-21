@@ -761,7 +761,7 @@ function isOwnerProfile(profile) {
       return
     }
     if (typeof role === 'object') {
-      ;[
+      [
         role.name,
         role.title,
         role.code,

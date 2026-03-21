@@ -188,6 +188,7 @@ async function getProposalList(query = {}, user) {
 
   const [data, total] = await Promise.all([
     Proposal.find(filter)
+      .populate('applicantUserId', 'fullName email')
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 }),

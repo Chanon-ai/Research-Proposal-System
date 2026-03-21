@@ -5,6 +5,7 @@ const { authenticate, requireRole } = require('../../../../middleware/authMiddle
 const router = express.Router();
 
 router.use(authenticate);
+router.get('/summary', requireRole('admin', 'chairman', 'committee', 'researcher'), controller.summary);
 router.get('/', requireRole('admin', 'chairman', 'committee', 'researcher'), controller.list);
 router.post('/', requireRole('admin', 'chairman'), controller.create);
 router.put('/:id/minutes', requireRole('admin', 'chairman'), controller.updateMinutes);

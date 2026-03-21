@@ -1,3 +1,8 @@
+// NOTE: "legacy_admin" was used in older builds. Current auth uses "admin",
+// so keep both to avoid hiding Access Control menus.
+// (Filtering happens in `src/containers/TheSidebar.vue` via `item.roles.includes(role)`.)
+const ACCESS_CONTROL_ROLES = ['admin', 'legacy_admin']
+
 export default [{
   _name: 'CSidebarNav',
   _children: [
@@ -103,103 +108,106 @@ export default [{
       }
     },
     {
-      _name: 'CSidebarNavTitle',
-      _children: ['Access Control']
-    },
-    {
-      _name: 'CSidebarNavDropdown',
-      name: 'Config',
-      route: '/config',
-      icon: 'cil-settings',
-      roles: ['legacy_admin'],
-      items: [
-        {
-          name: 'Message Authen',
-          to: '/config/message-authen'
-        },
-        {
-          name: 'Setting Message',
-          to: '/config/setting-message'
-        },
-        {
-          name: 'Setting Verification',
-          to: '/config/verification'
-        }
-      ]
-    },
-    {
-      _name: 'CSidebarNavDropdown',
-      name: 'Setting',
-      route: '/setting',
-      icon: 'cil-list',
-      roles: ['legacy_admin'],
-      items: [
-        {
-          name: 'Setting Group',
-          to: '/setting/group'
-        },
-        {
-          name: 'Message Status',
-          to: '/setting/message-status'
-        }
-      ]
-    },
-    {
-      _name: 'CSidebarNavDropdown',
-      name: 'Accounts',
-      route: '/accounts',
-      icon: 'cil-user',
-      roles: ['legacy_admin'],
-      items: [
-        {
-          name: 'Account Directory',
-          to: '/accounts/management'
-        }
-      ]
-    },
-    {
-      _name: 'CSidebarNavDropdown',
-      name: 'Training',
-      route: '/training',
-      icon: 'cil-library',
-      roles: ['legacy_admin'],
-      items: [
-        {
-          name: 'Training Requests',
-          to: '/training/requests'
-        },
-        {
-          name: 'Training Records',
-          to: '/training/records'
-        }
-      ]
-    },
-    {
-      _name: 'CSidebarNavDropdown',
-      name: 'Permission',
-      route: '/security/permissions',
-      icon: 'cil-lock-locked',
-      roles: ['legacy_admin'],
-      items: [
-        {
-          name: 'Create Menu',
-          to: '/security/permissions/menu'
-        },
-        {
-          name: 'Create Group',
-          to: '/security/permissions/group'
-        },
-        {
-          name: 'Permission Matrix',
-          to: '/security/permissions/matrix'
-        }
-      ]
-    },
-    {
       _name: 'CSidebarNavDropdownTemplate',
       name: 'Template',
       icon: 'cil-layers',
       items: [
+        {
+          _name: 'CSidebarNavTitle',
+          name: 'Access Control'
+        },
+        {
+          _name: 'CSidebarNavDropdown',
+          name: 'Config',
+          route: '/config',
+          icon: 'cil-settings',
+          roles: ACCESS_CONTROL_ROLES,
+          items: [
+            {
+              name: 'Message Authen',
+              to: '/config/message-authen'
+            },
+            {
+              name: 'Setting Message',
+              to: '/config/setting-message'
+            },
+            {
+              name: 'Setting Verification',
+              to: '/config/verification'
+            }
+          ]
+        },
+        {
+          _name: 'CSidebarNavDropdown',
+          name: 'Setting',
+          route: '/setting',
+          icon: 'cil-list',
+          roles: ACCESS_CONTROL_ROLES,
+          items: [
+            {
+              name: 'Setting Group',
+              to: '/setting/group'
+            },
+            {
+              name: 'Message Status',
+              to: '/setting/message-status'
+            }
+          ]
+        },
+        {
+          _name: 'CSidebarNavDropdown',
+          name: 'Accounts',
+          route: '/accounts',
+          icon: 'cil-user',
+          roles: ACCESS_CONTROL_ROLES,
+          items: [
+            {
+              name: 'Account Directory',
+              to: '/accounts/management'
+            }
+          ]
+        },
+        {
+          _name: 'CSidebarNavDropdown',
+          name: 'Training',
+          route: '/training',
+          icon: 'cil-library',
+          roles: ACCESS_CONTROL_ROLES,
+          items: [
+            {
+              name: 'Training Requests',
+              to: '/training/requests'
+            },
+            {
+              name: 'Training Records',
+              to: '/training/records'
+            }
+          ]
+        },
+        {
+          _name: 'CSidebarNavDropdown',
+          name: 'Permission',
+          route: '/security/permissions',
+          icon: 'cil-lock-locked',
+          roles: ACCESS_CONTROL_ROLES,
+          items: [
+            {
+              name: 'Create Menu',
+              to: '/security/permissions/menu'
+            },
+            {
+              name: 'Create Group',
+              to: '/security/permissions/group'
+            },
+            {
+              name: 'Permission Matrix',
+              to: '/security/permissions/matrix'
+            }
+          ]
+        },
+        {
+          _name: 'CSidebarNavDivider'
+        },
         {
           _name: 'CSidebarNavTitle',
           _children: ['Theme']
