@@ -15,6 +15,15 @@ exports.list = async (req, res) => {
   }
 };
 
+exports.summary = async (req, res) => {
+  try {
+    const result = await meetingService.getMeetingsSummary(req.query || {}, req.user);
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    return handleError(res, err, 500);
+  }
+};
+
 exports.create = async (req, res) => {
   try {
     const { title, meetingDate, startTime } = req.body || {};

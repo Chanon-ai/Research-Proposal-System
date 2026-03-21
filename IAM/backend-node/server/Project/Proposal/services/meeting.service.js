@@ -204,6 +204,90 @@ async function listMeetings(query = {}, user) {
   };
 }
 
+async function getMeetingsSummary(query = {}, user) {
+  const filter = {
+    isDeleted: { $ne: true }
+  };
+
+  const truthy = (v) => String(v || '').toLowerCase() === '1' || String(v || '').toLowerCase() === 'true';
+  const parseYmd = (s) => {
+    if (!s) return null;
+    const d = new Date(String(s));
+    if (Number.isNaN(d.getTime())) return null;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  };
+
+  // Intentionally ignore query.status for summary counts so tiles remain stable while filtering.
+  const fromDate = parseYmd(query.fromDate);
+  const toDateRaw = parseYmd(query.toDate);
+  const isUpcoming = truthy(query.upcoming);
+
+  if (fromDate || toDateRaw || isUpcoming) {
+    const range = {};
+    const start = fromDate || (isUpcoming ? new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()) : null);
+    if (start) range.$gte = start;
+
+    if (toDateRaw) {
+      const end = new Date(toDateRaw.getFullYear(), toDateRaw.getMonth(), toDateRaw.getDate(), 23, 59, 59, 999);
+      range.$lte = end;
+    } else if (isUpcoming) {
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 30, 23, 59, 59, 999);
+      range.$lte = end;
+    }
+
+    filter.meetingDate = range;
+  }
+
+  if (user && user._id && user.role && !['admin', 'chairman'].includes(user.role)) {
+    const orFilters = [{ participantIds: user._id }];
+
+    const proposalOr = [];
+    if (user.role === 'researcher') {
+      proposalOr.push({ applicantUserId: user._id });
+    } else {
+      proposalOr.push({ applicantUserId: user._id });
+      proposalOr.push({ committeeIds: user._id });
+    }
+
+    if (proposalOr.length) {
+      const relatedProposals = await Proposal.find({
+        isDeleted: { $ne: true },
+        $or: proposalOr
+      }).select('_id');
+      const proposalIds = (relatedProposals || []).map(p => p._id);
+      if (proposalIds.length) {
+        orFilters.push({ proposalIds: { $in: proposalIds } });
+      }
+    }
+
+    filter.$or = orFilters;
+  }
+
+  const grouped = await Meeting.aggregate([
+    { $match: filter },
+    { $group: { _id: '$status', count: { $sum: 1 } } }
+  ]);
+
+  const counts = {
+    scheduled: 0,
+    completed: 0,
+    cancelled: 0,
+    total: 0
+  };
+
+  (grouped || []).forEach((row) => {
+    const key = row && row._id ? String(row._id) : '';
+    const count = Number(row && row.count) || 0;
+    counts.total += count;
+    if (key === 'scheduled') counts.scheduled += count;
+    else if (key === 'completed') counts.completed += count;
+    else if (key === 'cancelled') counts.cancelled += count;
+  });
+
+  return counts;
+}
+
 async function resolveMeetingRecipients(proposalIds = [], participantIds = []) {
   const recipientIds = new Set(normalizeIds(participantIds));
   let proposals = [];
@@ -496,6 +580,7 @@ async function updateMeetingStatus(id, status, user) {
 
 module.exports = {
   listMeetings,
+  getMeetingsSummary,
   createMeeting,
   updateMeeting,
   deleteMeeting,

@@ -14,23 +14,50 @@
       </div>
     </section>
 
-    <CRow class="summary-row">
-      <CCol sm="6" lg="4" class="mb-3">
-        <div class="summary-card summary-card--info">
+    <CRow class="summary-row summary-row--filters">
+      <CCol sm="6" lg="4">
+        <div
+          class="summary-card summary-card--info"
+          :class="{ 'summary-card--active': isSummaryFilterActive('scheduled') }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="isSummaryFilterActive('scheduled') ? 'true' : 'false'"
+          @click="toggleSummaryFilter('scheduled')"
+          @keydown.enter.prevent="toggleSummaryFilter('scheduled')"
+          @keydown.space.prevent="toggleSummaryFilter('scheduled')"
+        >
           <div class="summary-label">กำหนดการแล้ว</div>
           <div class="summary-number">{{ getSummaryCount('scheduled') }}</div>
           <div class="summary-caption">รายการที่กำลังรอวันประชุมหรือยังไม่ปิดผล</div>
         </div>
       </CCol>
-      <CCol sm="6" lg="4" class="mb-3">
-        <div class="summary-card summary-card--success">
+      <CCol sm="6" lg="4">
+        <div
+          class="summary-card summary-card--success"
+          :class="{ 'summary-card--active': isSummaryFilterActive('completed') }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="isSummaryFilterActive('completed') ? 'true' : 'false'"
+          @click="toggleSummaryFilter('completed')"
+          @keydown.enter.prevent="toggleSummaryFilter('completed')"
+          @keydown.space.prevent="toggleSummaryFilter('completed')"
+        >
           <div class="summary-label">เสร็จสิ้น</div>
           <div class="summary-number">{{ getSummaryCount('completed') }}</div>
           <div class="summary-caption">ประชุมที่บันทึกผลเรียบร้อยแล้ว</div>
         </div>
       </CCol>
-      <CCol sm="6" lg="4" class="mb-3">
-        <div class="summary-card summary-card--danger">
+      <CCol sm="6" lg="4">
+        <div
+          class="summary-card summary-card--danger"
+          :class="{ 'summary-card--active': isSummaryFilterActive('cancelled') }"
+          role="button"
+          tabindex="0"
+          :aria-pressed="isSummaryFilterActive('cancelled') ? 'true' : 'false'"
+          @click="toggleSummaryFilter('cancelled')"
+          @keydown.enter.prevent="toggleSummaryFilter('cancelled')"
+          @keydown.space.prevent="toggleSummaryFilter('cancelled')"
+        >
           <div class="summary-label">ยกเลิก</div>
           <div class="summary-number">{{ getSummaryCount('cancelled') }}</div>
           <div class="summary-caption">ใช้ติดตามรายการที่ต้องนัดหมายใหม่</div>
@@ -38,7 +65,7 @@
       </CCol>
     </CRow>
 
-    <CCard class="filter-card mb-4">
+    <CCard class="filter-card">
       <CCardBody>
         <div class="filter-card__header">
           <div>
@@ -87,7 +114,7 @@
           @keydown.space.prevent="selectMeetingForActions(meeting)" role="button" tabindex="0">
           <div class="meeting-card__left-bar" aria-hidden="true"></div>
           <div class="meeting-card__surface ">
-            <div class="meeting-card__top mt-2 ">
+            <div class="meeting-card__top mt-1">
               <CBadge class="meeting-card__badge" :color="getStatusMeta(meeting.status).color">{{
                 getStatusMeta(meeting.status).label }}</CBadge>
               <span class="meeting-card__participant-pill">
@@ -101,17 +128,28 @@
             <div class="meeting-card__content">
               <div class="meeting-card__body">
                 <div class="meeting-card__title-wrap">
-                  <h5 class="meeting-card__title" :aria-label="meeting.title || '-'" tabindex="0"
-                    @mouseenter="maybeOpenTitleTooltip($event, meeting)" @mouseleave="closeTitleTooltip()"
-                    @focus="maybeOpenTitleTooltip($event, meeting)" @blur="closeTitleTooltip()"
-                    @click.stop="toggleTitleTooltip($event, meeting)">
-                    {{ meeting.title || '-' }}
-                  </h5>
+                  <div class="meeting-card__title-row">
+                    <button
+                      v-if="getMeetingProposalId(meeting)"
+                      type="button"
+                      class="meeting-card__proposal-link"
+                      :aria-label="`เปิดแบบฟอร์มโครงการ`"
+                      @click.stop="goToProposalForm(meeting)"
+                    >
+                      <CIcon name="cil-description" width="18" aria-hidden="true" />
+                    </button>
+                    <h5 class="meeting-card__title" :aria-label="meeting.title || '-'" tabindex="0"
+                      @mouseenter="maybeOpenTitleTooltip($event, meeting)" @mouseleave="closeTitleTooltip()"
+                      @focus="maybeOpenTitleTooltip($event, meeting)" @blur="closeTitleTooltip()"
+                      @click.stop="toggleTitleTooltip($event, meeting)">
+                      {{ meeting.title || '-' }}
+                    </h5>
+                  </div>
                   <div v-if="isTitleTooltipOpen(meeting)" class="meeting-card__title-tooltip" role="tooltip">
                     {{ meeting.title || '-' }}
                   </div>
                 </div>
-                <div class="meeting-card__meta">
+                <div class="meeting-card__meta ">
                   <div class="meeting-card__meta-item" tabindex="0"
                     @mouseenter="maybeOpenMetaTooltip($event, `${meeting._id}-date`, formatDate(meeting.meetingDate))"
                     @mouseleave="closeMetaTooltip()"
@@ -181,7 +219,11 @@
               </div>
 
               <div class="meeting-card__footer">
-                <CButton size="sm" block :color="meeting.status === 'completed' ? 'secondary' : 'primary'"
+                <CButton
+                  size="sm"
+                  block
+                  :color="meeting.status === 'completed' ? 'secondary' : 'primary'"
+                  :class="['meeting-card__cta', meeting.status === 'completed' ? 'is-completed' : '']"
                   @click.stop="openMinutesModal(meeting)">
                   {{ meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม' }}
                 </CButton>
@@ -222,6 +264,9 @@
               <template slot="option" slot-scope="{ option }">
                 <div>
                   <div class="font-weight-bold">{{ option.projectTitleTh || option.projectTitleEn || '-' }}</div>
+                  <div v-if="getProposalLeaderName(option)" class="text-muted small">
+                    หัวหน้าโครงการ: {{ getProposalLeaderName(option) }}
+                  </div>
                 </div>
               </template>
             </multiselect>
@@ -456,6 +501,13 @@ export default {
       limit: 9,
       loading: false,
       filterStatus: '',
+      summaryCounts: {
+        scheduled: 0,
+        completed: 0,
+        cancelled: 0,
+        total: 0
+      },
+      summaryCountsLoading: false,
 
       showMeetingModal: false,
       isEditMode: false,
@@ -592,6 +644,7 @@ export default {
   },
   mounted() {
     this.fetchMeetings()
+    this.fetchMeetingSummary()
     this.fetchProposalOptions()
     this.fetchParticipantOptions()
     this.consumeProposalContext()
@@ -1001,7 +1054,20 @@ export default {
     },
     formatProposalTitle(p) {
       if (!p) return '-'
-      return p.projectTitleTh || p.projectTitleEn || p.projectTitle || '-'
+      const title = p.projectTitleTh || p.projectTitleEn || p.projectTitle || '-'
+      const leaderName = this.getProposalLeaderName(p)
+      return leaderName ? `${title} (หัวหน้า: ${leaderName})` : title
+    },
+    getProposalLeaderName(p) {
+      if (!p) return ''
+      const direct = (p.projectLeaderName || (p.projectLeader && (p.projectLeader.fullName || p.projectLeader.name)) || p.leaderName || '').toString().trim()
+      if (direct) return direct
+
+      const snapshot = (p.formSnapshotJson || p.formSnapshot || {})
+      const team = snapshot && snapshot.researchTeam ? snapshot.researchTeam : {}
+      const leader = team && team.projectLeader ? team.projectLeader : {}
+      const nested = ((leader && (leader.name || leader.fullName)) || '').toString().trim()
+      return nested
     },
     formatParticipantLabel(u) {
       if (!u) return '-'
@@ -1020,8 +1086,9 @@ export default {
           const th = (p && p.projectTitleTh) ? String(p.projectTitleTh) : ''
           const en = (p && p.projectTitleEn) ? String(p.projectTitleEn) : ''
           const code = (p && p.proposalCode) ? String(p.proposalCode) : ''
-          const searchText = [th, en, code].filter(Boolean).join(' ')
-          return { ...p, searchText }
+          const leaderName = this.getProposalLeaderName(p)
+          const searchText = [th, en, code, leaderName].filter(Boolean).join(' ')
+          return { ...p, searchText, leaderName }
         })
         this.resolveSelectedProposalOption()
       } catch (err) {
@@ -1198,10 +1265,61 @@ export default {
         this.loading = false
       }
     },
+    async fetchMeetingSummary() {
+      this.summaryCountsLoading = true
+      try {
+        const response = await axios.get('/api/v1/meetings/summary')
+        const payload = (response && response.data && response.data.data) || {}
+        this.summaryCounts = {
+          scheduled: Number(payload.scheduled) || 0,
+          completed: Number(payload.completed) || 0,
+          cancelled: Number(payload.cancelled) || 0,
+          total: Number(payload.total) || 0
+        }
+      } catch (error) {
+        console.error('[AdminMeetings] Error fetching meeting summary:', error)
+        try {
+          const [scheduledRes, completedRes, cancelledRes] = await Promise.all([
+            axios.get('/api/v1/meetings', { params: { page: 1, limit: 1, status: 'scheduled' } }),
+            axios.get('/api/v1/meetings', { params: { page: 1, limit: 1, status: 'completed' } }),
+            axios.get('/api/v1/meetings', { params: { page: 1, limit: 1, status: 'cancelled' } })
+          ])
+
+          const scheduledPayload = (scheduledRes && scheduledRes.data && scheduledRes.data.data) || {}
+          const completedPayload = (completedRes && completedRes.data && completedRes.data.data) || {}
+          const cancelledPayload = (cancelledRes && cancelledRes.data && cancelledRes.data.data) || {}
+
+          const scheduled = Number(scheduledPayload.total) || 0
+          const completed = Number(completedPayload.total) || 0
+          const cancelled = Number(cancelledPayload.total) || 0
+
+          this.summaryCounts = {
+            scheduled,
+            completed,
+            cancelled,
+            total: scheduled + completed + cancelled
+          }
+        } catch (fallbackErr) {
+          console.error('[AdminMeetings] Summary fallback failed:', fallbackErr)
+          // Keep last known values instead of forcing zeros.
+        }
+      } finally {
+        this.summaryCountsLoading = false
+      }
+    },
     onFilterStatusChange(val) {
       this.filterStatus = this.getSelectValue(val)
       this.page = 1
       this.fetchMeetings()
+    },
+    toggleSummaryFilter(status) {
+      const next = this.filterStatus === status ? '' : status
+      this.filterStatus = next
+      this.page = 1
+      this.fetchMeetings()
+    },
+    isSummaryFilterActive(status) {
+      return this.filterStatus === status
     },
     onReset() {
       this.filterStatus = ''
@@ -1343,6 +1461,7 @@ export default {
 
         this.closeMeetingModal()
         await this.fetchMeetings()
+        await this.fetchMeetingSummary()
         await Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลการประชุมสำเร็จ', timer: 1400, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminMeetings] Error saving meeting:', error)
@@ -1366,6 +1485,7 @@ export default {
       try {
         await axios.delete(`/api/v1/meetings/${meeting._id}`)
         await this.fetchMeetings()
+        await this.fetchMeetingSummary()
         await Swal.fire({ icon: 'success', title: 'ลบการประชุมสำเร็จ', timer: 1300, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminMeetings] Error deleting meeting:', error)
@@ -1417,6 +1537,7 @@ export default {
 
         this.closeMinutesModal()
         await this.fetchMeetings()
+        await this.fetchMeetingSummary()
         await Swal.fire({ icon: 'success', title: 'บันทึกผลการประชุมสำเร็จ', timer: 1400, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminMeetings] Error saving minutes:', error)
@@ -1426,7 +1547,8 @@ export default {
       }
     },
     getSummaryCount(status) {
-      return this.meetings.filter(m => m.status === status).length
+      const counts = this.summaryCounts || {}
+      return Number(counts[status]) || 0
     },
     formatDate(dateStr) {
       if (!dateStr) return '-'
@@ -1439,6 +1561,16 @@ export default {
     },
     formatTime(time) {
       return time ? this.formatTime12h(time) : '-'
+    },
+    getMeetingProposalId(meeting) {
+      const ids = meeting && Array.isArray(meeting.proposalIds) ? meeting.proposalIds : []
+      const first = ids && ids.length ? String(ids[0] || '').trim() : ''
+      return first
+    },
+    goToProposalForm(meeting) {
+      const proposalId = this.getMeetingProposalId(meeting)
+      if (!proposalId) return
+      this.$router.push({ name: 'ResearchForm', params: { id: proposalId } })
     },
     isReadOnly(meeting) {
       return meeting && meeting.status === 'completed'
@@ -1460,6 +1592,7 @@ export default {
   --am-gold: #c59b3a;
   --am-gold-rgb: 197, 155, 58;
   --am-accent-ring: rgba(139, 18, 18, 0.18);
+  --am-section-gap: 24px;
 
   width: 100%;
   padding: 22px 22px 28px;
@@ -1472,7 +1605,7 @@ export default {
   align-items: center;
   gap: 20px;
   padding: 28px;
-  margin-bottom: 24px;
+  margin-bottom: var(--am-section-gap);
   border-radius: 22px;
   background:
     radial-gradient(circle at top right, rgba(255, 255, 255, 0.28), transparent 30%),
@@ -1526,22 +1659,28 @@ export default {
 }
 
 .summary-row {
-  margin-bottom: 8px;
+  margin-bottom: 0;
+  row-gap: 18px;
 }
 
 .summary-row--filters {
-  margin-bottom: 22px;
+  margin-bottom: var(--am-section-gap);
 }
 
 .summary-row--filters .summary-card {
   cursor: pointer;
   user-select: none;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  outline: none;
 }
 
 .summary-row--filters .summary-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.09);
+}
+
+.summary-row--filters .summary-card:focus-visible {
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 18px 48px rgba(15, 23, 42, 0.09);
 }
 
 .summary-card--active {
@@ -1618,6 +1757,7 @@ export default {
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
   border: 1px solid var(--am-border);
   background: var(--am-surface);
+  margin-bottom: var(--am-section-gap);
 }
 
 /* Meeting type segmented control */
@@ -1700,7 +1840,7 @@ export default {
   position: relative;
   isolation: isolate;
   display: block;
-  height: 520px;
+  height: 540px;
   border: 0;
   border-radius: 22px;
   padding: 0;
@@ -1769,7 +1909,7 @@ export default {
   flex-wrap: nowrap;
   gap: 12px;
   min-height: 42px;
-  padding: 14px 18px 14px;
+  padding: 14px 18px 8px;
   background: transparent;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
@@ -1890,15 +2030,62 @@ export default {
 }
 
 .meeting-card__title {
-  margin-bottom: 14px;
+  margin: 0 0 4px;
   color: #111827;
   font-size: 1.18rem;
   font-weight: 800;
   line-height: 1.45;
   display: block;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.meeting-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.meeting-card__proposal-link {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--am-gold-rgb), 0.55);
+  background: rgba(var(--am-gold-rgb), 0.12);
+  color: var(--am-accent);
+  cursor: pointer;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+  padding: 0;
+  line-height: 0;
+}
+
+.meeting-card__proposal-link:hover {
+  background: rgba(var(--am-gold-rgb), 0.18);
+  border-color: rgba(var(--am-gold-rgb), 0.75);
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.1);
+  transform: translateY(-1px);
+}
+
+.meeting-card__proposal-link:active {
+  transform: translateY(0);
+}
+
+.meeting-card__proposal-link:focus {
+  outline: none;
+}
+
+.meeting-card__proposal-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 12px 22px rgba(15, 23, 42, 0.1);
 }
 
 .meeting-card__title-wrap {
@@ -2205,6 +2392,50 @@ export default {
 
 .meeting-card__footer {
   margin-top: 18px;
+}
+
+.meeting-card__cta {
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.01em;
+  background: linear-gradient(135deg, rgba(197, 155, 58, 0.98), rgba(139, 18, 18, 0.98)) !important;
+  border: 1px solid rgba(139, 18, 18, 0.22) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.14);
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+}
+
+.meeting-card__cta:hover {
+  filter: brightness(1.03);
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.18);
+  transform: translateY(-1px);
+}
+
+.meeting-card__cta:active {
+  transform: translateY(0);
+}
+
+.meeting-card__cta:focus {
+  outline: none !important;
+}
+
+.meeting-card__cta:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 26px rgba(15, 23, 42, 0.18);
+}
+
+.meeting-card__cta.is-completed {
+  background: rgba(var(--am-gold-rgb), 0.12) !important;
+  border-color: rgba(var(--am-gold-rgb), 0.6) !important;
+  color: var(--am-accent) !important;
+  box-shadow: none;
+}
+
+.meeting-card__cta.is-completed:hover {
+  background: rgba(var(--am-gold-rgb), 0.16) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
 }
 
 .meeting-card.completed {
