@@ -75,6 +75,26 @@
       <CTab>
         <template slot="title">Workflow</template>
 
+        <CAlert
+          show
+          class="mt-3"
+          :color="workflowDataSource === 'database' ? 'success' : (workflowDataSource === 'local_fallback' ? 'warning' : 'secondary')"
+        >
+          <strong>แหล่งข้อมูลที่กำลังใช้งาน:</strong>
+          <span v-if="workflowDataSource === 'database'"> ฐานข้อมูล (Database)</span>
+          <span v-else-if="workflowDataSource === 'local_fallback'"> local fallback ในเครื่อง</span>
+          <span v-else> ยังไม่สามารถยืนยันแหล่งข้อมูลได้</span>
+          <span v-if="workflowDataSource === 'local_fallback' && workflowFallbackSavedAt"> (อัปเดตล่าสุด {{ formatLogDate(workflowFallbackSavedAt) }})</span>
+        </CAlert>
+
+        <CAlert
+          v-if="workflowSaveStatus !== 'idle' && workflowSaveMessage"
+          show
+          :color="workflowSaveStatus === 'db_saved' ? 'success' : (workflowSaveStatus === 'local_fallback' ? 'warning' : 'danger')"
+        >
+          {{ workflowSaveMessage }}
+        </CAlert>
+
         <CCard class="mt-3">
           <CCardHeader>กำหนดระยะเวลา (Deadline per Step)</CCardHeader>
           <CCardBody>
@@ -133,89 +153,6 @@
         <template slot="title">อีเมล</template>
 
         <CCard class="mt-3">
-          <CCardHeader class="d-flex justify-content-between align-items-center">
-            <span>Email Notifications</span>
-            <CBadge :color="emailNotificationsEnabled ? 'success' : 'secondary'">
-              {{ emailNotificationsEnabled ? 'เปิดใช้งาน' : 'ปิดใช้งาน' }}
-            </CBadge>
-          </CCardHeader>
-          <CCardBody>
-            <div class="d-flex align-items-center" style="gap: 12px;">
-              <CSwitch color="success" :checked.sync="emailNotificationsEnabled" />
-              <div>
-                <div class="font-weight-bold">ส่งอีเมลแจ้งเตือน Workflow อัตโนมัติ</div>
-                <small class="text-muted">เมื่อปิด ระบบจะหยุดส่งอีเมลสำหรับทุกเหตุการณ์ Workflow (อนุมัติ, ขอแก้ไข, นัดประชุม ฯลฯ) ไม่กระทบต่อการทดสอบ SMTP</small>
-              </div>
-            </div>
-            <div class="mt-3">
-              <CButton color="primary" size="sm" @click="saveEmailNotificationToggle">บันทึกการตั้งค่า</CButton>
-            </div>
-          </CCardBody>
-        </CCard>
-
-        <CCard class="mt-3">
-          <CCardHeader>SMTP Configuration</CCardHeader>
-          <CCardBody>
-            <form autocomplete="off" @submit.prevent>
-            <CRow>
-              <CCol md="4"><CInput label="SMTP Host" placeholder="smtp.gmail.com" v-model="smtpForm.smtp_host" /></CCol>
-              <CCol md="2"><CInput type="number" label="SMTP Port" v-model.number="smtpForm.smtp_port" /></CCol>
-              <CCol md="3"><CInput type="email" label="Username" v-model="smtpForm.smtp_username" name="smtp_username" autocomplete="off" /></CCol>
-              <CCol md="3">
-                <CInput :type="showPassword ? 'text' : 'password'" label="Password" v-model="smtpForm.smtp_password" name="smtp_password" autocomplete="new-password" placeholder="มีการตั้งค่าไว้แล้ว (กรอกใหม่เพื่อเปลี่ยน)">
-                  <template #append>
-                    <CButton color="secondary" variant="outline" @click="toggleShowPassword">{{ showPassword ? 'ซ่อน' : 'แสดง' }}</CButton>
-                  </template>
-                </CInput>
-              </CCol>
-              <CCol md="4"><CInput label="From Name" v-model="smtpForm.smtp_from_name" /></CCol>
-              <CCol md="4"><CInput type="email" label="From Email" v-model="smtpForm.smtp_from_email" /></CCol>
-              <CCol md="4">
-                <label class="d-block mb-1">ใช้ SSL/TLS</label>
-                <CSwitch color="success" :checked.sync="smtpForm.smtp_use_ssl" />
-              </CCol>
-            </CRow>
-            </form>
-
-            <CCallout color="info" class="mb-3">
-              ระบบจะส่งอีเมลทดสอบไปยังอีเมลผู้ใช้ในระบบที่ระบุด้านล่างเท่านั้น
-            </CCallout>
-
-            <CRow class="mb-2">
-              <CCol md="8">
-                <CInput
-                  label="อีเมลผู้รับสำหรับทดสอบ"
-                  type="email"
-                  v-model="testRecipientEmail"
-                  placeholder="กรอกอีเมลผู้ใช้จริงในระบบ"
-                  autocomplete="off"
-                />
-              </CCol>
-              <CCol md="4">
-                <label class="d-block mb-1">เทมเพลตสำหรับทดสอบ</label>
-                <CSelect
-                  :value="testTemplateKey"
-                  :options="[
-                    { value: '', label: '(ข้อความทดสอบเริ่มต้น)' },
-                    ...Object.keys(emailTemplates).map(key => ({ value: key, label: getTemplateLabel(key) }))
-                  ]"
-                  @change="testTemplateKey = $event && $event.target ? $event.target.value : $event"
-                />
-              </CCol>
-            </CRow>
-
-            <CCallout v-if="isPlaceholderEmail(getCurrentUserEmail())" color="warning" class="mb-3">
-              อีเมลผู้ดูแลที่ล็อกอินอยู่ดูเหมือนเป็นข้อมูลทดสอบ ({{ getCurrentUserEmail() || '-' }}) กรุณาระบุอีเมลผู้ใช้จริงในระบบสำหรับทดสอบ
-            </CCallout>
-
-            <div class="d-flex" style="gap: 8px;">
-              <CButton color="warning" @click="sendTestSMTP">ทดสอบการส่งอีเมล</CButton>
-              <CButton color="primary" @click="saveSMTPSettings">บันทึก SMTP</CButton>
-            </div>
-          </CCardBody>
-        </CCard>
-
-        <CCard>
           <CCardHeader>Email Templates</CCardHeader>
           <CCardBody>
             <CCallout color="warning" class="mb-3">
@@ -389,19 +326,96 @@
       </CTab>
     </CTabs>
 
-    <CModal class="send-modal" :show.sync="showTestEmailModal" centered title="ทดสอบการส่งอีเมล" :close-on-backdrop="false">
-      <template #body-wrapper>
-        <div class="send-modal-inner" style="padding-left:36px;padding-right:36px;box-sizing:border-box;">
-          <CInput label="อีเมลสำหรับทดสอบ" type="email" v-model="testEmailAddress" placeholder="example@mfu.ac.th" />
-        </div>
-      </template>
-      <template #footer-wrapper>
-        <div class="d-flex justify-content-end w-100" style="max-width:880px;margin:0 auto;padding-right:36px;box-sizing:border-box;gap:12px;">
-          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="showTestEmailModal = false">ยกเลิก</CButton>
-          <CButton color="warning" class="modal-btn modal-btn--primary" @click="sendTestSMTP">ส่งทดสอบ</CButton>
-        </div>
-      </template>
-    </CModal>
+    <button
+      type="button"
+      class="admin-email-widget__fab"
+      :class="{ 'is-open': isEmailWidgetOpen }"
+      aria-label="เปิดฟอร์มส่งอีเมล"
+      @click="toggleEmailWidget"
+    >
+      <CIcon :name="isEmailWidgetOpen ? 'cil-x' : 'cil-envelope-open'" size="lg" />
+    </button>
+
+    <div
+      v-if="isEmailWidgetOpen"
+      class="admin-email-widget__backdrop"
+      @click="closeEmailWidget"
+    >
+      <CCard
+        class="admin-email-widget__panel"
+        @click.stop
+      >
+        <CCardHeader class="admin-email-widget__header d-flex justify-content-between align-items-start">
+          <div>
+            <div class="admin-email-widget__eyebrow">ADMIN EMAIL</div>
+            <h5 class="mb-1">Send a message</h5>
+            <small class="text-muted">ส่งอีเมลทดสอบผ่านระบบ SMTP ที่ตั้งค่าไว้</small>
+          </div>
+          <CButton color="secondary" variant="ghost" size="sm" class="admin-email-widget__close-btn" @click="closeEmailWidget">ปิด</CButton>
+        </CCardHeader>
+
+        <CCardBody class="admin-email-widget__body">
+          <CAlert
+            v-if="emailWidgetFeedback.message"
+            :color="emailWidgetFeedback.type === 'success' ? 'success' : 'danger'"
+            show
+            class="mb-3"
+          >
+            {{ emailWidgetFeedback.message }}
+          </CAlert>
+
+          <CInput
+            label="Name / ชื่อผู้ส่ง"
+            v-model="emailWidgetForm.senderName"
+            placeholder="เช่น ผู้ดูแลระบบ"
+          />
+
+          <CInput
+            label="Subject / หัวข้อ"
+            v-model="emailWidgetForm.subject"
+            placeholder="เช่น ทดสอบระบบแจ้งเตือน"
+          />
+
+          <CInput
+            label="Email address / อีเมลผู้รับ"
+            type="email"
+            v-model="emailWidgetForm.recipientEmail"
+            placeholder="ต้องเป็นอีเมลผู้ใช้จริงในระบบ"
+          />
+
+          <label class="d-block mb-1">Template (ถ้าต้องการ)</label>
+          <CSelect
+            class="mb-3"
+            :value="emailWidgetForm.templateKey"
+            :options="[
+              { value: '', label: '(ใช้หัวข้อ/ข้อความที่กรอกเอง)' },
+              ...Object.keys(emailTemplates).map(key => ({ value: key, label: getTemplateLabel(key) }))
+            ]"
+            @change="onWidgetTemplateChange"
+          />
+
+          <label class="d-block mb-1">Message / รายละเอียดข้อความ</label>
+          <textarea
+            v-model="emailWidgetForm.message"
+            rows="6"
+            class="form-control admin-email-widget__textarea"
+            placeholder="พิมพ์ข้อความที่ต้องการส่ง"
+          />
+        </CCardBody>
+
+        <CCardFooter class="admin-email-widget__footer">
+          <CButton
+            color="primary"
+            class="admin-email-widget__send-btn"
+            block
+            :disabled="emailWidgetSending"
+            @click="sendEmailFromWidget"
+          >
+            {{ emailWidgetSending ? 'กำลังส่ง...' : 'ส่งอีเมล' }}
+          </CButton>
+        </CCardFooter>
+      </CCard>
+    </div>
 
     <CModal class="send-modal" :show.sync="showAddSettingModal" centered title="เพิ่ม Setting ใหม่" :close-on-backdrop="false">
       <template #body-wrapper>
@@ -556,6 +570,10 @@ export default {
           step5: 7
         }
       },
+      workflowSaveStatus: 'idle',
+      workflowSaveMessage: '',
+      workflowDataSource: 'unknown',
+      workflowFallbackSavedAt: '',
 
       smtpForm: {
         smtp_host: '',
@@ -579,6 +597,20 @@ export default {
       emailLogFilter: '',
       emailLogPage: 1,
 
+      isEmailWidgetOpen: false,
+      emailWidgetSending: false,
+      emailWidgetFeedback: {
+        type: '',
+        message: ''
+      },
+      emailWidgetForm: {
+        senderName: '',
+        subject: '',
+        recipientEmail: '',
+        message: '',
+        templateKey: ''
+      },
+
       showAddSettingModal: false,
       newSetting: { key: '', value: '', group: 'general', description: '' },
 
@@ -601,6 +633,10 @@ export default {
     this.applyTabFromRoute()
     this.fetchSettings()
     this.fetchEmailLogs()
+    document.addEventListener('keydown', this.onEmailWidgetKeydown)
+  },
+  beforeDestroy () {
+    document.removeEventListener('keydown', this.onEmailWidgetKeydown)
   },
   watch: {
     '$route.query.tab' () {
@@ -775,20 +811,48 @@ export default {
       if (typeof value === 'object') return JSON.stringify(value)
       return String(value)
     },
-    saveFallback () {
+    parseFallbackMeta () {
+      try {
+        const raw = localStorage.getItem(LOCAL_FALLBACK_KEY)
+        if (!raw) return {}
+        const parsed = JSON.parse(raw)
+        return (parsed && parsed.__meta && typeof parsed.__meta === 'object') ? parsed.__meta : {}
+      } catch (e) {
+        return {}
+      }
+    },
+    saveFallback (meta = {}) {
+      const currentMeta = this.parseFallbackMeta()
       const bundle = {
         generalForm: this.generalForm,
         workflowForm: this.workflowForm,
         smtpForm: this.smtpForm,
         emailTemplates: this.emailTemplates,
-        settings: this.settings
+        settings: this.settings,
+        __meta: {
+          ...currentMeta,
+          ...meta
+        }
       }
       localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(bundle))
+    },
+    clearWorkflowFallbackMeta () {
+      try {
+        const raw = localStorage.getItem(LOCAL_FALLBACK_KEY)
+        if (!raw) return
+        const parsed = JSON.parse(raw)
+        if (!parsed || typeof parsed !== 'object') return
+        if (!parsed.__meta || typeof parsed.__meta !== 'object') return
+        delete parsed.__meta.workflow
+        localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(parsed))
+      } catch (e) {
+        console.error('[AdminSettings] clearWorkflowFallbackMeta error:', e)
+      }
     },
     loadFallback () {
       try {
         const raw = localStorage.getItem(LOCAL_FALLBACK_KEY)
-        if (!raw) return
+        if (!raw) return false
         const parsed = JSON.parse(raw)
         if (parsed.generalForm) this.generalForm = { ...this.generalForm, ...parsed.generalForm }
         if (parsed.workflowForm) {
@@ -804,8 +868,17 @@ export default {
         if (parsed.smtpForm) this.smtpForm = this.normalizeSmtpForm(parsed.smtpForm)
         if (parsed.emailTemplates) this.emailTemplates = parsed.emailTemplates
         if (Array.isArray(parsed.settings)) this.settings = parsed.settings
+
+        const workflowMeta = parsed && parsed.__meta && parsed.__meta.workflow
+        if (workflowMeta && workflowMeta.status === 'local_fallback') {
+          this.workflowDataSource = 'local_fallback'
+          this.workflowFallbackSavedAt = workflowMeta.savedAt || ''
+        }
+
+        return true
       } catch (e) {
         console.error('[AdminSettings] loadFallback error:', e)
+        return false
       }
     },
     async fetchSettings () {
@@ -814,11 +887,18 @@ export default {
         const response = await axios.get('/api/v1/setting')
         this.settings = this.parseSettingsPayload(response)
         this.apiConnected = true
+        this.workflowDataSource = 'database'
+        this.workflowFallbackSavedAt = ''
         this.applySettingsToForms()
       } catch (error) {
         console.error('[AdminSettings] Error fetching settings:', error)
         this.apiConnected = false
-        this.loadFallback()
+        const hasFallback = this.loadFallback()
+        if (hasFallback) {
+          this.workflowDataSource = 'local_fallback'
+        } else {
+          this.workflowDataSource = 'unknown'
+        }
       } finally {
         this.loadingSettings = false
       }
@@ -899,6 +979,23 @@ export default {
       }
       return axios.post('/api/v1/setting', { key, value, description, group })
     },
+    buildWorkflowSettingsPayload () {
+      const d = this.workflowForm.stepDeadlines
+      return {
+        group: 'workflow',
+        settings: [
+          { key: 'workflow_min_score', value: this.workflowForm.minScore, valueType: 'number', label: 'คะแนนขั้นต่ำ' },
+          { key: 'workflow_min_committee', value: this.workflowForm.minCommittee, valueType: 'number', label: 'จำนวนกรรมการขั้นต่ำ' },
+          { key: 'workflow_max_rounds', value: this.workflowForm.maxRounds, valueType: 'number', label: 'รอบพิจารณาสูงสุด' },
+          { key: 'workflow_allow_revision_after_meeting', value: this.workflowForm.allowRevisionAfterMeeting, valueType: 'boolean', label: 'เปิดให้แก้ไขหลังประชุม' },
+          { key: 'workflow_step1_days', value: d.step1, valueType: 'number', label: 'ยื่นโครงการ -> รับโดยส่วนบริหาร' },
+          { key: 'workflow_step2_days', value: d.step2, valueType: 'number', label: 'ตรวจสอบเอกสาร -> มอบหมายกรรมการ' },
+          { key: 'workflow_step3_days', value: d.step3, valueType: 'number', label: 'กรรมการพิจารณา -> ประชุม' },
+          { key: 'workflow_step4_days', value: d.step4, valueType: 'number', label: 'ขอแก้ไข -> นักวิจัยส่งกลับ' },
+          { key: 'workflow_step5_days', value: d.step5, valueType: 'number', label: 'ส่งแก้ไข -> พิจารณารอบ 2' }
+        ]
+      }
+    },
     async saveGeneralSettings () {
       try {
         const jobs = [
@@ -922,26 +1019,46 @@ export default {
       }
     },
     async saveWorkflowSettings () {
+      this.workflowSaveStatus = 'idle'
+      this.workflowSaveMessage = ''
       try {
-        const d = this.workflowForm.stepDeadlines
-        const jobs = [
-          this.upsertSettingByKey('workflow_min_score', this.workflowForm.minScore, 'คะแนนขั้นต่ำ', 'workflow'),
-          this.upsertSettingByKey('workflow_min_committee', this.workflowForm.minCommittee, 'จำนวนกรรมการขั้นต่ำ', 'workflow'),
-          this.upsertSettingByKey('workflow_max_rounds', this.workflowForm.maxRounds, 'รอบพิจารณาสูงสุด', 'workflow'),
-          this.upsertSettingByKey('workflow_allow_revision_after_meeting', this.workflowForm.allowRevisionAfterMeeting, 'เปิดให้แก้ไขหลังประชุม', 'workflow'),
-          this.upsertSettingByKey('workflow_step1_days', d.step1, 'ยื่นโครงการ → รับโดยส่วนบริหาร', 'workflow'),
-          this.upsertSettingByKey('workflow_step2_days', d.step2, 'ตรวจสอบเอกสาร → มอบหมายกรรมการ', 'workflow'),
-          this.upsertSettingByKey('workflow_step3_days', d.step3, 'กรรมการพิจารณา → ประชุม', 'workflow'),
-          this.upsertSettingByKey('workflow_step4_days', d.step4, 'ขอแก้ไข → นักวิจัยส่งกลับ', 'workflow'),
-          this.upsertSettingByKey('workflow_step5_days', d.step5, 'ส่งแก้ไข → พิจารณารอบ 2', 'workflow')
-        ]
-        await Promise.all(jobs)
+        const payload = this.buildWorkflowSettingsPayload()
+        const response = await axios.put('/api/v1/setting/bulk', payload)
+        const result = response && response.data && response.data.data ? response.data.data : {}
+        const failedKeys = Array.isArray(result.failedKeys) ? result.failedKeys : []
+
+        if (!response || !response.data || response.data.success !== true || failedKeys.length > 0) {
+          throw new Error('bulk workflow save returned failed keys')
+        }
+
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'บันทึก Workflow สำเร็จ', timer: 1400, showConfirmButton: false })
+        this.clearWorkflowFallbackMeta()
+        this.workflowDataSource = 'database'
+        this.workflowSaveStatus = 'db_saved'
+        this.workflowSaveMessage = 'บันทึก Workflow Settings ลงฐานข้อมูลสำเร็จ'
+        await Swal.fire({ icon: 'success', title: 'บันทึก Workflow Settings ลงฐานข้อมูลสำเร็จ', timer: 1400, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] saveWorkflowSettings fallback:', error)
-        this.saveFallback()
-        await Swal.fire({ icon: 'info', title: 'บันทึกในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
+        const savedAt = new Date().toISOString()
+        try {
+          this.saveFallback({
+            workflow: {
+              status: 'local_fallback',
+              savedAt,
+              reason: (error && error.message) ? error.message : 'unknown_error'
+            }
+          })
+          this.workflowDataSource = 'local_fallback'
+          this.workflowFallbackSavedAt = savedAt
+          this.workflowSaveStatus = 'local_fallback'
+          this.workflowSaveMessage = 'ไม่สามารถบันทึกลงฐานข้อมูลได้ ข้อมูลถูกเก็บไว้เฉพาะในเครื่องชั่วคราว'
+          await Swal.fire({ icon: 'warning', title: 'บันทึกเฉพาะในเครื่องชั่วคราว', text: 'ไม่สามารถบันทึกลงฐานข้อมูลได้ ข้อมูลถูกเก็บไว้เฉพาะในเครื่องชั่วคราว' })
+        } catch (fallbackError) {
+          console.error('[AdminSettings] workflow fallback save failed:', fallbackError)
+          this.workflowSaveStatus = 'failed'
+          this.workflowSaveMessage = 'ไม่สามารถบันทึกข้อมูลได้ ทั้งฐานข้อมูลและ local fallback'
+          await Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: 'ไม่สามารถบันทึกได้ทั้งฐานข้อมูลและเครื่องนี้ กรุณาลองใหม่' })
+        }
       }
     },
     async saveSMTPSettings () {
@@ -1284,6 +1401,104 @@ export default {
     },
     toggleShowPassword () {
       this.showPassword = !this.showPassword
+    },
+    onEmailWidgetKeydown (event) {
+      if (!this.isEmailWidgetOpen) return
+      if (event && event.key === 'Escape') {
+        this.closeEmailWidget()
+      }
+    },
+    toggleEmailWidget () {
+      if (this.isEmailWidgetOpen) {
+        this.closeEmailWidget()
+        return
+      }
+
+      this.emailWidgetFeedback = { type: '', message: '' }
+      this.emailWidgetForm = {
+        ...this.emailWidgetForm,
+        senderName: this.emailWidgetForm.senderName || 'ผู้ดูแลระบบ',
+        recipientEmail: this.emailWidgetForm.recipientEmail || this.getPreferredTestRecipientEmail(),
+        templateKey: this.emailWidgetForm.templateKey || this.testTemplateKey || ''
+      }
+      this.isEmailWidgetOpen = true
+    },
+    closeEmailWidget () {
+      this.isEmailWidgetOpen = false
+    },
+    onWidgetTemplateChange (val) {
+      const key = val && val.target ? val.target.value : val
+      this.emailWidgetForm.templateKey = key
+      if (!key || !this.emailTemplates[key]) return
+
+      const template = this.emailTemplates[key]
+      if (!String(this.emailWidgetForm.subject || '').trim()) {
+        this.emailWidgetForm.subject = String(template.subject || '').trim()
+      }
+      if (!String(this.emailWidgetForm.message || '').trim()) {
+        this.emailWidgetForm.message = String(template.body || '').trim()
+      }
+    },
+    validateWidgetEmailForm () {
+      if (!String(this.emailWidgetForm.senderName || '').trim()) {
+        return 'กรุณากรอกชื่อผู้ส่ง'
+      }
+      if (!String(this.emailWidgetForm.subject || '').trim()) {
+        return 'กรุณากรอกหัวข้ออีเมล'
+      }
+      if (!String(this.emailWidgetForm.message || '').trim()) {
+        return 'กรุณากรอกข้อความอีเมล'
+      }
+
+      const recipientEmail = String(this.emailWidgetForm.recipientEmail || '').trim()
+      if (!recipientEmail) {
+        return 'กรุณากรอกอีเมลผู้รับ'
+      }
+      if (!this.isValidEmail(recipientEmail)) {
+        return 'รูปแบบอีเมลผู้รับไม่ถูกต้อง'
+      }
+      if (this.isPlaceholderEmail(recipientEmail)) {
+        return 'อีเมลผู้รับดูเหมือนเป็นข้อมูลทดสอบ กรุณาใช้อีเมลผู้ใช้จริงในระบบ'
+      }
+
+      const smtpValidationError = this.validateSMTPConfig({ requirePassword: true })
+      if (smtpValidationError) return smtpValidationError
+      return ''
+    },
+    async sendEmailFromWidget () {
+      this.emailWidgetFeedback = { type: '', message: '' }
+
+      const validationError = this.validateWidgetEmailForm()
+      if (validationError) {
+        this.emailWidgetFeedback = { type: 'error', message: validationError }
+        return
+      }
+
+      this.emailWidgetSending = true
+      try {
+        const smtpPayload = this.buildSmtpPayloadForApi({ includePasswordIfProvided: true })
+        const payload = {
+          recipientEmail: this.normalizeEmail(this.emailWidgetForm.recipientEmail),
+          smtp: smtpPayload,
+          templateKey: this.emailWidgetForm.templateKey || '',
+          senderName: String(this.emailWidgetForm.senderName || '').trim(),
+          subject: String(this.emailWidgetForm.subject || '').trim(),
+          message: String(this.emailWidgetForm.message || '').trim()
+        }
+
+        await axios.post('/api/v1/setting/test-email', payload)
+        this.emailWidgetFeedback = {
+          type: 'success',
+          message: `ส่งอีเมลเรียบร้อยไปยัง ${payload.recipientEmail}`
+        }
+      } catch (error) {
+        this.emailWidgetFeedback = {
+          type: 'error',
+          message: (error && error.response && error.response.data && error.response.data.message) || 'ส่งอีเมลไม่สำเร็จ กรุณาตรวจสอบ SMTP แล้วลองใหม่'
+        }
+      } finally {
+        this.emailWidgetSending = false
+      }
     }
   }
 }
@@ -1300,5 +1515,95 @@ export default {
 
 .danger-zone {
   border: 1px solid #e55353;
+}
+
+.admin-email-widget__fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2f6de1 0%, #1748a3 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(20, 46, 101, 0.35);
+  z-index: 1100;
+  cursor: pointer;
+}
+
+.admin-email-widget__fab.is-open {
+  background: linear-gradient(135deg, #4a5f84 0%, #2b3d5e 100%);
+}
+
+.admin-email-widget__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.12);
+  z-index: 1090;
+}
+
+.admin-email-widget__panel {
+  position: fixed;
+  right: 24px;
+  bottom: 92px;
+  width: min(420px, calc(100vw - 24px));
+  max-height: min(72vh, 700px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(44, 62, 100, 0.12);
+}
+
+.admin-email-widget__header {
+  background: #f4f7ff;
+  border-bottom: 1px solid #d9e2f6;
+}
+
+.admin-email-widget__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: #3f65b6;
+  margin-bottom: 2px;
+}
+
+.admin-email-widget__body {
+  overflow: auto;
+  background: #ffffff;
+}
+
+.admin-email-widget__body label {
+  color: #24314e;
+}
+
+.admin-email-widget__footer {
+  background: #f8fbff;
+  border-top: 1px solid #d9e2f6;
+}
+
+.admin-email-widget__textarea {
+  resize: vertical;
+  min-height: 124px;
+}
+
+@media (max-width: 768px) {
+  .admin-email-widget__fab {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .admin-email-widget__panel {
+    right: 12px;
+    left: 12px;
+    bottom: 84px;
+    width: auto;
+    max-height: 76vh;
+  }
 }
 </style>

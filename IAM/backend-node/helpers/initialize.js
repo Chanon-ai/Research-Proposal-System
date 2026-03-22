@@ -1,11 +1,35 @@
 'use strict';
 
+var dns = require('dns');
 var mongoose = require('mongoose');
 var cfg = require('../config/config');
 var resMsg = require('../config/message');
 var mongodb = null;
 
+function configureMongoSrvDns() {
+    if (!cfg.mongoURI || cfg.mongoURI.indexOf('mongodb+srv://') !== 0) {
+        return;
+    }
+
+    var dnsServers = (process.env.MONGO_DNS_SERVERS || '')
+        .split(',')
+        .map(function (item) { return item.trim(); })
+        .filter(Boolean);
+
+    if (!dnsServers.length) {
+        return;
+    }
+
+    try {
+        dns.setServers(dnsServers);
+        console.log('[MongoDB] DNS override enabled: ' + dnsServers.join(', '));
+    } catch (err) {
+        console.log('[MongoDB] Failed to set DNS override: ' + (err && err.message ? err.message : err));
+    }
+}
+
 exports.init = function (callback) {
+    configureMongoSrvDns();
     mongoose.Promise = global.Promise;
     mongodb = mongoose.connect(cfg.mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
     var db = mongoose.connection;
