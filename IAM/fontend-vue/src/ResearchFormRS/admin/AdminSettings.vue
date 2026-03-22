@@ -133,89 +133,6 @@
         <template slot="title">อีเมล</template>
 
         <CCard class="mt-3">
-          <CCardHeader class="d-flex justify-content-between align-items-center">
-            <span>Email Notifications</span>
-            <CBadge :color="emailNotificationsEnabled ? 'success' : 'secondary'">
-              {{ emailNotificationsEnabled ? 'เปิดใช้งาน' : 'ปิดใช้งาน' }}
-            </CBadge>
-          </CCardHeader>
-          <CCardBody>
-            <div class="d-flex align-items-center" style="gap: 12px;">
-              <CSwitch color="success" :checked.sync="emailNotificationsEnabled" />
-              <div>
-                <div class="font-weight-bold">ส่งอีเมลแจ้งเตือน Workflow อัตโนมัติ</div>
-                <small class="text-muted">เมื่อปิด ระบบจะหยุดส่งอีเมลสำหรับทุกเหตุการณ์ Workflow (อนุมัติ, ขอแก้ไข, นัดประชุม ฯลฯ) ไม่กระทบต่อการทดสอบ SMTP</small>
-              </div>
-            </div>
-            <div class="mt-3">
-              <CButton color="primary" size="sm" @click="saveEmailNotificationToggle">บันทึกการตั้งค่า</CButton>
-            </div>
-          </CCardBody>
-        </CCard>
-
-        <CCard class="mt-3">
-          <CCardHeader>SMTP Configuration</CCardHeader>
-          <CCardBody>
-            <form autocomplete="off" @submit.prevent>
-            <CRow>
-              <CCol md="4"><CInput label="SMTP Host" placeholder="smtp.gmail.com" v-model="smtpForm.smtp_host" /></CCol>
-              <CCol md="2"><CInput type="number" label="SMTP Port" v-model.number="smtpForm.smtp_port" /></CCol>
-              <CCol md="3"><CInput type="email" label="Username" v-model="smtpForm.smtp_username" name="smtp_username" autocomplete="off" /></CCol>
-              <CCol md="3">
-                <CInput :type="showPassword ? 'text' : 'password'" label="Password" v-model="smtpForm.smtp_password" name="smtp_password" autocomplete="new-password" placeholder="มีการตั้งค่าไว้แล้ว (กรอกใหม่เพื่อเปลี่ยน)">
-                  <template #append>
-                    <CButton color="secondary" variant="outline" @click="toggleShowPassword">{{ showPassword ? 'ซ่อน' : 'แสดง' }}</CButton>
-                  </template>
-                </CInput>
-              </CCol>
-              <CCol md="4"><CInput label="From Name" v-model="smtpForm.smtp_from_name" /></CCol>
-              <CCol md="4"><CInput type="email" label="From Email" v-model="smtpForm.smtp_from_email" /></CCol>
-              <CCol md="4">
-                <label class="d-block mb-1">ใช้ SSL/TLS</label>
-                <CSwitch color="success" :checked.sync="smtpForm.smtp_use_ssl" />
-              </CCol>
-            </CRow>
-            </form>
-
-            <CCallout color="info" class="mb-3">
-              ระบบจะส่งอีเมลทดสอบไปยังอีเมลผู้ใช้ในระบบที่ระบุด้านล่างเท่านั้น
-            </CCallout>
-
-            <CRow class="mb-2">
-              <CCol md="8">
-                <CInput
-                  label="อีเมลผู้รับสำหรับทดสอบ"
-                  type="email"
-                  v-model="testRecipientEmail"
-                  placeholder="กรอกอีเมลผู้ใช้จริงในระบบ"
-                  autocomplete="off"
-                />
-              </CCol>
-              <CCol md="4">
-                <label class="d-block mb-1">เทมเพลตสำหรับทดสอบ</label>
-                <CSelect
-                  :value="testTemplateKey"
-                  :options="[
-                    { value: '', label: '(ข้อความทดสอบเริ่มต้น)' },
-                    ...Object.keys(emailTemplates).map(key => ({ value: key, label: getTemplateLabel(key) }))
-                  ]"
-                  @change="testTemplateKey = $event && $event.target ? $event.target.value : $event"
-                />
-              </CCol>
-            </CRow>
-
-            <CCallout v-if="isPlaceholderEmail(getCurrentUserEmail())" color="warning" class="mb-3">
-              อีเมลผู้ดูแลที่ล็อกอินอยู่ดูเหมือนเป็นข้อมูลทดสอบ ({{ getCurrentUserEmail() || '-' }}) กรุณาระบุอีเมลผู้ใช้จริงในระบบสำหรับทดสอบ
-            </CCallout>
-
-            <div class="d-flex" style="gap: 8px;">
-              <CButton color="warning" @click="sendTestSMTP">ทดสอบการส่งอีเมล</CButton>
-              <CButton color="primary" @click="saveSMTPSettings">บันทึก SMTP</CButton>
-            </div>
-          </CCardBody>
-        </CCard>
-
-        <CCard>
           <CCardHeader>Email Templates</CCardHeader>
           <CCardBody>
             <CCallout color="warning" class="mb-3">
@@ -414,7 +331,7 @@
             <h5 class="mb-1">Send a message</h5>
             <small class="text-muted">ส่งอีเมลทดสอบผ่านระบบ SMTP ที่ตั้งค่าไว้</small>
           </div>
-          <CButton color="secondary" variant="ghost" size="sm" @click="closeEmailWidget">ปิด</CButton>
+          <CButton color="secondary" variant="ghost" size="sm" class="admin-email-widget__close-btn" @click="closeEmailWidget">ปิด</CButton>
         </CCardHeader>
 
         <CCardBody class="admin-email-widget__body">
@@ -469,6 +386,7 @@
         <CCardFooter class="admin-email-widget__footer">
           <CButton
             color="primary"
+            class="admin-email-widget__send-btn"
             block
             :disabled="emailWidgetSending"
             @click="sendEmailFromWidget"
@@ -478,20 +396,6 @@
         </CCardFooter>
       </CCard>
     </div>
-
-    <CModal class="send-modal" :show.sync="showTestEmailModal" centered title="ทดสอบการส่งอีเมล" :close-on-backdrop="false">
-      <template #body-wrapper>
-        <div class="send-modal-inner" style="padding-left:36px;padding-right:36px;box-sizing:border-box;">
-          <CInput label="อีเมลสำหรับทดสอบ" type="email" v-model="testEmailAddress" placeholder="example@mfu.ac.th" />
-        </div>
-      </template>
-      <template #footer-wrapper>
-        <div class="d-flex justify-content-end w-100" style="max-width:880px;margin:0 auto;padding-right:36px;box-sizing:border-box;gap:12px;">
-          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="showTestEmailModal = false">ยกเลิก</CButton>
-          <CButton color="warning" class="modal-btn modal-btn--primary" @click="sendTestSMTP">ส่งทดสอบ</CButton>
-        </div>
-      </template>
-    </CModal>
 
     <CModal class="send-modal" :show.sync="showAddSettingModal" centered title="เพิ่ม Setting ใหม่" :close-on-backdrop="false">
       <template #body-wrapper>
@@ -1569,6 +1473,10 @@ export default {
   background: #ffffff;
 }
 
+.admin-email-widget__body label {
+  color: #24314e;
+}
+
 .admin-email-widget__footer {
   background: #f8fbff;
   border-top: 1px solid #d9e2f6;
@@ -1577,59 +1485,6 @@ export default {
 .admin-email-widget__textarea {
   resize: vertical;
   min-height: 124px;
-}
-
-:deep(.c-dark-theme) .admin-email-widget__panel,
-:deep([data-coreui-theme='dark']) .admin-email-widget__panel {
-  border-color: #2f3e55;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
-}
-
-:deep(.c-dark-theme) .admin-email-widget__header,
-:deep([data-coreui-theme='dark']) .admin-email-widget__header {
-  background: #182233;
-  border-bottom-color: #2f3e55;
-  color: #e9f0ff;
-}
-
-:deep(.c-dark-theme) .admin-email-widget__header .text-muted,
-:deep([data-coreui-theme='dark']) .admin-email-widget__header .text-muted {
-  color: #b3c2dd !important;
-}
-
-:deep(.c-dark-theme) .admin-email-widget__eyebrow,
-:deep([data-coreui-theme='dark']) .admin-email-widget__eyebrow {
-  color: #8fb5ff;
-}
-
-:deep(.c-dark-theme) .admin-email-widget__body,
-:deep([data-coreui-theme='dark']) .admin-email-widget__body {
-  background: #1e2a3d;
-  color: #e7eeff;
-}
-
-:deep(.c-dark-theme) .admin-email-widget__body .form-control,
-:deep([data-coreui-theme='dark']) .admin-email-widget__body .form-control {
-  background: #151f2f;
-  color: #e7eeff;
-  border-color: #3a4b67;
-}
-
-:deep(.c-dark-theme) .admin-email-widget__body .form-control::placeholder,
-:deep([data-coreui-theme='dark']) .admin-email-widget__body .form-control::placeholder {
-  color: #90a4c8;
-}
-
-:deep(.c-dark-theme) .admin-email-widget__body .form-control:focus,
-:deep([data-coreui-theme='dark']) .admin-email-widget__body .form-control:focus {
-  border-color: #76a4ff;
-  box-shadow: 0 0 0 0.15rem rgba(118, 164, 255, 0.22);
-}
-
-:deep(.c-dark-theme) .admin-email-widget__footer,
-:deep([data-coreui-theme='dark']) .admin-email-widget__footer {
-  background: #182233;
-  border-top-color: #2f3e55;
 }
 
 @media (max-width: 768px) {
