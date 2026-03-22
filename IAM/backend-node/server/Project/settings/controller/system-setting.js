@@ -57,7 +57,10 @@ exports.testEmail = async (req, res) => {
     await service.testEmail({
       recipientEmail,
       smtp: (req.body && req.body.smtp) || {},
-      templateKey: String((req.body && req.body.templateKey) || '').trim()
+      templateKey: String((req.body && req.body.templateKey) || '').trim(),
+      senderName: String((req.body && req.body.senderName) || '').trim(),
+      subject: String((req.body && req.body.subject) || '').trim(),
+      message: String((req.body && req.body.message) || '').trim()
     });
     return res.json({ success: true, message: 'Test email sent successfully', data: { recipientEmail } });
   } catch (err) {

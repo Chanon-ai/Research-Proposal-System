@@ -289,7 +289,7 @@ function validateSmtpConfig({ config, smtp = {} }) {
   }
 }
 
-async function testEmail({ recipientEmail, smtp = {}, templateKey = '' }) {
+async function testEmail({ recipientEmail, smtp = {}, templateKey = '', senderName = '', subject = '', message = '' }) {
   const { email, userId } = await resolveTestRecipientEmail(recipientEmail);
 
   const saved = await getSettingMap();
@@ -313,7 +313,7 @@ async function testEmail({ recipientEmail, smtp = {}, templateKey = '' }) {
   // Render template if templateKey provided, otherwise use default test text
   const templates = parseEmailTemplates(saved.email_templates_json);
   const chosenKey = String(templateKey || '').trim();
-  let subject = 'MFU Research System: SMTP Test';
+  let resolvedSubject = 'MFU Research System: SMTP Test';
   let text = 'This is a test email from the MFU Research System admin settings page.';
 
   if (chosenKey && templates[chosenKey]) {
@@ -327,15 +327,28 @@ async function testEmail({ recipientEmail, smtp = {}, templateKey = '' }) {
       meetingDate: new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }),
       meetingTime: '09:00 น.'
     };
-    subject = renderTemplate(tpl.subject, dummyVars) || subject;
+    resolvedSubject = renderTemplate(tpl.subject, dummyVars) || resolvedSubject;
     text = renderTemplate(tpl.body, dummyVars) || text;
+  }
+
+  const customSubject = String(subject || '').trim();
+  const customMessage = String(message || '').trim();
+  const customSenderName = String(senderName || '').trim();
+  if (customSubject) {
+    resolvedSubject = customSubject;
+  }
+  if (customMessage) {
+    text = customMessage;
+  }
+  if (customSenderName) {
+    text = `จาก: ${customSenderName}\n\n${text}`;
   }
 
   const transporter = nodemailer.createTransport(config);
   await transporter.sendMail({
     from: fromName ? { name: fromName, address: fromAddress } : fromAddress,
     to: email,
-    subject,
+    subject: resolvedSubject,
     text
   });
 

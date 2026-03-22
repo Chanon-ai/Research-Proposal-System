@@ -389,6 +389,96 @@
       </CTab>
     </CTabs>
 
+    <button
+      type="button"
+      class="admin-email-widget__fab"
+      :class="{ 'is-open': isEmailWidgetOpen }"
+      aria-label="เปิดฟอร์มส่งอีเมล"
+      @click="toggleEmailWidget"
+    >
+      <CIcon :name="isEmailWidgetOpen ? 'cil-x' : 'cil-envelope-open'" size="lg" />
+    </button>
+
+    <div
+      v-if="isEmailWidgetOpen"
+      class="admin-email-widget__backdrop"
+      @click="closeEmailWidget"
+    >
+      <CCard
+        class="admin-email-widget__panel"
+        @click.stop
+      >
+        <CCardHeader class="admin-email-widget__header d-flex justify-content-between align-items-start">
+          <div>
+            <div class="admin-email-widget__eyebrow">ADMIN EMAIL</div>
+            <h5 class="mb-1">Send a message</h5>
+            <small class="text-muted">ส่งอีเมลทดสอบผ่านระบบ SMTP ที่ตั้งค่าไว้</small>
+          </div>
+          <CButton color="secondary" variant="ghost" size="sm" @click="closeEmailWidget">ปิด</CButton>
+        </CCardHeader>
+
+        <CCardBody class="admin-email-widget__body">
+          <CAlert
+            v-if="emailWidgetFeedback.message"
+            :color="emailWidgetFeedback.type === 'success' ? 'success' : 'danger'"
+            show
+            class="mb-3"
+          >
+            {{ emailWidgetFeedback.message }}
+          </CAlert>
+
+          <CInput
+            label="Name / ชื่อผู้ส่ง"
+            v-model="emailWidgetForm.senderName"
+            placeholder="เช่น ผู้ดูแลระบบ"
+          />
+
+          <CInput
+            label="Subject / หัวข้อ"
+            v-model="emailWidgetForm.subject"
+            placeholder="เช่น ทดสอบระบบแจ้งเตือน"
+          />
+
+          <CInput
+            label="Email address / อีเมลผู้รับ"
+            type="email"
+            v-model="emailWidgetForm.recipientEmail"
+            placeholder="ต้องเป็นอีเมลผู้ใช้จริงในระบบ"
+          />
+
+          <label class="d-block mb-1">Template (ถ้าต้องการ)</label>
+          <CSelect
+            class="mb-3"
+            :value="emailWidgetForm.templateKey"
+            :options="[
+              { value: '', label: '(ใช้หัวข้อ/ข้อความที่กรอกเอง)' },
+              ...Object.keys(emailTemplates).map(key => ({ value: key, label: getTemplateLabel(key) }))
+            ]"
+            @change="onWidgetTemplateChange"
+          />
+
+          <label class="d-block mb-1">Message / รายละเอียดข้อความ</label>
+          <textarea
+            v-model="emailWidgetForm.message"
+            rows="6"
+            class="form-control admin-email-widget__textarea"
+            placeholder="พิมพ์ข้อความที่ต้องการส่ง"
+          />
+        </CCardBody>
+
+        <CCardFooter class="admin-email-widget__footer">
+          <CButton
+            color="primary"
+            block
+            :disabled="emailWidgetSending"
+            @click="sendEmailFromWidget"
+          >
+            {{ emailWidgetSending ? 'กำลังส่ง...' : 'ส่งอีเมล' }}
+          </CButton>
+        </CCardFooter>
+      </CCard>
+    </div>
+
     <CModal class="send-modal" :show.sync="showTestEmailModal" centered title="ทดสอบการส่งอีเมล" :close-on-backdrop="false">
       <template #body-wrapper>
         <div class="send-modal-inner" style="padding-left:36px;padding-right:36px;box-sizing:border-box;">
@@ -579,6 +669,20 @@ export default {
       emailLogFilter: '',
       emailLogPage: 1,
 
+      isEmailWidgetOpen: false,
+      emailWidgetSending: false,
+      emailWidgetFeedback: {
+        type: '',
+        message: ''
+      },
+      emailWidgetForm: {
+        senderName: '',
+        subject: '',
+        recipientEmail: '',
+        message: '',
+        templateKey: ''
+      },
+
       showAddSettingModal: false,
       newSetting: { key: '', value: '', group: 'general', description: '' },
 
@@ -601,6 +705,10 @@ export default {
     this.applyTabFromRoute()
     this.fetchSettings()
     this.fetchEmailLogs()
+    document.addEventListener('keydown', this.onEmailWidgetKeydown)
+  },
+  beforeDestroy () {
+    document.removeEventListener('keydown', this.onEmailWidgetKeydown)
   },
   watch: {
     '$route.query.tab' () {
@@ -1284,6 +1392,104 @@ export default {
     },
     toggleShowPassword () {
       this.showPassword = !this.showPassword
+    },
+    onEmailWidgetKeydown (event) {
+      if (!this.isEmailWidgetOpen) return
+      if (event && event.key === 'Escape') {
+        this.closeEmailWidget()
+      }
+    },
+    toggleEmailWidget () {
+      if (this.isEmailWidgetOpen) {
+        this.closeEmailWidget()
+        return
+      }
+
+      this.emailWidgetFeedback = { type: '', message: '' }
+      this.emailWidgetForm = {
+        ...this.emailWidgetForm,
+        senderName: this.emailWidgetForm.senderName || 'ผู้ดูแลระบบ',
+        recipientEmail: this.emailWidgetForm.recipientEmail || this.getPreferredTestRecipientEmail(),
+        templateKey: this.emailWidgetForm.templateKey || this.testTemplateKey || ''
+      }
+      this.isEmailWidgetOpen = true
+    },
+    closeEmailWidget () {
+      this.isEmailWidgetOpen = false
+    },
+    onWidgetTemplateChange (val) {
+      const key = val && val.target ? val.target.value : val
+      this.emailWidgetForm.templateKey = key
+      if (!key || !this.emailTemplates[key]) return
+
+      const template = this.emailTemplates[key]
+      if (!String(this.emailWidgetForm.subject || '').trim()) {
+        this.emailWidgetForm.subject = String(template.subject || '').trim()
+      }
+      if (!String(this.emailWidgetForm.message || '').trim()) {
+        this.emailWidgetForm.message = String(template.body || '').trim()
+      }
+    },
+    validateWidgetEmailForm () {
+      if (!String(this.emailWidgetForm.senderName || '').trim()) {
+        return 'กรุณากรอกชื่อผู้ส่ง'
+      }
+      if (!String(this.emailWidgetForm.subject || '').trim()) {
+        return 'กรุณากรอกหัวข้ออีเมล'
+      }
+      if (!String(this.emailWidgetForm.message || '').trim()) {
+        return 'กรุณากรอกข้อความอีเมล'
+      }
+
+      const recipientEmail = String(this.emailWidgetForm.recipientEmail || '').trim()
+      if (!recipientEmail) {
+        return 'กรุณากรอกอีเมลผู้รับ'
+      }
+      if (!this.isValidEmail(recipientEmail)) {
+        return 'รูปแบบอีเมลผู้รับไม่ถูกต้อง'
+      }
+      if (this.isPlaceholderEmail(recipientEmail)) {
+        return 'อีเมลผู้รับดูเหมือนเป็นข้อมูลทดสอบ กรุณาใช้อีเมลผู้ใช้จริงในระบบ'
+      }
+
+      const smtpValidationError = this.validateSMTPConfig({ requirePassword: true })
+      if (smtpValidationError) return smtpValidationError
+      return ''
+    },
+    async sendEmailFromWidget () {
+      this.emailWidgetFeedback = { type: '', message: '' }
+
+      const validationError = this.validateWidgetEmailForm()
+      if (validationError) {
+        this.emailWidgetFeedback = { type: 'error', message: validationError }
+        return
+      }
+
+      this.emailWidgetSending = true
+      try {
+        const smtpPayload = this.buildSmtpPayloadForApi({ includePasswordIfProvided: true })
+        const payload = {
+          recipientEmail: this.normalizeEmail(this.emailWidgetForm.recipientEmail),
+          smtp: smtpPayload,
+          templateKey: this.emailWidgetForm.templateKey || '',
+          senderName: String(this.emailWidgetForm.senderName || '').trim(),
+          subject: String(this.emailWidgetForm.subject || '').trim(),
+          message: String(this.emailWidgetForm.message || '').trim()
+        }
+
+        await axios.post('/api/v1/setting/test-email', payload)
+        this.emailWidgetFeedback = {
+          type: 'success',
+          message: `ส่งอีเมลเรียบร้อยไปยัง ${payload.recipientEmail}`
+        }
+      } catch (error) {
+        this.emailWidgetFeedback = {
+          type: 'error',
+          message: (error && error.response && error.response.data && error.response.data.message) || 'ส่งอีเมลไม่สำเร็จ กรุณาตรวจสอบ SMTP แล้วลองใหม่'
+        }
+      } finally {
+        this.emailWidgetSending = false
+      }
     }
   }
 }
@@ -1300,5 +1506,144 @@ export default {
 
 .danger-zone {
   border: 1px solid #e55353;
+}
+
+.admin-email-widget__fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2f6de1 0%, #1748a3 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(20, 46, 101, 0.35);
+  z-index: 1100;
+  cursor: pointer;
+}
+
+.admin-email-widget__fab.is-open {
+  background: linear-gradient(135deg, #4a5f84 0%, #2b3d5e 100%);
+}
+
+.admin-email-widget__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.12);
+  z-index: 1090;
+}
+
+.admin-email-widget__panel {
+  position: fixed;
+  right: 24px;
+  bottom: 92px;
+  width: min(420px, calc(100vw - 24px));
+  max-height: min(72vh, 700px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.24);
+  border: 1px solid rgba(44, 62, 100, 0.12);
+}
+
+.admin-email-widget__header {
+  background: #f4f7ff;
+  border-bottom: 1px solid #d9e2f6;
+}
+
+.admin-email-widget__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: #3f65b6;
+  margin-bottom: 2px;
+}
+
+.admin-email-widget__body {
+  overflow: auto;
+  background: #ffffff;
+}
+
+.admin-email-widget__footer {
+  background: #f8fbff;
+  border-top: 1px solid #d9e2f6;
+}
+
+.admin-email-widget__textarea {
+  resize: vertical;
+  min-height: 124px;
+}
+
+:deep(.c-dark-theme) .admin-email-widget__panel,
+:deep([data-coreui-theme='dark']) .admin-email-widget__panel {
+  border-color: #2f3e55;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+}
+
+:deep(.c-dark-theme) .admin-email-widget__header,
+:deep([data-coreui-theme='dark']) .admin-email-widget__header {
+  background: #182233;
+  border-bottom-color: #2f3e55;
+  color: #e9f0ff;
+}
+
+:deep(.c-dark-theme) .admin-email-widget__header .text-muted,
+:deep([data-coreui-theme='dark']) .admin-email-widget__header .text-muted {
+  color: #b3c2dd !important;
+}
+
+:deep(.c-dark-theme) .admin-email-widget__eyebrow,
+:deep([data-coreui-theme='dark']) .admin-email-widget__eyebrow {
+  color: #8fb5ff;
+}
+
+:deep(.c-dark-theme) .admin-email-widget__body,
+:deep([data-coreui-theme='dark']) .admin-email-widget__body {
+  background: #1e2a3d;
+  color: #e7eeff;
+}
+
+:deep(.c-dark-theme) .admin-email-widget__body .form-control,
+:deep([data-coreui-theme='dark']) .admin-email-widget__body .form-control {
+  background: #151f2f;
+  color: #e7eeff;
+  border-color: #3a4b67;
+}
+
+:deep(.c-dark-theme) .admin-email-widget__body .form-control::placeholder,
+:deep([data-coreui-theme='dark']) .admin-email-widget__body .form-control::placeholder {
+  color: #90a4c8;
+}
+
+:deep(.c-dark-theme) .admin-email-widget__body .form-control:focus,
+:deep([data-coreui-theme='dark']) .admin-email-widget__body .form-control:focus {
+  border-color: #76a4ff;
+  box-shadow: 0 0 0 0.15rem rgba(118, 164, 255, 0.22);
+}
+
+:deep(.c-dark-theme) .admin-email-widget__footer,
+:deep([data-coreui-theme='dark']) .admin-email-widget__footer {
+  background: #182233;
+  border-top-color: #2f3e55;
+}
+
+@media (max-width: 768px) {
+  .admin-email-widget__fab {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .admin-email-widget__panel {
+    right: 12px;
+    left: 12px;
+    bottom: 84px;
+    width: auto;
+    max-height: 76vh;
+  }
 }
 </style>
