@@ -38,6 +38,12 @@ const meetingSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    meetingType: {
+      type: String,
+      enum: ['online', 'onsite'],
+      default: 'online',
+      index: true
+    },
     agenda: {
       type: String,
       default: ''

@@ -56,7 +56,6 @@ var objsSchema  = new Schema({
         cardId              : {type: String, default: null},//citizen card id
         birthday            : {type: Date, default: null},
         msisdn              : {type: String, default: null} ,//phone number
-        lineId              : {type: String, default: null},
         religion            : {type: String, default: null},
     },
 
