@@ -32,6 +32,7 @@ router.delete("/verification", verification.onDelete);
 
 router.get("/", authenticate, requireRole('admin', 'chairman'), systemSetting.list);
 router.post("/", authenticate, requireRole('admin', 'chairman'), systemSetting.create);
+router.put("/bulk", authenticate, requireRole('admin', 'chairman'), systemSetting.bulkUpdate);
 router.get("/email-logs", authenticate, requireRole('admin', 'chairman'), systemSetting.listEmailLogs);
 router.post("/test-email", authenticate, requireRole('admin', 'chairman'), systemSetting.testEmail);
 router.post("/clear-cache", authenticate, requireRole('admin', 'chairman'), systemSetting.clearCache);

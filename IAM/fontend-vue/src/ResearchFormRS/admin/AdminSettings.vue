@@ -75,6 +75,26 @@
       <CTab>
         <template slot="title">Workflow</template>
 
+        <CAlert
+          show
+          class="mt-3"
+          :color="workflowDataSource === 'database' ? 'success' : (workflowDataSource === 'local_fallback' ? 'warning' : 'secondary')"
+        >
+          <strong>แหล่งข้อมูลที่กำลังใช้งาน:</strong>
+          <span v-if="workflowDataSource === 'database'"> ฐานข้อมูล (Database)</span>
+          <span v-else-if="workflowDataSource === 'local_fallback'"> local fallback ในเครื่อง</span>
+          <span v-else> ยังไม่สามารถยืนยันแหล่งข้อมูลได้</span>
+          <span v-if="workflowDataSource === 'local_fallback' && workflowFallbackSavedAt"> (อัปเดตล่าสุด {{ formatLogDate(workflowFallbackSavedAt) }})</span>
+        </CAlert>
+
+        <CAlert
+          v-if="workflowSaveStatus !== 'idle' && workflowSaveMessage"
+          show
+          :color="workflowSaveStatus === 'db_saved' ? 'success' : (workflowSaveStatus === 'local_fallback' ? 'warning' : 'danger')"
+        >
+          {{ workflowSaveMessage }}
+        </CAlert>
+
         <CCard class="mt-3">
           <CCardHeader>กำหนดระยะเวลา (Deadline per Step)</CCardHeader>
           <CCardBody>
@@ -550,6 +570,10 @@ export default {
           step5: 7
         }
       },
+      workflowSaveStatus: 'idle',
+      workflowSaveMessage: '',
+      workflowDataSource: 'unknown',
+      workflowFallbackSavedAt: '',
 
       smtpForm: {
         smtp_host: '',
@@ -787,20 +811,48 @@ export default {
       if (typeof value === 'object') return JSON.stringify(value)
       return String(value)
     },
-    saveFallback () {
+    parseFallbackMeta () {
+      try {
+        const raw = localStorage.getItem(LOCAL_FALLBACK_KEY)
+        if (!raw) return {}
+        const parsed = JSON.parse(raw)
+        return (parsed && parsed.__meta && typeof parsed.__meta === 'object') ? parsed.__meta : {}
+      } catch (e) {
+        return {}
+      }
+    },
+    saveFallback (meta = {}) {
+      const currentMeta = this.parseFallbackMeta()
       const bundle = {
         generalForm: this.generalForm,
         workflowForm: this.workflowForm,
         smtpForm: this.smtpForm,
         emailTemplates: this.emailTemplates,
-        settings: this.settings
+        settings: this.settings,
+        __meta: {
+          ...currentMeta,
+          ...meta
+        }
       }
       localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(bundle))
+    },
+    clearWorkflowFallbackMeta () {
+      try {
+        const raw = localStorage.getItem(LOCAL_FALLBACK_KEY)
+        if (!raw) return
+        const parsed = JSON.parse(raw)
+        if (!parsed || typeof parsed !== 'object') return
+        if (!parsed.__meta || typeof parsed.__meta !== 'object') return
+        delete parsed.__meta.workflow
+        localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(parsed))
+      } catch (e) {
+        console.error('[AdminSettings] clearWorkflowFallbackMeta error:', e)
+      }
     },
     loadFallback () {
       try {
         const raw = localStorage.getItem(LOCAL_FALLBACK_KEY)
-        if (!raw) return
+        if (!raw) return false
         const parsed = JSON.parse(raw)
         if (parsed.generalForm) this.generalForm = { ...this.generalForm, ...parsed.generalForm }
         if (parsed.workflowForm) {
@@ -816,8 +868,17 @@ export default {
         if (parsed.smtpForm) this.smtpForm = this.normalizeSmtpForm(parsed.smtpForm)
         if (parsed.emailTemplates) this.emailTemplates = parsed.emailTemplates
         if (Array.isArray(parsed.settings)) this.settings = parsed.settings
+
+        const workflowMeta = parsed && parsed.__meta && parsed.__meta.workflow
+        if (workflowMeta && workflowMeta.status === 'local_fallback') {
+          this.workflowDataSource = 'local_fallback'
+          this.workflowFallbackSavedAt = workflowMeta.savedAt || ''
+        }
+
+        return true
       } catch (e) {
         console.error('[AdminSettings] loadFallback error:', e)
+        return false
       }
     },
     async fetchSettings () {
@@ -826,11 +887,18 @@ export default {
         const response = await axios.get('/api/v1/setting')
         this.settings = this.parseSettingsPayload(response)
         this.apiConnected = true
+        this.workflowDataSource = 'database'
+        this.workflowFallbackSavedAt = ''
         this.applySettingsToForms()
       } catch (error) {
         console.error('[AdminSettings] Error fetching settings:', error)
         this.apiConnected = false
-        this.loadFallback()
+        const hasFallback = this.loadFallback()
+        if (hasFallback) {
+          this.workflowDataSource = 'local_fallback'
+        } else {
+          this.workflowDataSource = 'unknown'
+        }
       } finally {
         this.loadingSettings = false
       }
@@ -911,6 +979,23 @@ export default {
       }
       return axios.post('/api/v1/setting', { key, value, description, group })
     },
+    buildWorkflowSettingsPayload () {
+      const d = this.workflowForm.stepDeadlines
+      return {
+        group: 'workflow',
+        settings: [
+          { key: 'workflow_min_score', value: this.workflowForm.minScore, valueType: 'number', label: 'คะแนนขั้นต่ำ' },
+          { key: 'workflow_min_committee', value: this.workflowForm.minCommittee, valueType: 'number', label: 'จำนวนกรรมการขั้นต่ำ' },
+          { key: 'workflow_max_rounds', value: this.workflowForm.maxRounds, valueType: 'number', label: 'รอบพิจารณาสูงสุด' },
+          { key: 'workflow_allow_revision_after_meeting', value: this.workflowForm.allowRevisionAfterMeeting, valueType: 'boolean', label: 'เปิดให้แก้ไขหลังประชุม' },
+          { key: 'workflow_step1_days', value: d.step1, valueType: 'number', label: 'ยื่นโครงการ -> รับโดยส่วนบริหาร' },
+          { key: 'workflow_step2_days', value: d.step2, valueType: 'number', label: 'ตรวจสอบเอกสาร -> มอบหมายกรรมการ' },
+          { key: 'workflow_step3_days', value: d.step3, valueType: 'number', label: 'กรรมการพิจารณา -> ประชุม' },
+          { key: 'workflow_step4_days', value: d.step4, valueType: 'number', label: 'ขอแก้ไข -> นักวิจัยส่งกลับ' },
+          { key: 'workflow_step5_days', value: d.step5, valueType: 'number', label: 'ส่งแก้ไข -> พิจารณารอบ 2' }
+        ]
+      }
+    },
     async saveGeneralSettings () {
       try {
         const jobs = [
@@ -934,26 +1019,46 @@ export default {
       }
     },
     async saveWorkflowSettings () {
+      this.workflowSaveStatus = 'idle'
+      this.workflowSaveMessage = ''
       try {
-        const d = this.workflowForm.stepDeadlines
-        const jobs = [
-          this.upsertSettingByKey('workflow_min_score', this.workflowForm.minScore, 'คะแนนขั้นต่ำ', 'workflow'),
-          this.upsertSettingByKey('workflow_min_committee', this.workflowForm.minCommittee, 'จำนวนกรรมการขั้นต่ำ', 'workflow'),
-          this.upsertSettingByKey('workflow_max_rounds', this.workflowForm.maxRounds, 'รอบพิจารณาสูงสุด', 'workflow'),
-          this.upsertSettingByKey('workflow_allow_revision_after_meeting', this.workflowForm.allowRevisionAfterMeeting, 'เปิดให้แก้ไขหลังประชุม', 'workflow'),
-          this.upsertSettingByKey('workflow_step1_days', d.step1, 'ยื่นโครงการ → รับโดยส่วนบริหาร', 'workflow'),
-          this.upsertSettingByKey('workflow_step2_days', d.step2, 'ตรวจสอบเอกสาร → มอบหมายกรรมการ', 'workflow'),
-          this.upsertSettingByKey('workflow_step3_days', d.step3, 'กรรมการพิจารณา → ประชุม', 'workflow'),
-          this.upsertSettingByKey('workflow_step4_days', d.step4, 'ขอแก้ไข → นักวิจัยส่งกลับ', 'workflow'),
-          this.upsertSettingByKey('workflow_step5_days', d.step5, 'ส่งแก้ไข → พิจารณารอบ 2', 'workflow')
-        ]
-        await Promise.all(jobs)
+        const payload = this.buildWorkflowSettingsPayload()
+        const response = await axios.put('/api/v1/setting/bulk', payload)
+        const result = response && response.data && response.data.data ? response.data.data : {}
+        const failedKeys = Array.isArray(result.failedKeys) ? result.failedKeys : []
+
+        if (!response || !response.data || response.data.success !== true || failedKeys.length > 0) {
+          throw new Error('bulk workflow save returned failed keys')
+        }
+
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'บันทึก Workflow สำเร็จ', timer: 1400, showConfirmButton: false })
+        this.clearWorkflowFallbackMeta()
+        this.workflowDataSource = 'database'
+        this.workflowSaveStatus = 'db_saved'
+        this.workflowSaveMessage = 'บันทึก Workflow Settings ลงฐานข้อมูลสำเร็จ'
+        await Swal.fire({ icon: 'success', title: 'บันทึก Workflow Settings ลงฐานข้อมูลสำเร็จ', timer: 1400, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] saveWorkflowSettings fallback:', error)
-        this.saveFallback()
-        await Swal.fire({ icon: 'info', title: 'บันทึกในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
+        const savedAt = new Date().toISOString()
+        try {
+          this.saveFallback({
+            workflow: {
+              status: 'local_fallback',
+              savedAt,
+              reason: (error && error.message) ? error.message : 'unknown_error'
+            }
+          })
+          this.workflowDataSource = 'local_fallback'
+          this.workflowFallbackSavedAt = savedAt
+          this.workflowSaveStatus = 'local_fallback'
+          this.workflowSaveMessage = 'ไม่สามารถบันทึกลงฐานข้อมูลได้ ข้อมูลถูกเก็บไว้เฉพาะในเครื่องชั่วคราว'
+          await Swal.fire({ icon: 'warning', title: 'บันทึกเฉพาะในเครื่องชั่วคราว', text: 'ไม่สามารถบันทึกลงฐานข้อมูลได้ ข้อมูลถูกเก็บไว้เฉพาะในเครื่องชั่วคราว' })
+        } catch (fallbackError) {
+          console.error('[AdminSettings] workflow fallback save failed:', fallbackError)
+          this.workflowSaveStatus = 'failed'
+          this.workflowSaveMessage = 'ไม่สามารถบันทึกข้อมูลได้ ทั้งฐานข้อมูลและ local fallback'
+          await Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: 'ไม่สามารถบันทึกได้ทั้งฐานข้อมูลและเครื่องนี้ กรุณาลองใหม่' })
+        }
       }
     },
     async saveSMTPSettings () {

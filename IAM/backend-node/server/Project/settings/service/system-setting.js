@@ -203,6 +203,151 @@ async function getSettingMap() {
   }, {});
 }
 
+function normalizeBulkSettingItem(item = {}) {
+  const key = String(item.key || '').trim();
+  const valueType = String(item.valueType || '').trim();
+  const description = item.description !== undefined
+    ? String(item.description)
+    : String(item.label || '');
+
+  return {
+    key,
+    value: item.value,
+    valueType,
+    description
+  };
+}
+
+function normalizeBulkPayload(payload = {}) {
+  const group = String(payload.group || '').trim() || 'general';
+  const settings = Array.isArray(payload.settings)
+    ? payload.settings.map(normalizeBulkSettingItem)
+    : [];
+
+  if (!settings.length) {
+    throw new Error('settings array is required');
+  }
+
+  const invalidItems = settings.filter((item) => !item.key);
+  if (invalidItems.length > 0) {
+    throw new Error('every setting item must include key');
+  }
+
+  const duplicateKeyMap = settings.reduce((acc, item) => {
+    acc[item.key] = (acc[item.key] || 0) + 1;
+    return acc;
+  }, {});
+  const duplicateKeys = Object.keys(duplicateKeyMap).filter((key) => duplicateKeyMap[key] > 1);
+  if (duplicateKeys.length > 0) {
+    throw new Error(`duplicate keys in payload: ${duplicateKeys.join(', ')}`);
+  }
+
+  return { group, settings };
+}
+
+function isUnsupportedTransactionError(err) {
+  const message = String((err && err.message) || '').toLowerCase();
+  return message.includes('transaction numbers are only allowed on a replica set member or mongos') ||
+    message.includes('replica set') ||
+    message.includes('does not support retryable writes') ||
+    message.includes('transaction');
+}
+
+function buildBulkOperations({ settings, group, user }) {
+  const userId = user && user._id ? user._id : null;
+  return settings.map((item) => ({
+    updateOne: {
+      filter: {
+        key: item.key,
+        isDeleted: { $ne: true }
+      },
+      update: {
+        $set: {
+          key: item.key,
+          value: item.value,
+          description: item.description || '',
+          group,
+          isDeleted: false,
+          updatedBy: userId,
+          updatedAt: new Date()
+        },
+        $setOnInsert: {
+          createdBy: userId,
+          createdAt: new Date()
+        }
+      },
+      upsert: true
+    }
+  }));
+}
+
+async function bulkUpsertSettings(payload = {}, user = null) {
+  const { group, settings } = normalizeBulkPayload(payload);
+  const savedKeys = settings.map((item) => item.key);
+  const operations = buildBulkOperations({ settings, group, user });
+
+  let session = null;
+  try {
+    session = await SystemSetting.startSession();
+    await session.withTransaction(async () => {
+      await SystemSetting.bulkWrite(operations, {
+        ordered: true,
+        session
+      });
+    });
+
+    return {
+      success: true,
+      group,
+      savedCount: savedKeys.length,
+      savedKeys,
+      failedKeys: [],
+      source: 'database',
+      writeMode: 'transaction'
+    };
+  } catch (err) {
+    if (!isUnsupportedTransactionError(err)) {
+      throw err;
+    }
+
+    const failedKeySet = new Set();
+    try {
+      await SystemSetting.bulkWrite(operations, {
+        ordered: false
+      });
+    } catch (bulkErr) {
+      const writeErrors = (bulkErr && bulkErr.writeErrors) || [];
+      writeErrors.forEach((writeError) => {
+        const op = writeError && writeError.err && writeError.err.op
+          ? writeError.err.op
+          : (writeError && writeError.op ? writeError.op : null);
+        const failedKey = op && op.q && op.q.key ? op.q.key : null;
+        if (failedKey) failedKeySet.add(failedKey);
+      });
+
+      if (failedKeySet.size === savedKeys.length) {
+        throw bulkErr;
+      }
+    }
+
+    const failedKeys = Array.from(failedKeySet);
+    const savedAfterFallback = savedKeys.filter((key) => !failedKeySet.has(key));
+    return {
+      success: failedKeys.length === 0,
+      group,
+      savedCount: savedAfterFallback.length,
+      savedKeys: savedAfterFallback,
+      failedKeys,
+      source: 'database',
+      writeMode: 'bulkWrite'
+    };
+  } finally {
+    if (session) {
+      await session.endSession();
+    }
+  }
+}
+
 // Template rendering helpers (mirrors workflow-notification.service.js)
 const DEFAULT_EMAIL_TEMPLATES = {
   revision_requested: {
@@ -401,6 +546,7 @@ module.exports = {
   createSetting,
   updateSetting,
   deleteSetting,
+  bulkUpsertSettings,
   getSettingMap,
   testEmail,
   clearCache

@@ -34,6 +34,23 @@ exports.update = async (req, res) => {
   }
 };
 
+exports.bulkUpdate = async (req, res) => {
+  try {
+    const result = await service.bulkUpsertSettings(req.body || {}, req.user);
+    const hasFailures = Array.isArray(result.failedKeys) && result.failedKeys.length > 0;
+
+    return res.status(hasFailures ? 207 : 200).json({
+      success: !hasFailures,
+      data: result,
+      message: hasFailures
+        ? 'Some settings could not be saved'
+        : 'Settings saved successfully'
+    });
+  } catch (err) {
+    return handleError(res, err, 400);
+  }
+};
+
 exports.remove = async (req, res) => {
   try {
     await service.deleteSetting(req.params.id);

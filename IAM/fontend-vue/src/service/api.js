@@ -339,6 +339,8 @@ export default {
     switch (method) {
       case 'groups':
         return instance.get('/api/v1/setting/groups', { params: data || {} });
+      case 'bulk-update':
+        return instance.put('/api/v1/setting/bulk', data);
       case 'create-group':
         return instance.post('/api/v1/setting/groups', data);
       case 'update-group':
