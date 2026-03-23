@@ -4276,6 +4276,7 @@ export default {
         })
       } finally {
         this.isExportingPdf = false
+        this.reportExportForm = null
       }
     },
 
@@ -4869,8 +4870,12 @@ export default {
 .report-export-host {
   position: fixed;
   top: 0;
-  right: -260mm;
-  width: 210mm;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
   z-index: -1;
   pointer-events: none;
 }

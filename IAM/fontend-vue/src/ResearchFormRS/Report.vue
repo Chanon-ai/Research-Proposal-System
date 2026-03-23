@@ -622,43 +622,8 @@ export default {
         .trim()
       return title || 'Research_Proposal_RS1'
     },
-    async generatePDF() {
-      const element = this.$refs.reportContainer
-      const button = this.$refs.exportButton || null
-      if (!element || typeof element.querySelectorAll !== 'function') {
-        throw new Error('Report container is not ready')
-      }
-
-      if (button) button.style.display = "none";
-      element.classList.add("export-mode");
-
-      try {
-        await this.$nextTick();
-
-        const images = element.querySelectorAll("img");
-        await Promise.all(
-          Array.from(images).map(img => {
-            if (img.complete) return Promise.resolve();
-            return new Promise(resolve => {
-              img.onload = img.onerror = resolve;
-            });
-          })
-        );
-
-        const popup = window.open('', '_blank');
-        if (!popup) {
-          throw new Error('เบราว์เซอร์บล็อกหน้าต่างสำหรับพิมพ์ PDF')
-        }
-
-        const styleNodes = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
-          .map(node => node.outerHTML)
-          .join('\n')
-
-        const reportHtml = element.outerHTML
-        const title = this.exportFileName()
-
-        popup.document.open()
-        popup.document.write(`<!doctype html>
+    buildPrintableHtml(reportHtml, title, styleNodes) {
+      return `<!doctype html>
 <html lang="th">
   <head>
     <meta charset="utf-8" />
@@ -698,13 +663,117 @@ export default {
   <body>
     <div class="page-wrapper">${reportHtml}</div>
   </body>
-</html>`)
-        popup.document.close()
-        popup.focus()
+</html>`
+    },
+    waitForIframeLoad(iframe, timeoutMs = 1500) {
+      return new Promise((resolve) => {
+        let isDone = false
+        const finish = () => {
+          if (isDone) return
+          isDone = true
+          resolve()
+        }
+        const timer = window.setTimeout(finish, timeoutMs)
+        iframe.onload = () => {
+          window.clearTimeout(timer)
+          finish()
+        }
+      })
+    },
+    async printWithHiddenIframe(printableHtml) {
+      const iframe = document.createElement('iframe')
+      iframe.setAttribute('aria-hidden', 'true')
+      iframe.setAttribute('tabindex', '-1')
+      iframe.style.position = 'fixed'
+      iframe.style.bottom = '0'
+      iframe.style.right = '0'
+      iframe.style.width = '0'
+      iframe.style.height = '0'
+      iframe.style.border = '0'
+      iframe.style.opacity = '0'
+      iframe.style.visibility = 'hidden'
+      iframe.style.pointerEvents = 'none'
 
+      document.body.appendChild(iframe)
+      try {
+        const frameWindow = iframe.contentWindow
+        if (!frameWindow || !frameWindow.document) {
+          throw new Error('Print iframe is not ready')
+        }
+
+        const frameDocument = frameWindow.document
+        frameDocument.open()
+        frameDocument.write(printableHtml)
+        frameDocument.close()
+
+        await this.waitForIframeLoad(iframe)
         await new Promise(resolve => window.setTimeout(resolve, 350))
 
-        popup.print()
+        frameWindow.focus()
+        frameWindow.print()
+      } finally {
+        window.setTimeout(() => {
+          try {
+            if (iframe && iframe.parentNode) {
+              iframe.parentNode.removeChild(iframe)
+            }
+          } catch (_) { void _ }
+        }, 1200)
+      }
+    },
+    async printWithPopupFallback(printableHtml) {
+      const popup = window.open('', '_blank')
+      if (!popup) {
+        throw new Error('Browser blocked print window')
+      }
+
+      popup.document.open()
+      popup.document.write(printableHtml)
+      popup.document.close()
+      popup.focus()
+      await new Promise(resolve => window.setTimeout(resolve, 350))
+      popup.print()
+    },
+    async generatePDF() {
+      const element = this.$refs.reportContainer
+      const button = this.$refs.exportButton || null
+      if (!element || typeof element.querySelectorAll !== 'function') {
+        throw new Error('Report container is not ready')
+      }
+
+      if (button) button.style.display = "none";
+      element.classList.add("export-mode");
+
+      try {
+        await this.$nextTick();
+
+        const images = element.querySelectorAll("img");
+        await Promise.all(
+          Array.from(images).map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise(resolve => {
+              img.onload = img.onerror = resolve;
+            });
+          })
+        );
+
+        const styleNodes = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+          .map(node => node.outerHTML)
+          .join('\n')
+
+        const reportHtml = element.outerHTML
+        const title = this.exportFileName()
+        const printableHtml = this.buildPrintableHtml(reportHtml, title, styleNodes)
+
+        try {
+          await this.printWithHiddenIframe(printableHtml)
+        } catch (hiddenPrintErr) {
+          try {
+            await this.printWithPopupFallback(printableHtml)
+          } catch (popupErr) {
+            throw popupErr || hiddenPrintErr
+          }
+        }
       } finally {
         if (button) button.style.display = "block";
         element.classList.remove("export-mode");
