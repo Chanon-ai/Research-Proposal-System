@@ -110,6 +110,7 @@ async function listMeetings(query = {}, user) {
   };
 
   const truthy = (v) => String(v || '').toLowerCase() === '1' || String(v || '').toLowerCase() === 'true';
+  const escapeRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const parseYmd = (s) => {
     if (!s) return null;
     const d = new Date(String(s));
@@ -175,6 +176,27 @@ async function listMeetings(query = {}, user) {
     }
 
     filter.$or = orFilters;
+  }
+
+  const keyword = (query.keyword || query.search || query.q || '').toString().trim();
+  if (keyword) {
+    const safe = escapeRegExp(keyword);
+    const re = new RegExp(safe, 'i');
+    const orFilters = [
+      { title: re },
+      { agenda: re },
+      { location: re },
+      { videoLink: re }
+    ];
+
+    const keywordDate = parseYmd(keyword);
+    if (keywordDate) {
+      const end = new Date(keywordDate.getFullYear(), keywordDate.getMonth(), keywordDate.getDate(), 23, 59, 59, 999);
+      orFilters.push({ meetingDate: { $gte: keywordDate, $lte: end } });
+    }
+
+    filter.$and = filter.$and || [];
+    filter.$and.push({ $or: orFilters });
   }
 
   const { page, limit, skip } = normalizePagination(query);
