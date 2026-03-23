@@ -2,18 +2,15 @@
   <div class="committee-summary-page">
     <div class="page-hero mb-4">
       <div class="hero-title">
-        <span class="hero-icon" aria-hidden="true">
+        <span class="hero-icon mt-2" aria-hidden="true">
           <CIcon name="cil-speedometer" />
         </span>
         <div>
-          <h2>แดชบอร์ดสรุปผล (คณะกรรมการ)</h2>
+          <h2>แดชบอร์ดสรุปผล</h2>
           <div class="subtext">สรุปภาพรวมงานที่ได้รับมอบหมาย สถานะการประเมิน และภาพรวมการประชุม</div>
         </div>
       </div>
       <div class="hero-actions">
-        <CButton color="primary" variant="outline" @click="$router.push('/committee/assigned')">
-          ดูงานที่ได้รับมอบหมาย
-        </CButton>
       </div>
     </div>
 
@@ -108,9 +105,6 @@
               <CChartBar :datasets="meetingBar.datasets" :labels="meetingBar.labels" :options="meetingBar.options" />
 
               <div class="text-right mt-3">
-                <CButton size="sm" color="primary" variant="outline" @click="$router.push('/committee/meetings')">
-                  ไปหน้า Meetings
-                </CButton>
               </div>
             </div>
           </CCardBody>
@@ -345,7 +339,7 @@ export default {
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: #eef2ff;
+  background: #d7e1ff;
   color: #4338ca;
   flex: 0 0 auto;
 }
@@ -419,9 +413,5 @@ export default {
 .meeting-kpi--cancelled { border-left: 4px solid #ef4444; }
 .meeting-kpi--total { border-left: 4px solid #6b7280; }
 
-/deep/ canvas,
->>> canvas,
-::v-deep canvas {
-  min-height: 240px;
-}
+
 </style>

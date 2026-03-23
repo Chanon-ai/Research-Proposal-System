@@ -346,7 +346,8 @@
 
             <button v-if="showExportPdfButton" type="button" class="btn btn-lg text-white"
               style="background-color: #b58522; border-color: #b58522;" :disabled="isExportingPdf" @click="exportProposalPdf">
-              <i class="cil-file-pdf me-2"></i>
+              <i v-if="isExportingPdf" class="cil-loop export-pdf-icon--spin" aria-hidden="true"></i>
+              <i v-else class="cil-cloud-download" aria-hidden="true"></i>
               {{ isExportingPdf ? 'กำลังสร้าง PDF...' : 'Export PDF' }}
             </button>
           </div>
@@ -4405,6 +4406,16 @@ export default {
 
 .research-form--has-admin-actions {
   padding-bottom: 110px;
+}
+
+.export-pdf-icon--spin {
+  display: inline-block;
+  animation: exportPdfSpin 0.75s linear infinite;
+}
+
+@keyframes exportPdfSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Draft: hide the bottom "note" block in SignatureCard (shown just above the status footer) */

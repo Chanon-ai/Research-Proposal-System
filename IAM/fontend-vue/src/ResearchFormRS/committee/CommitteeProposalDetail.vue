@@ -47,11 +47,25 @@
             <CCardHeader class="evaluation-card__header">
               แบบประเมินข้อเสนอโครงการ
             </CCardHeader>
-            <CCardBody v-if="proposal" class="evaluation-card__body">
-              <CAlert color="success" v-if="submitted" show close-button @update:show="submitted = false">
-                ส่งผลการประเมินเรียบร้อยแล้ว
+            <CCardBody v-if="proposal" class="evaluation-card__body" :class="{ 'evaluation-locked': isEvaluationLocked }">
+              <CAlert
+                color="light"
+                v-if="submittedBannerVisible"
+                show
+                close-button
+                class="evaluation-alert evaluation-alert--submitted"
+                @update:show="submittedBannerVisible = false"
+              >
+                ส่งผลการประเมินเรียบร้อยแล้ว (ส่งซ้ำไม่ได้)
               </CAlert>
-              <CAlert color="info" v-if="draftSaved" show close-button @update:show="draftSaved = false">
+              <CAlert
+                color="light"
+                v-if="draftSaved"
+                show
+                close-button
+                class="evaluation-alert evaluation-alert--draft"
+                @update:show="draftSaved = false"
+              >
                 บันทึกฉบับร่างแล้ว
               </CAlert>
 
@@ -92,8 +106,12 @@
                               <div class="rubric-controls__radios">
                                 <div class="rubric-radio-group" :class="{ 'is-disabled': !isScorable(row) }">
                                   <label v-for="opt in rubricScoreOptions" :key="opt" class="rubric-radio">
-                                    <input type="radio" :name="`rubric-${row.no}`" :value="opt"
-                                      v-model.number="form.rubricScores[row.no]" :disabled="!isScorable(row)">
+                                    <input
+                                      type="radio"
+                                      :name="`rubric-${row.no}`"
+                                      :value="opt"
+                                      v-model.number="form.rubricScores[row.no]"
+                                      :disabled="!isScorable(row) || isEvaluationLocked">
                                     <span class="rubric-radio__label">{{ opt }}</span>
                                   </label>
                                 </div>
@@ -114,6 +132,7 @@
                             v-model.trim="form.rowComments[row.no]"
                             class="form-control form-control-sm"
                             rows="3"
+                            :disabled="isEvaluationLocked"
                             placeholder="ระบุสิ่งที่ต้องการให้นักวิจัยแก้ไขในหัวข้อนี้"
                           />
                         </div>
@@ -135,21 +154,34 @@
                   </CCol>
                 </CRow>
 
-                <CTextarea label="ข้อคิดเห็นและข้อเสนอแนะ" rows="5" placeholder="พิมพ์ความคิดเห็น..."
-                  :value.sync="form.comments" />
+                <CTextarea
+                  label="ข้อคิดเห็นและข้อเสนอแนะ"
+                  rows="5"
+                  placeholder="พิมพ์ความคิดเห็น..."
+                  :value.sync="form.comments"
+                  :disabled="isEvaluationLocked"
+                />
 
-                <CInputFile label="อัปโหลดไฟล์ประกอบการประเมินเพิ่มเติม (PDF, DOCX, XLSX)" custom
-                  accept=".pdf,.doc,.docx,.xlsx" @change="onEvaluationFileChange" />
+                <CInputFile
+                  label="อัปโหลดไฟล์ประกอบการประเมินเพิ่มเติม (PDF, DOCX, XLSX)"
+                  custom
+                  accept=".pdf,.doc,.docx,.xlsx"
+                  :disabled="isEvaluationLocked"
+                  @change="onEvaluationFileChange"
+                />
                 <div class="text-muted small" v-if="evaluationFileName">
                   ไฟล์ที่เลือก: {{ evaluationFileName }}
                 </div>
 
                 <div class="mt-3 mb-2 text-muted">ผลการพิจารณา</div>
-                <CInputRadioGroup :options="decisionOptions" :checked.sync="form.decision" custom />
+                <div v-if="isEvaluationLocked" class="decision-readonly">
+                  {{ decisionLabel }}
+                </div>
+                <CInputRadioGroup v-else :options="decisionOptions" :checked.sync="form.decision" custom />
 
                 <div class="evaluation-actions">
                   <div class="form-actions">
-                    <CButton color="secondary" variant="outline" @click="saveDraft">
+                    <CButton color="secondary" variant="outline" :disabled="isEvaluationLocked" @click="saveDraft">
                       บันทึกฉบับร่าง
                     </CButton>
                     <CButton color="primary" class="ml-2" :disabled="!canSubmit || isSubmitting" @click="submitEvaluation">
@@ -188,7 +220,8 @@ export default {
       error: null,
       proposal: null,
       draftSaved: false,
-      submitted: false,
+      submittedBannerVisible: false,
+      isEvaluationLocked: false,
       evaluationFileName: '',
       showRubric: true,
       selectedFundType: 'new',
@@ -260,11 +293,15 @@ export default {
       return this.rubricRows.reduce((sum, row) => sum + (Number(this.weightFor(row)) || 0), 0)
     },
     canSubmit() {
-      return !!this.proposal
+      return !!this.proposal && !this.isEvaluationLocked
     },
     selectedFundTypeLabel() {
       const match = (this.fundTypeOptions || []).find(o => o && o.value === this.selectedFundType)
       return match ? match.label : this.selectedFundType
+    },
+    decisionLabel() {
+      const match = (this.decisionOptions || []).find(o => o && o.value === (this.form && this.form.decision))
+      return match ? match.label : ((this.form && this.form.decision) || '-')
     }
   },
   watch: {
@@ -314,7 +351,8 @@ export default {
       this.error = null
       this.loading = false
       this.draftSaved = false
-      this.submitted = false
+      this.submittedBannerVisible = false
+      this.isEvaluationLocked = false
       this.evaluationFileName = ''
 
       if (!id) return
@@ -341,6 +379,7 @@ export default {
 
       if (this.proposal) this.loadDraft()
       if (this.proposal) await this.loadSavedReview()
+      if (this.proposal) this.loadLocalSubmissionLock()
     },
     async loadSavedReview() {
       if (!this.proposal) return
@@ -369,13 +408,23 @@ export default {
         }
 
         if (review.reviewStatus === 'submitted') {
-          this.submitted = true
+          this.isEvaluationLocked = true
+          this.submittedBannerVisible = true
         }
       } catch (e) {
         const status = e && e.response ? e.response.status : null
         if (status === 404) return
         console.warn('Load saved review failed:', e)
       }
+    },
+    loadLocalSubmissionLock() {
+      try {
+        const raw = localStorage.getItem(this.submissionKey())
+        if (raw) {
+          this.isEvaluationLocked = true
+          this.submittedBannerVisible = true
+        }
+      } catch (e) { void e }
     },
     draftKey() {
       const pid = this.proposal ? (this.proposal._id || this.proposal.id) : ''
@@ -414,6 +463,7 @@ export default {
     },
     saveDraft() {
       if (!this.proposal) return
+      if (this.isEvaluationLocked) return
       try {
         localStorage.setItem(this.draftKey(), JSON.stringify({
           form: {
@@ -427,6 +477,14 @@ export default {
     },
     async submitEvaluation() {
       if (!this.proposal || this.isSubmitting) return
+      if (this.isEvaluationLocked) {
+        await this.showAlert({
+          icon: 'info',
+          title: 'ส่งผลการประเมินแล้ว',
+          text: 'รายการนี้ส่งได้เพียงครั้งเดียว และไม่สามารถส่งซ้ำได้'
+        })
+        return
+      }
       const pid = this.proposal._id || this.proposal.id
       const scoreItems = this.rubricRows
         .filter(row => this.isScorable(row))
@@ -468,7 +526,8 @@ export default {
         localStorage.removeItem(this.draftKey())
         localStorage.removeItem(this.legacyDraftKey())
 
-        this.submitted = true
+        this.isEvaluationLocked = true
+        this.submittedBannerVisible = true
         await this.loadSavedReview()
 
         await this.showAlert({
@@ -479,6 +538,17 @@ export default {
           showConfirmButton: false
         })
       } catch (e) {
+        const status = e && e.response ? e.response.status : null
+        if (status === 409) {
+          this.isEvaluationLocked = true
+          this.submittedBannerVisible = true
+          await this.showAlert({
+            icon: 'info',
+            title: 'ส่งผลการประเมินแล้ว',
+            text: 'ระบบไม่อนุญาตให้ส่งซ้ำ เนื่องจากมีการส่งผลการประเมินไปแล้ว'
+          })
+          return
+        }
         await this.showAlert({
           icon: 'error',
           title: 'ส่งผลการประเมินไม่สำเร็จ',
@@ -489,6 +559,7 @@ export default {
       }
     },
     onEvaluationFileChange(event) {
+      if (this.isEvaluationLocked) return
       const file = (event && event.target && event.target.files && event.target.files[0]) ? event.target.files[0] : null
       this.evaluationFileName = file ? file.name : ''
     },
@@ -584,20 +655,48 @@ export default {
 
 <style scoped>
 .evaluation-card {
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  --theme-red: #8b1a1a;
+  --theme-red-dark: #6f1111;
+  --theme-gold: #d4af37;
+  --theme-gold-soft: rgba(212, 175, 55, 0.32);
+
+  border: 1px solid var(--theme-gold-soft);
   border-radius: 10px;
   overflow: visible;
+  box-shadow: 0 10px 28px rgba(111, 17, 17, 0.08);
 }
 
 .evaluation-card__header {
-  background: #ffffff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: linear-gradient(90deg, var(--theme-red-dark), var(--theme-red));
+  border-bottom: 2px solid var(--theme-gold);
   font-weight: 800;
-  color: #111827;
+  color: #ffffff;
 }
 
 .evaluation-card__body {
   background: #ffffff;
+}
+
+.evaluation-alert {
+  border: 1px solid var(--theme-gold-soft);
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.evaluation-alert--submitted {
+  border-left: 6px solid var(--theme-gold);
+  color: var(--theme-red-dark);
+  font-weight: 700;
+}
+
+.evaluation-alert--draft {
+  border-left: 6px solid rgba(212, 175, 55, 0.8);
+  color: var(--theme-red-dark);
+  font-weight: 700;
+}
+
+.evaluation-locked {
+  scroll-behavior: auto;
 }
 
 .evaluation-sticky {
@@ -624,8 +723,8 @@ export default {
 }
 
 .rubric-card__header {
-  background: #f9fafb;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  border-bottom: 1px solid var(--theme-gold-soft);
 }
 
 .rubric-card__header-row {
@@ -637,7 +736,7 @@ export default {
 
 .rubric-card__title {
   font-weight: 800;
-  color: #111827;
+  color: var(--theme-red-dark);
 }
 
 .rubric-card__body {
@@ -651,8 +750,8 @@ export default {
   gap: 12px;
   padding: 0.75rem 1rem;
   background: #ffffff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--theme-gold-soft);
+  box-shadow: 0 1px 0 rgba(111, 17, 17, 0.04);
 }
 
 .rubric-toolbar__left {
@@ -664,7 +763,7 @@ export default {
 
 .rubric-toolbar__label {
   font-weight: 700;
-  color: #111827;
+  color: var(--theme-red-dark);
 }
 
 .rubric-toolbar__right {
@@ -677,10 +776,10 @@ export default {
 .rubric-fund-readonly {
   min-width: 210px;
   padding: 0.375rem 0.5rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--theme-gold-soft);
   border-radius: 0.2rem;
-  background: #f8fafc;
-  color: #0f172a;
+  background: #fffaf0;
+  color: var(--theme-red-dark);
   font-weight: 700;
   text-align: center;
 }
@@ -694,7 +793,7 @@ export default {
   flex-direction: column;
   gap: 14px;
   padding: 12px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.22);
 }
 
 .rubric-item:last-child {
@@ -715,13 +814,13 @@ export default {
   display: block;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #374151;
+  color: var(--theme-red-dark);
   margin-bottom: 6px;
 }
 
 .rubric-topic-title {
   font-weight: 800;
-  color: #111827;
+  color: var(--theme-red-dark);
   margin-bottom: 6px;
 }
 
@@ -759,12 +858,12 @@ export default {
 .rubric-radio input[type="radio"] {
   width: 16px;
   height: 16px;
-  accent-color: var(--primary-legacy-theme, #321fdb);
+  accent-color: var(--theme-gold);
 }
 
 .rubric-radio__label {
   font-weight: 400;
-  color: #111827;
+  color: #1f2937;
 }
 
 .rubric-radio-group.is-disabled {
@@ -781,18 +880,55 @@ export default {
   justify-content: center;
   gap: 6px;
   padding: 3px 8px;
-  border: 0;
+  border: 1px solid rgba(212, 175, 55, 0.28);
   border-radius: 8px;
-  background: transparent;
+  background: rgba(212, 175, 55, 0.08);
   font-variant-numeric: tabular-nums;
   min-width: 64px;
   font-weight: 400;
-  color: #111827;
+  color: var(--theme-red-dark);
   font-size: 0.9rem;
 }
 
 .rubric-scorepill__sep {
-  color: #6b7280;
+  color: rgba(111, 17, 17, 0.55);
   font-weight: 400;
+}
+
+.decision-readonly {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 10px;
+  background: #ffffff;
+  font-weight: 800;
+  color: var(--theme-red-dark);
+}
+
+.evaluation-actions ::v-deep .btn-primary {
+  background-color: var(--theme-red);
+  border-color: var(--theme-red);
+}
+
+.evaluation-actions ::v-deep .btn-primary:hover:not(:disabled),
+.evaluation-actions ::v-deep .btn-primary:focus:not(:disabled) {
+  background-color: var(--theme-red-dark);
+  border-color: var(--theme-red-dark);
+}
+
+.evaluation-actions ::v-deep .btn-primary:disabled {
+  background-color: rgba(139, 26, 26, 0.45);
+  border-color: rgba(139, 26, 26, 0.35);
+}
+
+.evaluation-actions ::v-deep .btn-outline-secondary {
+  color: var(--theme-red-dark);
+  border-color: rgba(212, 175, 55, 0.75);
+}
+
+.evaluation-actions ::v-deep .btn-outline-secondary:hover:not(:disabled),
+.evaluation-actions ::v-deep .btn-outline-secondary:focus:not(:disabled) {
+  background-color: rgba(212, 175, 55, 0.14);
+  color: var(--theme-red-dark);
+  border-color: rgba(212, 175, 55, 0.95);
 }
 </style>
