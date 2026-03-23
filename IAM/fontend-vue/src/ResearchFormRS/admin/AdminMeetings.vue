@@ -16,48 +16,33 @@
 
     <CRow class="summary-row summary-row--filters">
       <CCol sm="6" lg="4">
-        <div
-          class="summary-card summary-card--info"
-          :class="{ 'summary-card--active': isSummaryFilterActive('scheduled') }"
-          role="button"
-          tabindex="0"
+        <div class="summary-card summary-card--info"
+          :class="{ 'summary-card--active': isSummaryFilterActive('scheduled') }" role="button" tabindex="0"
           :aria-pressed="isSummaryFilterActive('scheduled') ? 'true' : 'false'"
-          @click="toggleSummaryFilter('scheduled')"
-          @keydown.enter.prevent="toggleSummaryFilter('scheduled')"
-          @keydown.space.prevent="toggleSummaryFilter('scheduled')"
-        >
+          @click="toggleSummaryFilter('scheduled')" @keydown.enter.prevent="toggleSummaryFilter('scheduled')"
+          @keydown.space.prevent="toggleSummaryFilter('scheduled')">
           <div class="summary-label">กำหนดการแล้ว</div>
           <div class="summary-number">{{ getSummaryCount('scheduled') }}</div>
           <div class="summary-caption">รายการที่กำลังรอวันประชุมหรือยังไม่ปิดผล</div>
         </div>
       </CCol>
       <CCol sm="6" lg="4">
-        <div
-          class="summary-card summary-card--success"
-          :class="{ 'summary-card--active': isSummaryFilterActive('completed') }"
-          role="button"
-          tabindex="0"
+        <div class="summary-card summary-card--success"
+          :class="{ 'summary-card--active': isSummaryFilterActive('completed') }" role="button" tabindex="0"
           :aria-pressed="isSummaryFilterActive('completed') ? 'true' : 'false'"
-          @click="toggleSummaryFilter('completed')"
-          @keydown.enter.prevent="toggleSummaryFilter('completed')"
-          @keydown.space.prevent="toggleSummaryFilter('completed')"
-        >
+          @click="toggleSummaryFilter('completed')" @keydown.enter.prevent="toggleSummaryFilter('completed')"
+          @keydown.space.prevent="toggleSummaryFilter('completed')">
           <div class="summary-label">เสร็จสิ้น</div>
           <div class="summary-number">{{ getSummaryCount('completed') }}</div>
           <div class="summary-caption">ประชุมที่บันทึกผลเรียบร้อยแล้ว</div>
         </div>
       </CCol>
       <CCol sm="6" lg="4">
-        <div
-          class="summary-card summary-card--danger"
-          :class="{ 'summary-card--active': isSummaryFilterActive('cancelled') }"
-          role="button"
-          tabindex="0"
+        <div class="summary-card summary-card--danger"
+          :class="{ 'summary-card--active': isSummaryFilterActive('cancelled') }" role="button" tabindex="0"
           :aria-pressed="isSummaryFilterActive('cancelled') ? 'true' : 'false'"
-          @click="toggleSummaryFilter('cancelled')"
-          @keydown.enter.prevent="toggleSummaryFilter('cancelled')"
-          @keydown.space.prevent="toggleSummaryFilter('cancelled')"
-        >
+          @click="toggleSummaryFilter('cancelled')" @keydown.enter.prevent="toggleSummaryFilter('cancelled')"
+          @keydown.space.prevent="toggleSummaryFilter('cancelled')">
           <div class="summary-label">ยกเลิก</div>
           <div class="summary-number">{{ getSummaryCount('cancelled') }}</div>
           <div class="summary-caption">ใช้ติดตามรายการที่ต้องนัดหมายใหม่</div>
@@ -69,29 +54,31 @@
       <CCardBody>
         <div class="filter-card__header">
           <div>
-            <div class="filter-card__title">ตัวกรองการประชุม</div>
-            <div class="filter-card__subtitle">เลือกสถานะที่ต้องการเพื่อโฟกัสเฉพาะรายการสำคัญ</div>
+            <div class="filter-card__title">ค้นหาการประชุม</div>
+            <div class="filter-card__subtitle">พิมพ์คำค้นหาเพื่อค้นหาจากชื่อการประชุม สถานที่ ลิงก์ หรือวาระ</div>
           </div>
         </div>
         <CRow class="align-items-end">
+          <CCol md="8" class="mb-2 mb-md-0">
+            <CInput v-model="searchKeyword" label="ค้นหา" placeholder="เช่น ชื่อการประชุม, สถานที่, ลิงก์..."
+              @input="onSearchKeywordInput" />
+          </CCol>
           <CCol md="4" class="mb-2 mb-md-0">
-            <CSelect label="สถานะ" :value="filterStatus" :options="statusFilterOptions"
-              @change="onFilterStatusChange" />
+            <div class="filter-card__search-actions">
+              <CButton size="sm" :color="selectionMode ? 'secondary' : 'primary'" class="filter-card__select-toggle"
+                @click="toggleSelectionMode">
+                {{ selectionMode ? 'ยกเลิกเลือก' : 'เลือก' }}
+              </CButton>
+              <small class="text-muted filter-card__search-hint">
+                {{ selectionMode
+                  ? (selectedMeetingForActions ? 'เลือกการประชุมแล้ว — ใช้ปุ่มแก้ไข/ลบที่การ์ด' :
+                    'คลิกการ์ดการประชุมด้านล่างเพื่อแสดงปุ่มแก้ไข/ลบ')
+                  : 'กดปุ่มเลือกเพื่อเลือกการประชุมสำหรับแก้ไข/ลบ'
+                }}
+              </small>
+            </div>
           </CCol>
         </CRow>
-
-        <div class="filter-card__bottom-actions">
-          <small v-if="!selectedMeetingForActions"
-            class="text-muted mr-3">เลือกการประชุมด้านล่างเพื่อใช้งานปุ่มแก้ไข/ลบ</small>
-          <CButton size="sm" color="warning" class="mr-2" :disabled="!selectedMeetingForActions"
-            @click="selectedMeetingForActions && openEditModal(selectedMeetingForActions)">
-            แก้ไข
-          </CButton>
-          <CButton size="sm" color="danger" :disabled="!selectedMeetingForActions"
-            @click="selectedMeetingForActions && deleteMeeting(selectedMeetingForActions)">
-            ลบ
-          </CButton>
-        </div>
       </CCardBody>
     </CCard>
 
@@ -110,10 +97,30 @@
       <div v-else class="meeting-grid">
         <div v-for="meeting in meetings" :key="meeting._id" class="meeting-card"
           :class="[getMeetingCardClass(meeting), isSelectedMeeting(meeting) ? 'meeting-card--selected' : '']"
-          @click="selectMeetingForActions(meeting)" @keydown.enter.prevent="selectMeetingForActions(meeting)"
-          @keydown.space.prevent="selectMeetingForActions(meeting)" role="button" tabindex="0">
+          @click="selectionMode && selectMeetingForActions(meeting)"
+          @keydown.enter.prevent="selectionMode && selectMeetingForActions(meeting)"
+          @keydown.space.prevent="selectionMode && selectMeetingForActions(meeting)" role="button" tabindex="0"
+          :aria-disabled="selectionMode ? 'false' : 'true'">
           <div class="meeting-card__left-bar" aria-hidden="true"></div>
           <div class="meeting-card__surface ">
+            <div v-if="selectionMode && isSelectedMeeting(meeting)" class="meeting-card__selected-overlay" @click.stop>
+              <button type="button" class="meeting-card__overlay-close" aria-label="ปิดเมนูแก้ไข/ลบ"
+                @click.stop="clearSelectedMeeting">
+                <CIcon name="cil-x" width="18" aria-hidden="true" />
+              </button>
+              <div class="meeting-card__selected-actions">
+                <CButton size="sm" color="warning" class="meeting-card__overlay-btn meeting-card__overlay-btn--edit"
+                  @click.stop="openEditModal(meeting)">
+                  <CIcon name="cil-pencil" width="16" class="meeting-card__overlay-ic" aria-hidden="true" />
+                  แก้ไข
+                </CButton>
+                <CButton size="sm" color="danger" class="meeting-card__overlay-btn meeting-card__overlay-btn--delete"
+                  @click.stop="deleteMeeting(meeting)">
+                  <CIcon name="cil-trash" width="16" class="meeting-card__overlay-ic" aria-hidden="true" />
+                  ลบ
+                </CButton>
+              </div>
+            </div>
             <div class="meeting-card__top mt-1">
               <CBadge class="meeting-card__badge" :color="getStatusMeta(meeting.status).color">{{
                 getStatusMeta(meeting.status).label }}</CBadge>
@@ -129,13 +136,8 @@
               <div class="meeting-card__body">
                 <div class="meeting-card__title-wrap">
                   <div class="meeting-card__title-row">
-                    <button
-                      v-if="getMeetingProposalId(meeting)"
-                      type="button"
-                      class="meeting-card__proposal-link"
-                      :aria-label="`เปิดแบบฟอร์มโครงการ`"
-                      @click.stop="goToProposalForm(meeting)"
-                    >
+                    <button v-if="getMeetingProposalId(meeting)" type="button" class="meeting-card__proposal-link"
+                      :aria-label="`เปิดแบบฟอร์มโครงการ`" @click.stop="goToProposalForm(meeting)">
                       <CIcon name="cil-description" width="18" aria-hidden="true" />
                     </button>
                     <h5 class="meeting-card__title" :aria-label="meeting.title || '-'" tabindex="0"
@@ -219,10 +221,7 @@
               </div>
 
               <div class="meeting-card__footer">
-                <CButton
-                  size="sm"
-                  block
-                  :color="meeting.status === 'completed' ? 'secondary' : 'primary'"
+                <CButton size="sm" block :color="meeting.status === 'completed' ? 'secondary' : 'primary'"
                   :class="['meeting-card__cta', meeting.status === 'completed' ? 'is-completed' : '']"
                   @click.stop="openMinutesModal(meeting)">
                   {{ meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม' }}
@@ -314,7 +313,7 @@
               </v-date-picker>
               <small v-if="meetingDatePickerValue" class="text-muted d-block mt-1">{{
                 formatThaiDateBelow(meetingDatePickerValue)
-                }}</small>
+              }}</small>
             </div>
             <div class="field small-field">
               <label class="form-label">เวลาเริ่ม <span class="required">*</span></label>
@@ -408,19 +407,37 @@
       :title="`บันทึกผลการประชุม — ${minutesMeeting ? (minutesMeeting.title || '-') : '-'}`">
       <template #body-wrapper>
         <div class="minutes-form">
-          <div v-if="minutesMeeting" class="mb-3">
-            <small class="text-muted">📅 {{ formatDate(minutesMeeting.meetingDate) }} | 📍 {{ minutesMeeting.location ||
-              '-' }}</small>
+          <div v-if="minutesMeeting" class="minutes-meta full">
+            <div class="minutes-meta__item">
+              <CIcon name="cil-calendar" width="16" class="minutes-meta__ic" aria-hidden="true" />
+              <span>{{ formatDate(minutesMeeting.meetingDate) }}</span>
+            </div>
+            <div class="minutes-meta__divider" aria-hidden="true"></div>
+            <div class="minutes-meta__item">
+              <CIcon name="cil-location-pin" width="16" class="minutes-meta__ic" aria-hidden="true" />
+              <span>{{ getMinutesLocationLabel(minutesMeeting) }}</span>
+            </div>
           </div>
 
-          <CTextarea label="บันทึกการประชุม" rows="5" placeholder="บันทึกสิ่งที่เกิดขึ้นในการประชุม..."
-            v-model="minutesForm.minutes" :disabled="isReadOnly(minutesMeeting)" />
+          <div class="minutes-panel">
+            <div class="minutes-panel__title">บันทึกการประชุม</div>
+            <CTextarea rows="6" placeholder="บันทึกสิ่งที่เกิดขึ้นในการประชุม..." v-model="minutesForm.minutes"
+              :disabled="isReadOnly(minutesMeeting)" />
+          </div>
 
-          <CTextarea label="มติที่ประชุม" rows="4" placeholder="มติหรือข้อสรุปสำคัญจากที่ประชุม..."
-            v-model="minutesForm.decisions" :disabled="isReadOnly(minutesMeeting)" />
+          <div class="minutes-panel">
+            <div class="minutes-panel__title">มติที่ประชุม</div>
+            <CTextarea rows="6" placeholder="มติหรือข้อสรุปสำคัญจากที่ประชุม..." v-model="minutesForm.decisions"
+              :disabled="isReadOnly(minutesMeeting)" />
+          </div>
 
-          <div class="table-responsive">
-            <table class="table table-bordered table-sm">
+          <div class="minutes-action full">
+            <div class="minutes-action__header">
+              <div class="minutes-action__title">Action Items</div>
+            </div>
+
+            <div class="table-responsive minutes-action__table">
+              <table class="table table-bordered table-sm mb-0">
               <thead>
                 <tr>
                   <th>งานที่ต้องทำ</th>
@@ -441,23 +458,27 @@
                     <CInput type="date" v-model="item.deadline" :disabled="isReadOnly(minutesMeeting)" />
                   </td>
                   <td>
-                    <CButton size="sm" color="danger" :disabled="isReadOnly(minutesMeeting)"
-                      @click="removeActionItem(index)">
-                      X
+                    <CButton size="sm" color="danger" :disabled="isReadOnly(minutesMeeting)" class="minutes-action__remove"
+                      @click="removeActionItem(index)" aria-label="ลบ Action Item">
+                      <CIcon name="cil-trash" width="14" aria-hidden="true" />
                     </CButton>
                   </td>
                 </tr>
                 <tr v-if="minutesForm.actionItems.length === 0">
                   <td colspan="4" class="text-center text-muted">ยังไม่มี Action Items</td>
                 </tr>
+                <tr v-if="!isReadOnly(minutesMeeting)" class="minutes-action__add-row">
+                  <td colspan="4">
+                    <button type="button" class="minutes-action__add-btn" @click="addActionItem">
+                      <CIcon name="cil-plus" width="16" class="minutes-action__add-ic" aria-hidden="true" />
+                      เพิ่ม Action Item
+                    </button>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
-
-          <CButton v-if="!isReadOnly(minutesMeeting)" size="sm" color="primary" variant="outline"
-            @click="addActionItem">
-            + เพิ่ม Action Item
-          </CButton>
+          </div>
         </div>
       </template>
 
@@ -501,6 +522,8 @@ export default {
       limit: 9,
       loading: false,
       filterStatus: '',
+      searchKeyword: '',
+      searchDebounceTimer: null,
       summaryCounts: {
         scheduled: 0,
         completed: 0,
@@ -513,6 +536,7 @@ export default {
       isEditMode: false,
       selectedMeeting: null,
       selectedMeetingForActions: null,
+      selectionMode: false,
       pendingProposalIds: [],
       pendingProjectTitle: '',
       proposalOptions: [],
@@ -1212,11 +1236,18 @@ export default {
         cancelled: meeting.status === 'cancelled'
       }
     },
+    toggleSelectionMode() {
+      this.selectionMode = !this.selectionMode
+      this.selectedMeetingForActions = null
+    },
+    clearSelectedMeeting() {
+      this.selectedMeetingForActions = null
+    },
     selectMeetingForActions(meeting) {
       this.selectedMeetingForActions = meeting || null
     },
     isSelectedMeeting(meeting) {
-      if (!meeting || !this.selectedMeetingForActions) return false
+      if (!this.selectionMode || !meeting || !this.selectedMeetingForActions) return false
       return String(meeting._id) === String(this.selectedMeetingForActions._id)
     },
     getMeetingModeLabel(meeting) {
@@ -1229,6 +1260,12 @@ export default {
       const locationLooksOnline = /online|zoom|teams|meet|webex/i.test(location) || /^https?:\/\//i.test(location)
       return (videoLink || locationLooksOnline) ? 'ออนไลน์' : 'ออนไซต์'
     },
+    getMinutesLocationLabel(meeting) {
+      if (!meeting) return '-'
+      const mode = this.getMeetingModeLabel(meeting)
+      if (mode === 'ออนไลน์') return 'ออนไลน์'
+      return meeting.location || '-'
+    },
     async fetchMeetings() {
       this.loading = true
       try {
@@ -1237,6 +1274,7 @@ export default {
           limit: this.limit
         }
         if (this.filterStatus) params.status = this.filterStatus
+        if (this.searchKeyword && String(this.searchKeyword).trim()) params.keyword = String(this.searchKeyword).trim()
 
         const response = await axios.get('/api/v1/meetings', { params })
         const payload = (response && response.data && response.data.data) || {}
@@ -1249,12 +1287,14 @@ export default {
         this.page = Number(payload.page) || this.page
         this.totalPages = Number(payload.totalPages) || Math.max(1, Math.ceil(this.total / this.limit))
 
-        if (!this.selectedMeetingForActions && this.meetings.length > 0) {
-          this.selectedMeetingForActions = this.meetings[0]
-        } else if (this.selectedMeetingForActions) {
+        if (this.selectedMeetingForActions) {
           const stillExists = this.meetings.find(m => String(m._id) === String(this.selectedMeetingForActions._id))
-          this.selectedMeetingForActions = stillExists || (this.meetings[0] || null)
+          this.selectedMeetingForActions = stillExists || null
+        } else {
+          this.selectedMeetingForActions = null
         }
+
+        if (!this.selectionMode) this.selectedMeetingForActions = null
       } catch (error) {
         console.error('[AdminMeetings] Error fetching meetings:', error)
         this.meetings = []
@@ -1312,6 +1352,18 @@ export default {
       this.page = 1
       this.fetchMeetings()
     },
+    onSearchKeywordInput() {
+      if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer)
+      this.searchDebounceTimer = setTimeout(() => {
+        this.page = 1
+        this.fetchMeetings()
+      }, 350)
+    },
+    clearSearch() {
+      this.searchKeyword = ''
+      this.page = 1
+      this.fetchMeetings()
+    },
     toggleSummaryFilter(status) {
       const next = this.filterStatus === status ? '' : status
       this.filterStatus = next
@@ -1323,6 +1375,7 @@ export default {
     },
     onReset() {
       this.filterStatus = ''
+      this.searchKeyword = ''
       this.page = 1
       this.fetchMeetings()
     },
@@ -1758,6 +1811,31 @@ export default {
   border: 1px solid var(--am-border);
   background: var(--am-surface);
   margin-bottom: var(--am-section-gap);
+}
+
+.filter-card__search-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 6px;
+  width: 100%;
+}
+
+.filter-card__search-hint {
+  line-height: 1.25;
+  text-align: right;
+  max-width: 340px;
+  font-size: 0.82rem;
+  opacity: 0.92;
+}
+
+.filter-card__select-toggle {
+  border-radius: 14px !important;
+  padding: 6px 14px !important;
+  min-height: 34px !important;
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.12);
+  font-weight: 800 !important;
 }
 
 /* Meeting type segmented control */
@@ -2394,6 +2472,115 @@ export default {
   margin-top: 18px;
 }
 
+.meeting-card__selected-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.meeting-card__overlay-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(255, 255, 255, 0.78);
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.16);
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+  cursor: pointer;
+}
+
+.meeting-card__overlay-close:hover {
+  filter: brightness(1.02);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.18);
+}
+
+.meeting-card__overlay-close:active {
+  transform: translateY(0);
+}
+
+.meeting-card__overlay-close:focus {
+  outline: none;
+}
+
+.meeting-card__overlay-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 26px rgba(15, 23, 42, 0.18);
+}
+
+.meeting-card--selected .meeting-card__surface> :not(.meeting-card__selected-overlay) {
+  filter: blur(2.5px);
+}
+
+.meeting-card__selected-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.meeting-card__overlay-btn {
+  width: 108px !important;
+  height: 40px !important;
+  padding: 0 14px !important;
+  border-radius: 14px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.01em;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  border: 0 !important;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.18) !important;
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease !important;
+}
+
+.meeting-card__overlay-btn:hover {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.22) !important;
+}
+
+.meeting-card__overlay-btn:active {
+  transform: translateY(0);
+}
+
+.meeting-card__overlay-btn:focus {
+  outline: none !important;
+}
+
+.meeting-card__overlay-btn:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 16px 32px rgba(15, 23, 42, 0.22) !important;
+}
+
+.meeting-card__overlay-btn--edit {
+  background: linear-gradient(135deg, rgba(197, 155, 58, 0.98), rgba(241, 165, 0, 0.98)) !important;
+  color: #ffffff !important;
+}
+
+.meeting-card__overlay-btn--delete {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.98), rgba(139, 18, 18, 0.98)) !important;
+  color: #ffffff !important;
+}
+
+.meeting-card__overlay-ic {
+  opacity: 0.95;
+}
+
 .meeting-card__cta {
   border-radius: 14px !important;
   padding: 10px 12px !important;
@@ -2505,7 +2692,7 @@ export default {
 .minutes-modal .minutes-form {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 14px;
   padding: 6px 0 2px;
   align-items: start;
 }
@@ -2520,6 +2707,153 @@ export default {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+}
+
+.minutes-modal .minutes-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(248, 250, 252, 0.92);
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.minutes-modal .minutes-meta__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.minutes-modal .minutes-meta__divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(148, 163, 184, 0.55);
+}
+
+.minutes-modal .minutes-meta__ic {
+  color: var(--am-accent);
+  opacity: 0.9;
+}
+
+.minutes-modal .minutes-panel {
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: #ffffff;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+  padding: 12px 12px 10px;
+}
+
+.minutes-modal .minutes-panel__title {
+  font-weight: 900;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.minutes-modal .minutes-panel textarea.form-control {
+  margin-top: 0 !important;
+}
+
+.minutes-modal .minutes-action {
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: #ffffff;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+  padding: 12px;
+}
+
+.minutes-modal .minutes-action__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.minutes-modal .minutes-action__title {
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.minutes-modal .minutes-action__add {
+  border-radius: 14px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.12);
+}
+
+.minutes-modal .minutes-action__add-row td {
+  background: rgba(248, 250, 252, 0.8);
+  padding: 10px !important;
+}
+
+.minutes-modal .minutes-action__add-btn {
+  width: 100%;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px dashed rgba(197, 155, 58, 0.6);
+  background: rgba(197, 155, 58, 0.08);
+  color: var(--am-accent);
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+}
+
+.minutes-modal .minutes-action__add-btn:hover {
+  filter: brightness(1.02);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.12);
+}
+
+.minutes-modal .minutes-action__add-btn:active {
+  transform: translateY(0);
+}
+
+.minutes-modal .minutes-action__add-btn:focus {
+  outline: none;
+}
+
+.minutes-modal .minutes-action__add-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 26px rgba(15, 23, 42, 0.12);
+}
+
+.minutes-modal .minutes-action__add-ic {
+  opacity: 0.9;
+}
+
+.minutes-modal .minutes-action__table {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.minutes-modal .minutes-action__table .table thead th {
+  background: rgba(197, 155, 58, 0.08);
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.minutes-modal .minutes-action__remove {
+  width: 34px;
+  height: 34px;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+@media (max-width: 991px) {
+  .minutes-modal .minutes-form {
+    grid-template-columns: 1fr;
+  }
 }
 
 .input-icon__wrap {
