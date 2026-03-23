@@ -1,6 +1,7 @@
 <template>
   <AdminMeetings
     :read-only="true"
+    read-only-cta-tone="dark"
     :my-only="true"
     hero-eyebrow="Committee Meetings"
     hero-title="ตารางการประชุมคณะกรรมการ"

@@ -235,11 +235,12 @@
               </div>
 
               <div class="meeting-card__footer">
-                <CButton size="sm" block :color="readOnly ? 'secondary' : (meeting.status === 'completed' ? 'secondary' : 'primary')"
+                <CButton size="sm" block
+                  :color="(readOnly && readOnlyCtaTone === 'dark') ? 'primary' : (readOnly ? 'secondary' : (meeting.status === 'completed' ? 'secondary' : 'primary'))"
                   :class="[
                     'meeting-card__cta',
-                    meeting.status === 'completed' ? 'is-completed' : '',
-                    readOnly ? 'meeting-card__cta--soft' : ''
+                    (meeting.status === 'completed' && !(readOnly && readOnlyCtaTone === 'dark')) ? 'is-completed' : '',
+                    (readOnly && readOnlyCtaTone === 'soft') ? 'meeting-card__cta--soft' : ''
                   ]"
                   @click.stop="openMinutesModal(meeting)">
                   {{ isReadOnly(meeting) ? 'ดูรายละเอียด' : (meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม') }}
@@ -554,6 +555,11 @@ export default {
     readOnly: {
       type: Boolean,
       default: false
+    },
+    readOnlyCtaTone: {
+      type: String,
+      default: 'soft',
+      validator: (value) => ['soft', 'dark'].includes(value)
     },
     myOnly: {
       type: Boolean,
