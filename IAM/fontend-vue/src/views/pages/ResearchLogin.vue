@@ -212,7 +212,7 @@ export default {
     },
     redirectByRole(role) {
       if (role === 'committee') {
-        this.$router.push('/committee/dashboard')
+        this.$router.push('/committee/assigned')
         return
       }
       if (role === 'admin' || role === 'chairman') {

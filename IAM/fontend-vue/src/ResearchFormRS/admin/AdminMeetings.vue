@@ -203,7 +203,18 @@
                 <div class="meeting-card__detail-list">
                   <div class="meeting-card__detail">
                     <span class="meeting-card__detail-key">รูปแบบ</span>
-                    <span class="meeting-card__detail-value">{{ getMeetingModeLabel(meeting) }}</span>
+                    <span
+                      :class="[
+                        'meeting-card__detail-value',
+                        (meeting && (meeting.videoLink || (meeting.meetingType && String(meeting.meetingType).trim().toLowerCase() === 'online')))
+                          ? 'meeting-mode meeting-mode--online'
+                          : (meeting && meeting.meetingType && String(meeting.meetingType).trim().toLowerCase() === 'onsite')
+                            ? 'meeting-mode meeting-mode--onsite'
+                            : ''
+                      ]"
+                    >
+                      {{ getMeetingModeLabel(meeting) }}
+                    </span>
                   </div>
                   <div class="meeting-card__detail">
                     <span class="meeting-card__detail-key">สถานที่</span>
@@ -236,11 +247,11 @@
 
               <div class="meeting-card__footer">
                 <CButton size="sm" block
-                  :color="(readOnly && readOnlyCtaTone === 'dark') ? 'primary' : (readOnly ? 'secondary' : (meeting.status === 'completed' ? 'secondary' : 'primary'))"
+                  :color="(isReadOnly(meeting) && readOnlyCtaTone === 'dark') ? 'primary' : (isReadOnly(meeting) ? 'secondary' : (meeting.status === 'completed' ? 'secondary' : 'primary'))"
                   :class="[
                     'meeting-card__cta',
-                    (meeting.status === 'completed' && !(readOnly && readOnlyCtaTone === 'dark')) ? 'is-completed' : '',
-                    (readOnly && readOnlyCtaTone === 'soft') ? 'meeting-card__cta--soft' : ''
+                    (meeting.status === 'completed' && !isReadOnly(meeting)) ? 'is-completed' : '',
+                    (isReadOnly(meeting) && readOnlyCtaTone === 'soft') ? 'meeting-card__cta--soft' : ''
                   ]"
                   @click.stop="openMinutesModal(meeting)">
                   {{ isReadOnly(meeting) ? 'ดูรายละเอียด' : (meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม') }}
@@ -558,7 +569,7 @@ export default {
     },
     readOnlyCtaTone: {
       type: String,
-      default: 'soft',
+      default: 'dark',
       validator: (value) => ['soft', 'dark'].includes(value)
     },
     myOnly: {
@@ -2140,6 +2151,7 @@ export default {
   --status-rgb: 59, 130, 246;
   --accent-offset: 8px;
   --accent-width: 30px;
+  --meeting-card-accent-height: 37%;
   position: relative;
   isolation: isolate;
   display: block;
@@ -2158,7 +2170,7 @@ export default {
   bottom: 0;
   left: calc(var(--accent-offset) * -1);
   width: calc(var(--accent-width) + var(--accent-offset));
-  background: rgb(var(--status-rgb));
+  background: transparent;
   border-radius: inherit;
   z-index: 0;
   pointer-events: none;
@@ -2171,10 +2183,54 @@ export default {
   display: flex;
   flex-direction: column;
   border-radius: inherit;
-  background: #ffffff;
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #ffffff var(--meeting-card-accent-height),
+    #ffffff var(--meeting-card-accent-height),
+    #f3e9e9 100%
+  );
   overflow: hidden;
-  border: 1px solid var(--am-border);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(var(--am-gold-rgb), 0.55);
+  border-top-color: rgba(var(--status-rgb), 0.22);
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--am-gold-rgb), 0.18),
+    0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.meeting-card__surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  height: var(--meeting-card-accent-height);
+  background:
+    radial-gradient(circle at 16% 22%, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0) 48%),
+    radial-gradient(circle at 86% 0%, rgba(var(--status-rgb), 0.26), rgba(var(--status-rgb), 0) 55%),
+    linear-gradient(135deg, rgba(var(--status-rgb), 0.42) 0%, rgba(var(--status-rgb), 0.22) 58%, rgba(255, 255, 255, 0) 100%);
+  border-bottom: 1px solid rgba(var(--status-rgb), 0.20);
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.meeting-card__surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  height: var(--meeting-card-accent-height);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.12) 0px,
+      rgba(255, 255, 255, 0.12) 9px,
+      rgba(255, 255, 255, 0) 9px,
+      rgba(255, 255, 255, 0) 22px
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0));
+  opacity: 0.36;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .meeting-card--selected {
@@ -2246,9 +2302,11 @@ export default {
 
 .meeting-card__content {
   flex: 1;
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
+  background: transparent;
   border-radius: 0;
   margin-top: 0;
   padding: 18px;
@@ -2284,8 +2342,8 @@ export default {
 .meeting-card__participant-pill {
   padding: 6px 10px;
   border-radius: 999px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(var(--status-rgb), 0.22);
   color: #0f172a;
   font-size: 0.85rem;
   font-weight: 600;
@@ -2297,10 +2355,13 @@ export default {
   min-width: 0;
   max-width: 56%;
   overflow: hidden;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .meeting-card__participant-ic {
-  color: #334155;
+  color: rgb(var(--status-rgb));
 }
 
 .meeting-card__participant-text {
@@ -2499,7 +2560,10 @@ export default {
 .meeting-card__meta-widget::v-deep.card {
   border-radius: 5px;
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid rgba(var(--am-gold-rgb), 0.5);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   box-shadow: 0 8px 14px rgba(15, 23, 42, 0.05);
   width: 100%;
   height: 64px;
@@ -2545,6 +2609,30 @@ export default {
   text-overflow: ellipsis;
 }
 
+.meeting-card__meta-item:nth-child(1) .meeting-card__meta-widget::v-deep .text-value {
+  color: #1e1b4b;
+}
+
+.meeting-card__meta-item:nth-child(1) .meeting-card__meta-widget::v-deep .small {
+  color: rgba(30, 27, 75, 0.82);
+}
+
+.meeting-card__meta-item:nth-child(2) .meeting-card__meta-widget::v-deep .text-value {
+  color: #0f172a;
+}
+
+.meeting-card__meta-item:nth-child(2) .meeting-card__meta-widget::v-deep .small {
+  color: rgba(15, 23, 42, 0.88);
+}
+
+.meeting-card__meta-item:nth-child(1) .meeting-card__meta-widget::v-deep.card {
+  border-color: rgba(var(--am-gold-rgb), 0.84);
+}
+
+.meeting-card__meta-item:nth-child(2) .meeting-card__meta-widget::v-deep.card {
+  border-color: rgba(var(--am-gold-rgb), 0.84);
+}
+
 .meeting-card__detail-list {
   padding: 14px 0;
   border-top: 1px solid rgba(148, 163, 184, 0.22);
@@ -2587,6 +2675,29 @@ export default {
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.2;
+}
+
+.meeting-card__detail-value.meeting-mode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.meeting-card__detail-value.meeting-mode::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55), 0 8px 14px rgba(15, 23, 42, 0.10);
+}
+
+.meeting-card__detail-value.meeting-mode--online::before {
+  background: #38bdf8;
+}
+
+.meeting-card__detail-value.meeting-mode--onsite::before {
+  background: #fb923c;
 }
 
 .meeting-card__detail-value.is-link {
@@ -3412,8 +3523,8 @@ export default {
 
 .meeting-modal .modal-actions-wrapper,
 .minutes-modal .modal-actions-wrapper {
-  padding-right: 0 !important;
-  margin-right: -24px !important;
+  padding-right: 16px !important;
+  margin-right: 0 !important;
   justify-content: flex-end !important;
 }
 

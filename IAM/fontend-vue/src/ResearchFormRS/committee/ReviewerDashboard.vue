@@ -450,7 +450,7 @@ export default {
       if (Number.isNaN(d.getTime())) return '-'
       const date = new Intl.DateTimeFormat('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d)
       const time = new Intl.DateTimeFormat('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
-      return `${date} ${time} เธ.`
+      return `${date} ${time} น.`
     },
     async fetchNextMeetings () {
       try {
@@ -633,21 +633,21 @@ export default {
     },
     statusLabel (status) {
       switch (status) {
-        case 'draft': return 'เนเธเธเธฃเนเธฒเธ'
-        case 'submitted': return 'เธขเธทเนเธเนเธฅเนเธง'
-        case 'faculty_review_pending': return 'เธฃเธญเธเธฃเธฐเธเธฒเธเธเธดเธเธฒเธฃเธ“เธฒ'
-        case 'faculty_approved': return 'เธเธฃเธฐเธเธฒเธเธญเธเธธเธกเธฑเธ•เธด'
-        case 'office_received': return 'เธชเนเธงเธเธเธฃเธดเธซเธฒเธฃเธฃเธฑเธเนเธฅเนเธง'
-        case 'document_checking': return 'เธ•เธฃเธงเธเธชเธญเธเน€เธญเธเธชเธฒเธฃ'
-        case 'assigned_to_committee': return 'เธกเธญเธเธซเธกเธฒเธขเธเธฃเธฃเธกเธเธฒเธฃเนเธฅเนเธง'
-        case 'under_review': return 'เธเธณเธฅเธฑเธเธเธดเธเธฒเธฃเธ“เธฒ'
-        case 'meeting_completed': return 'เธเธฃเธฐเธเธธเธกเน€เธชเธฃเนเธเนเธฅเนเธง'
-        case 'revision_requested': return 'เธเธญเนเธเนเนเธเน€เธเธดเนเธกเน€เธ•เธดเธก'
-        case 'resubmitted': return 'เธชเนเธเนเธเนเนเธเนเธฅเนเธง'
-        case 'second_round_review': return 'เธเธดเธเธฒเธฃเธ“เธฒเธฃเธญเธ 2'
-        case 'approved': return 'เธญเธเธธเธกเธฑเธ•เธด'
-        case 'rejected': return 'เธเธเธดเน€เธชเธ'
-        case 'announced': return 'เธเธฃเธฐเธเธฒเธจเธเธฅเนเธฅเนเธง'
+        case 'draft': return 'ร่าง'
+        case 'submitted': return 'ยื่นแล้ว'
+        case 'faculty_review_pending': return 'รอการพิจารณาคณะ'
+        case 'faculty_approved': return 'คณะอนุมัติ'
+        case 'office_received': return 'สำนักงานรับแล้ว'
+        case 'document_checking': return 'ตรวจสอบเอกสาร'
+        case 'assigned_to_committee': return 'มอบหมายกรรมการแล้ว'
+        case 'under_review': return 'กำลังพิจารณา'
+        case 'meeting_completed': return 'ประชุมเสร็จแล้ว'
+        case 'revision_requested': return 'ขอแก้ไขเพิ่มเติม'
+        case 'resubmitted': return 'ส่งใหม่แล้ว'
+        case 'second_round_review': return 'พิจารณารอบ 2'
+        case 'approved': return 'อนุมัติ'
+        case 'rejected': return 'ไม่ผ่าน'
+        case 'announced': return 'ประกาศผลแล้ว'
         default: return status
       }
     },
@@ -670,24 +670,24 @@ export default {
         const min = Math.floor(sec / 60)
         const hr = Math.floor(min / 60)
         const day = Math.floor(hr / 24)
-        if (sec < 45) return 'เธญเธตเธเธชเธฑเธเธเธฃเธนเน'
-        if (min < 60) return `เธญเธตเธ ${min} เธเธฒเธ—เธต`
-        if (hr < 24) return `เธญเธตเธ ${hr} เธเธฑเนเธงเนเธกเธ`
-        return `เธญเธตเธ ${day} เธงเธฑเธ`
+        if (sec < 45) return 'อีกสักครู่'
+        if (min < 60) return `อีก ${min} นาที`
+        if (hr < 24) return `อีก ${hr} ชั่วโมง`
+        return `อีก ${day} วัน`
       }
 
       const sec = Math.floor(diffMs / 1000)
-      if (sec < 45) return 'เน€เธกเธทเนเธญเธชเธฑเธเธเธฃเธนเน'
+      if (sec < 45) return 'เมื่อสักครู่'
       const min = Math.floor(sec / 60)
-      if (min < 60) return `${min} เธเธฒเธ—เธตเธ—เธตเนเนเธฅเนเธง`
+      if (min < 60) return `${min} นาทีที่แล้ว`
       const hr = Math.floor(min / 60)
-      if (hr < 24) return `${hr} เธเธฑเนเธงเนเธกเธเธ—เธตเนเนเธฅเนเธง`
+      if (hr < 24) return `${hr} ชั่วโมงที่แล้ว`
       const day = Math.floor(hr / 24)
-      if (day < 30) return `${day} เธงเธฑเธเธ—เธตเนเนเธฅเนเธง`
+      if (day < 30) return `${day} วันที่แล้ว`
       const month = Math.floor(day / 30)
-      if (month < 12) return `${month} เน€เธ”เธทเธญเธเธ—เธตเนเนเธฅเนเธง`
+      if (month < 12) return `${month} เดือนที่แล้ว`
       const year = Math.floor(month / 12)
-      return `${year} เธเธตเธ—เธตเนเนเธฅเนเธง`
+      return `${year} ปีที่แล้ว`
     },
     view (item) {
       this.$router.push({ name: 'committeeProposalDetail', params: { id: item.proposalId || item.id } })
@@ -770,11 +770,16 @@ export default {
   border-color: #e2e8f0;
 }
 .block-head {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 10px;
+  margin: -14px -16px 12px;
+  padding: 12px 16px 10px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
 }
 .block-head-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .block-icon {
@@ -822,6 +827,20 @@ export default {
 .committee-block-notifs { border-left: 4px solid var(--committee-red); }
 .committee-block-meetings .item-bullet { background: #10b981; }
 .committee-block-notifs .item-bullet { background: var(--committee-gold); }
+
+.committee-block-meetings .block-head {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 46%),
+    linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0.08) 38%, rgba(255, 255, 255, 0.96) 100%);
+  border-bottom-color: rgba(16, 185, 129, 0.18);
+}
+
+.committee-block-notifs .block-head {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 46%),
+    linear-gradient(135deg, rgba(254, 194, 96, 0.22) 0%, rgba(140, 21, 21, 0.06) 42%, rgba(255, 255, 255, 0.96) 100%);
+  border-bottom-color: rgba(254, 194, 96, 0.28);
+}
 
 @media (max-width: 900px) {
   .committee-dashboard-row { grid-template-columns: 1fr; }
