@@ -576,7 +576,7 @@ export default {
       URL.revokeObjectURL(url)
     },
     goBack() {
-      this.$router.push({ path: '/committee/dashboard' })
+      this.$router.push({ path: '/committee/assigned' })
     }
   }
 }

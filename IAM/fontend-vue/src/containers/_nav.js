@@ -67,22 +67,25 @@ export default [{
     },
     {
       _name: 'CSidebarNavDropdown',
-      name: 'Committee Panel',
+      name: 'เมนูคณะกรรมการ',
       route: '/committee',
       icon: 'cil-people',
       roles: ['committee'],
       items: [
         {
-          name: 'Dashboard',
-          to: '/committee/dashboard'
+          name: 'สรุปภาพรวม',
+          to: '/committee/dashboard',
+          icon: 'cil-speedometer'
         },
         {
-          name: 'Meetings',
-          to: '/committee/meetings'
+          name: 'งานที่ได้รับมอบหมาย',
+          to: '/committee/assigned',
+          icon: 'cil-list'
         },
         {
-          name: 'Notifications',
-          to: '/committee/notifications'
+          name: 'กำหนดการประชุม',
+          to: '/committee/meetings',
+          icon: 'cil-calendar'
         }
       ]
     },
@@ -98,20 +101,16 @@ export default [{
     },
 
     {
-      _name: 'CSidebarNavItem',
-      name: 'Banks',
-      to: '/banks',
-      icon: 'cil-settings',
-      badge: {
-        color: 'primary',
-        text: 'Themplate'
-      }
-    },
-    {
       _name: 'CSidebarNavDropdownTemplate',
       name: 'Template',
       icon: 'cil-layers',
+      roles: ['admin', 'chairman', 'legacy_admin'],
       items: [
+        {
+          name: 'Banks',
+          to: '/banks',
+          icon: 'cil-settings'
+        },
         {
           _name: 'CSidebarNavTitle',
           name: 'Access Control'

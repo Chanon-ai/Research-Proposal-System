@@ -20,7 +20,8 @@ const AdminReports = () => import('@/ResearchFormRS/admin/AdminReports.vue')
 const AdminSettings = () => import('@/ResearchFormRS/admin/AdminSettings.vue')
 const AdminUsers = () => import('@/ResearchFormRS/admin/AdminUsers.vue')
 
-const CommitteeDashboard = () => import('@/ResearchFormRS/committee/ReviewerDashboard.vue')
+const CommitteeDashboard = () => import('@/ResearchFormRS/committee/CommitteeDashboardSummary.vue')
+const CommitteeAssigned = () => import('@/ResearchFormRS/committee/ReviewerDashboard.vue')
 const CommitteeMeetings = () => import('@/ResearchFormRS/committee/CommitteeMeetings.vue')
 const CommitteeNotifications = () => import('@/ResearchFormRS/committee/CommitteeNotifications.vue')
 const CommitteeProposalDetail = () => import('@/ResearchFormRS/committee/CommitteeProposalDetail.vue')
@@ -243,6 +244,12 @@ const router = new Router({
           path: 'committee/dashboard',
           name: 'CommitteeDashboard',
           component: CommitteeDashboard,
+          meta: { appAuth: 'research', roles: ['committee', 'admin', 'chairman'] }
+        },
+        {
+          path: 'committee/assigned',
+          name: 'CommitteeAssigned',
+          component: CommitteeAssigned,
           meta: { appAuth: 'research', roles: ['committee', 'admin', 'chairman'] }
         },
         {

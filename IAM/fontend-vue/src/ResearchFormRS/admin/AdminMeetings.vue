@@ -2,13 +2,13 @@
   <div class="admin-meetings-page">
     <section class="meetings-hero">
       <div class="meetings-hero__content">
-        <div class="meetings-hero__eyebrow">Meeting Management</div>
-        <h2 class="meetings-hero__title">จัดการการประชุม พร้อมติดตามผลได้ทันที</h2>
+        <div class="meetings-hero__eyebrow">{{ heroEyebrow }}</div>
+        <h2 class="meetings-hero__title">{{ heroTitle }}</h2>
         <p class="meetings-hero__subtitle mb-0">
-          รวมกำหนดการ ผู้เข้าร่วม สถานะ และบันทึกผลไว้ในหน้าเดียว
+          {{ heroSubtitle }}
         </p>
       </div>
-      <div class="meetings-hero__action">
+      <div v-if="canCreate" class="meetings-hero__action">
         <CButton color="primary" size="lg" class="hero-action-btn" @click="openCreateModal">+ สร้างการประชุมใหม่
         </CButton>
       </div>
@@ -55,7 +55,10 @@
         <div class="filter-card__header">
           <div>
             <div class="filter-card__title">ค้นหาการประชุม</div>
-            <div class="filter-card__subtitle">พิมพ์คำค้นหาเพื่อค้นหาจากชื่อการประชุม สถานที่ ลิงก์ หรือวาระ</div>
+            <div class="filter-card__subtitle">
+              พิมพ์คำค้นหาเพื่อค้นหาจาก
+              <span>ชื่อการประชุม สถานที่ ลิงก์ วาระการประชุม</span>
+            </div>
           </div>
         </div>
         <CRow class="align-items-end">
@@ -65,17 +68,19 @@
           </CCol>
           <CCol md="4" class="mb-2 mb-md-0">
             <div class="filter-card__search-actions">
-              <CButton size="sm" :color="selectionMode ? 'secondary' : 'primary'" class="filter-card__select-toggle"
-                @click="toggleSelectionMode">
-                {{ selectionMode ? 'ยกเลิกเลือก' : 'เลือก' }}
-              </CButton>
-              <small class="text-muted filter-card__search-hint">
-                {{ selectionMode
-                  ? (selectedMeetingForActions ? 'เลือกการประชุมแล้ว — ใช้ปุ่มแก้ไข/ลบที่การ์ด' :
-                    'คลิกการ์ดการประชุมด้านล่างเพื่อแสดงปุ่มแก้ไข/ลบ')
-                  : 'กดปุ่มเลือกเพื่อเลือกการประชุมสำหรับแก้ไข/ลบ'
-                }}
-              </small>
+              <template v-if="canEditDelete">
+                <CButton size="sm" :color="selectionMode ? 'secondary' : 'primary'" class="filter-card__select-toggle"
+                  @click="toggleSelectionMode">
+                  {{ selectionMode ? 'ยกเลิกเลือก' : 'เลือก' }}
+                </CButton>
+                <small class="text-muted filter-card__search-hint">
+                  {{ selectionMode
+                    ? (selectedMeetingForActions ? 'เลือกการประชุมแล้ว — ใช้ปุ่มแก้ไข/ลบที่การ์ด' :
+                      'คลิกการ์ดการประชุมด้านล่างเพื่อแสดงปุ่มแก้ไข/ลบ')
+                    : 'กดปุ่มเลือกเพื่อเลือกการประชุมสำหรับแก้ไข/ลบ'
+                  }}
+                </small>
+              </template>
             </div>
           </CCol>
         </CRow>
@@ -91,19 +96,28 @@
       <div v-if="meetings.length === 0" class="empty-state">
         <div class="empty-state__icon">🗓️</div>
         <div class="empty-state__title">ยังไม่มีรายการประชุม</div>
-        <div class="empty-state__text">เริ่มต้นด้วยการสร้างการประชุมใหม่เพื่อจัดการรอบประชุมและบันทึกผลภายหลัง</div>
+        <div class="empty-state__text">
+          {{ canCreate
+            ? 'เริ่มต้นด้วยการสร้างการประชุมใหม่เพื่อจัดการรอบประชุมและบันทึกผลภายหลัง'
+            : 'ยังไม่มีรายการประชุมในระบบ'
+          }}
+        </div>
       </div>
 
       <div v-else class="meeting-grid">
         <div v-for="meeting in meetings" :key="meeting._id" class="meeting-card"
-          :class="[getMeetingCardClass(meeting), isSelectedMeeting(meeting) ? 'meeting-card--selected' : '']"
+          :class="[
+            getMeetingCardClass(meeting),
+            isSelectedMeeting(meeting) ? 'meeting-card--selected' : '',
+            (selectionMode && !isMeetingActionable(meeting)) ? 'meeting-card--locked' : ''
+          ]"
           @click="selectionMode && selectMeetingForActions(meeting)"
           @keydown.enter.prevent="selectionMode && selectMeetingForActions(meeting)"
           @keydown.space.prevent="selectionMode && selectMeetingForActions(meeting)" role="button" tabindex="0"
-          :aria-disabled="selectionMode ? 'false' : 'true'">
+          :aria-disabled="(selectionMode && isMeetingActionable(meeting)) ? 'false' : 'true'">
           <div class="meeting-card__left-bar" aria-hidden="true"></div>
           <div class="meeting-card__surface ">
-            <div v-if="selectionMode && isSelectedMeeting(meeting)" class="meeting-card__selected-overlay" @click.stop>
+            <div v-if="canEditDelete && selectionMode && isSelectedMeeting(meeting)" class="meeting-card__selected-overlay" @click.stop>
               <button type="button" class="meeting-card__overlay-close" aria-label="ปิดเมนูแก้ไข/ลบ"
                 @click.stop="clearSelectedMeeting">
                 <CIcon name="cil-x" width="18" aria-hidden="true" />
@@ -221,10 +235,14 @@
               </div>
 
               <div class="meeting-card__footer">
-                <CButton size="sm" block :color="meeting.status === 'completed' ? 'secondary' : 'primary'"
-                  :class="['meeting-card__cta', meeting.status === 'completed' ? 'is-completed' : '']"
+                <CButton size="sm" block :color="readOnly ? 'secondary' : (meeting.status === 'completed' ? 'secondary' : 'primary')"
+                  :class="[
+                    'meeting-card__cta',
+                    meeting.status === 'completed' ? 'is-completed' : '',
+                    readOnly ? 'meeting-card__cta--soft' : ''
+                  ]"
                   @click.stop="openMinutesModal(meeting)">
-                  {{ meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม' }}
+                  {{ isReadOnly(meeting) ? 'ดูรายละเอียด' : (meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม') }}
                 </CButton>
               </div>
             </div>
@@ -247,8 +265,28 @@
       </div>
     </div>
 
-    <CModal :show.sync="showMeetingModal" :close-on-backdrop="false" centered size="lg" class="meeting-modal"
-      :title="isEditMode ? 'แก้ไขการประชุม' : 'สร้างการประชุมใหม่'">
+    <CModal v-if="canCreate" :show.sync="showMeetingModal" :close-on-backdrop="false" centered size="lg" class="meeting-modal">
+      <template #header-wrapper>
+        <div class="modal-header">
+          <h5 class="modal-title">{{ isEditMode ? 'แก้ไขการประชุม' : 'สร้างการประชุมใหม่' }}</h5>
+          <div class="meeting-modal__header-actions">
+            <CButton
+              v-if="isEditMode && selectedMeeting && meetingForm && meetingForm.status === 'scheduled'"
+              size="sm"
+              color="danger"
+              variant="outline"
+              class="meeting-modal__cancel-meeting"
+              @click="cancelMeeting"
+            >
+              <CIcon name="cil-ban" width="16" class="mr-1  icon-bold" aria-hidden="true" />
+              ยกเลิกการประชุม
+            </CButton>
+            <button type="button" class="close" aria-label="Close" @click="closeMeetingModal">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        </div>
+      </template>
       <template #body-wrapper>
         <div class="meeting-form">
           <div class="field full-field">
@@ -388,8 +426,8 @@
       </template>
     </CModal>
 
-    <div v-if="timeDropdown.openFor" class="time-dropdown__backdrop" @mousedown="closeTimeDropdown"></div>
-    <div v-if="timeDropdown.openFor" class="time-dropdown" ref="timeDropdownPanel" :style="{
+    <div v-if="canCreate && timeDropdown.openFor" class="time-dropdown__backdrop" @mousedown="closeTimeDropdown"></div>
+    <div v-if="canCreate && timeDropdown.openFor" class="time-dropdown" ref="timeDropdownPanel" :style="{
       top: timeDropdown.top + 'px',
       left: timeDropdown.left + 'px',
       width: timeDropdown.width + 'px',
@@ -404,7 +442,7 @@
     </div>
 
     <CModal :show.sync="showMinutesModal" :close-on-backdrop="false" centered size="xl" class="minutes-modal"
-      :title="`บันทึกผลการประชุม — ${minutesMeeting ? (minutesMeeting.title || '-') : '-'}`">
+      :title="`${readOnly ? 'รายละเอียดการประชุม' : 'บันทึกผลการประชุม'} — ${minutesMeeting ? (minutesMeeting.title || '-') : '-'}`">
       <template #body-wrapper>
         <div class="minutes-form">
           <div v-if="minutesMeeting" class="minutes-meta full">
@@ -512,6 +550,28 @@ const BASE_MEETING_START_TIME = '06:00'
 
 export default {
   name: 'AdminMeetings',
+  props: {
+    readOnly: {
+      type: Boolean,
+      default: false
+    },
+    myOnly: {
+      type: Boolean,
+      default: false
+    },
+    heroEyebrow: {
+      type: String,
+      default: 'Meeting Management'
+    },
+    heroTitle: {
+      type: String,
+      default: 'จัดการการประชุม พร้อมติดตามผลได้ทันที'
+    },
+    heroSubtitle: {
+      type: String,
+      default: 'รวมกำหนดการ ผู้เข้าร่วม สถานะ และบันทึกผลไว้ในหน้าเดียว'
+    }
+  },
   components: { Multiselect, 'v-date-picker': DatePicker },
   data() {
     return {
@@ -592,6 +652,36 @@ export default {
     }
   },
   computed: {
+    currentUser() {
+      try {
+        const raw = localStorage.getItem('auth_user')
+        return raw ? JSON.parse(raw) : null
+      } catch (e) {
+        return null
+      }
+    },
+    currentUserId() {
+      const user = this.currentUser
+      return user && user._id ? String(user._id) : ''
+    },
+    currentUserName() {
+      const user = this.currentUser || {}
+      return String(user.fullName || user.name || user.displayName || user.username || '').trim()
+    },
+    currentUserEmail() {
+      const user = this.currentUser || {}
+      return String(user.email || '').trim()
+    },
+    applyMyOnlyFilter() {
+      const role = this.currentUser && this.currentUser.role ? String(this.currentUser.role) : ''
+      return Boolean(this.myOnly && role === 'committee' && (this.currentUserId || this.currentUserName || this.currentUserEmail))
+    },
+    canCreate() {
+      return !this.readOnly
+    },
+    canEditDelete() {
+      return !this.readOnly
+    },
     meetingDatePickerValue: {
       get() {
         return this.parseLocalYmd(this.meetingForm && this.meetingForm.meetingDate ? this.meetingForm.meetingDate : '')
@@ -669,13 +759,15 @@ export default {
   mounted() {
     this.fetchMeetings()
     this.fetchMeetingSummary()
-    this.fetchProposalOptions()
-    this.fetchParticipantOptions()
-    this.consumeProposalContext()
+    if (!this.readOnly) {
+      this.fetchProposalOptions()
+      this.fetchParticipantOptions()
+      this.consumeProposalContext()
+    }
   },
   watch: {
     '$route.query'() {
-      this.consumeProposalContext()
+      if (!this.readOnly) this.consumeProposalContext()
     },
     'meetingForm.meetingType'(next) {
       if (next === 'online') {
@@ -703,6 +795,63 @@ export default {
     }
   },
   methods: {
+    normalizeText(value) {
+      return String(value || '').trim().toLowerCase()
+    },
+    meetingHasCurrentUser(meeting) {
+      if (!meeting) return false
+
+      const userId = this.currentUserId
+      const userName = this.normalizeText(this.currentUserName)
+      const userEmail = this.normalizeText(this.currentUserEmail)
+
+      const ids = Array.isArray(meeting.participantIds) ? meeting.participantIds.map(x => String(x)) : []
+      if (userId && ids.includes(userId)) return true
+      if ((userName || userEmail) && ids.length) {
+        const joinedIds = this.normalizeText(ids.join(' '))
+        if (userEmail && joinedIds.includes(userEmail)) return true
+        if (userName && joinedIds.includes(userName)) return true
+      }
+
+      const maybeParticipants =
+        meeting.participants ||
+        meeting.participantUsers ||
+        meeting.participantDetails ||
+        meeting.participantList ||
+        meeting.participantNames ||
+        []
+
+      const hay = []
+
+      if (Array.isArray(maybeParticipants)) {
+        maybeParticipants.forEach(p => {
+          if (!p) return
+          if (typeof p === 'string') {
+            hay.push(p)
+            return
+          }
+          if (typeof p === 'object') {
+            hay.push(
+              p.fullName,
+              p.name,
+              p.displayName,
+              p.username,
+              p.email
+            )
+          }
+        })
+      } else if (typeof maybeParticipants === 'string') {
+        hay.push(maybeParticipants)
+      }
+
+      const joined = this.normalizeText(hay.filter(Boolean).join(' '))
+      if (!joined) return false
+
+      if (userEmail && joined.includes(userEmail)) return true
+      if (userName && joined.includes(userName)) return true
+
+      return false
+    },
     formatThaiDateBelow(date) {
       const d = date instanceof Date ? date : new Date(date)
       if (Number.isNaN(d.getTime())) return ''
@@ -1236,7 +1385,11 @@ export default {
         cancelled: meeting.status === 'cancelled'
       }
     },
+    isMeetingActionable(meeting) {
+      return !!(meeting && meeting.status === 'scheduled')
+    },
     toggleSelectionMode() {
+      if (!this.canEditDelete) return
       this.selectionMode = !this.selectionMode
       this.selectedMeetingForActions = null
     },
@@ -1244,6 +1397,7 @@ export default {
       this.selectedMeetingForActions = null
     },
     selectMeetingForActions(meeting) {
+      if (!this.isMeetingActionable(meeting)) return
       this.selectedMeetingForActions = meeting || null
     },
     isSelectedMeeting(meeting) {
@@ -1269,10 +1423,9 @@ export default {
     async fetchMeetings() {
       this.loading = true
       try {
-        const params = {
-          page: this.page,
-          limit: this.limit
-        }
+        const params = this.applyMyOnlyFilter
+          ? { page: 1, limit: 500 }
+          : { page: this.page, limit: this.limit }
         if (this.filterStatus) params.status = this.filterStatus
         if (this.searchKeyword && String(this.searchKeyword).trim()) params.keyword = String(this.searchKeyword).trim()
 
@@ -1282,14 +1435,25 @@ export default {
           ? payload.meetings
           : (Array.isArray(payload.data) ? payload.data : [])
 
-        this.meetings = this.sortMeetingsForDisplay(list)
-        this.total = Number(payload.total) || list.length
-        this.page = Number(payload.page) || this.page
-        this.totalPages = Number(payload.totalPages) || Math.max(1, Math.ceil(this.total / this.limit))
+        const sorted = this.sortMeetingsForDisplay(list)
+
+        if (this.applyMyOnlyFilter) {
+          const mine = sorted.filter(m => this.meetingHasCurrentUser(m))
+          this.total = mine.length
+          this.totalPages = Math.max(1, Math.ceil(this.total / Math.max(1, this.limit)))
+          if (this.page > this.totalPages) this.page = 1
+          const start = (Math.max(1, this.page) - 1) * this.limit
+          this.meetings = mine.slice(start, start + this.limit)
+        } else {
+          this.meetings = sorted
+          this.total = Number(payload.total) || list.length
+          this.page = Number(payload.page) || this.page
+          this.totalPages = Number(payload.totalPages) || Math.max(1, Math.ceil(this.total / this.limit))
+        }
 
         if (this.selectedMeetingForActions) {
           const stillExists = this.meetings.find(m => String(m._id) === String(this.selectedMeetingForActions._id))
-          this.selectedMeetingForActions = stillExists || null
+          this.selectedMeetingForActions = (stillExists && this.isMeetingActionable(stillExists)) ? stillExists : null
         } else {
           this.selectedMeetingForActions = null
         }
@@ -1385,6 +1549,7 @@ export default {
       this.fetchMeetings()
     },
     openCreateModal() {
+      if (!this.canCreate) return
       this.isEditMode = false
       this.selectedMeeting = null
       this.pendingProposalIds = []
@@ -1410,6 +1575,7 @@ export default {
       }
     },
     openEditModal(meeting) {
+      if (!this.canEditDelete) return
       this.isEditMode = true
       this.selectedMeeting = meeting
       this.pendingProposalIds = []
@@ -1446,7 +1612,38 @@ export default {
       this.savingMeeting = false
       this.closeTimeDropdown()
     },
+    async cancelMeeting() {
+      if (this.readOnly) return
+      if (!this.selectedMeeting || !this.selectedMeeting._id) return
+      if (!this.meetingForm || this.meetingForm.status !== 'scheduled') return
+
+      const result = await Swal.fire({
+        icon: 'warning',
+        title: 'ยืนยันการยกเลิกการประชุม',
+        text: `ยกเลิกการประชุม '${this.selectedMeeting.title || ''}'?`,
+        showCancelButton: true,
+        confirmButtonText: 'ยกเลิกการประชุม',
+        cancelButtonText: 'กลับ',
+        confirmButtonColor: '#e55353'
+      })
+      if (!result.isConfirmed) return
+
+      this.savingMeeting = true
+      try {
+        await axios.patch(`/api/v1/meetings/${this.selectedMeeting._id}/status`, { status: 'cancelled' })
+        this.closeMeetingModal()
+        await this.fetchMeetings()
+        await this.fetchMeetingSummary()
+        await Swal.fire({ icon: 'success', title: 'ยกเลิกการประชุมสำเร็จ', timer: 1300, showConfirmButton: false })
+      } catch (error) {
+        console.error('[AdminMeetings] Error cancelling meeting:', error)
+        await Swal.fire({ icon: 'error', title: 'ยกเลิกไม่สำเร็จ', text: 'API การประชุมยังไม่พร้อมใช้งาน' })
+      } finally {
+        this.savingMeeting = false
+      }
+    },
     async saveMeeting() {
+      if (this.readOnly) return
       if (!this.meetingForm.title || !this.meetingForm.meetingDate || !this.meetingForm.startTime) {
         await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'ชื่อการประชุม วันที่ประชุม และเวลาเริ่ม เป็นข้อมูลบังคับ' })
         return
@@ -1524,6 +1721,8 @@ export default {
       }
     },
     async deleteMeeting(meeting) {
+      if (this.readOnly) return
+      if (!meeting || !meeting._id) return
       const result = await Swal.fire({
         icon: 'warning',
         title: 'ยืนยันการลบ',
@@ -1574,6 +1773,7 @@ export default {
       this.minutesForm.actionItems.splice(index, 1)
     },
     async saveMinutes() {
+      if (this.readOnly) return
       if (!this.minutesMeeting || !this.minutesMeeting._id) return
 
       this.savingMinutes = true
@@ -1626,13 +1826,18 @@ export default {
       this.$router.push({ name: 'ResearchForm', params: { id: proposalId } })
     },
     isReadOnly(meeting) {
-      return meeting && meeting.status === 'completed'
+      return this.readOnly || (meeting && meeting.status === 'completed')
     }
   }
 }
 </script>
 
 <style scoped>
+.icon-bold {
+  transform: scale(1.2);
+  filter: contrast(1.3);
+}
+
 .admin-meetings-page {
   /* Theme tokens (match Research Form vibe, but keep readable vs sidebar) */
   --am-bg: #fffaf2;
@@ -1813,6 +2018,20 @@ export default {
   margin-bottom: var(--am-section-gap);
 }
 
+.filter-card__title {
+  font-weight: 900;
+  color: var(--am-text);
+  font-size: 1.05rem;
+  letter-spacing: 0.2px;
+}
+
+.filter-card__subtitle {
+  margin-top: 2px;
+  color: var(--am-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
 .filter-card__search-actions {
   display: flex;
   flex-direction: column;
@@ -1958,6 +2177,19 @@ export default {
 
 .meeting-card--selected .meeting-card__surface {
   box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.meeting-card--locked {
+  cursor: not-allowed;
+}
+
+.meeting-card--locked .meeting-card__surface {
+  opacity: 0.86;
+  filter: grayscale(0.12);
+}
+
+.meeting-card--locked .meeting-card__left-bar {
+  opacity: 0.55;
 }
 
 .meeting-card:focus,
@@ -2612,6 +2844,25 @@ export default {
   box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 26px rgba(15, 23, 42, 0.18);
 }
 
+.meeting-card__cta.meeting-card__cta--soft {
+  background: #fff7e6 !important;
+  border-color: rgba(var(--am-gold-rgb), 0.65) !important;
+  color: var(--am-accent) !important;
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.10);
+  filter: none !important;
+}
+
+.meeting-card__cta.meeting-card__cta--soft:hover {
+  background: rgba(var(--am-gold-rgb), 0.18) !important;
+  border-color: rgba(var(--am-gold-rgb), 0.8) !important;
+  color: var(--am-accent) !important;
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.12);
+}
+
+.meeting-card__cta.meeting-card__cta--soft:focus-visible {
+  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 26px rgba(15, 23, 42, 0.12) !important;
+}
+
 .meeting-card__cta.is-completed {
   background: rgba(var(--am-gold-rgb), 0.12) !important;
   border-color: rgba(var(--am-gold-rgb), 0.6) !important;
@@ -3213,6 +3464,26 @@ export default {
 .minutes-modal .modal-header .modal-title {
   color: #ffffff !important;
   font-weight: 900;
+}
+
+.meeting-modal__header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.meeting-modal__cancel-meeting {
+  border-radius: 10px !important;
+  font-weight: 900 !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.16);
+}
+
+.meeting-modal__cancel-meeting:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  filter: none !important;
 }
 
 .meeting-modal .close,
