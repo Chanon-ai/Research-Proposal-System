@@ -5,5 +5,5 @@
   </div>
 </template>
 <script>
-export default { name: 'ReviewerDashboard' }
+export default { name: 'CommitteeProjectProposal' }
 </script>

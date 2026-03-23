@@ -21,7 +21,7 @@ const AdminSettings = () => import('@/ResearchFormRS/admin/AdminSettings.vue')
 const AdminUsers = () => import('@/ResearchFormRS/admin/AdminUsers.vue')
 
 const CommitteeDashboard = () => import('@/ResearchFormRS/committee/CommitteeDashboardSummary.vue')
-const CommitteeAssigned = () => import('@/ResearchFormRS/committee/ReviewerDashboard.vue')
+const CommitteeAssigned = () => import('@/ResearchFormRS/committee/CommitteeProjectProposal.vue')
 const CommitteeMeetings = () => import('@/ResearchFormRS/committee/CommitteeMeetings.vue')
 const CommitteeNotifications = () => import('@/ResearchFormRS/committee/CommitteeNotifications.vue')
 const CommitteeProposalDetail = () => import('@/ResearchFormRS/committee/CommitteeProposalDetail.vue')

@@ -190,7 +190,7 @@
 import Service from '@/service/api'
 
 export default {
-  name: 'ReviewerDashboard',
+  name: 'CommitteeProjectProposal',
   data () {
     return {
       loading: false,
