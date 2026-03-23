@@ -137,13 +137,35 @@
           </CCardBody>
         </CCard>
 
+        <!-- ✅ STATUS FLOW CARD (แทนที่ของเดิม) -->
         <CCard>
           <CCardHeader>สถานะที่อนุญาต (Read-only)</CCardHeader>
           <CCardBody>
-            <div class="transition-row" v-for="(toStatuses, fromStatus) in allowedTransitions" :key="fromStatus">
-              <CBadge color="secondary" class="mr-2 mb-2">{{ getStatusLabel(fromStatus) }}</CBadge>
-              <span class="mr-2">→</span>
-              <CBadge class="mr-2 mb-2" color="primary" v-for="to in toStatuses" :key="`${fromStatus}-${to}`">{{ getStatusLabel(to) }}</CBadge>
+            <div class="status-flow-list">
+              <div
+                v-for="(toStatuses, fromStatus, index) in allowedTransitions"
+                :key="fromStatus"
+              >
+                <div v-if="index > 0" class="status-flow-divider" />
+                <div class="status-flow-row">
+                  <!-- FROM chip -->
+                  <span class="status-chip status-chip--from">
+                    <component :is="'svg'" v-bind="svgProps" v-html="getStatusIcon(fromStatus)" />
+                    {{ getStatusLabel(fromStatus) }}
+                  </span>
+                  <span class="status-flow-arrow">→</span>
+                  <!-- TO chips -->
+                  <span
+                    v-for="to in toStatuses"
+                    :key="`${fromStatus}-${to}`"
+                    class="status-chip"
+                    :class="getStatusChipClass(to)"
+                  >
+                    <component :is="'svg'" v-bind="svgProps" v-html="getStatusIcon(to)" />
+                    {{ getStatusLabel(to) }}
+                  </span>
+                </div>
+              </div>
             </div>
           </CCardBody>
         </CCard>
@@ -157,7 +179,7 @@
           <CCardBody>
             <CCallout color="warning" class="mb-3">
               <strong>หมายเหตุ:</strong>
-              การกด “บันทึก Templates ทั้งหมด” จะบันทึก <strong>ทุก Template พร้อมกัน</strong>ในครั้งเดียว ไม่ใช่เฉพาะ Template ที่เปิดอยู่ กรุณาแก้ไขให้ครบถ้วนก่อนกดบันทึก
+              การกด "บันทึก Templates ทั้งหมด" จะบันทึก <strong>ทุก Template พร้อมกัน</strong>ในครั้งเดียว ไม่ใช่เฉพาะ Template ที่เปิดอยู่ กรุณาแก้ไขให้ครบถ้วนก่อนกดบันทึก
             </CCallout>
             <details class="mb-3" v-for="(tpl, key) in emailTemplates" :key="key">
               <summary class="font-weight-bold mb-2">{{ getTemplateLabel(key) }}</summary>
@@ -364,24 +386,9 @@
             {{ emailWidgetFeedback.message }}
           </CAlert>
 
-          <CInput
-            label="Name / ชื่อผู้ส่ง"
-            v-model="emailWidgetForm.senderName"
-            placeholder="เช่น ผู้ดูแลระบบ"
-          />
-
-          <CInput
-            label="Subject / หัวข้อ"
-            v-model="emailWidgetForm.subject"
-            placeholder="เช่น ทดสอบระบบแจ้งเตือน"
-          />
-
-          <CInput
-            label="Email address / อีเมลผู้รับ"
-            type="email"
-            v-model="emailWidgetForm.recipientEmail"
-            placeholder="ต้องเป็นอีเมลผู้ใช้จริงในระบบ"
-          />
+          <CInput label="Name / ชื่อผู้ส่ง" v-model="emailWidgetForm.senderName" placeholder="เช่น ผู้ดูแลระบบ" />
+          <CInput label="Subject / หัวข้อ" v-model="emailWidgetForm.subject" placeholder="เช่น ทดสอบระบบแจ้งเตือน" />
+          <CInput label="Email address / อีเมลผู้รับ" type="email" v-model="emailWidgetForm.recipientEmail" placeholder="ต้องเป็นอีเมลผู้ใช้จริงในระบบ" />
 
           <label class="d-block mb-1">Template (ถ้าต้องการ)</label>
           <CSelect
@@ -420,8 +427,14 @@
     <CModal class="send-modal" :show.sync="showAddSettingModal" centered title="เพิ่ม Setting ใหม่" :close-on-backdrop="false">
       <template #body-wrapper>
         <div class="send-modal-inner" style="padding-left:36px;padding-right:36px;box-sizing:border-box;">
-          <CInput label="Key *" v-model="newSetting.key" placeholder="use_snake_case" />
-          <CInput label="Value *" v-model="newSetting.value" />
+          <div class="form-group">
+            <label>Key <span class="text-required">*</span></label>
+            <input class="form-control" v-model="newSetting.key" placeholder="use_snake_case" />
+          </div>
+          <div class="form-group">
+            <label>Value <span class="text-required">*</span></label>
+            <input class="form-control" v-model="newSetting.value" />
+          </div>
           <CSelect
             label="Group"
             :value="newSetting.group"
@@ -437,9 +450,9 @@
         </div>
       </template>
       <template #footer-wrapper>
-        <div class="d-flex justify-content-end w-100" style="max-width:880px;margin:0 auto;padding-right:36px;box-sizing:border-box;gap:12px;">
-          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="showAddSettingModal = false">ยกเลิก</CButton>
-          <CButton color="primary" class="modal-btn modal-btn--primary" @click="addSetting">เพิ่ม</CButton>
+        <div class="d-flex justify-content-end w-100" style="padding: 0.875rem 1.5rem 1rem; gap: 10px; border-top: 1px solid #e4e7ea; background: #f8f9fa;">
+          <CButton color="secondary" variant="outline" class="modal-btn modal-btn--secondary" @click="showAddSettingModal = false">ยกเลิก</CButton>
+          <CButton color="primary" class="modal-btn modal-btn--primary" @click="addSetting">+ เพิ่ม</CButton>
         </div>
       </template>
     </CModal>
@@ -509,6 +522,24 @@ const STATUS_LABELS = {
   announced: 'ประกาศผลแล้ว'
 }
 
+// flat SVG icon paths — keyed by status
+const STATUS_ICONS = {
+  submitted:              '<path d="M8 2v8M5 7l3 3 3-3"/><rect x="2" y="11" width="12" height="2" rx="1"/>',
+  faculty_review_pending: '<circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/>',
+  faculty_approved:       '<path d="M3 8l4 4 6-6"/>',
+  office_received:        '<path d="M8 14V6M5 9l3-3 3 3"/><rect x="2" y="3" width="12" height="2" rx="1"/>',
+  document_checking:      '<circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/>',
+  assigned_to_committee:  '<rect x="2" y="2" width="12" height="12" rx="1"/><path d="M5 6h6M5 9h4"/>',
+  under_review:           '<circle cx="8" cy="8" r="6"/><path d="M8 5v3h3"/>',
+  meeting_completed:      '<rect x="2" y="3" width="12" height="11" rx="1"/><path d="M5 3V1M11 3V1M2 7h12"/>',
+  revision_requested:     '<path d="M11 3l2 2-7 7H4v-2L11 3z"/>',
+  resubmitted:            '<path d="M2 10l4-4 4 4"/><path d="M6 6v6"/><path d="M10 6h3a1 1 0 010 4h-3"/>',
+  second_round_review:    '<path d="M13 8A5 5 0 103 8"/><path d="M13 8l-2-2M13 8l2-2"/>',
+  approved:               '<path d="M3 8l4 4 6-6"/>',
+  rejected:               '<path d="M4 4l8 8M12 4l-8 8"/>',
+  announced:              '<path d="M2 12c0 0 2-3 6-3s6 3 6 3"/><circle cx="8" cy="6" r="2.5"/><path d="M13 7l2 1-2 1"/>'
+}
+
 const ALLOWED_TRANSITIONS = {
   submitted: ['faculty_review_pending'],
   faculty_approved: ['office_received'],
@@ -535,15 +566,26 @@ const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'workflow', 'email', 'admin', 'use
 
 export default {
   name: 'AdminSettings',
-  components: {
-    AdminUsersManagement
-  },
+  components: { AdminUsersManagement },
   data () {
     return {
       activeTab: 0,
       settings: [],
       loadingSettings: false,
       apiConnected: false,
+
+      // shared SVG attrs for status icons
+      svgProps: {
+        width: '14',
+        height: '14',
+        viewBox: '0 0 16 16',
+        fill: 'none',
+        stroke: 'currentColor',
+        'stroke-width': '1.5',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        style: 'flex-shrink:0;vertical-align:middle;'
+      },
 
       generalForm: {
         systemName: 'ระบบบริหารจัดการข้อเสนอโครงการวิจัย MFU',
@@ -562,13 +604,7 @@ export default {
         minCommittee: 3,
         maxRounds: 2,
         allowRevisionAfterMeeting: true,
-        stepDeadlines: {
-          step1: 7,
-          step2: 5,
-          step3: 14,
-          step4: 7,
-          step5: 7
-        }
+        stepDeadlines: { step1: 7, step2: 5, step3: 14, step4: 7, step5: 7 }
       },
       workflowSaveStatus: 'idle',
       workflowSaveMessage: '',
@@ -599,21 +635,11 @@ export default {
 
       isEmailWidgetOpen: false,
       emailWidgetSending: false,
-      emailWidgetFeedback: {
-        type: '',
-        message: ''
-      },
-      emailWidgetForm: {
-        senderName: '',
-        subject: '',
-        recipientEmail: '',
-        message: '',
-        templateKey: ''
-      },
+      emailWidgetFeedback: { type: '', message: '' },
+      emailWidgetForm: { senderName: '', subject: '', recipientEmail: '', message: '', templateKey: '' },
 
       showAddSettingModal: false,
       newSetting: { key: '', value: '', group: 'general', description: '' },
-
       editingSettingId: null,
       editingSettingValue: '',
       editingSettingDescription: '',
@@ -639,14 +665,25 @@ export default {
     document.removeEventListener('keydown', this.onEmailWidgetKeydown)
   },
   watch: {
-    '$route.query.tab' () {
-      this.applyTabFromRoute()
-    },
-    activeTab () {
-      this.syncRouteTabQuery()
-    }
+    '$route.query.tab' () { this.applyTabFromRoute() },
+    activeTab () { this.syncRouteTabQuery() }
   },
   methods: {
+    // ─── Status flow helpers ───────────────────────────────────────────────
+    getStatusLabel (status) {
+      return STATUS_LABELS[status] || status
+    },
+    getStatusIcon (status) {
+      return STATUS_ICONS[status] || ''
+    },
+    getStatusChipClass (status) {
+      if (['approved', 'faculty_approved'].includes(status)) return 'status-chip--approve'
+      if (['rejected'].includes(status)) return 'status-chip--reject'
+      if (['revision_requested'].includes(status)) return 'status-chip--alt'
+      return 'status-chip--to'
+    },
+
+    // ─── Tab routing ──────────────────────────────────────────────────────
     getTabIndexFromQuery (tabKey) {
       if (!tabKey) return null
       const key = String(tabKey).trim().toLowerCase()
@@ -664,15 +701,10 @@ export default {
       if (!tabKey) return
       const currentTab = String(this.$route.query.tab || '').trim().toLowerCase()
       if (currentTab === tabKey) return
-
-      this.$router.replace({
-        path: this.$route.path,
-        query: {
-          ...this.$route.query,
-          tab: tabKey
-        }
-      }).catch(() => {})
+      this.$router.replace({ path: this.$route.path, query: { ...this.$route.query, tab: tabKey } }).catch(() => {})
     },
+
+    // ─── Utility ─────────────────────────────────────────────────────────
     toBool (val, fallback = false) {
       if (val === true || val === false) return val
       if (val === undefined || val === null) return fallback
@@ -695,8 +727,7 @@ export default {
       return s === '' ? fallback : s
     },
     isValidEmail (email) {
-      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      return re.test(String(email || '').trim().toLowerCase())
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim().toLowerCase())
     },
     normalizeEmail (email) {
       return String(email || '').trim().toLowerCase()
@@ -705,15 +736,8 @@ export default {
       const normalized = this.normalizeEmail(email)
       if (!normalized) return true
       if (['admin01@gmail.com', 'test@example.com'].includes(normalized)) return true
-      const patterns = [
-        /^admin0\d+@gmail\.com$/i,
-        /^test[\w.+-]*@/i,
-        /^fake[\w.+-]*@/i,
-        /^dummy[\w.+-]*@/i,
-        /^seed[\w.+-]*@/i,
-        /@example\.(com|org|net)$/i
-      ]
-      return patterns.some(pattern => pattern.test(normalized))
+      const patterns = [/^admin0\d+@gmail\.com$/i, /^test[\w.+-]*@/i, /^fake[\w.+-]*@/i, /^dummy[\w.+-]*@/i, /^seed[\w.+-]*@/i, /@example\.(com|org|net)$/i]
+      return patterns.some(p => p.test(normalized))
     },
     validateSMTPConfig ({ requirePassword = false } = {}) {
       const host = String(this.smtpForm.smtp_host || '').trim()
@@ -721,27 +745,15 @@ export default {
       const fromEmail = String(this.smtpForm.smtp_from_email || '').trim()
       const username = String(this.smtpForm.smtp_username || '').trim()
       const password = String(this.smtpForm.smtp_password || '').trim()
-
       if (!host) return 'กรุณากรอก SMTP Host'
       if (!Number.isFinite(port) || port < 1 || port > 65535) return 'SMTP Port ไม่ถูกต้อง'
       if (!fromEmail || !this.isValidEmail(fromEmail)) return 'กรุณากรอก From Email ให้ถูกต้อง'
-
-      if (username && !requirePassword && !password && !this.smtpPasswordConfigured) {
-        return 'กรุณากรอก SMTP Password'
-      }
-      if (requirePassword && username && !password && !this.smtpPasswordConfigured) {
-        return 'กรุณากรอก SMTP Password สำหรับทดสอบการส่งอีเมล'
-      }
-
+      if (username && !requirePassword && !password && !this.smtpPasswordConfigured) return 'กรุณากรอก SMTP Password'
+      if (requirePassword && username && !password && !this.smtpPasswordConfigured) return 'กรุณากรอก SMTP Password สำหรับทดสอบการส่งอีเมล'
       return ''
     },
     getSmtpDebugSnapshot () {
-      return {
-        smtp_host: String(this.smtpForm.smtp_host || '').trim(),
-        smtp_port: Number(this.smtpForm.smtp_port),
-        smtp_username: String(this.smtpForm.smtp_username || '').trim(),
-        smtp_from_email: String(this.smtpForm.smtp_from_email || '').trim()
-      }
+      return { smtp_host: String(this.smtpForm.smtp_host || '').trim(), smtp_port: Number(this.smtpForm.smtp_port), smtp_username: String(this.smtpForm.smtp_username || '').trim(), smtp_from_email: String(this.smtpForm.smtp_from_email || '').trim() }
     },
     normalizeSmtpForm (raw = {}, fallback = null) {
       const base = fallback || this.smtpForm
@@ -752,9 +764,7 @@ export default {
         smtp_password: this.toStr(raw.smtp_password !== undefined ? raw.smtp_password : raw.password, base.smtp_password),
         smtp_from_name: this.toStr(raw.smtp_from_name !== undefined ? raw.smtp_from_name : raw.fromName, base.smtp_from_name),
         smtp_from_email: this.toStr(raw.smtp_from_email !== undefined ? raw.smtp_from_email : raw.fromEmail, base.smtp_from_email),
-        smtp_use_ssl: raw.smtp_use_ssl !== undefined
-          ? this.toBool(raw.smtp_use_ssl, base.smtp_use_ssl)
-          : (raw.useSSL !== undefined ? this.toBool(raw.useSSL, base.smtp_use_ssl) : base.smtp_use_ssl)
+        smtp_use_ssl: raw.smtp_use_ssl !== undefined ? this.toBool(raw.smtp_use_ssl, base.smtp_use_ssl) : (raw.useSSL !== undefined ? this.toBool(raw.useSSL, base.smtp_use_ssl) : base.smtp_use_ssl)
       }
     },
     shouldKeepExistingSecret (value) {
@@ -772,20 +782,11 @@ export default {
         smtp_from_email: String(this.smtpForm.smtp_from_email || '').trim(),
         smtp_use_ssl: Boolean(this.smtpForm.smtp_use_ssl)
       }
-
       const password = String(this.smtpForm.smtp_password || '').trim()
-      if (includePasswordIfProvided && !this.shouldKeepExistingSecret(password)) {
-        payload.smtp_password = password
-      }
-
+      if (includePasswordIfProvided && !this.shouldKeepExistingSecret(password)) payload.smtp_password = password
       return payload
     },
-    getSelectValue (val) {
-      return val && val.target ? val.target.value : val
-    },
-    getStatusLabel (status) {
-      return STATUS_LABELS[status] || status
-    },
+    getSelectValue (val) { return val && val.target ? val.target.value : val },
     isSecretKey (key) {
       const normalizedKey = String(key || '').trim()
       if (!normalizedKey) return false
@@ -799,9 +800,7 @@ export default {
       return []
     },
     renderSettingValue (setting) {
-      const value = setting && Object.prototype.hasOwnProperty.call(setting, 'value')
-        ? setting.value
-        : setting
+      const value = setting && Object.prototype.hasOwnProperty.call(setting, 'value') ? setting.value : setting
       const key = setting && setting.key ? setting.key : ''
       const isSecret = Boolean(setting && setting.isSecret) || this.isSecretKey(key)
       if (isSecret) {
@@ -817,24 +816,18 @@ export default {
         if (!raw) return {}
         const parsed = JSON.parse(raw)
         return (parsed && parsed.__meta && typeof parsed.__meta === 'object') ? parsed.__meta : {}
-      } catch (e) {
-        return {}
-      }
+      } catch (e) { return {} }
     },
     saveFallback (meta = {}) {
       const currentMeta = this.parseFallbackMeta()
-      const bundle = {
+      localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify({
         generalForm: this.generalForm,
         workflowForm: this.workflowForm,
         smtpForm: this.smtpForm,
         emailTemplates: this.emailTemplates,
         settings: this.settings,
-        __meta: {
-          ...currentMeta,
-          ...meta
-        }
-      }
-      localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(bundle))
+        __meta: { ...currentMeta, ...meta }
+      }))
     },
     clearWorkflowFallbackMeta () {
       try {
@@ -845,9 +838,7 @@ export default {
         if (!parsed.__meta || typeof parsed.__meta !== 'object') return
         delete parsed.__meta.workflow
         localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(parsed))
-      } catch (e) {
-        console.error('[AdminSettings] clearWorkflowFallbackMeta error:', e)
-      }
+      } catch (e) { console.error('[AdminSettings] clearWorkflowFallbackMeta error:', e) }
     },
     loadFallback () {
       try {
@@ -855,32 +846,20 @@ export default {
         if (!raw) return false
         const parsed = JSON.parse(raw)
         if (parsed.generalForm) this.generalForm = { ...this.generalForm, ...parsed.generalForm }
-        if (parsed.workflowForm) {
-          this.workflowForm = {
-            ...this.workflowForm,
-            ...parsed.workflowForm,
-            stepDeadlines: {
-              ...this.workflowForm.stepDeadlines,
-              ...(parsed.workflowForm.stepDeadlines || {})
-            }
-          }
-        }
+        if (parsed.workflowForm) this.workflowForm = { ...this.workflowForm, ...parsed.workflowForm, stepDeadlines: { ...this.workflowForm.stepDeadlines, ...(parsed.workflowForm.stepDeadlines || {}) } }
         if (parsed.smtpForm) this.smtpForm = this.normalizeSmtpForm(parsed.smtpForm)
         if (parsed.emailTemplates) this.emailTemplates = parsed.emailTemplates
         if (Array.isArray(parsed.settings)) this.settings = parsed.settings
-
         const workflowMeta = parsed && parsed.__meta && parsed.__meta.workflow
         if (workflowMeta && workflowMeta.status === 'local_fallback') {
           this.workflowDataSource = 'local_fallback'
           this.workflowFallbackSavedAt = workflowMeta.savedAt || ''
         }
-
         return true
-      } catch (e) {
-        console.error('[AdminSettings] loadFallback error:', e)
-        return false
-      }
+      } catch (e) { console.error('[AdminSettings] loadFallback error:', e); return false }
     },
+
+    // ─── API ──────────────────────────────────────────────────────────────
     async fetchSettings () {
       this.loadingSettings = true
       try {
@@ -894,89 +873,28 @@ export default {
         console.error('[AdminSettings] Error fetching settings:', error)
         this.apiConnected = false
         const hasFallback = this.loadFallback()
-        if (hasFallback) {
-          this.workflowDataSource = 'local_fallback'
-        } else {
-          this.workflowDataSource = 'unknown'
-        }
-      } finally {
-        this.loadingSettings = false
-      }
+        this.workflowDataSource = hasFallback ? 'local_fallback' : 'unknown'
+      } finally { this.loadingSettings = false }
     },
     applySettingsToForms () {
       const map = {}
-      this.settings.forEach(item => {
-        if (item && item.key) map[item.key] = item.value
-      })
-
-      this.generalForm = {
-        ...this.generalForm,
-        systemName: this.toStr(map.system_name, this.generalForm.systemName),
-        universityName: this.toStr(map.university_name, this.generalForm.universityName),
-        fiscalYear: this.toNum(map.current_fiscal_year, this.generalForm.fiscalYear),
-        submissionDeadline: this.toStr(map.submission_deadline, this.generalForm.submissionDeadline),
-        maxProposalsPerResearcher: this.toNum(map.max_proposals_per_researcher, this.generalForm.maxProposalsPerResearcher),
-        language: this.toStr(map.default_language, this.generalForm.language),
-        timezone: this.toStr(map.timezone, this.generalForm.timezone),
-        dateFormat: this.toStr(map.date_format, this.generalForm.dateFormat),
-        itemsPerPage: this.toNum(map.items_per_page, this.generalForm.itemsPerPage)
-      }
-
-      this.workflowForm = {
-        ...this.workflowForm,
-        minScore: this.toNum(map.workflow_min_score, this.workflowForm.minScore),
-        minCommittee: this.toNum(map.workflow_min_committee, this.workflowForm.minCommittee),
-        maxRounds: this.toNum(map.workflow_max_rounds, this.workflowForm.maxRounds),
-        allowRevisionAfterMeeting: map.workflow_allow_revision_after_meeting !== undefined
-          ? this.toBool(map.workflow_allow_revision_after_meeting, this.workflowForm.allowRevisionAfterMeeting)
-          : this.workflowForm.allowRevisionAfterMeeting,
-        stepDeadlines: {
-          step1: this.toNum(map.workflow_step1_days, this.workflowForm.stepDeadlines.step1),
-          step2: this.toNum(map.workflow_step2_days, this.workflowForm.stepDeadlines.step2),
-          step3: this.toNum(map.workflow_step3_days, this.workflowForm.stepDeadlines.step3),
-          step4: this.toNum(map.workflow_step4_days, this.workflowForm.stepDeadlines.step4),
-          step5: this.toNum(map.workflow_step5_days, this.workflowForm.stepDeadlines.step5)
-        }
-      }
-
-      this.smtpForm = this.normalizeSmtpForm({
-        smtp_host: map.smtp_host,
-        smtp_port: map.smtp_port,
-        smtp_username: map.smtp_username,
-        smtp_password: '',
-        smtp_from_name: map.smtp_from_name,
-        smtp_from_email: map.smtp_from_email,
-        smtp_use_ssl: map.smtp_use_ssl
-      })
-
-      if (map.email_notifications_enabled !== undefined) {
-        this.emailNotificationsEnabled = this.toBool(map.email_notifications_enabled, true)
-      }
-
+      this.settings.forEach(item => { if (item && item.key) map[item.key] = item.value })
+      this.generalForm = { ...this.generalForm, systemName: this.toStr(map.system_name, this.generalForm.systemName), universityName: this.toStr(map.university_name, this.generalForm.universityName), fiscalYear: this.toNum(map.current_fiscal_year, this.generalForm.fiscalYear), submissionDeadline: this.toStr(map.submission_deadline, this.generalForm.submissionDeadline), maxProposalsPerResearcher: this.toNum(map.max_proposals_per_researcher, this.generalForm.maxProposalsPerResearcher), language: this.toStr(map.default_language, this.generalForm.language), timezone: this.toStr(map.timezone, this.generalForm.timezone), dateFormat: this.toStr(map.date_format, this.generalForm.dateFormat), itemsPerPage: this.toNum(map.items_per_page, this.generalForm.itemsPerPage) }
+      this.workflowForm = { ...this.workflowForm, minScore: this.toNum(map.workflow_min_score, this.workflowForm.minScore), minCommittee: this.toNum(map.workflow_min_committee, this.workflowForm.minCommittee), maxRounds: this.toNum(map.workflow_max_rounds, this.workflowForm.maxRounds), allowRevisionAfterMeeting: map.workflow_allow_revision_after_meeting !== undefined ? this.toBool(map.workflow_allow_revision_after_meeting, this.workflowForm.allowRevisionAfterMeeting) : this.workflowForm.allowRevisionAfterMeeting, stepDeadlines: { step1: this.toNum(map.workflow_step1_days, this.workflowForm.stepDeadlines.step1), step2: this.toNum(map.workflow_step2_days, this.workflowForm.stepDeadlines.step2), step3: this.toNum(map.workflow_step3_days, this.workflowForm.stepDeadlines.step3), step4: this.toNum(map.workflow_step4_days, this.workflowForm.stepDeadlines.step4), step5: this.toNum(map.workflow_step5_days, this.workflowForm.stepDeadlines.step5) } }
+      this.smtpForm = this.normalizeSmtpForm({ smtp_host: map.smtp_host, smtp_port: map.smtp_port, smtp_username: map.smtp_username, smtp_password: '', smtp_from_name: map.smtp_from_name, smtp_from_email: map.smtp_from_email, smtp_use_ssl: map.smtp_use_ssl })
+      if (map.email_notifications_enabled !== undefined) this.emailNotificationsEnabled = this.toBool(map.email_notifications_enabled, true)
       const smtpPasswordSetting = this.settings.find(s => s && s.key === 'smtp_password')
-      this.smtpPasswordConfigured = Boolean(
-        smtpPasswordSetting && (
-          smtpPasswordSetting.isConfigured ||
-          (smtpPasswordSetting.value !== undefined && smtpPasswordSetting.value !== null && String(smtpPasswordSetting.value).trim() !== '')
-        )
-      )
-
+      this.smtpPasswordConfigured = Boolean(smtpPasswordSetting && (smtpPasswordSetting.isConfigured || (smtpPasswordSetting.value !== undefined && smtpPasswordSetting.value !== null && String(smtpPasswordSetting.value).trim() !== '')))
       if (map.email_templates_json) {
         try {
-          const parsed = typeof map.email_templates_json === 'string'
-            ? JSON.parse(map.email_templates_json)
-            : map.email_templates_json
+          const parsed = typeof map.email_templates_json === 'string' ? JSON.parse(map.email_templates_json) : map.email_templates_json
           this.emailTemplates = { ...this.emailTemplates, ...parsed }
-        } catch (e) {
-          console.error('[AdminSettings] parse templates error:', e)
-        }
+        } catch (e) { console.error('[AdminSettings] parse templates error:', e) }
       }
     },
     async upsertSettingByKey (key, value, description, group) {
       const existed = this.settings.find(s => s.key === key)
-      if (existed && existed._id) {
-        return axios.put(`/api/v1/setting/${existed._id}`, { value, description })
-      }
+      if (existed && existed._id) return axios.put(`/api/v1/setting/${existed._id}`, { value, description })
       return axios.post('/api/v1/setting', { key, value, description, group })
     },
     buildWorkflowSettingsPayload () {
@@ -998,7 +916,7 @@ export default {
     },
     async saveGeneralSettings () {
       try {
-        const jobs = [
+        await Promise.all([
           this.upsertSettingByKey('system_name', this.generalForm.systemName, 'ชื่อระบบ', 'general'),
           this.upsertSettingByKey('university_name', this.generalForm.universityName, 'ชื่อมหาวิทยาลัย', 'general'),
           this.upsertSettingByKey('current_fiscal_year', this.generalForm.fiscalYear, 'ปีงบประมาณปัจจุบัน', 'general'),
@@ -1008,8 +926,7 @@ export default {
           this.upsertSettingByKey('timezone', this.generalForm.timezone, 'เขตเวลา', 'general'),
           this.upsertSettingByKey('date_format', this.generalForm.dateFormat, 'รูปแบบวันที่', 'general'),
           this.upsertSettingByKey('items_per_page', this.generalForm.itemsPerPage, 'จำนวนรายการต่อหน้า', 'general')
-        ]
-        await Promise.all(jobs)
+        ])
         await this.fetchSettings()
         await Swal.fire({ icon: 'success', title: 'บันทึกการตั้งค่าทั่วไปสำเร็จ', timer: 1400, showConfirmButton: false })
       } catch (error) {
@@ -1026,11 +943,7 @@ export default {
         const response = await axios.put('/api/v1/setting/bulk', payload)
         const result = response && response.data && response.data.data ? response.data.data : {}
         const failedKeys = Array.isArray(result.failedKeys) ? result.failedKeys : []
-
-        if (!response || !response.data || response.data.success !== true || failedKeys.length > 0) {
-          throw new Error('bulk workflow save returned failed keys')
-        }
-
+        if (!response || !response.data || response.data.success !== true || failedKeys.length > 0) throw new Error('bulk workflow save returned failed keys')
         await this.fetchSettings()
         this.clearWorkflowFallbackMeta()
         this.workflowDataSource = 'database'
@@ -1041,13 +954,7 @@ export default {
         console.error('[AdminSettings] saveWorkflowSettings fallback:', error)
         const savedAt = new Date().toISOString()
         try {
-          this.saveFallback({
-            workflow: {
-              status: 'local_fallback',
-              savedAt,
-              reason: (error && error.message) ? error.message : 'unknown_error'
-            }
-          })
+          this.saveFallback({ workflow: { status: 'local_fallback', savedAt, reason: (error && error.message) ? error.message : 'unknown_error' } })
           this.workflowDataSource = 'local_fallback'
           this.workflowFallbackSavedAt = savedAt
           this.workflowSaveStatus = 'local_fallback'
@@ -1061,43 +968,9 @@ export default {
         }
       }
     },
-    async saveSMTPSettings () {
-      console.debug('[AdminSettings][SMTP] save before validate', this.getSmtpDebugSnapshot())
-      const smtpValidationError = this.validateSMTPConfig()
-      if (smtpValidationError) {
-        await Swal.fire({ icon: 'warning', title: 'ข้อมูล SMTP ไม่ครบถ้วน', text: smtpValidationError })
-        return
-      }
-
-      try {
-        const jobs = [
-          this.upsertSettingByKey('smtp_host', this.smtpForm.smtp_host, 'SMTP Host', 'email'),
-          this.upsertSettingByKey('smtp_port', this.smtpForm.smtp_port, 'SMTP Port', 'email'),
-          this.upsertSettingByKey('smtp_username', this.smtpForm.smtp_username, 'SMTP Username', 'email'),
-          this.upsertSettingByKey('smtp_from_name', this.smtpForm.smtp_from_name, 'From Name', 'email'),
-          this.upsertSettingByKey('smtp_from_email', this.smtpForm.smtp_from_email, 'From Email', 'email'),
-          this.upsertSettingByKey('smtp_use_ssl', this.smtpForm.smtp_use_ssl, 'ใช้ SSL/TLS', 'email'),
-          this.upsertSettingByKey('email_notifications_enabled', this.emailNotificationsEnabled, 'เปิด/ปิด Workflow Email', 'email')
-        ]
-        if (String(this.smtpForm.smtp_password || '').trim() !== '' || !this.smtpPasswordConfigured) {
-          jobs.push(this.upsertSettingByKey('smtp_password', this.smtpForm.smtp_password, 'SMTP Password', 'email'))
-        }
-        await Promise.all(jobs)
-        await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'บันทึก SMTP สำเร็จ', timer: 1400, showConfirmButton: false })
-      } catch (error) {
-        console.error('[AdminSettings] saveSMTPSettings fallback:', error)
-        this.saveFallback()
-        await Swal.fire({ icon: 'info', title: 'บันทึกในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
-      }
-    },
     async saveTemplate (type) {
       const subject = String(this.emailTemplates[type] && this.emailTemplates[type].subject ? this.emailTemplates[type].subject : '').trim()
-      if (!subject) {
-        await Swal.fire({ icon: 'warning', title: 'หัวเรื่องว่าง', text: `กรุณากรอกหัวเรื่องสำหรับ template ${type}` })
-        return
-      }
-
+      if (!subject) { await Swal.fire({ icon: 'warning', title: 'หัวเรื่องว่าง', text: `กรุณากรอกหัวเรื่องสำหรับ template ${type}` }); return }
       try {
         await this.upsertSettingByKey('email_templates_json', JSON.stringify(this.emailTemplates), 'Email templates JSON', 'email')
         await this.fetchSettings()
@@ -1108,23 +981,11 @@ export default {
         await Swal.fire({ icon: 'info', title: 'บันทึก Template ในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงใช้ local fallback' })
       }
     },
-    resetTemplate (type) {
-      this.$set(this.emailTemplates, type, JSON.parse(JSON.stringify(DEFAULT_TEMPLATES[type])))
-    },
+    resetTemplate (type) { this.$set(this.emailTemplates, type, JSON.parse(JSON.stringify(DEFAULT_TEMPLATES[type]))) },
     getCurrentUserEmail () {
-      const fromStore = this.$store && this.$store.getters
-        ? this.$store.getters['Authentication/currentUser']
-        : null
+      const fromStore = this.$store && this.$store.getters ? this.$store.getters['Authentication/currentUser'] : null
       if (fromStore && fromStore.email) return String(fromStore.email).trim()
-
-      try {
-        const raw = localStorage.getItem('auth_user')
-        if (!raw) return ''
-        const parsed = JSON.parse(raw)
-        return parsed && parsed.email ? String(parsed.email).trim() : ''
-      } catch (e) {
-        return ''
-      }
+      try { const raw = localStorage.getItem('auth_user'); if (!raw) return ''; const parsed = JSON.parse(raw); return parsed && parsed.email ? String(parsed.email).trim() : '' } catch (e) { return '' }
     },
     getPreferredTestRecipientEmail () {
       const fromInput = String(this.testRecipientEmail || '').trim()
@@ -1133,104 +994,20 @@ export default {
       if (this.isPlaceholderEmail(currentUserEmail)) return ''
       return currentUserEmail
     },
-    async sendTestSMTP () {
-      const currentUserEmail = this.getCurrentUserEmail()
-      const recipientEmail = this.getPreferredTestRecipientEmail()
-
-      if (!recipientEmail) {
-        await Swal.fire({
-          icon: 'warning',
-          title: 'กรุณาระบุอีเมลผู้รับทดสอบ',
-          text: 'อีเมลผู้ดูแลปัจจุบันเป็นข้อมูลทดสอบหรือไม่พร้อมใช้งาน กรุณากรอกอีเมลผู้ใช้จริงในระบบ'
-        })
-        return
-      }
-      if (!this.isValidEmail(recipientEmail)) {
-        await Swal.fire({ icon: 'warning', title: 'อีเมลผู้รับทดสอบไม่ถูกต้อง' })
-        return
-      }
-      if (this.isPlaceholderEmail(recipientEmail)) {
-        await Swal.fire({
-          icon: 'warning',
-          title: 'อีเมลผู้รับดูเหมือนเป็นข้อมูลทดสอบ',
-          text: 'กรุณาใช้อีเมลผู้ใช้จริงในระบบเพื่อยืนยันการส่งจริง'
-        })
-        return
-      }
-
-      console.debug('[AdminSettings][SMTP] test before validate', this.getSmtpDebugSnapshot())
-      const smtpValidationError = this.validateSMTPConfig({ requirePassword: true })
-      if (smtpValidationError) {
-        await Swal.fire({ icon: 'warning', title: 'ข้อมูล SMTP ไม่ครบถ้วน', text: smtpValidationError })
-        return
-      }
-
-      const confirmResult = await Swal.fire({
-        icon: 'question',
-        title: 'ยืนยันการส่งอีเมลทดสอบ',
-        html: `ระบบจะส่งอีเมลทดสอบไปยัง <strong>${recipientEmail}</strong><br>ดำเนินการต่อหรือไม่?`,
-        showCancelButton: true,
-        confirmButtonText: 'ส่งเลย',
-        cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#e8a000'
-      })
-      if (!confirmResult.isConfirmed) return
-
-      try {
-        console.debug('[AdminSettings][SMTP] test before API', this.getSmtpDebugSnapshot())
-        const smtpPayload = this.buildSmtpPayloadForApi({ includePasswordIfProvided: true })
-        await axios.post('/api/v1/setting/test-email', {
-          recipientEmail: this.normalizeEmail(recipientEmail),
-          smtp: smtpPayload,
-          templateKey: this.testTemplateKey || ''
-        })
-        await Swal.fire({
-          icon: 'success',
-          title: 'ส่งอีเมลทดสอบสำเร็จ',
-          text: `ระบบส่งไปที่ ${recipientEmail} (ผู้ใช้งานปัจจุบัน: ${currentUserEmail || '-'})`
-        })
-      } catch (error) {
-        console.error('[AdminSettings] test smtp error:', error)
-        await Swal.fire({
-          icon: 'error',
-          title: 'ส่งอีเมลทดสอบไม่สำเร็จ',
-          text: (error && error.response && error.response.data && error.response.data.message) || 'กรุณาตรวจสอบการตั้งค่า SMTP แล้วลองใหม่'
-        })
-      }
-    },
     async addSetting () {
       const key = (this.newSetting.key || '').trim()
       const value = this.newSetting.value
-      if (!key || value === undefined || value === null || value === '') {
-        await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'ต้องกรอก key และ value' })
-        return
-      }
-      if (/\s/.test(key)) {
-        await Swal.fire({ icon: 'warning', title: 'Key ไม่ถูกต้อง', text: 'Key ต้องไม่มีช่องว่าง และควรเป็น snake_case' })
-        return
-      }
-
+      if (!key || value === undefined || value === null || value === '') { await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'ต้องกรอก key และ value' }); return }
+      if (/\s/.test(key)) { await Swal.fire({ icon: 'warning', title: 'Key ไม่ถูกต้อง', text: 'Key ต้องไม่มีช่องว่าง และควรเป็น snake_case' }); return }
       try {
-        await axios.post('/api/v1/setting', {
-          key,
-          value,
-          description: this.newSetting.description,
-          group: this.newSetting.group
-        })
+        await axios.post('/api/v1/setting', { key, value, description: this.newSetting.description, group: this.newSetting.group })
         this.showAddSettingModal = false
         this.newSetting = { key: '', value: '', group: 'general', description: '' }
         await this.fetchSettings()
         await Swal.fire({ icon: 'success', title: 'เพิ่ม Setting สำเร็จ', timer: 1200, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] addSetting fallback:', error)
-        const localId = `local-${Date.now()}`
-        this.settings.push({
-          _id: localId,
-          key,
-          value: this.newSetting.value,
-          description: this.newSetting.description,
-          group: this.newSetting.group
-        })
+        this.settings.push({ _id: `local-${Date.now()}`, key, value: this.newSetting.value, description: this.newSetting.description, group: this.newSetting.group })
         this.saveFallback()
         this.showAddSettingModal = false
         this.newSetting = { key: '', value: '', group: 'general', description: '' }
@@ -1243,23 +1020,12 @@ export default {
       this.editingSettingValue = this.editingSettingIsSecret ? '' : this.renderSettingValue(s)
       this.editingSettingDescription = s.description || ''
     },
-    cancelEditSetting () {
-      this.editingSettingId = null
-      this.editingSettingValue = ''
-      this.editingSettingDescription = ''
-      this.editingSettingIsSecret = false
-    },
+    cancelEditSetting () { this.editingSettingId = null; this.editingSettingValue = ''; this.editingSettingDescription = ''; this.editingSettingIsSecret = false },
     async editSetting (s) {
       try {
-        if (s._id && String(s._id).startsWith('local-')) {
-          throw new Error('local fallback row')
-        }
-        const payload = {
-          description: this.editingSettingDescription
-        }
-        if (!this.editingSettingIsSecret || String(this.editingSettingValue || '').trim() !== '') {
-          payload.value = this.editingSettingValue
-        }
+        if (s._id && String(s._id).startsWith('local-')) throw new Error('local fallback row')
+        const payload = { description: this.editingSettingDescription }
+        if (!this.editingSettingIsSecret || String(this.editingSettingValue || '').trim() !== '') payload.value = this.editingSettingValue
         await axios.put(`/api/v1/setting/${s._id}`, payload)
         this.cancelEditSetting()
         await this.fetchSettings()
@@ -1268,14 +1034,8 @@ export default {
         console.error('[AdminSettings] editSetting fallback:', error)
         const idx = this.settings.findIndex(x => (x._id || x.key) === (s._id || s.key))
         if (idx >= 0) {
-          const nextValue = (this.editingSettingIsSecret && String(this.editingSettingValue || '').trim() === '')
-            ? this.settings[idx].value
-            : this.editingSettingValue
-          this.$set(this.settings, idx, {
-            ...this.settings[idx],
-            value: nextValue,
-            description: this.editingSettingDescription
-          })
+          const nextValue = (this.editingSettingIsSecret && String(this.editingSettingValue || '').trim() === '') ? this.settings[idx].value : this.editingSettingValue
+          this.$set(this.settings, idx, { ...this.settings[idx], value: nextValue, description: this.editingSettingDescription })
           this.saveFallback()
         }
         this.cancelEditSetting()
@@ -1283,20 +1043,10 @@ export default {
       }
     },
     async deleteSetting (s) {
-      const result = await Swal.fire({
-        icon: 'warning',
-        title: `ยืนยันการลบ setting ${s.key}?`,
-        showCancelButton: true,
-        confirmButtonText: 'ยืนยันการลบ',
-        cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#e55353'
-      })
+      const result = await Swal.fire({ icon: 'warning', title: `ยืนยันการลบ setting ${s.key}?`, showCancelButton: true, confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#e55353' })
       if (!result.isConfirmed) return
-
       try {
-        if (s._id && String(s._id).startsWith('local-')) {
-          throw new Error('local fallback row')
-        }
+        if (s._id && String(s._id).startsWith('local-')) throw new Error('local fallback row')
         await axios.delete(`/api/v1/setting/${s._id}`)
         await this.fetchSettings()
         await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1200, showConfirmButton: false })
@@ -1308,50 +1058,27 @@ export default {
       }
     },
     async clearCache () {
-      const result = await Swal.fire({
-        icon: 'warning',
-        title: 'ยืนยันการล้างข้อมูล Cache?',
-        showCancelButton: true,
-        confirmButtonText: 'ยืนยัน',
-        cancelButtonText: 'ยกเลิก'
-      })
+      const result = await Swal.fire({ icon: 'warning', title: 'ยืนยันการล้างข้อมูล Cache?', showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก' })
       if (!result.isConfirmed) return
-
-      try {
-        await axios.post('/api/v1/setting/clear-cache', {})
-        await Swal.fire({ icon: 'success', title: 'ล้าง Cache สำเร็จ' })
-      } catch (error) {
-        console.error('[AdminSettings] clear-cache stub:', error)
-        await Swal.fire({ icon: 'info', title: 'กำลังพัฒนา', text: 'ฟีเจอร์ล้าง Cache อยู่ระหว่างพัฒนา' })
-      }
+      try { await axios.post('/api/v1/setting/clear-cache', {}); await Swal.fire({ icon: 'success', title: 'ล้าง Cache สำเร็จ' }) } catch (error) { await Swal.fire({ icon: 'info', title: 'กำลังพัฒนา', text: 'ฟีเจอร์ล้าง Cache อยู่ระหว่างพัฒนา' }) }
     },
     exportSettings () {
       const blob = new Blob([JSON.stringify(this.settings, null, 2)], { type: 'application/json' })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url
-      a.download = 'settings-export.json'
-      a.click()
+      a.href = url; a.download = 'settings-export.json'; a.click()
       window.URL.revokeObjectURL(url)
     },
     formatLogDate (dateStr) {
       if (!dateStr) return '-'
-      try {
-        const d = new Date(dateStr)
-        return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-      } catch (e) {
-        return String(dateStr)
-      }
+      try { return new Date(dateStr).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) } catch (e) { return String(dateStr) }
     },
     onEmailLogFilterChange (val) {
       this.emailLogFilter = val && val.target ? val.target.value : val
-      this.emailLogPage = 1
-      this.emailLogs = []
-      this.fetchEmailLogs()
+      this.emailLogPage = 1; this.emailLogs = []; this.fetchEmailLogs()
     },
     async fetchEmailLogs () {
-      this.emailLogLoading = true
-      this.emailLogPage = 1
+      this.emailLogLoading = true; this.emailLogPage = 1
       try {
         const params = { limit: 50, page: 1 }
         if (this.emailLogFilter) params.status = this.emailLogFilter
@@ -1359,146 +1086,57 @@ export default {
         const data = response && response.data && response.data.data
         this.emailLogs = (data && Array.isArray(data.logs)) ? data.logs : []
         this.emailLogTotal = (data && data.total) ? Number(data.total) : 0
-      } catch (e) {
-        console.error('[AdminSettings] fetchEmailLogs error:', e)
-        this.emailLogs = []
-        this.emailLogTotal = 0
-      } finally {
-        this.emailLogLoading = false
-      }
+      } catch (e) { console.error('[AdminSettings] fetchEmailLogs error:', e); this.emailLogs = []; this.emailLogTotal = 0 } finally { this.emailLogLoading = false }
     },
     async loadMoreEmailLogs () {
-      this.emailLogLoading = true
-      this.emailLogPage += 1
+      this.emailLogLoading = true; this.emailLogPage += 1
       try {
         const params = { limit: 50, page: this.emailLogPage }
         if (this.emailLogFilter) params.status = this.emailLogFilter
         const response = await axios.get('/api/v1/setting/email-logs', { params })
         const data = response && response.data && response.data.data
-        const more = (data && Array.isArray(data.logs)) ? data.logs : []
-        this.emailLogs = [...this.emailLogs, ...more]
+        this.emailLogs = [...this.emailLogs, ...((data && Array.isArray(data.logs)) ? data.logs : [])]
         this.emailLogTotal = (data && data.total) ? Number(data.total) : this.emailLogTotal
-      } catch (e) {
-        console.error('[AdminSettings] loadMoreEmailLogs error:', e)
-        this.emailLogPage -= 1
-      } finally {
-        this.emailLogLoading = false
-      }
+      } catch (e) { console.error('[AdminSettings] loadMoreEmailLogs error:', e); this.emailLogPage -= 1 } finally { this.emailLogLoading = false }
     },
-    async saveEmailNotificationToggle () {
-      try {
-        await this.upsertSettingByKey('email_notifications_enabled', this.emailNotificationsEnabled, 'เปิด/ปิด Workflow Email', 'email')
-        await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'บันทึกการตั้งค่าสำเร็จ', timer: 1200, showConfirmButton: false })
-      } catch (error) {
-        console.error('[AdminSettings] saveEmailNotificationToggle fallback:', error)
-        this.saveFallback()
-        await Swal.fire({ icon: 'info', title: 'บันทึกในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
-      }
-    },
-    getTemplateLabel (key) {
-      return EMAIL_TEMPLATE_LABELS[key] || key
-    },
-    toggleShowPassword () {
-      this.showPassword = !this.showPassword
-    },
-    onEmailWidgetKeydown (event) {
-      if (!this.isEmailWidgetOpen) return
-      if (event && event.key === 'Escape') {
-        this.closeEmailWidget()
-      }
-    },
+    getTemplateLabel (key) { return EMAIL_TEMPLATE_LABELS[key] || key },
+    onEmailWidgetKeydown (event) { if (!this.isEmailWidgetOpen) return; if (event && event.key === 'Escape') this.closeEmailWidget() },
     toggleEmailWidget () {
-      if (this.isEmailWidgetOpen) {
-        this.closeEmailWidget()
-        return
-      }
-
+      if (this.isEmailWidgetOpen) { this.closeEmailWidget(); return }
       this.emailWidgetFeedback = { type: '', message: '' }
-      this.emailWidgetForm = {
-        ...this.emailWidgetForm,
-        senderName: this.emailWidgetForm.senderName || 'ผู้ดูแลระบบ',
-        recipientEmail: this.emailWidgetForm.recipientEmail || this.getPreferredTestRecipientEmail(),
-        templateKey: this.emailWidgetForm.templateKey || this.testTemplateKey || ''
-      }
+      this.emailWidgetForm = { ...this.emailWidgetForm, senderName: this.emailWidgetForm.senderName || 'ผู้ดูแลระบบ', recipientEmail: this.emailWidgetForm.recipientEmail || this.getPreferredTestRecipientEmail(), templateKey: this.emailWidgetForm.templateKey || this.testTemplateKey || '' }
       this.isEmailWidgetOpen = true
     },
-    closeEmailWidget () {
-      this.isEmailWidgetOpen = false
-    },
+    closeEmailWidget () { this.isEmailWidgetOpen = false },
     onWidgetTemplateChange (val) {
       const key = val && val.target ? val.target.value : val
       this.emailWidgetForm.templateKey = key
       if (!key || !this.emailTemplates[key]) return
-
       const template = this.emailTemplates[key]
-      if (!String(this.emailWidgetForm.subject || '').trim()) {
-        this.emailWidgetForm.subject = String(template.subject || '').trim()
-      }
-      if (!String(this.emailWidgetForm.message || '').trim()) {
-        this.emailWidgetForm.message = String(template.body || '').trim()
-      }
+      if (!String(this.emailWidgetForm.subject || '').trim()) this.emailWidgetForm.subject = String(template.subject || '').trim()
+      if (!String(this.emailWidgetForm.message || '').trim()) this.emailWidgetForm.message = String(template.body || '').trim()
     },
     validateWidgetEmailForm () {
-      if (!String(this.emailWidgetForm.senderName || '').trim()) {
-        return 'กรุณากรอกชื่อผู้ส่ง'
-      }
-      if (!String(this.emailWidgetForm.subject || '').trim()) {
-        return 'กรุณากรอกหัวข้ออีเมล'
-      }
-      if (!String(this.emailWidgetForm.message || '').trim()) {
-        return 'กรุณากรอกข้อความอีเมล'
-      }
-
+      if (!String(this.emailWidgetForm.senderName || '').trim()) return 'กรุณากรอกชื่อผู้ส่ง'
+      if (!String(this.emailWidgetForm.subject || '').trim()) return 'กรุณากรอกหัวข้ออีเมล'
+      if (!String(this.emailWidgetForm.message || '').trim()) return 'กรุณากรอกข้อความอีเมล'
       const recipientEmail = String(this.emailWidgetForm.recipientEmail || '').trim()
-      if (!recipientEmail) {
-        return 'กรุณากรอกอีเมลผู้รับ'
-      }
-      if (!this.isValidEmail(recipientEmail)) {
-        return 'รูปแบบอีเมลผู้รับไม่ถูกต้อง'
-      }
-      if (this.isPlaceholderEmail(recipientEmail)) {
-        return 'อีเมลผู้รับดูเหมือนเป็นข้อมูลทดสอบ กรุณาใช้อีเมลผู้ใช้จริงในระบบ'
-      }
-
-      const smtpValidationError = this.validateSMTPConfig({ requirePassword: true })
-      if (smtpValidationError) return smtpValidationError
-      return ''
+      if (!recipientEmail) return 'กรุณากรอกอีเมลผู้รับ'
+      if (!this.isValidEmail(recipientEmail)) return 'รูปแบบอีเมลผู้รับไม่ถูกต้อง'
+      if (this.isPlaceholderEmail(recipientEmail)) return 'อีเมลผู้รับดูเหมือนเป็นข้อมูลทดสอบ กรุณาใช้อีเมลผู้ใช้จริงในระบบ'
+      return this.validateSMTPConfig({ requirePassword: true })
     },
     async sendEmailFromWidget () {
       this.emailWidgetFeedback = { type: '', message: '' }
-
       const validationError = this.validateWidgetEmailForm()
-      if (validationError) {
-        this.emailWidgetFeedback = { type: 'error', message: validationError }
-        return
-      }
-
+      if (validationError) { this.emailWidgetFeedback = { type: 'error', message: validationError }; return }
       this.emailWidgetSending = true
       try {
-        const smtpPayload = this.buildSmtpPayloadForApi({ includePasswordIfProvided: true })
-        const payload = {
-          recipientEmail: this.normalizeEmail(this.emailWidgetForm.recipientEmail),
-          smtp: smtpPayload,
-          templateKey: this.emailWidgetForm.templateKey || '',
-          senderName: String(this.emailWidgetForm.senderName || '').trim(),
-          subject: String(this.emailWidgetForm.subject || '').trim(),
-          message: String(this.emailWidgetForm.message || '').trim()
-        }
-
-        await axios.post('/api/v1/setting/test-email', payload)
-        this.emailWidgetFeedback = {
-          type: 'success',
-          message: `ส่งอีเมลเรียบร้อยไปยัง ${payload.recipientEmail}`
-        }
+        await axios.post('/api/v1/setting/test-email', { recipientEmail: this.normalizeEmail(this.emailWidgetForm.recipientEmail), smtp: this.buildSmtpPayloadForApi({ includePasswordIfProvided: true }), templateKey: this.emailWidgetForm.templateKey || '', senderName: String(this.emailWidgetForm.senderName || '').trim(), subject: String(this.emailWidgetForm.subject || '').trim(), message: String(this.emailWidgetForm.message || '').trim() })
+        this.emailWidgetFeedback = { type: 'success', message: `ส่งอีเมลเรียบร้อยไปยัง ${this.normalizeEmail(this.emailWidgetForm.recipientEmail)}` }
       } catch (error) {
-        this.emailWidgetFeedback = {
-          type: 'error',
-          message: (error && error.response && error.response.data && error.response.data.message) || 'ส่งอีเมลไม่สำเร็จ กรุณาตรวจสอบ SMTP แล้วลองใหม่'
-        }
-      } finally {
-        this.emailWidgetSending = false
-      }
+        this.emailWidgetFeedback = { type: 'error', message: (error && error.response && error.response.data && error.response.data.message) || 'ส่งอีเมลไม่สำเร็จ กรุณาตรวจสอบ SMTP แล้วลองใหม่' }
+      } finally { this.emailWidgetSending = false }
     }
   }
 }
@@ -1509,8 +1147,76 @@ export default {
   width: 100%;
 }
 
+/* ─── Status flow ─────────────────────────────────────── */
+.status-flow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status-flow-divider {
+  height: 1px;
+  background-color: #e4e4e4;
+  margin: 2px 0;
+}
+
+.status-flow-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.status-flow-arrow {
+  color: #9b9b9b;
+  font-size: 13px;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.status-chip--from {
+  background: #f1efeb;
+  color: #5f5e5a;
+  border: 1px solid #d3d1c7;
+}
+
+.status-chip--to {
+  background: #cecbf6;
+  color: #26215c;
+}
+
+.status-chip--approve {
+  background: #c0dd97;
+  color: #173404;
+}
+
+.status-chip--reject {
+  background: #f7c1c1;
+  color: #501313;
+}
+
+.status-chip--alt {
+  background: #f4c0d1;
+  color: #4b1528;
+}
+/* ──────────────────────────────────────────────────────── */
+
 .transition-row {
   margin-bottom: 8px;
+}
+
+.text-required {
+  color: #e55353;
 }
 
 .danger-zone {
@@ -1593,17 +1299,7 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .admin-email-widget__fab {
-    right: 16px;
-    bottom: 16px;
-  }
-
-  .admin-email-widget__panel {
-    right: 12px;
-    left: 12px;
-    bottom: 84px;
-    width: auto;
-    max-height: 76vh;
-  }
+  .admin-email-widget__fab { right: 16px; bottom: 16px; }
+  .admin-email-widget__panel { right: 12px; left: 12px; bottom: 84px; width: auto; max-height: 76vh; }
 }
 </style>
