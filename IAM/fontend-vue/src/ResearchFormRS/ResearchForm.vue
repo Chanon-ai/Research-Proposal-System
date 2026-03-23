@@ -22,7 +22,7 @@
       <ResearchTeamForm
         ref="researchTeamForm"
         @team-changed="syncResearchTeamData"
-        :is-read-only="effectiveReadOnly"
+        :is-read-only="mainFormReadOnly"
         :current-status="currentStatus"
         :allow-auto-prefill="true"
         :revision-highlight-sections="adminRevisionResearchTeamSectionKeys"
@@ -31,7 +31,7 @@
       <!-- Project Details Form Component -->
       <ProjectDetailsForm
         ref="projectDetailsForm"
-        :is-read-only="effectiveReadOnly"
+        :is-read-only="mainFormReadOnly"
         :disable-project-title-section="shouldDisableProjectTitleSection"
         :revision-highlight-sections="adminRevisionProjectSectionKeys"
         @form-changed="syncProjectDetailsData"
@@ -48,7 +48,7 @@
       <FileManagement
         ref="fileManagement"
         :files="files"
-        :is-read-only="effectiveReadOnly"
+        :is-read-only="mainFormReadOnly"
         @upload="handleUpload"
         @open="openFile"
         @update:files="handleFilesUpdate"
@@ -62,7 +62,7 @@
         :project-leader="researchTeamData.projectLeader"
         :co-researchers="researchTeamData.coResearchers"
         :advisors="researchTeamData.advisors"
-        :is-read-only="effectiveReadOnly"
+        :is-read-only="mainFormReadOnly"
       />
 
       <div v-if="revisionDiffSummaryForDisplay && revisionDiffSummaryForDisplay.sections && revisionDiffSummaryForDisplay.sections.length" class="card mt-3 mb-3 revision-diff-summary-card">
@@ -908,6 +908,10 @@ export default {
 
     effectiveReadOnly () {
       return Boolean(this.readOnly || this.isReadOnly)
+    },
+    mainFormReadOnly () {
+      if (this.effectiveReadOnly) return true
+      return Boolean(!this.isAdminView && this.isRevisionRequested)
     },
     showAdminFooterBar () {
       return Boolean(this.isAdminView && this.viewProposalId)
@@ -2933,7 +2937,7 @@ export default {
       }
     },
     async handleUpload(event) {
-      if (this.effectiveReadOnly) return
+      if (this.mainFormReadOnly) return
       const input = event && event.target ? event.target : null
       const selected = input && input.files ? Array.from(input.files) : []
       if (!selected.length) return
@@ -2960,6 +2964,7 @@ export default {
       this.markAsEdited()
     },
     handleFilesUpdate (updatedFiles) {
+      if (this.mainFormReadOnly) return
       this.files = Array.isArray(updatedFiles) ? updatedFiles : []
       this.markAsEdited()
     },
@@ -3033,7 +3038,7 @@ export default {
         : []
     },
     async handleBudgetAttachmentUpload ({ categoryName, itemId, file }) {
-      if (this.effectiveReadOnly || !itemId || !file) return
+      if (this.mainFormReadOnly || !itemId || !file) return
 
       try {
         const proposalId = await this.ensureProposalDraftExistsForAttachments()
@@ -3102,7 +3107,7 @@ export default {
       }
     },
     async handleResearchStandardUpload ({ slotKey, file }) {
-      if (this.effectiveReadOnly || !slotKey || !file) return
+      if (this.mainFormReadOnly || !slotKey || !file) return
 
       try {
         const proposalId = await this.ensureProposalDraftExistsForAttachments()
@@ -3152,7 +3157,7 @@ export default {
       await this.openFile(file)
     },
     async handleResearchStandardRemove ({ slotKey, file }) {
-      if (this.effectiveReadOnly || !slotKey || !file || !this.viewProposalId) return
+      if (this.mainFormReadOnly || !slotKey || !file || !this.viewProposalId) return
 
       try {
         if (file.fileId) {
@@ -3216,6 +3221,7 @@ export default {
     },
 
     async removeFile(index) {
+      if (this.mainFormReadOnly) return
       const item = Array.isArray(this.files) ? this.files[index] : null
       if (!item) return
 
@@ -3592,7 +3598,7 @@ export default {
     canAutoSave () {
       if (this.suppressAutoSave) return false
       if (this.isAdminView) return false
-      if (this.effectiveReadOnly) return false
+      if (this.mainFormReadOnly) return false
       const status = String(this.currentStatus || 'draft').toLowerCase()
       return status === 'draft' || status === 'revision_requested'
     },
