@@ -289,6 +289,10 @@ export default {
     allowAutoPrefill: {
       type: Boolean,
       default: true
+    },
+    revisionHighlightSections: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -410,8 +414,18 @@ export default {
       return [
         'section',
         'mb-4',
-        { 'section-highlight': this.highlightedSectionKey === sectionKey }
+        {
+          'section-highlight': this.highlightedSectionKey === sectionKey,
+          'section-revision-highlight': this.isRevisionHighlighted(sectionKey)
+        }
       ]
+    },
+    isRevisionHighlighted (sectionKey) {
+      const targetKey = String(sectionKey || '').trim()
+      if (!targetKey) return false
+      return (Array.isArray(this.revisionHighlightSections) ? this.revisionHighlightSections : [])
+        .map(key => String(key || '').trim())
+        .includes(targetKey)
     },
     scrollToSection(sectionKey) {
       const target = this.$refs[sectionKey]
@@ -765,6 +779,19 @@ export default {
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.16);
 }
 
+.section-revision-highlight {
+  background: #fff2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.section-revision-highlight .section-title {
+  background: #ffe2e2;
+  border-left-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14);
+}
+
 .co-researcher-item, .advisor-item {
   margin-bottom: 15px;
   border-radius: 8px;
@@ -778,10 +805,29 @@ export default {
   padding: 14px;
 }
 
+.research-team-form--dark .section-revision-highlight {
+  background: rgba(127, 29, 29, 0.22);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+.research-team-form--dark .section-revision-highlight .section-title {
+  background: rgba(127, 29, 29, 0.35);
+  border-left-color: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.24);
+  color: #fee2e2;
+}
+
 .research-team-form--dark .project-leader-section .section-title {
   background: #152132;
   color: #e8eef8;
   border-left-color: #5aa9ff;
+}
+
+.research-team-form--dark .project-leader-section.section-revision-highlight .section-title {
+  background: rgba(127, 29, 29, 0.35);
+  border-left-color: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.24);
+  color: #fee2e2;
 }
 
 .research-team-form--dark .project-leader-section .form-group label {

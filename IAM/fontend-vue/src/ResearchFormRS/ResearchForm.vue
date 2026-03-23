@@ -25,6 +25,7 @@
         :is-read-only="effectiveReadOnly"
         :current-status="currentStatus"
         :allow-auto-prefill="true"
+        :revision-highlight-sections="adminRevisionResearchTeamSectionKeys"
       />
 
       <!-- Project Details Form Component -->
@@ -32,6 +33,7 @@
         ref="projectDetailsForm"
         :is-read-only="effectiveReadOnly"
         :disable-project-title-section="shouldDisableProjectTitleSection"
+        :revision-highlight-sections="adminRevisionProjectSectionKeys"
         @form-changed="syncProjectDetailsData"
         @budget-changed="handleBudgetAutoSave"
         @budget-attachment-upload="handleBudgetAttachmentUpload"
@@ -63,33 +65,43 @@
         :is-read-only="effectiveReadOnly"
       />
 
-      <div v-if="!isAdminView && viewProposalId" class="card mt-3">
+      <div v-if="revisionDiffSummaryForDisplay && revisionDiffSummaryForDisplay.sections && revisionDiffSummaryForDisplay.sections.length" class="card mt-3 mb-3 revision-diff-summary-card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap" style="gap:8px;">
+          <strong>สรุปความต่างก่อน/หลังการแก้ไข</strong>
+          <span class="text-muted small">
+            รอบ {{ revisionDiffSummaryForDisplay.roundNo || '-' }}
+            <span v-if="revisionDiffSummaryForDisplay.generatedAt"> • {{ formatReviewDateTime(revisionDiffSummaryForDisplay.generatedAt) }}</span>
+          </span>
+        </div>
         <div class="card-body">
-          <CAlert v-if="isRevisionRequested" color="warning" show class="mb-3">
-            โครงการนี้อยู่ในสถานะขอแก้ไขเพิ่มเติม คุณสามารถแก้ไขข้อมูล บันทึก และส่งแก้ไขอีกครั้งได้
-          </CAlert>
-          <CAlert v-else-if="isRejectedStatus" color="danger" show class="mb-3">
-            โครงการนี้ไม่อนุมัติ และไม่สามารถส่งแก้ไขอีกครั้งใน workflow เดิมได้
-          </CAlert>
-          <CAlert v-else-if="isApprovedStatus" color="success" show class="mb-3">
-            โครงการนี้ได้รับการอนุมัติแล้ว
-          </CAlert>
-
-          <div v-if="isRevisionRequested" class="d-flex justify-content-end" style="gap: 12px;">
-            <CButton
-              color="secondary"
-              :disabled="savingRevision"
-              @click="saveRevisionChanges"
-            >
-              {{ savingRevision ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
-            </CButton>
-            <CButton
-              color="primary"
-              :disabled="submittingRevision"
-              @click="resubmitRevision"
-            >
-              {{ submittingRevision ? 'กำลังส่ง...' : 'ส่งแก้ไขอีกครั้ง' }}
-            </CButton>
+          <div
+            v-for="section in revisionDiffSummaryForDisplay.sections"
+            :key="`revision-diff-${section.sectionKey}`"
+            class="revision-diff-item"
+          >
+            <div class="revision-diff-item__header">
+              <button
+                type="button"
+                class="btn btn-link p-0 align-baseline revision-diff-item__link"
+                @click="goToFeedbackSection({ sectionKey: section.sectionKey })"
+              >
+                {{ revisionDiffSectionLabel(section.sectionKey, section.sectionLabel) }}
+              </button>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-2">
+                <div class="revision-diff-box revision-diff-box--before">
+                  <div class="revision-diff-box__title">ก่อนแก้ไข</div>
+                  <div class="revision-diff-box__body">{{ section.beforeSummary || '-' }}</div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-2">
+                <div class="revision-diff-box revision-diff-box--after">
+                  <div class="revision-diff-box__title">หลังแก้ไข</div>
+                  <div class="revision-diff-box__body">{{ section.afterSummary || '-' }}</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -130,6 +142,30 @@
                 </CAlert>
               </div>
             </div>
+
+            <CAlert
+              v-if="isAdminRevisionSubmissionView && adminRevisionHighlightSections.length"
+              color="danger"
+              show
+              class="mt-2"
+            >
+              <div class="font-weight-bold mb-1">นักวิจัยส่งเอกสารแก้ไขกลับมาแล้ว</div>
+              <div class="mb-1">หัวข้อต่อไปนี้ถูกไฮไลต์พื้นหลังสีแดงในแบบฟอร์ม:</div>
+              <ul class="mb-0 pl-3">
+                <li
+                  v-for="section in adminRevisionHighlightSections"
+                  :key="`admin-revision-highlight-${section.sectionKey}`"
+                >
+                  <button
+                    type="button"
+                    class="btn btn-link p-0 align-baseline admin-revision-link"
+                    @click="goToFeedbackSection({ sectionKey: section.sectionKey })"
+                  >
+                    {{ (section.meta && section.meta.sectionLabel) || section.sectionKey }}
+                  </button>
+                </li>
+              </ul>
+            </CAlert>
 
             <div class="card mb-3">
               <div class="card-body">
@@ -196,6 +232,51 @@
         ref="userFeedbackSection"
         v-bind="feedbackSectionBindings"
       />
+
+      <div v-if="!isAdminView && viewProposalId" class="card mt-3 mb-5">
+        <div class="card-body">
+          <CAlert v-if="isRevisionRequested" color="warning" show class="mb-3">
+            โครงการนี้อยู่ในสถานะขอแก้ไขเพิ่มเติม คุณสามารถแก้ไขข้อมูล บันทึก และส่งแก้ไขอีกครั้งได้
+          </CAlert>
+          <CAlert v-else-if="isRejectedStatus" color="danger" show class="mb-3">
+            โครงการนี้ไม่อนุมัติ และไม่สามารถส่งแก้ไขอีกครั้งใน workflow เดิมได้
+          </CAlert>
+          <CAlert v-else-if="isApprovedStatus" color="success" show class="mb-3">
+            โครงการนี้ได้รับการอนุมัติแล้ว
+          </CAlert>
+
+          <div v-if="isRevisionRequested && pendingFeedbackSectionsForResubmit.length" class="alert alert-info mb-3">
+            กรุณาส่งแก้ไขรายหัวข้อให้ครบก่อนส่งเอกสารแก้ไขอีกครั้ง
+            <ul class="mb-0 mt-2 pl-3">
+              <li
+                v-for="section in pendingFeedbackSectionsForResubmit"
+                :key="`pending-feedback-${section.sectionKey}`"
+              >
+                {{ (section.meta && section.meta.sectionLabel) || section.sectionKey }}
+              </li>
+            </ul>
+          </div>
+
+          <div v-if="isRevisionRequested" class="d-flex justify-content-end revision-actions">
+            <CButton
+              class="revision-action-btn revision-action-btn--save"
+              color="secondary"
+              :disabled="savingRevision"
+              @click="saveRevisionChanges"
+            >
+              {{ savingRevision ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
+            </CButton>
+            <CButton
+              class="revision-action-btn revision-action-btn--submit"
+              color="primary"
+              :disabled="submittingRevision || !canResubmitRevision"
+              @click="resubmitRevision"
+            >
+              {{ submittingRevision ? 'กำลังส่ง...' : 'ส่งแก้ไขอีกครั้ง' }}
+            </CButton>
+          </div>
+        </div>
+      </div>
       <!-- Footer with action buttons -->
       <div v-if="showFooterBar" class="footer-fixed" :style="{ left: isSidebarOpen ? '256px' : '0px' }">
         <div class="d-flex justify-content-between align-items-center w-100 px-2">
@@ -562,6 +643,8 @@ import Swal from 'sweetalert2'
 import Service, { instance as axios } from '@/service/api'
 
 const ACTIVE_DRAFT_STORAGE_KEY = 'research_form_active_draft_id'
+const FEEDBACK_SECTION_PROGRESS_STORAGE_PREFIX = 'research_form_feedback_section_progress'
+const FEEDBACK_SECTION_BASELINE_STORAGE_PREFIX = 'research_form_feedback_section_baseline'
 
 const ADMIN_ALLOWED_TRANSITIONS = {
   submitted: ['faculty_review_pending'],
@@ -710,6 +793,7 @@ export default {
       reportExportForm: null,
       feedbackSectionCardStates: {},
       feedbackSectionDrafts: {},
+      feedbackSectionBaselines: {},
       projectDetailsData: {
         problemSignificance: '',
         objectives: '',
@@ -781,6 +865,9 @@ export default {
       if (this.isAdminView) {
         if (!this.isDraftStatus) {
           await this.fetchProposalReviews(id)
+          if (this.isAdminRevisionSubmissionView) {
+            await this.fetchUserFeedback(id)
+          }
           await this.scrollToReviewsIfRequested()
         }
       } else {
@@ -824,6 +911,10 @@ export default {
     },
     showAdminFooterBar () {
       return Boolean(this.isAdminView && this.viewProposalId)
+    },
+    isAdminRevisionSubmissionView () {
+      if (!this.isAdminView) return false
+      return String(this.currentStatus || '').trim().toLowerCase() === 'resubmitted'
     },
     adminHasAssignedCommittee () {
       return Array.isArray(this.loadedProposal && this.loadedProposal.committeeIds) && this.loadedProposal.committeeIds.length > 0
@@ -970,6 +1061,59 @@ export default {
           return leftOrder - rightOrder
         })
     },
+    adminRevisionHighlightSections () {
+      if (!this.isAdminRevisionSubmissionView) return []
+      const dedup = new Set()
+      return (this.feedbackEditableSections || [])
+        .filter(section => section && section.sectionKey)
+        .filter(section => {
+          const key = String(section.sectionKey)
+          if (dedup.has(key)) return false
+          dedup.add(key)
+          return true
+        })
+    },
+    adminRevisionSectionKeys () {
+      return this.adminRevisionHighlightSections
+        .map(section => String(section && section.sectionKey ? section.sectionKey : ''))
+        .filter(Boolean)
+    },
+    adminRevisionProjectSectionKeys () {
+      return this.adminRevisionSectionKeys.filter(sectionKey => sectionKey !== 'research_team')
+    },
+    adminRevisionResearchTeamSectionKeys () {
+      return this.adminRevisionSectionKeys.includes('research_team') ? ['research_team'] : []
+    },
+    storedRevisionDiffSummary () {
+      const raw = this.loadedProposal &&
+        this.loadedProposal.formSnapshotJson &&
+        this.loadedProposal.formSnapshotJson.revisionDiffSummary
+      if (!raw || typeof raw !== 'object') return null
+
+      const sections = Array.isArray(raw.sections)
+        ? raw.sections
+          .filter(section => section && section.sectionKey)
+          .map(section => ({
+            sectionKey: String(section.sectionKey),
+            sectionLabel: section.sectionLabel || '',
+            beforeSummary: section.beforeSummary || '',
+            afterSummary: section.afterSummary || ''
+          }))
+        : []
+
+      if (!sections.length) return null
+      return {
+        roundNo: raw.roundNo || null,
+        generatedAt: raw.generatedAt || null,
+        sections
+      }
+    },
+    revisionDiffSummaryForDisplay () {
+      if (!this.storedRevisionDiffSummary) return null
+      // Show summary only after researcher has sent the revision back (status no longer revision_requested).
+      if (this.isRevisionRequested) return null
+      return this.storedRevisionDiffSummary
+    },
     latestDecisionStatus () {
       return this.userFeedback && this.userFeedback.latestDecision
         ? this.userFeedback.latestDecision.toStatus
@@ -1022,6 +1166,21 @@ export default {
         decisionLabel: this.decisionLabel
       }
     },
+    pendingFeedbackSectionsForResubmit () {
+      if (!this.isRevisionRequested) return []
+      return (this.feedbackEditableSections || [])
+        .filter(section => section && section.sectionKey && !this.isFeedbackSectionSubmitted(section.sectionKey))
+    },
+    canResubmitRevision () {
+      if (!this.isRevisionRequested) return false
+      if (this.feedbackLoading || this.feedbackError || !this.userFeedback) return false
+      if (this.pendingFeedbackSectionsForResubmit.length > 0) return false
+      return true
+    },
+    pendingFeedbackSectionLabels () {
+      return this.pendingFeedbackSectionsForResubmit
+        .map(section => (section && section.meta && section.meta.sectionLabel) || (section && section.sectionKey) || '-')
+    },
     isRevisionRequested () {
       return String(this.currentStatus || '').trim().toLowerCase() === 'revision_requested'
     },
@@ -1069,7 +1228,15 @@ export default {
     feedbackEditableSections: {
       immediate: true,
       handler (sections) {
-        this.syncFeedbackSectionCardStates(sections)
+        const normalizedSections = Array.isArray(sections) ? sections : []
+        if (normalizedSections.length) {
+          this.restoreFeedbackSectionCardStates()
+        }
+        this.syncFeedbackSectionCardStates(normalizedSections)
+
+        if (!this.isAdminView && this.isRevisionRequested && normalizedSections.length) {
+          this.syncFeedbackSectionBaselines(normalizedSections)
+        }
       }
     },
     signatureData: {
@@ -1095,6 +1262,9 @@ export default {
           if (this.isAdminView) {
             if (!this.isDraftStatus) {
               await this.fetchProposalReviews(newId)
+              if (this.isAdminRevisionSubmissionView) {
+                await this.fetchUserFeedback(newId)
+              }
               await this.scrollToReviewsIfRequested()
             }
           } else {
@@ -1126,6 +1296,437 @@ export default {
           window.sessionStorage.removeItem(ACTIVE_DRAFT_STORAGE_KEY)
         }
       } catch (_) { void _ }
+    },
+    feedbackSectionProgressStorageKey (proposalId = this.viewProposalId) {
+      const normalizedProposalId = String(proposalId || '').trim()
+      if (!normalizedProposalId) return ''
+      return `${FEEDBACK_SECTION_PROGRESS_STORAGE_PREFIX}:${normalizedProposalId}`
+    },
+    persistFeedbackSectionCardStates (proposalId = this.viewProposalId) {
+      if (typeof window === 'undefined' || !window.sessionStorage) return
+      const storageKey = this.feedbackSectionProgressStorageKey(proposalId)
+      if (!storageKey) return
+
+      const sectionKeys = (Array.isArray(this.feedbackEditableSections) ? this.feedbackEditableSections : [])
+        .map(section => (section && section.sectionKey ? section.sectionKey : ''))
+        .filter(Boolean)
+
+      if (!sectionKeys.length) {
+        if (!this.userFeedback) return
+        try {
+          window.sessionStorage.removeItem(storageKey)
+        } catch (_) { void _ }
+        return
+      }
+
+      const states = {}
+      sectionKeys.forEach(sectionKey => {
+        const state = this.feedbackSectionCardStates[sectionKey]
+        if (!state || typeof state !== 'object') return
+
+        const isSubmitted = Boolean(state.submitted)
+        const hasSubmittedAt = Boolean(state.submittedAt)
+        const hasSnapshot = Object.prototype.hasOwnProperty.call(state, 'snapshot') && state.snapshot !== null && state.snapshot !== undefined
+        if (!isSubmitted && !hasSubmittedAt && !hasSnapshot) return
+
+        states[sectionKey] = {
+          collapsed: Boolean(state.collapsed),
+          submitted: isSubmitted,
+          submittedAt: state.submittedAt || null,
+          snapshot: hasSnapshot ? this.cloneSerializable(state.snapshot) : null
+        }
+      })
+
+      if (!Object.keys(states).length) {
+        try {
+          window.sessionStorage.removeItem(storageKey)
+        } catch (_) { void _ }
+        return
+      }
+
+      const currentRound = Number(this.latestDecisionRound || (this.userFeedback && this.userFeedback.currentRound) || 0)
+      const payload = {
+        roundNo: Number.isFinite(currentRound) ? currentRound : 0,
+        states
+      }
+
+      try {
+        window.sessionStorage.setItem(storageKey, JSON.stringify(payload))
+      } catch (_) { void _ }
+    },
+    restoreFeedbackSectionCardStates (proposalId = this.viewProposalId) {
+      if (typeof window === 'undefined' || !window.sessionStorage) return
+      const storageKey = this.feedbackSectionProgressStorageKey(proposalId)
+      if (!storageKey) return
+
+      try {
+        const raw = window.sessionStorage.getItem(storageKey)
+        if (!raw) return
+
+        const parsed = JSON.parse(raw)
+        const savedStates = parsed && parsed.states && typeof parsed.states === 'object'
+          ? parsed.states
+          : {}
+
+        const savedRoundNo = Number(parsed && parsed.roundNo)
+        const currentRoundNo = Number(this.latestDecisionRound || (this.userFeedback && this.userFeedback.currentRound) || 0)
+        if (Number.isFinite(savedRoundNo) && savedRoundNo > 0 && Number.isFinite(currentRoundNo) && currentRoundNo > 0 && savedRoundNo !== currentRoundNo) {
+          window.sessionStorage.removeItem(storageKey)
+          return
+        }
+
+        const restored = {}
+        Object.keys(savedStates).forEach(sectionKey => {
+          const state = savedStates[sectionKey]
+          if (!state || typeof state !== 'object') return
+          restored[sectionKey] = {
+            collapsed: Boolean(state.collapsed),
+            submitted: Boolean(state.submitted),
+            submittedAt: state.submittedAt || null,
+            snapshot: Object.prototype.hasOwnProperty.call(state, 'snapshot') ? state.snapshot : null,
+            saving: false
+          }
+        })
+
+        if (!Object.keys(restored).length) return
+
+        this.feedbackSectionCardStates = {
+          ...restored,
+          ...(this.feedbackSectionCardStates || {})
+        }
+      } catch (_) { void _ }
+    },
+    clearFeedbackSectionCardStatesStorage (proposalId = this.viewProposalId) {
+      if (typeof window === 'undefined' || !window.sessionStorage) return
+      const storageKey = this.feedbackSectionProgressStorageKey(proposalId)
+      if (!storageKey) return
+      try {
+        window.sessionStorage.removeItem(storageKey)
+      } catch (_) { void _ }
+    },
+    currentFeedbackRoundNo () {
+      const roundNo = Number(
+        this.latestDecisionRound ||
+        (this.userFeedback && this.userFeedback.currentRound) ||
+        (this.loadedProposal && this.loadedProposal.currentRound) ||
+        0
+      )
+      return Number.isFinite(roundNo) && roundNo > 0 ? roundNo : 0
+    },
+    feedbackSectionBaselineStorageKey (proposalId = this.viewProposalId) {
+      const normalizedProposalId = String(proposalId || '').trim()
+      if (!normalizedProposalId) return ''
+      return `${FEEDBACK_SECTION_BASELINE_STORAGE_PREFIX}:${normalizedProposalId}`
+    },
+    persistFeedbackSectionBaselines (proposalId = this.viewProposalId) {
+      if (typeof window === 'undefined' || !window.sessionStorage) return
+      const storageKey = this.feedbackSectionBaselineStorageKey(proposalId)
+      if (!storageKey) return
+
+      const baselines = this.cloneSerializable(this.feedbackSectionBaselines || {})
+      if (!baselines || !Object.keys(baselines).length) {
+        try {
+          window.sessionStorage.removeItem(storageKey)
+        } catch (_) { void _ }
+        return
+      }
+
+      const payload = {
+        roundNo: this.currentFeedbackRoundNo(),
+        baselines
+      }
+
+      try {
+        window.sessionStorage.setItem(storageKey, JSON.stringify(payload))
+      } catch (_) { void _ }
+    },
+    restoreFeedbackSectionBaselines (proposalId = this.viewProposalId) {
+      if (typeof window === 'undefined' || !window.sessionStorage) return false
+      const storageKey = this.feedbackSectionBaselineStorageKey(proposalId)
+      if (!storageKey) return false
+
+      try {
+        const raw = window.sessionStorage.getItem(storageKey)
+        if (!raw) return false
+        const parsed = JSON.parse(raw)
+        const savedRoundNo = Number(parsed && parsed.roundNo)
+        const currentRoundNo = this.currentFeedbackRoundNo()
+        if (
+          Number.isFinite(savedRoundNo) &&
+          savedRoundNo > 0 &&
+          Number.isFinite(currentRoundNo) &&
+          currentRoundNo > 0 &&
+          savedRoundNo !== currentRoundNo
+        ) {
+          window.sessionStorage.removeItem(storageKey)
+          return false
+        }
+
+        const baselines = parsed && parsed.baselines && typeof parsed.baselines === 'object'
+          ? parsed.baselines
+          : {}
+        if (!Object.keys(baselines).length) return false
+        this.feedbackSectionBaselines = {
+          ...(this.feedbackSectionBaselines || {}),
+          ...this.cloneSerializable(baselines)
+        }
+        return true
+      } catch (_) {
+        return false
+      }
+    },
+    clearFeedbackSectionBaselinesStorage (proposalId = this.viewProposalId) {
+      if (typeof window === 'undefined' || !window.sessionStorage) return
+      const storageKey = this.feedbackSectionBaselineStorageKey(proposalId)
+      if (!storageKey) return
+      try {
+        window.sessionStorage.removeItem(storageKey)
+      } catch (_) { void _ }
+    },
+    syncFeedbackSectionBaselines (sections) {
+      if (!this.viewProposalId || this.isAdminView || !this.isRevisionRequested) return
+      const normalizedSections = Array.isArray(sections) ? sections : []
+      if (!normalizedSections.length) return
+
+      this.restoreFeedbackSectionBaselines(this.viewProposalId)
+
+      const baselinePool = {
+        ...(this.feedbackSectionBaselines || {})
+      }
+      let hasChanged = false
+
+      normalizedSections.forEach(section => {
+        const sectionKey = section && section.sectionKey ? String(section.sectionKey) : ''
+        if (!sectionKey) return
+        if (Object.prototype.hasOwnProperty.call(baselinePool, sectionKey)) return
+        baselinePool[sectionKey] = this.cloneSerializable(this.currentFeedbackSectionValue(sectionKey))
+        hasChanged = true
+      })
+
+      const activeSectionKeys = normalizedSections
+        .map(section => (section && section.sectionKey ? String(section.sectionKey) : ''))
+        .filter(Boolean)
+      Object.keys(baselinePool).forEach(sectionKey => {
+        if (activeSectionKeys.includes(sectionKey)) return
+        delete baselinePool[sectionKey]
+        hasChanged = true
+      })
+
+      if (hasChanged) {
+        this.feedbackSectionBaselines = baselinePool
+        this.persistFeedbackSectionBaselines(this.viewProposalId)
+      }
+    },
+    sanitizeDiffText (value) {
+      return String(value || '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    },
+    truncateDiffText (value, maxLength = 220) {
+      const text = this.sanitizeDiffText(value)
+      if (!text) return '-'
+      if (text.length <= maxLength) return text
+      return `${text.slice(0, maxLength)}...`
+    },
+    normalizeBudgetForDiff (budgetValue) {
+      const budget = budgetValue && typeof budgetValue === 'object' ? budgetValue : {}
+      const categories = Array.isArray(budget.categories) ? budget.categories : []
+
+      const normalizedCategories = categories.map((category) => {
+        const items = Array.isArray(category && category.items) ? category.items : []
+        const total = this.normalizeBudgetNumber(
+          items.reduce((sum, item) => sum + (Number(item && item.total) || 0), 0)
+        )
+        const periodTotals = [0, 1, 2].map((periodIndex) => this.normalizeBudgetNumber(
+          items.reduce((sum, item) => {
+            const periods = item && Array.isArray(item.periods) ? item.periods : []
+            return sum + (Number(periods[periodIndex]) || 0)
+          }, 0)
+        ))
+        const attachmentCount = items.reduce((sum, item) => {
+          const hasAttachment = Boolean(item && item.attachment && (item.attachment.fileId || item.attachment.name || item.attachment.fileName))
+          return sum + (hasAttachment ? 1 : 0)
+        }, 0)
+        return {
+          name: String((category && category.name) || ''),
+          itemCount: items.length,
+          total,
+          periodTotals,
+          attachmentCount
+        }
+      }).filter(category => category.itemCount > 0 || category.total > 0)
+
+      const computedGrandTotal = this.normalizeBudgetNumber(
+        normalizedCategories.reduce((sum, category) => sum + (Number(category.total) || 0), 0)
+      )
+      const declaredGrandTotal = this.normalizeBudgetNumber(budget.grandTotal)
+      const periodTotals = [0, 1, 2].map((periodIndex) => this.normalizeBudgetNumber(
+        normalizedCategories.reduce((sum, category) => {
+          const row = Array.isArray(category.periodTotals) ? category.periodTotals : []
+          return sum + (Number(row[periodIndex]) || 0)
+        }, 0)
+      ))
+
+      return {
+        grandTotal: declaredGrandTotal > 0 ? declaredGrandTotal : computedGrandTotal,
+        itemCount: normalizedCategories.reduce((sum, category) => sum + (Number(category.itemCount) || 0), 0),
+        categoryTotals: normalizedCategories,
+        periodTotals,
+        attachmentCount: normalizedCategories.reduce((sum, category) => sum + (Number(category.attachmentCount) || 0), 0)
+      }
+    },
+    normalizeFeedbackValueForDiff (sectionKey, value) {
+      if (sectionKey === 'budget') return this.normalizeBudgetForDiff(value)
+      if (sectionKey === 'strategic_alignment') return this.normalizeStrategicAlignmentValue(value)
+      if (sectionKey === 'expected_outcomes') return this.normalizeExpectedOutcomesValue(value)
+      if (sectionKey === 'research_team') {
+        const source = value && typeof value === 'object' ? value : {}
+        return {
+          name: String(source.name || ''),
+          affiliation: String(source.affiliation || ''),
+          phone: String(source.phone || ''),
+          email: String(source.email || ''),
+          proportion: String(source.proportion || '')
+        }
+      }
+      if (sectionKey === 'work_plan') {
+        const rows = Array.isArray(value) ? value : []
+        return {
+          rowCount: rows.length,
+          rows: this.cloneSerializable(rows)
+        }
+      }
+      if (typeof value === 'string') return this.sanitizeDiffText(value)
+      return this.cloneSerializable(value)
+    },
+    feedbackDiffSummaryText (sectionKey, value) {
+      if (value === null || value === undefined || value === '') return '-'
+
+      if (sectionKey === 'budget') {
+        const normalized = value && typeof value === 'object' ? value : {}
+        const grandTotal = this.normalizeBudgetNumber(normalized.grandTotal)
+        const itemCount = Number(normalized.itemCount) || 0
+        const attachmentCount = Number(normalized.attachmentCount) || 0
+        const periodTotals = Array.isArray(normalized.periodTotals) ? normalized.periodTotals : [0, 0, 0]
+        const periodSummary = `งวด 1/2/3: ${this.normalizeBudgetNumber(periodTotals[0]).toLocaleString('th-TH')}/${this.normalizeBudgetNumber(periodTotals[1]).toLocaleString('th-TH')}/${this.normalizeBudgetNumber(periodTotals[2]).toLocaleString('th-TH')} บาท`
+        const categories = Array.isArray(normalized.categoryTotals) ? normalized.categoryTotals : []
+        const topCategories = categories
+          .slice()
+          .sort((left, right) => (Number(right.total) || 0) - (Number(left.total) || 0))
+          .slice(0, 3)
+          .map(category => `${category.name || '-'}: ${this.normalizeBudgetNumber(category.total).toLocaleString('th-TH')} บาท`)
+          .join(' | ')
+
+        const main = `งบรวม ${grandTotal.toLocaleString('th-TH')} บาท, ${itemCount} รายการ, เอกสารแนบ ${attachmentCount} ไฟล์`
+        const detail = `${main} | ${periodSummary}`
+        return topCategories ? `${detail} | ${topCategories}` : detail
+      }
+
+      if (sectionKey === 'strategic_alignment') {
+        return `ประเภททุน: ${(value && value.fundingType) || '-'} | ประเภทย่อย: ${(value && value.fundingSubType) || '-'}`
+      }
+
+      if (sectionKey === 'expected_outcomes') {
+        return `ประเภททุน: ${(value && value.fundingType) || '-'} | ผลลัพธ์: ${(value && value.selectedOutcome) || '-'}`
+      }
+
+      if (sectionKey === 'research_team') {
+        const source = value && typeof value === 'object' ? value : {}
+        return [
+          source.name ? `ชื่อ: ${source.name}` : '',
+          source.affiliation ? `สังกัด: ${source.affiliation}` : '',
+          source.email ? `อีเมล: ${source.email}` : '',
+          source.phone ? `โทร: ${source.phone}` : ''
+        ].filter(Boolean).join(' | ') || '-'
+      }
+
+      if (sectionKey === 'work_plan' && value && typeof value === 'object') {
+        const rowCount = Number(value.rowCount) || 0
+        return `จำนวนแผนงาน: ${rowCount}`
+      }
+
+      if (typeof value === 'string') return this.truncateDiffText(value)
+      return this.truncateDiffText(JSON.stringify(value))
+    },
+    revisionDiffSectionLabel (sectionKey, fallbackLabel = '') {
+      if (fallbackLabel) return fallbackLabel
+      const key = String(sectionKey || '').trim()
+      if (!key) return '-'
+
+      const fromEditableSections = (this.feedbackEditableSections || [])
+        .find(section => String(section && section.sectionKey ? section.sectionKey : '') === key)
+      if (fromEditableSections && fromEditableSections.meta && fromEditableSections.meta.sectionLabel) {
+        return fromEditableSections.meta.sectionLabel
+      }
+
+      const fromMap = Object.values(COMMITTEE_SECTION_FEEDBACK_MAP || {})
+        .find(entry => String(entry && entry.sectionKey ? entry.sectionKey : '') === key)
+      if (fromMap && fromMap.sectionLabel) return fromMap.sectionLabel
+
+      return key
+    },
+    revisionDiffCurrentSectionValue (sectionKey) {
+      const key = String(sectionKey || '').trim()
+      if (!key) return null
+
+      if (!this.isAdminView && this.isRevisionRequested) {
+        const state = this.feedbackSectionState(key)
+        if (
+          state &&
+          state.submitted &&
+          Object.prototype.hasOwnProperty.call(state, 'snapshot') &&
+          state.snapshot !== null &&
+          state.snapshot !== undefined
+        ) {
+          return this.cloneSerializable(state.snapshot)
+        }
+
+        if (Object.prototype.hasOwnProperty.call(this.feedbackSectionDrafts || {}, key)) {
+          return this.cloneSerializable(this.feedbackSectionDrafts[key])
+        }
+      }
+
+      return this.cloneSerializable(this.currentFeedbackSectionValue(key))
+    },
+    buildCurrentRevisionDiffSummary () {
+      const sections = Array.isArray(this.feedbackEditableSections) ? this.feedbackEditableSections : []
+      if (!sections.length) return { roundNo: this.currentFeedbackRoundNo(), generatedAt: new Date().toISOString(), sections: [] }
+
+      const result = []
+      sections.forEach(section => {
+        const sectionKey = section && section.sectionKey ? String(section.sectionKey) : ''
+        if (!sectionKey) return
+
+        const beforeValue = Object.prototype.hasOwnProperty.call(this.feedbackSectionBaselines || {}, sectionKey)
+          ? this.feedbackSectionBaselines[sectionKey]
+          : null
+        const afterValue = this.revisionDiffCurrentSectionValue(sectionKey)
+
+        const beforeNormalized = this.normalizeFeedbackValueForDiff(sectionKey, beforeValue)
+        const afterNormalized = this.normalizeFeedbackValueForDiff(sectionKey, afterValue)
+
+        let changed = true
+        try {
+          changed = JSON.stringify(beforeNormalized) !== JSON.stringify(afterNormalized)
+        } catch (_) {
+          changed = true
+        }
+        if (!changed) return
+
+        result.push({
+          sectionKey,
+          sectionLabel: this.revisionDiffSectionLabel(sectionKey, section && section.meta && section.meta.sectionLabel),
+          beforeSummary: this.feedbackDiffSummaryText(sectionKey, beforeNormalized),
+          afterSummary: this.feedbackDiffSummaryText(sectionKey, afterNormalized)
+        })
+      })
+
+      return {
+        roundNo: this.currentFeedbackRoundNo(),
+        generatedAt: new Date().toISOString(),
+        sections: result
+      }
     },
     syncRouteProposalId (proposalId) {
       if (!proposalId || !this.$router || !this.$route) return
@@ -1417,6 +2018,8 @@ export default {
       this.clearAutoSaveTimer()
       this.savingRevision = true
       try {
+        await this.$nextTick()
+        await this.$nextTick()
         const payload = this.normalizeApiPayload()
         await Service.proposal.updateDraft(this.viewProposalId, payload)
         await this.loadProposalById(this.viewProposalId)
@@ -1437,13 +2040,49 @@ export default {
     },
     async resubmitRevision () {
       if (!this.viewProposalId || !this.isRevisionRequested) return
+      if (this.feedbackLoading || this.feedbackError || !this.userFeedback) {
+        await this.showAlert({
+          icon: 'warning',
+          title: 'ยังไม่พร้อมส่งเอกสารแก้ไข',
+          text: 'กรุณารอให้ระบบโหลดข้อมูลข้อเสนอแนะให้ครบก่อน'
+        })
+        return
+      }
+      if (this.pendingFeedbackSectionsForResubmit.length > 0) {
+        const missingSectionLabels = this.pendingFeedbackSectionLabels
+        const missingSectionText = missingSectionLabels.length
+          ? `กรุณาส่งแก้ไขหัวข้อต่อไปนี้ก่อน:\n- ${missingSectionLabels.join('\n- ')}`
+          : 'กรุณาส่งแก้ไขรายหัวข้อให้ครบก่อนส่งเอกสารแก้ไขอีกครั้ง'
+        await this.showAlert({
+          icon: 'warning',
+          title: 'ส่งแก้ไขรายหัวข้อยังไม่ครบ',
+          text: missingSectionText
+        })
+        return
+      }
+      const completenessValidation = this.validateBeforeSubmit({ focusOnError: true })
+      if (!completenessValidation.ok) {
+        await this.showAlert({
+          icon: 'warning',
+          title: 'ข้อมูลยังไม่ครบถ้วน',
+          text: completenessValidation.message || 'กรุณาตรวจสอบข้อมูลให้ครบถ้วนก่อนส่งแก้ไขอีกครั้ง'
+        })
+        return
+      }
 
       this.clearAutoSaveTimer()
       this.submittingRevision = true
       try {
+        await this.$nextTick()
+        await this.$nextTick()
         const payload = this.normalizeApiPayload()
         await Service.proposal.updateDraft(this.viewProposalId, payload)
         await Service.proposal.resubmit(this.viewProposalId)
+        this.clearFeedbackSectionCardStatesStorage(this.viewProposalId)
+        this.clearFeedbackSectionBaselinesStorage(this.viewProposalId)
+        this.feedbackSectionCardStates = {}
+        this.feedbackSectionDrafts = {}
+        this.feedbackSectionBaselines = {}
         await this.loadProposalById(this.viewProposalId)
         await this.fetchUserFeedback(this.viewProposalId)
         await this.showAlert({
@@ -1497,6 +2136,7 @@ export default {
       this.userFeedback = null
       this.feedbackSectionCardStates = {}
       this.feedbackSectionDrafts = {}
+      this.feedbackSectionBaselines = {}
       try {
         const res = await Service.proposal.getFeedback(encodeURIComponent(proposalId))
         const payload = res && res.data ? res.data : null
@@ -1584,6 +2224,7 @@ export default {
         }
       })
       this.feedbackSectionCardStates = next
+      this.persistFeedbackSectionCardStates()
     },
     cloneSerializable (value) {
       if (value === null || value === undefined) return value
@@ -1639,6 +2280,7 @@ export default {
         ...current,
         ...patch
       })
+      this.persistFeedbackSectionCardStates()
     },
     toggleFeedbackSectionCard (sectionKey) {
       const current = this.feedbackSectionState(sectionKey)
@@ -1682,7 +2324,7 @@ export default {
       current[field] = value
       this.$set(this.feedbackSectionDrafts, sectionKey, current)
     },
-    applyFeedbackSectionDraftToForm (sectionKey) {
+    async applyFeedbackSectionDraftToForm (sectionKey) {
       const draft = this.cloneSerializable(this.feedbackSectionDraft(sectionKey))
 
       if (sectionKey === 'problem_significance' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
@@ -1696,7 +2338,9 @@ export default {
       } else if (sectionKey === 'work_plan' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
         this.$refs.projectDetailsForm.form.workPlan = Array.isArray(draft) || typeof draft === 'object' ? draft : []
       } else if (sectionKey === 'budget' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
-        this.$refs.projectDetailsForm.form.budget = (draft && typeof draft === 'object') ? draft : {}
+        this.$refs.projectDetailsForm.form.budget = (draft && typeof draft === 'object')
+          ? this.cloneSerializable(draft)
+          : {}
       } else if (sectionKey === 'integration' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
         this.$refs.projectDetailsForm.form.integration = draft || ''
       } else if (sectionKey === 'strategic_alignment' && this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
@@ -1713,6 +2357,11 @@ export default {
         this.$refs.projectDetailsForm.form.transferLevel = draft || ''
       } else if (sectionKey === 'research_team' && this.$refs.researchTeamForm && this.$refs.researchTeamForm.projectLeader) {
         Object.assign(this.$refs.researchTeamForm.projectLeader, draft || {})
+      }
+
+      if (sectionKey === 'budget') {
+        await this.$nextTick()
+        await this.$nextTick()
       }
 
       this.syncProjectDetailsData()
@@ -1840,6 +2489,118 @@ export default {
       if (value === 'none') return 'ไม่มีการถ่ายทอดสู่สังคม'
       return '-'
     },
+    hasWorkPlanDraftContent (value) {
+      const rows = Array.isArray(value) ? value : []
+      if (!rows.length) return false
+      return rows.some((row) => {
+        if (row === null || row === undefined) return false
+        if (typeof row !== 'object') return String(row).trim().length > 0
+        return Object.values(row).some((cell) => {
+          if (Array.isArray(cell)) {
+            return cell.some(entry => String(entry || '').trim().length > 0)
+          }
+          if (cell && typeof cell === 'object') {
+            return Object.values(cell).some(entry => String(entry || '').trim().length > 0)
+          }
+          return String(cell || '').trim().length > 0
+        })
+      })
+    },
+    validateFeedbackSectionBeforeSubmit (section, options = {}) {
+      const focusOnError = options.focusOnError !== false
+      const sectionKey = section && section.sectionKey ? String(section.sectionKey) : ''
+      if (!sectionKey) return { ok: false, message: 'ไม่พบหัวข้อที่ต้องการส่งแก้ไข' }
+
+      const sectionLabel = this.revisionDiffSectionLabel(
+        sectionKey,
+        section && section.meta && section.meta.sectionLabel ? section.meta.sectionLabel : ''
+      )
+      const fail = (message, onFocus = null) => {
+        if (focusOnError && typeof onFocus === 'function') {
+          try {
+            onFocus()
+          } catch (_) { void _ }
+        }
+        return { ok: false, message }
+      }
+
+      if (sectionKey === 'budget') {
+        const budgetValidation = this.getBudgetValidationResult()
+        if (!budgetValidation.ok) {
+          return fail(
+            `กรุณาแก้ไขหัวข้อ ${sectionLabel} ให้ถูกต้องก่อนส่งแก้ไข\n- ${budgetValidation.errors.join('\n- ')}`,
+            () => this.focusBudgetSection()
+          )
+        }
+        return { ok: true, message: '' }
+      }
+
+      if (sectionKey === 'research_team') {
+        const teamValidation = this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.getValidationResult === 'function'
+          ? this.$refs.researchTeamForm.getValidationResult()
+          : null
+        if (teamValidation && !teamValidation.ok) {
+          return fail(
+            teamValidation.message || `กรุณาตรวจสอบข้อมูลหัวข้อ ${sectionLabel} ให้ครบถ้วน`,
+            () => {
+              if (this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.scrollToSection === 'function') {
+                this.$refs.researchTeamForm.scrollToSection('research_team')
+              }
+            }
+          )
+        }
+      }
+
+      if (sectionKey === 'strategic_alignment') {
+        const strategicDraft = this.normalizeStrategicAlignmentValue(this.feedbackSectionDraft(sectionKey))
+        if (!strategicDraft.fundingType) {
+          return fail(`กรุณาเลือกประเภททุนในหัวข้อ ${sectionLabel}`)
+        }
+        const requiresSubType = ['new-researcher', 'researcher-development', 'industry-extension'].includes(strategicDraft.fundingType)
+        if (requiresSubType && !strategicDraft.fundingSubType) {
+          return fail(`กรุณาเลือกประเภทย่อยในหัวข้อ ${sectionLabel}`)
+        }
+        return { ok: true, message: '' }
+      }
+
+      if (sectionKey === 'expected_outcomes') {
+        const strategicFundingType = String(this.feedbackStrategicFundingType('strategic_alignment') || '')
+        const fallbackFundingType = String(
+          strategicFundingType ||
+          ((this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form && this.$refs.projectDetailsForm.form.fundingType) || this.projectDetailsData.fundingType || '')
+        )
+        const outcomesDraft = this.normalizeExpectedOutcomesValue(this.feedbackSectionDraft(sectionKey), fallbackFundingType)
+        if (!outcomesDraft.selectedOutcome) {
+          return fail(`กรุณาเลือกผลลัพธ์ในหัวข้อ ${sectionLabel}`)
+        }
+        return { ok: true, message: '' }
+      }
+
+      if (sectionKey === 'transfer_level') {
+        const transferDraft = String(this.feedbackSectionDraft(sectionKey) || '').trim()
+        if (!transferDraft) {
+          return fail(`กรุณาเลือกข้อมูลในหัวข้อ ${sectionLabel}`)
+        }
+        return { ok: true, message: '' }
+      }
+
+      if (sectionKey === 'work_plan') {
+        const workPlanDraft = this.feedbackSectionDraft(sectionKey)
+        if (!this.hasWorkPlanDraftContent(workPlanDraft)) {
+          return fail(`กรุณากรอกข้อมูลในหัวข้อ ${sectionLabel} ให้ครบถ้วน`)
+        }
+        return { ok: true, message: '' }
+      }
+
+      if (['problem_significance', 'objectives', 'literature_review', 'research_methodology', 'integration'].includes(sectionKey)) {
+        const textDraft = this.sanitizeDiffText(this.feedbackSectionDraft(sectionKey))
+        if (!textDraft) {
+          return fail(`กรุณากรอกข้อมูลในหัวข้อ ${sectionLabel} ให้ครบถ้วน`)
+        }
+      }
+
+      return { ok: true, message: '' }
+    },
     async submitFeedbackSection (section) {
       const sectionKey = section && section.sectionKey ? section.sectionKey : ''
       if (!sectionKey || this.effectiveReadOnly) return
@@ -1847,7 +2608,19 @@ export default {
       const preservedScrollTop = this.currentWindowScrollTop()
       this.setFeedbackSectionCardState(sectionKey, { saving: true })
       try {
-        this.applyFeedbackSectionDraftToForm(sectionKey)
+        await this.applyFeedbackSectionDraftToForm(sectionKey)
+        const validationResult = this.validateFeedbackSectionBeforeSubmit(section, { focusOnError: true })
+        if (!validationResult.ok) {
+          this.setFeedbackSectionCardState(sectionKey, { saving: false })
+          await this.restoreWindowScrollTop(preservedScrollTop)
+          await this.showAlert({
+            icon: 'warning',
+            title: 'ข้อมูลยังไม่ครบถ้วน',
+            text: validationResult.message || 'กรุณาตรวจสอบข้อมูลก่อนส่งแก้ไข'
+          })
+          return
+        }
+
         if (this.viewProposalId) {
           const payload = this.normalizeApiPayload()
           await Service.proposal.updateDraft(this.viewProposalId, payload)
@@ -2008,6 +2781,15 @@ export default {
         ? this.$refs.projectDetailsForm.getFormData()
         : {}
       const form = formData && formData.form ? formData.form : (formData || {})
+      const existingSnapshot = this.loadedProposal && this.loadedProposal.formSnapshotJson
+        ? this.loadedProposal.formSnapshotJson
+        : {}
+      const normalizedBudget = form && form.budget && typeof form.budget === 'object' && Object.keys(form.budget).length
+        ? form.budget
+        : (existingSnapshot.budget || {})
+      const normalizedResearchStandard = form && form.researchStandard && typeof form.researchStandard === 'object' && Object.keys(form.researchStandard).length
+        ? form.researchStandard
+        : (existingSnapshot.researchStandard || {})
 
       const rawKeywords = String(form.keywords || '')
         .replace(/<[^>]+>/g, '')
@@ -2018,7 +2800,7 @@ export default {
       const fallbackDraftTitle = 'ร่างโครงการวิจัย'
       const projectTitleTh = (form.projectNameThai || form.projectTitleTh || '').trim() || fallbackDraftTitle
 
-      const budgetTotal = (form.budget && form.budget.grandTotal)
+      const budgetTotal = (normalizedBudget && normalizedBudget.grandTotal)
         || form.budgetTotal
         || 0
       const collaborationAgency = String(form.collaborationAgency || '').trim()
@@ -2032,11 +2814,50 @@ export default {
           ? this.$refs.signatureCard.getAllSignatures()
           : null)
 
-       const persistedFiles = Array.isArray(this.files)
-         ? this.files.filter(f => f && !f._pending)
-         : []
+      const persistedFiles = Array.isArray(this.files)
+        ? this.files.filter(f => f && !f._pending)
+        : []
 
-       return {
+      const existingRawRevisionDiffSummary = this.loadedProposal &&
+        this.loadedProposal.formSnapshotJson &&
+        this.loadedProposal.formSnapshotJson.revisionDiffSummary
+      const existingRevisionDiffSummary = existingRawRevisionDiffSummary &&
+        typeof existingRawRevisionDiffSummary === 'object' &&
+        Array.isArray(existingRawRevisionDiffSummary.sections) &&
+        existingRawRevisionDiffSummary.sections.length
+        ? this.cloneSerializable(existingRawRevisionDiffSummary)
+        : null
+
+      const generatedRevisionDiffSummary = (!this.isAdminView && this.isRevisionRequested)
+        ? this.buildCurrentRevisionDiffSummary()
+        : null
+      const hasGeneratedSections = Boolean(
+        generatedRevisionDiffSummary &&
+        Array.isArray(generatedRevisionDiffSummary.sections) &&
+        generatedRevisionDiffSummary.sections.length
+      )
+
+      const currentRoundNo = this.currentFeedbackRoundNo()
+      const existingRoundNo = Number(existingRevisionDiffSummary && existingRevisionDiffSummary.roundNo)
+      const isExistingSummarySameRound = Number.isFinite(existingRoundNo) &&
+        existingRoundNo > 0 &&
+        Number.isFinite(currentRoundNo) &&
+        currentRoundNo > 0
+        ? existingRoundNo === currentRoundNo
+        : false
+
+      let revisionDiffSummary = null
+      if (hasGeneratedSections) {
+        revisionDiffSummary = generatedRevisionDiffSummary
+      } else if (this.isRevisionRequested) {
+        if (existingRevisionDiffSummary && (!currentRoundNo || isExistingSummarySameRound)) {
+          revisionDiffSummary = existingRevisionDiffSummary
+        }
+      } else if (existingRevisionDiffSummary) {
+        revisionDiffSummary = existingRevisionDiffSummary
+      }
+
+      return {
         projectTitleTh,
         projectTitleEn: form.projectNameEnglish || form.projectTitleEn || '',
         fiscalYear: form.fiscalYear || new Date().getFullYear(),
@@ -2050,7 +2871,7 @@ export default {
         projectLeaderPhone: projectLeader.phone || '',
         projectLeaderEmail: projectLeader.email || '',
         projectLeaderProportion: projectLeader.proportion || '',
-         formSnapshotJson: {
+        formSnapshotJson: {
           projectNameThai: form.projectNameThai || '',
           projectNameEnglish: form.projectNameEnglish || '',
           fiscalYear: form.fiscalYear || new Date().getFullYear(),
@@ -2071,14 +2892,15 @@ export default {
           selectedOutcome: form.selectedOutcome,
           integration: form.integration,
           transferLevel: form.transferLevel,
-          researchStandard: form.researchStandard || {},
-          budget: form.budget || {},
-           signatures: signatures || {},
-           researchTeam: teamData,
-           files: persistedFiles
-         }
-       }
-     },
+          researchStandard: normalizedResearchStandard,
+          budget: normalizedBudget,
+          signatures: signatures || {},
+          researchTeam: teamData,
+          files: persistedFiles,
+          ...(revisionDiffSummary ? { revisionDiffSummary } : {})
+        }
+      }
+    },
 
     buildDraftFingerprint (payload = null) {
       const draftPayload = payload || this.normalizeApiPayload()
@@ -2760,11 +3582,6 @@ export default {
     },
     handleBudgetAutoSave (budget) {
       const nextBudget = this.cloneSerializable(budget) || {}
-
-      if (this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form) {
-        this.$refs.projectDetailsForm.form.budget = nextBudget
-      }
-
       this.projectDetailsData = {
         ...(this.projectDetailsData || {}),
         budget: nextBudget
@@ -3080,7 +3897,8 @@ export default {
       }
     },
 
-    validateBeforeSubmit () {
+    validateBeforeSubmit (options = {}) {
+      const focusOnError = options.focusOnError !== false
       // 1) Validate research team required fields
       const teamValidation = this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.getValidationResult === 'function'
         ? this.$refs.researchTeamForm.getValidationResult()
@@ -3090,11 +3908,13 @@ export default {
         : null
       const isTeamValid = teamValidation ? teamValidation.ok : this.validateForm(teamData)
       if (!teamData || !isTeamValid) {
-        try {
-          if (this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.scrollToSection === 'function') {
-            this.$refs.researchTeamForm.scrollToSection('research_team')
-          }
-        } catch (_) { void _ }
+        if (focusOnError) {
+          try {
+            if (this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.scrollToSection === 'function') {
+              this.$refs.researchTeamForm.scrollToSection('research_team')
+            }
+          } catch (_) { void _ }
+        }
         if (teamValidation && teamValidation.message) {
           return { ok: false, message: teamValidation.message }
         }
@@ -3104,12 +3924,14 @@ export default {
       // 2) Validate HTML required inputs across the page (project details includes many required fields)
       const missing = this.findFirstMissingRequiredInput()
       if (missing) {
-        try {
-          if (typeof missing.scrollIntoView === 'function') {
-            missing.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          }
-          if (typeof missing.focus === 'function') missing.focus()
-        } catch (_) { void _ }
+        if (focusOnError) {
+          try {
+            if (typeof missing.scrollIntoView === 'function') {
+              missing.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
+            if (typeof missing.focus === 'function') missing.focus()
+          } catch (_) { void _ }
+        }
         return { ok: false, message: 'กรุณากรอกข้อมูลให้ครบถ้วนก่อนยื่นโครงการ' }
       }
 
@@ -3125,7 +3947,7 @@ export default {
       // 4) Special rule: section 17 budget must satisfy submission criteria
       const budgetValidation = this.getBudgetValidationResult()
       if (!budgetValidation.ok) {
-        this.focusBudgetSection()
+        if (focusOnError) this.focusBudgetSection()
         return {
           ok: false,
           message: `กรุณาแก้ไขหัวข้อ 17 งบประมาณให้ถูกต้องก่อนยื่นโครงการ\n- ${budgetValidation.errors.join('\n- ')}`
@@ -3630,6 +4452,52 @@ export default {
   border: none;
 } 
 
+.revision-actions {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.revision-action-btn {
+  min-width: 170px;
+  font-weight: 700;
+  border-width: 1px;
+}
+
+.research-form ::v-deep .revision-action-btn--save,
+.revision-action-btn--save {
+  background-color: var(--rf-gold) !important;
+  border-color: var(--rf-gold) !important;
+  color: #ffffff !important;
+}
+
+.research-form ::v-deep .revision-action-btn--save:hover:not(:disabled),
+.research-form ::v-deep .revision-action-btn--save:focus:not(:disabled),
+.revision-action-btn--save:hover:not(:disabled),
+.revision-action-btn--save:focus:not(:disabled) {
+  background-color: #b58522 !important;
+  border-color: #b58522 !important;
+}
+
+.research-form ::v-deep .revision-action-btn--submit,
+.revision-action-btn--submit {
+  background-color: var(--rf-accent) !important;
+  border-color: var(--rf-accent) !important;
+  color: #ffffff !important;
+}
+
+.research-form ::v-deep .revision-action-btn--submit:hover:not(:disabled),
+.research-form ::v-deep .revision-action-btn--submit:focus:not(:disabled),
+.revision-action-btn--submit:hover:not(:disabled),
+.revision-action-btn--submit:focus:not(:disabled) {
+  background-color: #6f0e0e !important;
+  border-color: #6f0e0e !important;
+}
+
+.research-form ::v-deep .revision-action-btn:disabled,
+.revision-action-btn:disabled {
+  opacity: 0.65;
+}
+
 .feedback-workspace {
   border: 1px solid #dbeafe;
   background: #ffffff;
@@ -3801,6 +4669,76 @@ export default {
   margin-top: 0.75rem;
   color: #334155;
   white-space: pre-line;
+}
+
+.revision-diff-summary-card {
+  border-color: #dbe4ef;
+}
+
+.revision-diff-item + .revision-diff-item {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #dbe4ef;
+}
+
+.revision-diff-item__header {
+  margin-bottom: 0.65rem;
+}
+
+.revision-diff-item__link {
+  color: var(--rf-accent);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.revision-diff-item__link:hover,
+.revision-diff-item__link:focus {
+  color: #6f0e0e;
+  text-decoration: underline;
+}
+
+.revision-diff-box {
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+  background: #fbfdff;
+  padding: 0.7rem 0.85rem;
+  height: 100%;
+}
+
+.revision-diff-box--before {
+  border-color: #f1c7c7;
+  background: #fff5f5;
+}
+
+.revision-diff-box--after {
+  border-color: #bfdcc7;
+  background: #f0fdf4;
+}
+
+.revision-diff-box__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 0.35rem;
+}
+
+.revision-diff-box__body {
+  color: #0f172a;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.45;
+}
+
+.admin-revision-link {
+  color: #b91c1c;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.admin-revision-link:hover,
+.admin-revision-link:focus {
+  color: #7f1d1d;
+  text-decoration: underline;
 }
 
 .footer-fixed {
@@ -4449,6 +5387,65 @@ export default {
   color: #aab9ca !important;
 }
 
+.research-form--dark .admin-revision-link,
+.research-form--dark ::v-deep .admin-revision-link {
+  color: #fecaca !important;
+}
+
+.research-form--dark .admin-revision-link:hover,
+.research-form--dark .admin-revision-link:focus,
+.research-form--dark ::v-deep .admin-revision-link:hover,
+.research-form--dark ::v-deep .admin-revision-link:focus {
+  color: #fca5a5 !important;
+}
+
+.research-form--dark .revision-diff-summary-card,
+.research-form--dark ::v-deep .revision-diff-summary-card {
+  border-color: #3d4f64 !important;
+}
+
+.research-form--dark .revision-diff-item + .revision-diff-item,
+.research-form--dark ::v-deep .revision-diff-item + .revision-diff-item {
+  border-top-color: #3d4f64 !important;
+}
+
+.research-form--dark .revision-diff-item__link,
+.research-form--dark ::v-deep .revision-diff-item__link {
+  color: #fecaca !important;
+}
+
+.research-form--dark .revision-diff-item__link:hover,
+.research-form--dark .revision-diff-item__link:focus,
+.research-form--dark ::v-deep .revision-diff-item__link:hover,
+.research-form--dark ::v-deep .revision-diff-item__link:focus {
+  color: #fca5a5 !important;
+}
+
+.research-form--dark .revision-diff-box,
+.research-form--dark ::v-deep .revision-diff-box {
+  border-color: #3d4f64 !important;
+  background: #223142 !important;
+}
+
+.research-form--dark .revision-diff-box--before,
+.research-form--dark ::v-deep .revision-diff-box--before {
+  border-color: #6b2f3a !important;
+  background: rgba(127, 29, 29, 0.22) !important;
+}
+
+.research-form--dark .revision-diff-box--after,
+.research-form--dark ::v-deep .revision-diff-box--after {
+  border-color: #3f6b54 !important;
+  background: rgba(6, 95, 70, 0.20) !important;
+}
+
+.research-form--dark .revision-diff-box__title,
+.research-form--dark .revision-diff-box__body,
+.research-form--dark ::v-deep .revision-diff-box__title,
+.research-form--dark ::v-deep .revision-diff-box__body {
+  color: #ecf3fb !important;
+}
+
 .research-form--dark ::v-deep .form-control,
 .research-form--dark ::v-deep textarea.form-control,
 .research-form--dark ::v-deep select.form-control,
@@ -4540,4 +5537,5 @@ export default {
   fill: #c7d4e2 !important;
 }
 </style>
+
 

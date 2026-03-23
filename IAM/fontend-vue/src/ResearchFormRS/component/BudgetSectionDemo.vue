@@ -424,7 +424,6 @@ export default {
   watch: {
     modelValue: {
       immediate: true,
-      deep: true,
       handler(val) {
         this.applyModelValue(val)
       }
@@ -473,13 +472,43 @@ export default {
       })
     },
     shouldApplyIncomingModel(incomingCategories) {
-      try {
-        const incomingSerialized = JSON.stringify(incomingCategories || [])
-        const localSerialized = JSON.stringify(this.getSanitizedCategories() || [])
-        return incomingSerialized !== localSerialized
-      } catch (_) {
-        return true
+      const incoming = Array.isArray(incomingCategories) ? incomingCategories : []
+      const local = Array.isArray(this.categories) ? this.categories : []
+
+      if (incoming.length !== local.length) return true
+
+      for (let catIndex = 0; catIndex < incoming.length; catIndex += 1) {
+        const incomingCategory = incoming[catIndex] || {}
+        const localCategory = local[catIndex] || {}
+
+        if (String(incomingCategory.name || '') !== String(localCategory.name || '')) return true
+
+        const incomingItems = Array.isArray(incomingCategory.items) ? incomingCategory.items : []
+        const localItems = Array.isArray(localCategory.items) ? localCategory.items : []
+        if (incomingItems.length !== localItems.length) return true
+
+        for (let itemIndex = 0; itemIndex < incomingItems.length; itemIndex += 1) {
+          const incomingItem = incomingItems[itemIndex] || {}
+          const localItem = localItems[itemIndex] || {}
+
+          if (String(incomingItem.id || '') !== String(localItem.id || '')) return true
+
+          const incomingTotal = this.toNumber(incomingItem.total)
+          const localTotal = this.toNumber(localItem.total)
+          if (incomingTotal !== localTotal) return true
+
+          const incomingPeriods = Array.isArray(incomingItem.periods) ? incomingItem.periods : []
+          const localPeriods = Array.isArray(localItem.periods) ? localItem.periods : []
+          const periodLength = Math.max(incomingPeriods.length, localPeriods.length)
+          for (let periodIndex = 0; periodIndex < periodLength; periodIndex += 1) {
+            const incomingPeriod = this.toRawNumberString(incomingPeriods[periodIndex])
+            const localPeriod = this.toRawNumberString(localPeriods[periodIndex])
+            if (incomingPeriod !== localPeriod) return true
+          }
+        }
       }
+
+      return false
     },
     emitModelValue() {
       if (this.suppressEmit) return

@@ -388,6 +388,10 @@ export default {
     disableProjectTitleSection: {
       type: Boolean,
       default: false
+    },
+    revisionHighlightSections: {
+      type: Array,
+      default: () => []
     }
   },
   computed: {
@@ -444,15 +448,7 @@ export default {
           }
         },
         budget: {
-          categories: [
-            { title: "หมวดค่าตอบแทน", options: ["ค่าตอบแทน – นักศึกษาช่วยงานด้านวิชาการ", "ค่าตอบแทน – นักศึกษาช่วยงานทั่วไป", "ค่าตอบแทน – อาสาสมัคร", "ค่าตอบแทน – ผู้ให้ข้อมูล"], selected: "", rows: [] },
-            { title: "หมวดค่าใช้สอย", options: ["ค่าอาหารกลางวัน (120.-)", "ค่าอาหารว่าง (50.-)", "จ้างเหมาวิเคราะห์ทดสอบ (TOR)"], selected: "", rows: [] },
-            { title: "หมวดค่าเดินทาง", options: ["ค่าเบี้ยเลี้ยง (350.-/วัน)", "ค่าที่พัก (เหมา 800.-)", "รถยนต์ส่วนบุคคล (4.-/กม.)"], selected: "", rows: [] },
-            { title: "หมวดค่าวัสดุ", options: ["ค่าวัสดุสำนักงาน", "ค่าวัสดุคอมพิวเตอร์", "น้ำมันเชื้อเพลิงพาหนะเช่า"], selected: "", rows: [] },
-            { title: "หมวดค่าสาธารณูปโภค", options: [], selected: "", rows: [] },
-            { title: "หมวดครุภัณฑ์", options: [], selected: "", rows: [] },
-            { title: "อื่นๆ", options: [], selected: "", rows: [] }
-          ],
+          categories: [],
           grandTotal: 0
         }
       }
@@ -571,8 +567,18 @@ export default {
       return [
         'section',
         'mb-4',
-        { 'section-highlight': this.highlightedSectionKey === sectionKey }
+        {
+          'section-highlight': this.highlightedSectionKey === sectionKey,
+          'section-revision-highlight': this.isRevisionHighlighted(sectionKey)
+        }
       ]
+    },
+    isRevisionHighlighted (sectionKey) {
+      const targetKey = String(sectionKey || '').trim()
+      if (!targetKey) return false
+      return (Array.isArray(this.revisionHighlightSections) ? this.revisionHighlightSections : [])
+        .map(key => String(key || '').trim())
+        .includes(targetKey)
     },
     scrollToSection(sectionKey) {
       const target = this.$refs[sectionKey]
@@ -728,6 +734,30 @@ export default {
   background: #fff8db;
   border-left-color: #f59e0b;
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.16);
+}
+
+.section-revision-highlight {
+  background: #fff2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.section-revision-highlight .section-title {
+  background: #ffe2e2;
+  border-left-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14);
+}
+
+.project-details-form.is-dark .section-revision-highlight {
+  background: rgba(127, 29, 29, 0.22);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+.project-details-form.is-dark .section-revision-highlight .section-title {
+  background: rgba(127, 29, 29, 0.35);
+  border-left-color: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.24);
 }
 
 .sub-section-title {
