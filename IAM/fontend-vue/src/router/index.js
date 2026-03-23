@@ -261,7 +261,7 @@ const router = new Router({
         },
         {
           path: 'committee/logout',
-          redirect: '/committee/dashboard'
+          redirect: '/committee/assigned'
         },
         {
           path: 'theme',
@@ -667,7 +667,7 @@ const router = new Router({
     },
     {
       path: '/review/login',
-      redirect: '/committee/dashboard'
+      redirect: '/committee/assigned'
     },
     {
       path: '/pages',
@@ -804,7 +804,7 @@ function getStoredRole() {
 }
 
 function getRoleHome(role) {
-  if (role === 'committee') return '/committee/dashboard'
+  if (role === 'committee') return '/committee/assigned'
   if (role === 'admin' || role === 'chairman') return '/admin/dashboard'
   return '/userdashboard'
 }
@@ -858,7 +858,7 @@ router.beforeEach(async (to, from, next) => {
       const allowed = roleRecords.every(record => record.meta.roles.includes(researchRole))
       if (!allowed) {
         if (researchRole === 'admin' || researchRole === 'chairman') return next('/admin/dashboard')
-        if (researchRole === 'committee') return next('/committee/dashboard')
+        if (researchRole === 'committee') return next('/committee/assigned')
         return next('/userdashboard')
       }
     }

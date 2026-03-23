@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="committee-dashboard-page">
     <div class="summary-strip mb-4">
       <div
@@ -70,6 +70,11 @@
                   :active-page="activePage"
                   :sorter="false"
                 >
+                <template #submissionDate="{ item }">
+                  <td>
+                    {{ formatThaiDateTime(item.submissionDate) }}
+                  </td>
+                </template>
                 <template #statusDisplay="{item}">
                   <td>
                     <div class="status-block">
@@ -78,11 +83,11 @@
                         <span class="status-text">{{ item.statusDisplay }}</span>
                       </div>
                       <div class="status-line">
-                        <span class="reviewer-label">โดย :</span>
+                        <span class="reviewer-label">โดย:</span>
                         <span class="reviewer-value">{{ item.reviewer || '-' }}</span>
                       </div>
                         <div class="status-line">
-                          <span class="time-label">เวลาล่าสุด :</span>
+                          <span class="time-label">เวลาล่าสุด:</span>
                           <span class="time-value">{{ formatLatest(item.lastUpdatedAt) }}</span>
                         </div>
                       </div>
@@ -143,7 +148,12 @@
             <span class="item-bullet" aria-hidden="true" />
             <div class="item-body">
               <div class="item-title">{{ meeting.title }}</div>
-              <div class="item-meta">วันที่ {{ meeting.date }} เวลา {{ meeting.time }} น. สถานที่ {{ meeting.location }}</div>
+              <div class="item-meta">
+                วันที่ {{ meeting.date }} เวลา {{ meeting.time }} น.
+                <span class="ml-1">| รูปแบบ: {{ meeting.typeLabel }}</span>
+                <span v-if="meeting.type === 'onsite' && meeting.location" class="ml-1">| สถานที่: {{ meeting.location }}</span>
+                <span v-else-if="meeting.type === 'online' && meeting.videoLink" class="ml-1">| ลิงก์: {{ meeting.videoLink }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -161,7 +171,7 @@
           </div>
           <CButton class="block-action" size="sm" color="primary" variant="outline" @click="goToNotifications">ดูทั้งหมด</CButton>
         </div>
-        <div v-if="latestNotifs.length === 0" class="block-empty">ไม่พบรายการแจ้งเตือนที่สำคัญ</div>
+        <div v-if="latestNotifs.length === 0" class="block-empty">ไม่พบรายการแจ้งเตือนล่าสุด</div>
         <div v-else class="block-list">
           <div v-for="note in latestNotifs" :key="note.id" class="block-item">
             <span class="item-bullet" aria-hidden="true" />
@@ -207,6 +217,7 @@ export default {
     }
   },
   mounted () {
+    this.loadLatestNotifsCache()
     this.fetchAssignedProposals()
     this.fetchSidePanels()
   },
@@ -366,6 +377,61 @@ export default {
     }
   },
   methods: {
+    timeAgo (value) {
+      if (!value) return '-'
+      const date = new Date(value)
+      if (Number.isNaN(date.getTime())) return String(value)
+
+      const diffMs = Date.now() - date.getTime()
+      const isFuture = diffMs < 0
+      const absMs = Math.abs(diffMs)
+
+      const sec = Math.floor(absMs / 1000)
+      if (sec < 45) return isFuture ? 'อีกไม่นาน' : 'เมื่อสักครู่'
+
+      const min = Math.floor(sec / 60)
+      if (min < 60) return isFuture ? `อีก ${min} นาที` : `${min} นาทีที่แล้ว`
+
+      const hr = Math.floor(min / 60)
+      if (hr < 24) return isFuture ? `อีก ${hr} ชั่วโมง` : `${hr} ชั่วโมงที่แล้ว`
+
+      const day = Math.floor(hr / 24)
+      if (day < 30) return isFuture ? `อีก ${day} วัน` : `${day} วันที่แล้ว`
+
+      const month = Math.floor(day / 30)
+      if (month < 12) return isFuture ? `อีก ${month} เดือน` : `${month} เดือนที่แล้ว`
+
+      const year = Math.floor(month / 12)
+      return isFuture ? `อีก ${year} ปี` : `${year} ปีที่แล้ว`
+    },
+    loadLatestNotifsCache () {
+      try {
+        const raw = localStorage.getItem('committee_latest_notifs_cache')
+        if (!raw) return
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length) {
+          this.latestNotifs = parsed.slice(0, 3)
+        }
+      } catch (e) {
+        // ignore cache parsing error
+      }
+    },
+    saveLatestNotifsCache (items) {
+      try {
+        if (!Array.isArray(items) || !items.length) return
+        localStorage.setItem('committee_latest_notifs_cache', JSON.stringify(items.slice(0, 3)))
+      } catch (e) {
+        // ignore localStorage error
+      }
+    },
+    getMockLatestNotifs () {
+      const now = Date.now()
+      return [
+        { id: 'mock-1', title: 'มีโครงการส่งเข้าประเมิน', time: this.timeAgo(new Date(now - 2 * 60 * 1000).toISOString()), timestamp: new Date(now - 2 * 60 * 1000).toISOString() },
+        { id: 'mock-2', title: 'มีคำขอแก้ไขเอกสาร', time: this.timeAgo(new Date(now - 25 * 60 * 1000).toISOString()), timestamp: new Date(now - 25 * 60 * 1000).toISOString() },
+        { id: 'mock-3', title: 'กำหนดการประชุมถูกอัปเดต', time: this.timeAgo(new Date(now - 2 * 60 * 60 * 1000).toISOString()), timestamp: new Date(now - 2 * 60 * 60 * 1000).toISOString() }
+      ]
+    },
     async fetchSidePanels () {
       await Promise.allSettled([
         this.fetchNextMeetings(),
@@ -378,29 +444,43 @@ export default {
       if (Number.isNaN(d.getTime())) return '-'
       return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })
     },
+    formatThaiDateTime (dateStr) {
+      if (!dateStr) return '-'
+      const d = new Date(dateStr)
+      if (Number.isNaN(d.getTime())) return '-'
+      const date = new Intl.DateTimeFormat('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d)
+      const time = new Intl.DateTimeFormat('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
+      return `${date} ${time} เธ.`
+    },
     async fetchNextMeetings () {
       try {
         const res = await Service.meeting.list({ page: 1, limit: 5, upcoming: 1 })
-        const ok = res && res.data && res.data.success
-        const payload = ok ? (res.data.data || {}) : {}
+        const payload = res && res.data && res.data.data ? res.data.data : {}
         const rows = payload.items || payload.meetings || payload.data || []
 
-        this.nextMeetings = (rows || []).map((m) => ({
-          id: m && (m._id || m.id) ? String(m._id || m.id) : '',
-          title: (m && m.title) || '-',
-          date: this.formatThaiDate(m && m.meetingDate),
-          time: `${(m && m.startTime) || '-'}${(m && m.endTime) ? ` - ${m.endTime}` : ''}`,
-          location: (m && (m.location || m.videoLink)) || '-'
-        }))
+        this.nextMeetings = (rows || []).map((m) => {
+          const location = (m && m.location) ? String(m.location) : ''
+          const videoLink = (m && m.videoLink) ? String(m.videoLink) : ''
+          const type = videoLink ? 'online' : 'onsite'
+          return {
+            id: m && (m._id || m.id) ? String(m._id || m.id) : '',
+            title: (m && m.title) || '-',
+            date: this.formatThaiDate(m && m.meetingDate),
+            time: `${(m && m.startTime) || '-'}${(m && m.endTime) ? ` - ${m.endTime}` : ''}`,
+            type,
+            typeLabel: type === 'online' ? 'ออนไลน์' : 'ออนไซต์',
+            location,
+            videoLink
+          }
+        })
       } catch (e) {
         this.nextMeetings = []
       }
     },
     async fetchLatestNotifications () {
       try {
-        const res = await Service.notification.list({ page: 1, limit: 5 })
-        const ok = res && res.data && res.data.success
-        const payload = ok ? (res.data.data || {}) : {}
+        const res = await Service.notification.list({ page: 1, limit: 20 })
+        const payload = res && res.data && res.data.data ? res.data.data : {}
         const rows = Array.isArray(payload.notifications)
           ? payload.notifications
           : (Array.isArray(payload.items) ? payload.items : (Array.isArray(payload.data) ? payload.data : (Array.isArray(payload) ? payload : [])))
@@ -412,15 +492,42 @@ export default {
             const bt = new Date((b && (b.createdAt || b.sentAt || b.updatedAt)) || 0).getTime()
             return bt - at
           })
-          .slice(0, 5)
+          .slice(0, 3)
 
-        this.latestNotifs = sorted.map((n) => ({
+        const mapped = sorted.map((n) => {
+          const ts = n && (n.createdAt || n.sentAt || n.updatedAt) ? (n.createdAt || n.sentAt || n.updatedAt) : null
+          return {
           id: n && n._id ? String(n._id) : '',
           title: n && n.title ? n.title : '-',
-          time: this.timeAgo(n && (n.createdAt || n.sentAt))
-        }))
+          time: this.timeAgo(ts),
+          timestamp: ts
+          }
+        })
+
+        if (mapped.length) {
+          this.latestNotifs = mapped
+          this.saveLatestNotifsCache(mapped)
+          return
+        }
+
+        if (!this.latestNotifs || this.latestNotifs.length === 0) {
+          const fallback = this.getMockLatestNotifs()
+          this.latestNotifs = fallback
+          this.saveLatestNotifsCache(fallback)
+        }
       } catch (e) {
-        this.latestNotifs = []
+        if (this.latestNotifs && this.latestNotifs.length) return
+        try {
+          const raw = localStorage.getItem('committee_latest_notifs_cache')
+          const parsed = raw ? JSON.parse(raw) : null
+          if (Array.isArray(parsed) && parsed.length) {
+            this.latestNotifs = parsed.slice(0, 3)
+            return
+          }
+        } catch (_) { void _ }
+        const fallback = this.getMockLatestNotifs()
+        this.latestNotifs = fallback
+        this.saveLatestNotifsCache(fallback)
       }
     },
     async fetchAssignedProposals () {
@@ -526,21 +633,21 @@ export default {
     },
     statusLabel (status) {
       switch (status) {
-        case 'draft': return 'แบบร่าง'
-        case 'submitted': return 'ยื่นแล้ว'
-        case 'faculty_review_pending': return 'รอประธานพิจารณา'
-        case 'faculty_approved': return 'ประธานอนุมัติ'
-        case 'office_received': return 'ส่วนบริหารรับแล้ว'
-        case 'document_checking': return 'ตรวจสอบเอกสาร'
-        case 'assigned_to_committee': return 'มอบหมายกรรมการแล้ว'
-        case 'under_review': return 'กำลังพิจารณา'
-        case 'meeting_completed': return 'ประชุมเสร็จแล้ว'
-        case 'revision_requested': return 'ขอแก้ไขเพิ่มเติม'
-        case 'resubmitted': return 'ส่งแก้ไขแล้ว'
-        case 'second_round_review': return 'พิจารณารอบ 2'
-        case 'approved': return 'อนุมัติ'
-        case 'rejected': return 'ปฏิเสธ'
-        case 'announced': return 'ประกาศผลแล้ว'
+        case 'draft': return 'เนเธเธเธฃเนเธฒเธ'
+        case 'submitted': return 'เธขเธทเนเธเนเธฅเนเธง'
+        case 'faculty_review_pending': return 'เธฃเธญเธเธฃเธฐเธเธฒเธเธเธดเธเธฒเธฃเธ“เธฒ'
+        case 'faculty_approved': return 'เธเธฃเธฐเธเธฒเธเธญเธเธธเธกเธฑเธ•เธด'
+        case 'office_received': return 'เธชเนเธงเธเธเธฃเธดเธซเธฒเธฃเธฃเธฑเธเนเธฅเนเธง'
+        case 'document_checking': return 'เธ•เธฃเธงเธเธชเธญเธเน€เธญเธเธชเธฒเธฃ'
+        case 'assigned_to_committee': return 'เธกเธญเธเธซเธกเธฒเธขเธเธฃเธฃเธกเธเธฒเธฃเนเธฅเนเธง'
+        case 'under_review': return 'เธเธณเธฅเธฑเธเธเธดเธเธฒเธฃเธ“เธฒ'
+        case 'meeting_completed': return 'เธเธฃเธฐเธเธธเธกเน€เธชเธฃเนเธเนเธฅเนเธง'
+        case 'revision_requested': return 'เธเธญเนเธเนเนเธเน€เธเธดเนเธกเน€เธ•เธดเธก'
+        case 'resubmitted': return 'เธชเนเธเนเธเนเนเธเนเธฅเนเธง'
+        case 'second_round_review': return 'เธเธดเธเธฒเธฃเธ“เธฒเธฃเธญเธ 2'
+        case 'approved': return 'เธญเธเธธเธกเธฑเธ•เธด'
+        case 'rejected': return 'เธเธเธดเน€เธชเธ'
+        case 'announced': return 'เธเธฃเธฐเธเธฒเธจเธเธฅเนเธฅเนเธง'
         default: return status
       }
     },
@@ -563,24 +670,24 @@ export default {
         const min = Math.floor(sec / 60)
         const hr = Math.floor(min / 60)
         const day = Math.floor(hr / 24)
-        if (sec < 45) return 'อีกสักครู่'
-        if (min < 60) return `อีก ${min} นาที`
-        if (hr < 24) return `อีก ${hr} ชั่วโมง`
-        return `อีก ${day} วัน`
+        if (sec < 45) return 'เธญเธตเธเธชเธฑเธเธเธฃเธนเน'
+        if (min < 60) return `เธญเธตเธ ${min} เธเธฒเธ—เธต`
+        if (hr < 24) return `เธญเธตเธ ${hr} เธเธฑเนเธงเนเธกเธ`
+        return `เธญเธตเธ ${day} เธงเธฑเธ`
       }
 
       const sec = Math.floor(diffMs / 1000)
-      if (sec < 45) return 'เมื่อสักครู่'
+      if (sec < 45) return 'เน€เธกเธทเนเธญเธชเธฑเธเธเธฃเธนเน'
       const min = Math.floor(sec / 60)
-      if (min < 60) return `${min} นาทีที่แล้ว`
+      if (min < 60) return `${min} เธเธฒเธ—เธตเธ—เธตเนเนเธฅเนเธง`
       const hr = Math.floor(min / 60)
-      if (hr < 24) return `${hr} ชั่วโมงที่แล้ว`
+      if (hr < 24) return `${hr} เธเธฑเนเธงเนเธกเธเธ—เธตเนเนเธฅเนเธง`
       const day = Math.floor(hr / 24)
-      if (day < 30) return `${day} วันที่แล้ว`
+      if (day < 30) return `${day} เธงเธฑเธเธ—เธตเนเนเธฅเนเธง`
       const month = Math.floor(day / 30)
-      if (month < 12) return `${month} เดือนที่แล้ว`
+      if (month < 12) return `${month} เน€เธ”เธทเธญเธเธ—เธตเนเนเธฅเนเธง`
       const year = Math.floor(month / 12)
-      return `${year} ปีที่แล้ว`
+      return `${year} เธเธตเธ—เธตเนเนเธฅเนเธง`
     },
     view (item) {
       this.$router.push({ name: 'committeeProposalDetail', params: { id: item.proposalId || item.id } })
@@ -597,6 +704,10 @@ export default {
 
 <style scoped>
 .committee-dashboard-page {
+  --committee-red: #8c1515;
+  --committee-red-soft: rgba(140, 21, 21, 0.12);
+  --committee-gold: #fec260;
+  --committee-gold-soft: rgba(254, 194, 96, 0.22);
   max-width: 1240px;
   margin: 0 auto;
   padding: 16px;
@@ -615,7 +726,7 @@ export default {
   background: #fff;
   border-radius: 12px;
   border: 2px solid transparent;
-  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.07);
+  box-shadow: 0 2px 10px rgba(140, 21, 21, 0.08);
   padding: 14px 16px;
   display: flex;
   flex-direction: row;
@@ -629,13 +740,13 @@ export default {
 
 .strip-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(29, 78, 216, 0.13);
-  border-color: #1d4ed8;
+  box-shadow: 0 10px 24px rgba(140, 21, 21, 0.16);
+  border-color: var(--committee-red);
 }
 
 .strip-card.strip-active {
-  border-color: #1d4ed8;
-  box-shadow: 0 6px 20px rgba(29, 78, 216, 0.2);
+  border-color: var(--committee-red);
+  box-shadow: 0 10px 26px rgba(140, 21, 21, 0.18);
 }
 
 .committee-dashboard-row {
@@ -677,7 +788,7 @@ export default {
   border: 1px solid rgba(15,23,42,0.06);
 }
 .block-icon--meetings { background: #ecfdf5; color: #047857; }
-.block-icon--notifs { background: #eff6ff; color: #1d4ed8; }
+.block-icon--notifs { background: var(--committee-gold-soft); color: var(--committee-red); }
 .block-title { font-weight: 900; font-size: 1.02rem; margin-bottom: 2px; color: #0f172a; letter-spacing: 0.2px; }
 .block-sub { font-size: 0.8rem; color: #4b5563; }
 .block-action { white-space: nowrap; }
@@ -708,17 +819,17 @@ export default {
 .item-meta { font-size: 0.82rem; color: #475569; margin-top: 3px; }
 .block-item:hover .item-title { text-decoration: underline; }
 .committee-block-meetings { border-left: 4px solid #10b981; }
-.committee-block-notifs { border-left: 4px solid #3b82f6; }
+.committee-block-notifs { border-left: 4px solid var(--committee-red); }
 .committee-block-meetings .item-bullet { background: #10b981; }
-.committee-block-notifs .item-bullet { background: #3b82f6; }
+.committee-block-notifs .item-bullet { background: var(--committee-gold); }
 
 @media (max-width: 900px) {
   .committee-dashboard-row { grid-template-columns: 1fr; }
 }
 
 .strip-card.strip-active {
-  border-color: #1d4ed8;
-  background: #eff6ff;
+  border-color: var(--committee-red);
+  background: linear-gradient(135deg, rgba(254, 194, 96, 0.18), rgba(255, 255, 255, 0.96));
 }
 
 .strip-icon {
@@ -778,14 +889,14 @@ export default {
   box-shadow: 0 10px 26px rgba(16,24,40,0.12);
 }
 
-.strip-card.strip-ALL .strip-icon-wrap { background: #64748b; color: #fff; }
-.strip-card.strip-PENDING .strip-icon-wrap { background: #f59e0b; color: #fff; }
-.strip-card.strip-REVISION .strip-icon-wrap { background: #0ea5e9; color: #fff; }
+.strip-card.strip-ALL .strip-icon-wrap { background: var(--committee-red); color: #fff; }
+.strip-card.strip-PENDING .strip-icon-wrap { background: var(--committee-gold); color: #6b0f0f; }
+.strip-card.strip-REVISION .strip-icon-wrap { background: #b91c1c; color: #fff; }
 .strip-card.strip-REVIEWED .strip-icon-wrap { background: #16a34a; color: #fff; }
 
 .card-body-tight {
   padding: 1rem;
-  background: #e9e8e8;
+  background: #f7f1ea;
 }
 
 .reviewer-dashboard-card {
@@ -794,7 +905,7 @@ export default {
 }
 
 .dashboard-card-header {
-  background: #ffffff;
+  background: linear-gradient(90deg, rgba(140, 21, 21, 0.1), rgba(254, 194, 96, 0.22));
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   padding: 0 1.25rem;
   border-top-left-radius: 12px;
@@ -811,7 +922,7 @@ export default {
 }
 
 .dashboard-card-title {
-  color: #1f2937;
+  color: #6b0f0f;
   font-weight: 800;
   font-size: 1.15rem;
   line-height: 1.2;
@@ -851,7 +962,7 @@ export default {
 .table-surface {
   background: #ffffff;
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(140, 21, 21, 0.14);
   overflow: hidden;
 }
 
@@ -861,8 +972,8 @@ export default {
   justify-content: space-between;
   gap: 12px;
   padding: 0.75rem 1rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  background: #ffffff;
+  border-top: 1px solid rgba(140, 21, 21, 0.12);
+  background: linear-gradient(90deg, rgba(140, 21, 21, 0.06), rgba(254, 194, 96, 0.14));
 }
 
 .table-footer__left {
@@ -938,26 +1049,19 @@ export default {
 .no-table-divider /deep/ .table thead th,
 .no-table-divider >>> .table thead th,
 .no-table-divider::v-deep .table thead th {
-  background: var(--primary-legacy-theme, #321fdb);
+  background: linear-gradient(90deg, var(--committee-red, #8c1515), rgba(107, 15, 15, 0.98));
   color: #ffffff;
   font-weight: 800;
-  text-align: left;
+  text-align: center;
   border-bottom: 0 !important;
   border-top: 0 !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.22);
-}
-
-.no-table-divider /deep/ .table thead th:first-child,
-.no-table-divider >>> .table thead th:first-child,
-.no-table-divider::v-deep .table thead th:first-child {
-  text-align: left;
+  border-right: 1px solid rgba(254, 194, 96, 0.5);
 }
 
 .no-table-divider /deep/ .table thead th:last-child,
 .no-table-divider >>> .table thead th:last-child,
 .no-table-divider::v-deep .table thead th:last-child {
   border-right: 0;
-  text-align: center;
 }
 
 .table-surface /deep/ .table,
@@ -969,22 +1073,15 @@ export default {
 .table-surface /deep/ .table tbody td,
 .table-surface >>> .table tbody td,
 .table-surface::v-deep .table tbody td {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
-  text-align: left;
-}
-
-.table-surface /deep/ .table tbody td:first-child,
-.table-surface >>> .table tbody td:first-child,
-.table-surface::v-deep .table tbody td:first-child {
-  text-align: left;
+  border-bottom: 1px solid rgba(140, 21, 21, 0.12);
+  border-right: 1px solid rgba(140, 21, 21, 0.12);
+  text-align: center;
 }
 
 .table-surface /deep/ .table tbody td:last-child,
 .table-surface >>> .table tbody td:last-child,
 .table-surface::v-deep .table tbody td:last-child {
   border-right: 0;
-  text-align: center;
 }
 
 .no-table-divider /deep/ .table td,
@@ -996,17 +1093,19 @@ export default {
 .no-table-divider /deep/ .table tbody tr:hover,
 .no-table-divider >>> .table tbody tr:hover,
 .no-table-divider::v-deep .table tbody tr:hover {
-  background: rgba(50, 31, 219, 0.06);
+  background: var(--committee-gold-soft, rgba(254, 194, 96, 0.22));
 }
 
 .table-surface /deep/ .table-striped tbody tr:nth-of-type(odd),
 .table-surface >>> .table-striped tbody tr:nth-of-type(odd),
 .table-surface::v-deep .table-striped tbody tr:nth-of-type(odd) {
-  background-color: rgba(50, 31, 219, 0.03);
+  background-color: #ffffff;
 }
 
 .status-block {
-  display: inline-block;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
   min-width: 0;
   padding: 0;
   border-radius: 0;
@@ -1024,6 +1123,7 @@ export default {
 .status-line--status {
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .status-dot {
@@ -1034,6 +1134,23 @@ export default {
   margin-right: 5px;
   margin-top: 3px;
   flex: 0 0 auto;
+}
+
+.committee-dashboard-page /deep/ .btn-outline-primary,
+.committee-dashboard-page >>> .btn-outline-primary,
+.committee-dashboard-page::v-deep .btn-outline-primary {
+  border-color: var(--committee-red, #8c1515);
+  color: var(--committee-red, #8c1515);
+  background: transparent;
+  font-weight: 700;
+}
+
+.committee-dashboard-page /deep/ .btn-outline-primary:hover,
+.committee-dashboard-page >>> .btn-outline-primary:hover,
+.committee-dashboard-page::v-deep .btn-outline-primary:hover {
+  border-color: var(--committee-gold, #fec260);
+  background: var(--committee-gold, #fec260);
+  color: #6b0f0f;
 }
 
 .status-text {

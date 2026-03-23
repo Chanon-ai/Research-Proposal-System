@@ -1,4 +1,4 @@
-// NOTE: "legacy_admin" was used in older builds. Current auth uses "admin",
+﻿// NOTE: "legacy_admin" was used in older builds. Current auth uses "admin",
 // so keep both to avoid hiding Access Control menus.
 // (Filtering happens in `src/containers/TheSidebar.vue` via `item.roles.includes(role)`.)
 const ACCESS_CONTROL_ROLES = ['admin', 'legacy_admin']
@@ -10,7 +10,8 @@ export default [{
       _name: 'CSidebarNavItem',
       name: 'Dashboard',
       to: '/dashboard',
-      icon: 'cil-speedometer'
+      icon: 'cil-speedometer',
+      roles: ['admin', 'legacy_admin', 'researcher', 'chairman']
     },
     {
       _name: 'CSidebarNavDropdown',
@@ -66,28 +67,30 @@ export default [{
       ]
     },
     {
-      _name: 'CSidebarNavDropdown',
-      name: 'เมนูคณะกรรมการ',
-      route: '/committee',
-      icon: 'cil-people',
+      _name: 'CSidebarNavTitle',
       roles: ['committee'],
-      items: [
-        {
-          name: 'สรุปภาพรวม',
-          to: '/committee/dashboard',
-          icon: 'cil-speedometer'
-        },
-        {
-          name: 'งานที่ได้รับมอบหมาย',
-          to: '/committee/assigned',
-          icon: 'cil-list'
-        },
-        {
-          name: 'กำหนดการประชุม',
-          to: '/committee/meetings',
-          icon: 'cil-calendar'
-        }
-      ]
+      _children: ['เมนูคณะกรรมการ']
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'งานที่ได้รับมอบหมาย',
+      to: '/committee/assigned',
+      icon: 'cil-list',
+      roles: ['committee']
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'กำหนดการประชุม',
+      to: '/committee/meetings',
+      icon: 'cil-calendar',
+      roles: ['committee']
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'สรุปภาพรวม',
+      to: '/committee/dashboard',
+      icon: 'cil-speedometer',
+      roles: ['committee']
     },
     {
       _name: 'CSidebarNavItem',

@@ -78,6 +78,11 @@ export default {
 
       const filterByRole = (items) => {
         return (items || []).reduce((acc, item) => {
+          if (typeof item === 'string') {
+            acc.push(item)
+            return acc
+          }
+
           if (item.roles && !item.roles.includes(role)) {
             return acc
           }
