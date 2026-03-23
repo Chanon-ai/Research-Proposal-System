@@ -43,13 +43,8 @@
             <CButton :color="activeTab === 'unread' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('unread')">ยังไม่อ่าน</CButton>
             <CButton :color="activeTab === 'read' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('read')">อ่านแล้ว</CButton>
           </div>
-
           <div style="min-width: 280px;">
-            <CSelect
-              :value="filterType"
-              :options="typeFilterOptions"
-              @change="onTypeFilterChange"
-            />
+            <CSelect :value="filterType" :options="typeFilterOptions" @change="onTypeFilterChange" />
           </div>
         </div>
       </CCardBody>
@@ -86,14 +81,7 @@
             <span v-if="notif.proposalCode"> | 📋 {{ notif.proposalCode }}</span>
           </small>
           <div>
-            <CButton
-              size="sm"
-              color="secondary"
-              variant="outline"
-              class="mr-2"
-              :disabled="notif.isRead"
-              @click="markAsRead(notif)"
-            >
+            <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="notif.isRead" @click="markAsRead(notif)">
               ทำเครื่องหมายอ่าน
             </CButton>
             <CButton size="sm" color="danger" @click="deleteNotification(notif)">ลบ</CButton>
@@ -104,25 +92,8 @@
       <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap" style="gap: 8px;">
         <small class="text-muted">หน้าที่ {{ page }} / {{ totalPages }}</small>
         <div>
-          <CButton
-            size="sm"
-            color="secondary"
-            variant="outline"
-            class="mr-2"
-            :disabled="page <= 1 || loading"
-            @click="onPageChange(page - 1)"
-          >
-            ก่อนหน้า
-          </CButton>
-          <CButton
-            size="sm"
-            color="secondary"
-            variant="outline"
-            :disabled="page >= totalPages || loading"
-            @click="onPageChange(page + 1)"
-          >
-            ถัดไป
-          </CButton>
+          <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="page <= 1 || loading" @click="onPageChange(page - 1)">ก่อนหน้า</CButton>
+          <CButton size="sm" color="secondary" variant="outline" :disabled="page >= totalPages || loading" @click="onPageChange(page + 1)">ถัดไป</CButton>
         </div>
       </div>
     </div>
@@ -137,80 +108,82 @@
       class="send-modal"
     >
       <template #body-wrapper>
-        <div class="send-modal-inner" style="padding-left:36px; padding-right:36px; box-sizing:border-box;">
-        <CSelect
-          label="ผู้รับ"
-          :value="sendForm.recipientType"
-          :options="recipientTypeOptions"
-          @change="onRecipientTypeChange"
-        />
+        <div class="send-modal-inner" style="padding: 1.25rem 1.5rem; box-sizing: border-box;">
 
-        <div v-if="sendForm.recipientType === 'specific'" class="recipient-box mb-3">
-          <CInput
-            v-model="userSearchKeyword"
-            placeholder="ค้นหาผู้รับ..."
-            class="mb-2"
+          <CSelect
+            label="ผู้รับ"
+            :value="sendForm.recipientType"
+            :options="recipientTypeOptions"
+            @change="onRecipientTypeChange"
           />
-          <div class="recipient-list">
-            <div class="custom-control custom-checkbox" v-for="user in filteredUsers" :key="user._id">
-              <input
-                :id="`recipient-${user._id}`"
-                type="checkbox"
-                class="custom-control-input"
-                :checked="sendForm.recipientIds.includes(user._id)"
-                @change="toggleRecipient(user._id)"
-              >
-              <label class="custom-control-label" :for="`recipient-${user._id}`">
-                {{ user.fullName || user.email || '-' }}
-                <small class="text-muted">({{ user.role || '-' }})</small>
-              </label>
+
+          <div v-if="sendForm.recipientType === 'specific'" class="recipient-box mb-3">
+            <CInput v-model="userSearchKeyword" placeholder="ค้นหาผู้รับ..." class="mb-2" />
+            <div class="recipient-list">
+              <div class="custom-control custom-checkbox" v-for="user in filteredUsers" :key="user._id">
+                <input
+                  :id="`recipient-${user._id}`"
+                  type="checkbox"
+                  class="custom-control-input"
+                  :checked="sendForm.recipientIds.includes(user._id)"
+                  @change="toggleRecipient(user._id)"
+                >
+                <label class="custom-control-label" :for="`recipient-${user._id}`">
+                  {{ user.fullName || user.email || '-' }}
+                  <small class="text-muted">({{ user.role || '-' }})</small>
+                </label>
+              </div>
+              <div v-if="filteredUsers.length === 0" class="text-muted small">ไม่พบผู้ใช้งาน</div>
             </div>
-            <div v-if="filteredUsers.length === 0" class="text-muted small">ไม่พบผู้ใช้งาน</div>
           </div>
-        </div>
 
-        <CSelect
-          label="โครงการที่เกี่ยวข้อง (ไม่บังคับ)"
-          :value="sendForm.proposalId"
-          :options="proposalOptions"
-          @change="onProposalChange"
-        />
+          <CSelect
+            label="โครงการที่เกี่ยวข้อง (ไม่บังคับ)"
+            :value="sendForm.proposalId"
+            :options="proposalOptions"
+            @change="onProposalChange"
+          />
 
-        <CSelect
-          label="ประเภทการแจ้งเตือน *"
-          :value="sendForm.type"
-          :options="typeSelectOptions"
-          @change="onTypeChange"
-        />
+          <!-- ประเภท + ชื่อเรื่อง + ข้อความ — label แยกเพื่อใส่ * สีแดงได้ -->
+          <div class="form-group">
+            <label class="modal-field-label">ประเภทการแจ้งเตือน <span class="text-required">*</span></label>
+            <select class="form-control" :value="sendForm.type" @change="onTypeChange">
+              <option value="">เลือกประเภทการแจ้งเตือน</option>
+              <option v-for="opt in typeSelectOptions.slice(1)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
 
-        <CInput
-          label="ชื่อเรื่อง *"
-          v-model="sendForm.title"
-          placeholder="ระบุชื่อเรื่อง"
-        />
+          <div class="form-group">
+            <label class="modal-field-label">ชื่อเรื่อง <span class="text-required">*</span></label>
+            <input class="form-control" v-model="sendForm.title" placeholder="ระบุชื่อเรื่อง" />
+          </div>
 
-        <CTextarea
-          label="ข้อความ *"
-          v-model="sendForm.message"
-          rows="6"
-          placeholder="ระบุข้อความที่ต้องการแจ้ง"
-        />
+          <div class="form-group">
+            <label class="modal-field-label">ข้อความ <span class="text-required">*</span></label>
+            <textarea class="form-control" v-model="sendForm.message" rows="6" placeholder="ระบุข้อความที่ต้องการแจ้ง" style="resize:vertical;"></textarea>
+          </div>
 
-        <div class="mb-3" v-if="hasTemplateForType(sendForm.type)">
-          <CButton size="sm" color="secondary" variant="outline" @click="applyTemplate">ใช้ Template</CButton>
-        </div>
+          <div class="mb-3" v-if="hasTemplateForType(sendForm.type)">
+            <CButton size="sm" color="secondary" variant="outline" @click="applyTemplate">ใช้ Template</CButton>
+          </div>
 
-        <div class="preview-box">
-          <strong>Preview:</strong>
-          <div>จะส่งให้: {{ previewRecipientCount }} คน | ประเภท: {{ getTypeLabel(sendForm.type) || '-' }}</div>
-        </div>
+          <div class="preview-box">
+            <div class="preview-box__label">Preview</div>
+            <div class="preview-box__text">
+              จะส่งให้: <strong>{{ previewRecipientCount }} คน</strong>
+              &nbsp;·&nbsp;
+              ประเภท: <strong>{{ getTypeLabel(sendForm.type) || '-' }}</strong>
+            </div>
+          </div>
+
         </div>
       </template>
 
+      <!-- ✅ footer: padding รอบด้าน, ปุ่มสีน้ำเงิน -->
       <template #footer-wrapper>
-        <div class="d-flex justify-content-end w-100" style="max-width:880px; margin:0 auto; padding-right:36px; box-sizing:border-box; gap:12px;">
-          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="closeSendModal">ยกเลิก</CButton>
-          <CButton color="primary" class="modal-btn modal-btn--primary btn-save" :disabled="sendLoading" @click="sendNotification">
+        <div class="d-flex justify-content-end w-100" style="padding: 0.875rem 1.5rem 1.1rem; gap: 10px; border-top: 1px solid #e4e7ea; background: #f8f9fa; box-sizing: border-box;">
+          <CButton color="secondary" variant="outline" class="modal-btn" @click="closeSendModal">ยกเลิก</CButton>
+          <CButton color="primary" class="modal-btn btn-save" :disabled="sendLoading" @click="sendNotification">
             {{ sendLoading ? 'กำลังส่ง...' : 'ส่งการแจ้งเตือน' }}
           </CButton>
         </div>
@@ -284,10 +257,8 @@ export default {
       limit: 15,
       loading: false,
       apiNotReady: false,
-
       activeTab: 'all',
       filterType: '',
-
       showSendModal: false,
       sendLoading: false,
       sendForm: {
@@ -310,97 +281,54 @@ export default {
         return d.toDateString() === today.toDateString()
       }).length
     },
-    summaryUnread () {
-      return this.notifications.filter(notif => !notif.isRead).length
-    },
-    summaryRead () {
-      return this.notifications.filter(notif => notif.isRead).length
-    },
+    summaryUnread () { return this.notifications.filter(n => !n.isRead).length },
+    summaryRead () { return this.notifications.filter(n => n.isRead).length },
     filteredUsers () {
       const kw = this.userSearchKeyword.trim().toLowerCase()
       if (!kw) return this.users
-      return this.users.filter(user => {
-        const text = `${user.fullName || ''} ${user.email || ''}`.toLowerCase()
-        return text.includes(kw)
-      })
+      return this.users.filter(u => `${u.fullName || ''} ${u.email || ''}`.toLowerCase().includes(kw))
     },
     typeFilterOptions () {
-      return [
-        { value: '', label: 'ทั้งหมด' },
-        ...Object.keys(NOTIFICATION_TYPES).map(type => ({ value: type, label: NOTIFICATION_TYPES[type] }))
-      ]
+      return [{ value: '', label: 'ทั้งหมด' }, ...Object.keys(NOTIFICATION_TYPES).map(t => ({ value: t, label: NOTIFICATION_TYPES[t] }))]
     },
     typeSelectOptions () {
-      return [{ value: '', label: 'เลือกประเภทการแจ้งเตือน' }, ...Object.keys(NOTIFICATION_TYPES).map(type => ({ value: type, label: NOTIFICATION_TYPES[type] }))]
+      return [{ value: '', label: 'เลือกประเภทการแจ้งเตือน' }, ...Object.keys(NOTIFICATION_TYPES).map(t => ({ value: t, label: NOTIFICATION_TYPES[t] }))]
     },
     recipientTypeOptions () {
-      return Object.keys(RECIPIENT_TYPES).map(type => ({ value: type, label: RECIPIENT_TYPES[type] }))
+      return Object.keys(RECIPIENT_TYPES).map(t => ({ value: t, label: RECIPIENT_TYPES[t] }))
     },
     proposalOptions () {
-      const options = [{ value: '', label: 'ไม่ระบุ' }]
-      this.proposals.forEach(p => {
-        options.push({ value: p._id, label: `${p.proposalCode || '-'} - ${p.projectTitleTh || '-'}` })
-      })
-      return options
+      return [{ value: '', label: 'ไม่ระบุ' }, ...this.proposals.map(p => ({ value: p._id, label: `${p.proposalCode || '-'} - ${p.projectTitleTh || '-'}` }))]
     },
     previewRecipientCount () {
-      if (this.sendForm.recipientType === 'specific') {
-        return this.sendForm.recipientIds.length
-      }
-      if (this.sendForm.recipientType === 'all_researchers') {
-        return this.users.filter(u => u.role === 'researcher').length
-      }
-      if (this.sendForm.recipientType === 'all_committee') {
-        return this.users.filter(u => u.role === 'committee').length
-      }
+      if (this.sendForm.recipientType === 'specific') return this.sendForm.recipientIds.length
+      if (this.sendForm.recipientType === 'all_researchers') return this.users.filter(u => u.role === 'researcher').length
+      if (this.sendForm.recipientType === 'all_committee') return this.users.filter(u => u.role === 'committee').length
       return this.users.length
     }
   },
-  mounted () {
-    this.fetchNotifications()
-  },
+  mounted () { this.fetchNotifications() },
   methods: {
-    getSelectValue (val) {
-      return val && val.target ? val.target.value : val
-    },
+    getSelectValue (val) { return val && val.target ? val.target.value : val },
     formatDate (dateStr) {
       if (!dateStr) return '-'
       const d = new Date(dateStr)
       if (Number.isNaN(d.getTime())) return '-'
-      return d.toLocaleString('th-TH', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      return d.toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     },
-    getTypeLabel (type) {
-      return NOTIFICATION_TYPES[type] || type || '-'
-    },
-    getTypeBadgeColor (type) {
-      return TYPE_BADGE_COLOR[type] || 'secondary'
-    },
-    hasTemplateForType (type) {
-      return Boolean(EMAIL_TEMPLATES[type])
-    },
+    getTypeLabel (type) { return NOTIFICATION_TYPES[type] || type || '-' },
+    getTypeBadgeColor (type) { return TYPE_BADGE_COLOR[type] || 'secondary' },
+    hasTemplateForType (type) { return Boolean(EMAIL_TEMPLATES[type]) },
     async fetchNotifications () {
       this.loading = true
       try {
-        const params = {
-          page: this.page,
-          limit: this.limit
-        }
+        const params = { page: this.page, limit: this.limit }
         if (this.filterType) params.type = this.filterType
         if (this.activeTab === 'unread') params.isRead = false
         if (this.activeTab === 'read') params.isRead = true
-
         const response = await axios.get('/api/v1/notifications', { params })
         const payload = (response && response.data && response.data.data) || {}
-        const list = Array.isArray(payload.notifications)
-          ? payload.notifications
-          : (Array.isArray(payload.data) ? payload.data : [])
-
+        const list = Array.isArray(payload.notifications) ? payload.notifications : (Array.isArray(payload.data) ? payload.data : [])
         this.notifications = list
         this.total = Number(payload.total) || list.length
         this.page = Number(payload.page) || this.page
@@ -408,193 +336,73 @@ export default {
         this.apiNotReady = false
       } catch (error) {
         console.error('[AdminNotifications] Error fetching notifications:', error)
-        this.notifications = []
-        this.total = 0
-        this.totalPages = 1
-        this.apiNotReady = true
-      } finally {
-        this.loading = false
-      }
+        this.notifications = []; this.total = 0; this.totalPages = 1; this.apiNotReady = true
+      } finally { this.loading = false }
     },
     async fetchUsers () {
       try {
         const response = await axios.get('/api/v1/users', { params: { limit: 100 } })
         const payload = (response && response.data && response.data.data) || {}
-        const list = Array.isArray(payload.users)
-          ? payload.users
-          : (Array.isArray(payload.data) ? payload.data : [])
-        this.users = list
-      } catch (error) {
-        console.error('[AdminNotifications] Error fetching users:', error)
-        this.users = []
-      }
+        this.users = Array.isArray(payload.users) ? payload.users : (Array.isArray(payload.data) ? payload.data : [])
+      } catch (error) { console.error('[AdminNotifications] Error fetching users:', error); this.users = [] }
     },
     async fetchProposals () {
       try {
         const response = await axios.get('/api/v1/proposals', { params: { limit: 100 } })
         const payload = (response && response.data && response.data.data) || {}
-        const list = Array.isArray(payload.proposals)
-          ? payload.proposals
-          : (Array.isArray(payload.data) ? payload.data : [])
-        this.proposals = list
-      } catch (error) {
-        console.error('[AdminNotifications] Error fetching proposals:', error)
-        this.proposals = []
-      }
+        this.proposals = Array.isArray(payload.proposals) ? payload.proposals : (Array.isArray(payload.data) ? payload.data : [])
+      } catch (error) { console.error('[AdminNotifications] Error fetching proposals:', error); this.proposals = [] }
     },
-    onTabChange (tab) {
-      this.activeTab = tab
-      this.page = 1
-      this.fetchNotifications()
-    },
-    onTypeFilterChange (val) {
-      this.filterType = this.getSelectValue(val)
-      this.page = 1
-      this.fetchNotifications()
-    },
-    onPageChange (nextPage) {
-      if (nextPage < 1 || nextPage > this.totalPages) return
-      this.page = nextPage
-      this.fetchNotifications()
-    },
+    onTabChange (tab) { this.activeTab = tab; this.page = 1; this.fetchNotifications() },
+    onTypeFilterChange (val) { this.filterType = this.getSelectValue(val); this.page = 1; this.fetchNotifications() },
+    onPageChange (nextPage) { if (nextPage < 1 || nextPage > this.totalPages) return; this.page = nextPage; this.fetchNotifications() },
     async markAsRead (notif) {
       if (notif.isRead) return
       try {
         await axios.patch(`/api/v1/notifications/${notif._id}/read`, {})
-        notif.isRead = true
-        notif.readAt = new Date().toISOString()
-      } catch (error) {
-        console.error('[AdminNotifications] Error marking as read:', error)
-        await Swal.fire({ icon: 'error', title: 'ทำรายการไม่สำเร็จ', text: 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' })
-      }
+        notif.isRead = true; notif.readAt = new Date().toISOString()
+      } catch (error) { await Swal.fire({ icon: 'error', title: 'ทำรายการไม่สำเร็จ', text: 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' }) }
     },
     async markAllRead () {
-      const result = await Swal.fire({
-        icon: 'question',
-        title: 'ยืนยันทำเครื่องหมายอ่านทั้งหมด?',
-        showCancelButton: true,
-        confirmButtonText: 'ยืนยัน',
-        cancelButtonText: 'ยกเลิก'
-      })
+      const result = await Swal.fire({ icon: 'question', title: 'ยืนยันทำเครื่องหมายอ่านทั้งหมด?', showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก' })
       if (!result.isConfirmed) return
-
-      try {
-        await axios.patch('/api/v1/notifications/mark-all-read', {})
-        await this.fetchNotifications()
-        await Swal.fire({ icon: 'success', title: 'อัปเดตสถานะสำเร็จ', timer: 1400, showConfirmButton: false })
-      } catch (error) {
-        console.error('[AdminNotifications] Error mark all read:', error)
-        await Swal.fire({ icon: 'error', title: 'ทำรายการไม่สำเร็จ', text: 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' })
-      }
+      try { await axios.patch('/api/v1/notifications/mark-all-read', {}); await this.fetchNotifications(); await Swal.fire({ icon: 'success', title: 'อัปเดตสถานะสำเร็จ', timer: 1400, showConfirmButton: false }) } catch (error) { await Swal.fire({ icon: 'error', title: 'ทำรายการไม่สำเร็จ', text: 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' }) }
     },
     async deleteNotification (notif) {
-      const result = await Swal.fire({
-        icon: 'warning',
-        title: `ยืนยันลบการแจ้งเตือน: ${notif.title || ''}?`,
-        showCancelButton: true,
-        confirmButtonText: 'ยืนยันการลบ',
-        cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#e55353'
-      })
+      const result = await Swal.fire({ icon: 'warning', title: `ยืนยันลบการแจ้งเตือน: ${notif.title || ''}?`, showCancelButton: true, confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#e55353' })
       if (!result.isConfirmed) return
-
-      try {
-        await axios.delete(`/api/v1/notifications/${notif._id}`)
-        await this.fetchNotifications()
-        await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1200, showConfirmButton: false })
-      } catch (error) {
-        console.error('[AdminNotifications] Error deleting notification:', error)
-        await Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' })
-      }
+      try { await axios.delete(`/api/v1/notifications/${notif._id}`); await this.fetchNotifications(); await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1200, showConfirmButton: false }) } catch (error) { await Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' }) }
     },
     async openSendModal () {
-      this.sendForm = {
-        recipientType: 'all_researchers',
-        recipientIds: [],
-        type: '',
-        title: '',
-        message: '',
-        proposalId: ''
-      }
+      this.sendForm = { recipientType: 'all_researchers', recipientIds: [], type: '', title: '', message: '', proposalId: '' }
       this.userSearchKeyword = ''
       await Promise.all([this.fetchUsers(), this.fetchProposals()])
       this.showSendModal = true
     },
-    closeSendModal () {
-      this.showSendModal = false
-      this.sendLoading = false
-    },
-    onRecipientTypeChange (val) {
-      this.sendForm.recipientType = this.getSelectValue(val)
-      if (this.sendForm.recipientType !== 'specific') {
-        this.sendForm.recipientIds = []
-      }
-    },
-    onProposalChange (val) {
-      this.sendForm.proposalId = this.getSelectValue(val)
-    },
-    onTypeChange (val) {
-      this.sendForm.type = this.getSelectValue(val)
-      if (this.hasTemplateForType(this.sendForm.type)) {
-        this.applyTemplate()
-      }
-    },
-    applyTemplate () {
-      const template = EMAIL_TEMPLATES[this.sendForm.type]
-      if (!template) return
-      this.sendForm.title = template.title
-      this.sendForm.message = template.message
-    },
-    toggleRecipient (userId) {
-      const index = this.sendForm.recipientIds.indexOf(userId)
-      if (index >= 0) {
-        this.sendForm.recipientIds.splice(index, 1)
-      } else {
-        this.sendForm.recipientIds.push(userId)
-      }
-    },
+    closeSendModal () { this.showSendModal = false; this.sendLoading = false },
+    onRecipientTypeChange (val) { this.sendForm.recipientType = this.getSelectValue(val); if (this.sendForm.recipientType !== 'specific') this.sendForm.recipientIds = [] },
+    onProposalChange (val) { this.sendForm.proposalId = this.getSelectValue(val) },
+    onTypeChange (val) { this.sendForm.type = this.getSelectValue(val); if (this.hasTemplateForType(this.sendForm.type)) this.applyTemplate() },
+    applyTemplate () { const t = EMAIL_TEMPLATES[this.sendForm.type]; if (!t) return; this.sendForm.title = t.title; this.sendForm.message = t.message },
+    toggleRecipient (userId) { const i = this.sendForm.recipientIds.indexOf(userId); if (i >= 0) this.sendForm.recipientIds.splice(i, 1); else this.sendForm.recipientIds.push(userId) },
     async sendNotification () {
-      if (!this.sendForm.type || !this.sendForm.title || !this.sendForm.message) {
-        await Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาเลือกประเภท ระบุชื่อเรื่อง และข้อความ' })
-        return
-      }
-      if (this.sendForm.recipientType === 'specific' && this.sendForm.recipientIds.length === 0) {
-        await Swal.fire({ icon: 'warning', title: 'ยังไม่เลือกผู้รับ', text: 'กรุณาเลือกผู้รับอย่างน้อย 1 คน' })
-        return
-      }
-
+      if (!this.sendForm.type || !this.sendForm.title || !this.sendForm.message) { await Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาเลือกประเภท ระบุชื่อเรื่อง และข้อความ' }); return }
+      if (this.sendForm.recipientType === 'specific' && this.sendForm.recipientIds.length === 0) { await Swal.fire({ icon: 'warning', title: 'ยังไม่เลือกผู้รับ', text: 'กรุณาเลือกผู้รับอย่างน้อย 1 คน' }); return }
       this.sendLoading = true
       try {
-        await axios.post('/api/v1/notifications/send', {
-          recipientType: this.sendForm.recipientType,
-          recipientIds: this.sendForm.recipientType === 'specific' ? this.sendForm.recipientIds : [],
-          type: this.sendForm.type,
-          title: this.sendForm.title,
-          message: this.sendForm.message,
-          proposalId: this.sendForm.proposalId || null
-        })
-        this.closeSendModal()
-        await this.fetchNotifications()
+        await axios.post('/api/v1/notifications/send', { recipientType: this.sendForm.recipientType, recipientIds: this.sendForm.recipientType === 'specific' ? this.sendForm.recipientIds : [], type: this.sendForm.type, title: this.sendForm.title, message: this.sendForm.message, proposalId: this.sendForm.proposalId || null })
+        this.closeSendModal(); await this.fetchNotifications()
         await Swal.fire({ icon: 'success', title: 'ส่งการแจ้งเตือนสำเร็จ', timer: 1500, showConfirmButton: false })
       } catch (error) {
-        console.error('[AdminNotifications] Error sending notification:', error)
-        await Swal.fire({
-          icon: 'error',
-          title: 'ส่งการแจ้งเตือนไม่สำเร็จ',
-          text: (error && error.response && error.response.data && error.response.data.message) || 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)'
-        })
-      } finally {
-        this.sendLoading = false
-      }
+        await Swal.fire({ icon: 'error', title: 'ส่งการแจ้งเตือนไม่สำเร็จ', text: (error && error.response && error.response.data && error.response.data.message) || 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' })
+      } finally { this.sendLoading = false }
     }
   }
 }
 </script>
 
 <style scoped>
-.admin-notifications-page {
-  width: 100%;
-}
+.admin-notifications-page { width: 100%; }
 
 .summary-card {
   background: #ffffff;
@@ -603,12 +411,7 @@ export default {
   border-radius: 8px;
   padding: 14px 16px;
 }
-
-.summary-number {
-  font-size: 1.65rem;
-  font-weight: 700;
-  line-height: 1.1;
-}
+.summary-number { font-size: 1.65rem; font-weight: 700; line-height: 1.1; }
 
 .notification-card {
   border: 1px solid #e9ecef;
@@ -616,46 +419,46 @@ export default {
   padding: 14px;
   margin-bottom: 12px;
 }
+.notification-card.unread { background: #eef6ff; border-left: 5px solid #39f; }
+.notification-card.read { background: #f8f9fa; }
 
-.notification-card.unread {
-  background: #eef6ff;
-  border-left: 5px solid #39f;
+.message-clamp { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+
+.empty-state { border: 1px dashed #c8ced3; border-radius: 8px; padding: 20px; text-align: center; color: #768192; }
+
+.recipient-box { border: 1px solid #d8dbe0; border-radius: 8px; padding: 10px; background: #fafbfc; }
+.recipient-list { max-height: 180px; overflow-y: auto; }
+
+/* ─── modal field labels ─── */
+.modal-field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 6px;
 }
 
-.notification-card.read {
-  background: #f8f9fa;
-}
+/* ─── red asterisk ─── */
+.text-required { color: #e55353; margin-left: 2px; }
 
-.message-clamp {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.empty-state {
-  border: 1px dashed #c8ced3;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  color: #768192;
-}
-
-.recipient-box {
+/* ─── preview box ─── */
+.preview-box {
   border: 1px solid #d8dbe0;
   border-radius: 8px;
-  padding: 10px;
-  background: #fafbfc;
-}
-
-.recipient-list {
-  max-height: 180px;
-  overflow-y: auto;
-}
-
-.preview-box {
-  border: 1px dashed #c8ced3;
-  border-radius: 8px;
-  padding: 10px;
+  padding: 10px 14px;
   background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
 }
+.preview-box__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #768192;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.preview-box__text { font-size: 13px; color: #4a5568; }
 </style>

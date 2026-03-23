@@ -631,10 +631,10 @@ export default {
   color: #9fb0c3;
 }
 
-.page-wrapper.is-dark .filter-tab {
+/* .page-wrapper.is-dark .filter-tab {
   background: #253240;
   color: #dce7f3;
-}
+} */
 
 .page-wrapper.is-dark .filter-tab.active {
   background: #3b82f6;
@@ -696,23 +696,23 @@ export default {
 }
 
 .page-wrapper.is-dark .icon-blue {
-  background: rgba(59, 130, 246, 0.2);
-  color: #8fc2ff;
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
 }
 
 .page-wrapper.is-dark .icon-orange {
-  background: rgba(251, 146, 60, 0.2);
-  color: #f9b87f;
+  background: rgba(251, 146, 60, 0.10);
+  color: #fbc38a;
 }
 
 .page-wrapper.is-dark .icon-green {
-  background: rgba(52, 211, 153, 0.2);
-  color: #80e7ba;
+  background: rgba(52, 211, 153, 0.10);
+  color: #8ee7b7;
 }
 
 .page-wrapper.is-dark .icon-gray {
-  background: rgba(148, 163, 184, 0.2);
-  color: #c5d1df;
+  background: rgba(148, 163, 184, 0.08);
+  color: #cbd5e1;
 }
 
 /* ══════════════════════════════════
@@ -740,12 +740,49 @@ export default {
   border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
   margin-top: 2px;
+  /* remove any visible border/outline that may appear as a thick black edge */
+  border: none;
+  box-shadow: none;
+  background-clip: padding-box;
 }
 
-.icon-blue   { background: #dbeafe; color: #1d4ed8; }
-.icon-orange { background: #fff7ed; color: #ea580c; }
-.icon-green  { background: #dcfce7; color: #16a34a; }
-.icon-gray   { background: #f3f4f6; color: #6b7280; }
+/* Force-clear any inherited outline/border from global styles or browser focus */
+.notif-icon,
+.notif-icon *,
+.notif-icon svg {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Ensure SVG strokes are not overly thick */
+.notif-icon svg {
+  stroke-width: 1.6 !important;
+}
+
+/* Stronger scoped overrides to prevent other global styles from adding a dark ring */
+.notif-item .notif-icon,
+.notif-item .notif-icon svg {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Ensure SVG strokes follow the icon color and stay thin in both themes */
+.notif-item .notif-icon svg {
+  stroke: currentColor !important;
+  stroke-width: 1.2 !important;
+}
+
+/* Dark theme: make sure icon stroke is visible on dark background */
+.page-wrapper.is-dark .notif-item .notif-icon svg {
+  stroke: #e5edf5 !important;
+}
+
+.icon-blue   { background: #eef2ff; color: #2563eb; }
+.icon-orange { background: #fff8ef; color: #f97316; }
+.icon-green  { background: #f0fdf4; color: #16a34a; }
+.icon-gray   { background: #f7fafb; color: #4b5563; }
 .icon-red    { background: #fee2e2; color: #dc2626; }
 
 /* Content */
@@ -965,7 +1002,7 @@ export default {
   .page-wrapper { padding: 10px 12px; }
   .notif-header { padding: 10px 12px; }
   .filter-tabs { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .filter-tab { padding: 6px 12px; font-size: 13px }
+  /* .filter-tab { padding: 6px 12px; font-size: 13px } */
   .notif-item { flex-direction: column; align-items: stretch; }
   .notif-icon { width: 48px; height: 48px; margin-bottom: 8px }
   .notif-content { margin-bottom: 8px }
@@ -975,4 +1012,56 @@ export default {
   .group-label { font-size: 18px }
   .empty-state { padding: 40px 12px }
 }
+
+/* Force remove dark borders on notification UI when user reports no visible change */
+.notif-card.is-dark,
+.page-wrapper.is-dark .notif-header,
+.dropdown-panel,
+.dropdown-panel::before,
+.bell-badge,
+.dp-item,
+.dp-footer {
+  border-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* If any outline/pseudo-element adds a ring, hide it */
+.notif-card.is-dark::before,
+.dropdown-panel::after,
+.bell-badge::before,
+.notif-item::before {
+  display: none !important;
+  border: none !important;
+}
+/* High-specificity override: remove persistent black rings/borders on tabs and buttons */
+.page-wrapper .filter-tab,
+.page-wrapper .filter-tab *,
+.page-wrapper .filter-tab svg,
+.page-wrapper .filter-tab:focus,
+.page-wrapper .filter-tab:focus-visible,
+.page-wrapper .filter-tab.active,
+.page-wrapper .btn-mark-all,
+.page-wrapper .btn-mark-all *,
+.bell-btn,
+.bell-btn * {
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  -webkit-appearance: none !important;
+  background-clip: padding-box !important;
+}
+
+.page-wrapper .filter-tab.active {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.page-wrapper .filter-tab svg,
+.bell-btn svg {
+  stroke: currentColor !important;
+  stroke-width: 0.9 !important;
+}
+
 </style>
