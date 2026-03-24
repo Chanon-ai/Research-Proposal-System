@@ -851,6 +851,61 @@ async function getProposalFeedback(proposalId, user) {
   };
 }
 
+async function getResearcherUsers(query = {}, currentUser = null) {
+  try {
+    const filter = {
+      role: 'researcher',
+      isActive: true,
+      isDeleted: { $ne: true }
+    };
+
+    const requesterId = currentUser && currentUser._id ? String(currentUser._id).trim() : '';
+    if (requesterId && mongoose.Types.ObjectId.isValid(requesterId)) {
+      filter._id = { $ne: new mongoose.Types.ObjectId(requesterId) };
+    }
+
+    if (query.keyword) {
+      const raw = String(query.keyword || '').trim();
+      if (raw) {
+        const safe = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        filter.$or = [
+          { fullName: new RegExp(safe, 'i') },
+          { email: new RegExp(safe, 'i') },
+          { department: new RegExp(safe, 'i') }
+        ];
+      }
+    }
+
+    const limit = Math.min(parseInt(query.limit, 10) || 300, 1000);
+    const rows = await User.find(filter)
+      .select('_id fullName email department phone role')
+      .sort({ fullName: 1 })
+      .limit(limit)
+      .lean();
+
+    const items = (rows || []).map(u => ({
+      _id: u && u._id ? u._id : null,
+      fullName: u && u.fullName ? String(u.fullName) : '',
+      email: u && u.email ? String(u.email) : '',
+      department: u && u.department ? String(u.department) : '',
+      affiliation: u && u.department ? String(u.department) : '',
+      phone: u && u.phone ? String(u.phone) : '',
+      role: u && u.role ? String(u.role) : 'researcher'
+    }));
+
+    return {
+      items,
+      total: items.length
+    };
+  } catch (err) {
+    console.error('[Proposal.getResearcherUsers] failed:', err && err.message ? err.message : err);
+    return {
+      items: [],
+      total: 0
+    };
+  }
+}
+
 async function getCommitteeUsers(query = {}) {
   try {
     const filter = {
@@ -1001,6 +1056,7 @@ module.exports = {
   getMyReviews,
   getProposalReviews,
   getProposalFeedback,
+  getResearcherUsers,
   getCommitteeUsers,
   getDashboardSummary,
   createStatusLog,

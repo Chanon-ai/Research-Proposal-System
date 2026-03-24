@@ -193,6 +193,17 @@ exports.proposalFeedback = async (req, res, next) => {
   }
 };
 
+exports.listResearcherUsers = async (req, res, next) => {
+  try {
+    const user = getUserFromReq(req);
+    if (!user) return res.status(401).json({ success: false, message: 'Unauthorized' });
+    const rows = await service.getResearcherUsers(req.query || {}, user);
+    return jsonResponse(res, { success: true, data: rows });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.listCommitteeUsers = async (req, res, next) => {
   try {
     const user = getUserFromReq(req);

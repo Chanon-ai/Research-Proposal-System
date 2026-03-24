@@ -205,6 +205,7 @@ export default {
     getReviewsByProposal: (id, params) => instance.get(`/api/v1/proposals/${id}/reviews`, { params }),
     getReviewsByProposalAlt: (id, params) => instance.get(`/api/v1/proposals/reviews/by-proposal/${id}`, { params }),
     getFeedback: (id) => instance.get(`/api/v1/proposals/${id}/feedback`),
+    getResearcherUsers: (params) => instance.get('/api/v1/proposals/researcher-users', { params }),
     getCommitteeUsers: (params) => instance.get('/api/v1/proposals/committee-users', { params }),
     getById: (id) => instance.get(`/api/v1/proposals/${id}`),
     list: (params) => instance.get('/api/v1/proposals', { params }),

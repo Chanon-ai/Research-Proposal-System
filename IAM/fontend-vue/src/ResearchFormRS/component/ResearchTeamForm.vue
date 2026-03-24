@@ -269,7 +269,7 @@
 </template>
 
 <script>
-import { instance as axios } from '@/service/api'
+import Service from '@/service/api'
 import Multiselect from 'vue-multiselect'
 import 'vue-multiselect/dist/vue-multiselect.min.css'
 
@@ -335,6 +335,12 @@ export default {
       } catch (err) {
         return null
       }
+    },
+    currentUserId () {
+      const user = this.currentUser
+      if (!user || typeof user !== 'object') return ''
+      const id = user._id || user.id || ''
+      return id ? String(id) : ''
     },
     shouldAutoFillProjectLeader() {
       return !!(
@@ -561,27 +567,39 @@ export default {
       this.coResearcherOptionsLoading = true
       this.coResearcherOptionsError = ''
       try {
-        const response = await axios.get('/api/v1/users', { params: { page: 1, limit: 300 } })
+        const response = await Service.proposal.getResearcherUsers({ limit: 500 })
         const payload = (response && response.data && response.data.data) || {}
-        const list = Array.isArray(payload.users) ? payload.users : []
-        this.coResearcherOptions = list.map(user => {
-          const fullName = this.getUserDisplayName(user)
-          const email = String((user && user.email) || '').trim()
-          const affiliation = this.getAffiliationText(user)
-          const searchText = [fullName, email, affiliation].filter(Boolean).join(' ')
-          const optionKey = this.getUserIdentity(user) || `${fullName}-${email}-${affiliation}`
-          return {
-            ...user,
-            fullName,
-            affiliation,
-            searchText,
-            _optionKey: optionKey
-          }
-        })
+        const list = Array.isArray(payload.items)
+          ? payload.items
+          : (Array.isArray(payload.users) ? payload.users : [])
+
+        const currentUserId = String(this.currentUserId || '').trim()
+        this.coResearcherOptions = list
+          .map(user => {
+            const fullName = this.getUserDisplayName(user)
+            const email = String((user && user.email) || '').trim()
+            const affiliation = this.getAffiliationText(user)
+            const searchText = [fullName, email, affiliation].filter(Boolean).join(' ')
+            const optionKey = this.getUserIdentity(user) || `${fullName}-${email}-${affiliation}`
+            return {
+              ...user,
+              fullName,
+              affiliation,
+              searchText,
+              _optionKey: optionKey
+            }
+          })
+          .filter(user => {
+            const role = String((user && user.role) || '').trim().toLowerCase()
+            if (role && role !== 'researcher') return false
+            if (!currentUserId) return true
+            const uid = String((user && (user._id || user.id)) || '').trim()
+            return !uid || uid !== currentUserId
+          })
       } catch (err) {
         console.error('[ResearchTeamForm] fetch co-researcher options failed:', err)
         this.coResearcherOptions = []
-        this.coResearcherOptionsError = 'ไม่สามารถโหลดรายชื่อผู้ร่วมโครงการได้'
+        this.coResearcherOptionsError = 'Unable to load researcher list'
       } finally {
         this.coResearcherOptionsLoading = false
       }

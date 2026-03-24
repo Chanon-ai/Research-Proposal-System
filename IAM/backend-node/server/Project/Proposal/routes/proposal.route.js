@@ -16,6 +16,7 @@ const uploadMemory = multer({
 router.get('/', authenticate, controller.list);
 router.post('/', authenticate, controller.create);
 router.get('/admin/dashboard-summary', authenticate, requireRole('admin', 'chairman'), controller.dashboardSummary);
+router.get('/researcher-users', authenticate, controller.listResearcherUsers);
 router.get('/committee-users', authenticate, requireRole('admin', 'chairman'), controller.listCommitteeUsers);
 router.get('/reviews/me', authenticate, requireRole('committee', 'admin'), controller.myReviews);
 router.get('/reviews/by-proposal/:id', authenticate, requireRole('admin', 'chairman'), controller.listProposalReviews);
