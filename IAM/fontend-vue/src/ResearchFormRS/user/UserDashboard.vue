@@ -79,7 +79,7 @@
       </CCol>
     </CRow>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div v-if="false" class="d-flex justify-content-between align-items-center mb-3">
       <div>
         <span style="font-size:15px;font-weight:500">
           {{ filterLabel }}
@@ -104,8 +104,46 @@
       </CButton>
     </div>
 
-    <CCard>
-      <CCardBody>
+    <CCard class="no-table-divider reviewer-dashboard-card user-dashboard-table-card">
+      <CCardHeader class="dashboard-card-header">
+        <div class="dashboard-card-header__row">
+          <div class="dashboard-card-title">
+            {{ filterLabel }}
+            <CBadge v-if="activeFilter" class="ml-2 user-count-badge">
+              {{ $t('status.itemsCount', { count: filteredProposals.length }) }}
+            </CBadge>
+          </div>
+          <div class="header-tools">
+            <CInput
+              class="search-input"
+              placeholder="ค้นหา..."
+              aria-label="ค้นหาในตาราง"
+              v-model="searchQuery"
+            />
+            <CButton
+              v-if="activeFilter"
+              color="secondary"
+              size="sm"
+              class="clear-filter-btn"
+              @click="clearFilter"
+            >
+              ล้างตัวกรอง
+            </CButton>
+            <CButton
+              class="collapse-toggle"
+              color="secondary"
+              variant="ghost"
+              size="sm"
+              :aria-label="showTable ? 'พับตาราง' : 'ขยายตาราง'"
+              @click="showTable = !showTable"
+            >
+              <CIcon :name="showTable ? 'cil-chevron-top' : 'cil-chevron-bottom'" />
+            </CButton>
+          </div>
+        </div>
+      </CCardHeader>
+      <CCollapse :show="showTable" :duration="220">
+      <CCardBody class="card-body-tight">
         <div v-if="loading" class="state-box">
           <div class="spinner"></div>
           <div class="state-text">กำลังโหลดข้อมูล…</div>
@@ -116,20 +154,15 @@
           <div style="margin-top:10px;"><button class="btn-quick btn-success" @click="retryFetch">ลองอีกครั้ง</button></div>
         </div>
 
-        <div v-else>
+        <div v-else class="table-surface">
           <CDataTable
-            :items="filteredProposals"
+            :items="displayItems"
             :fields="tableFields"
-            :items-per-page="5"
-            :items-per-page-select="{ label: 'Items per page:' }"
+            :items-per-page="perPage"
+            :active-page="activePage"
             sorter
-            column-filter
-            table-filter
-            :table-filter-value.sync="tableFilter"
-            pagination
             hover
             striped
-            border
           >
             <template #projectTitleTh="{ item }">
               <td>
@@ -174,7 +207,8 @@
               <td style="text-align:center; vertical-align:middle">
                 <CButton
                   size="sm"
-                  color="info"
+                  color="primary"
+                  variant="outline"
                   @click="$router.push('/research-form/' + item._id)"
                 >
                   {{ $t('common.show') }}
@@ -182,8 +216,31 @@
               </td>
             </template>
           </CDataTable>
+          <div v-if="displayItems.length === 0" class="text-muted text-center py-4">
+            ไม่พบข้อมูลที่ค้นหา
+          </div>
+          <div class="table-footer">
+            <div class="table-footer__left">
+              <span class="table-footer__label">แสดงต่อหน้า</span>
+              <select v-model.number="perPage" class="form-control form-control-sm per-page-select" aria-label="แสดงต่อหน้า">
+                <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
+              </select>
+              <span class="table-footer__suffix">รายการ</span>
+            </div>
+            <div class="table-footer__right">
+              <CPagination
+                :pages="pageCount"
+                :active-page.sync="activePage"
+                align="end"
+                :arrows="true"
+                :double-arrows="true"
+                size="sm"
+              />
+            </div>
+          </div>
         </div>
       </CCardBody>
+      </CCollapse>
     </CCard>
 
     <button class="fab" title="สร้างโครงการใหม่" @click="onAdd">＋</button>
@@ -205,6 +262,11 @@ export default {
       allProjects: [],
       loading: true,
       fetchError: null,
+      showTable: true,
+      searchQuery: '',
+      perPage: 5,
+      perPageOptions: [5, 10, 20, 50],
+      activePage: 1,
       tableFields: [
         {
           key: 'projectTitleTh',
@@ -229,7 +291,6 @@ export default {
           sorter: false
         }
       ],
-      tableFilter: '',
       activeFilter: null,
       filterGroups: {
         draft: ['draft'],
@@ -346,6 +407,40 @@ export default {
       return this.activeFilter
         ? this.$t('status.filteredBy', { label: labels[this.activeFilter] })
         : this.$t('status.allProjects');
+    },
+
+    displayItems() {
+      const q = String(this.searchQuery || '').trim().toLowerCase();
+      if (!q) return this.filteredProposals;
+      return this.filteredProposals.filter(item => {
+        const haystack = [
+          item.projectTitleTh,
+          item.projectTitleEn,
+          item.proposalCode,
+          item.projectLeaderName,
+          this.getStatusLabel(item.currentStatus),
+          this.getProgressLabel(item.currentStatus),
+        ].filter(Boolean).join(' ').toLowerCase();
+        return haystack.includes(q);
+      });
+    },
+
+    pageCount() {
+      const total = this.displayItems.length;
+      const per = Number(this.perPage) || 1;
+      return Math.max(1, Math.ceil(total / Math.max(1, per)));
+    },
+  },
+
+  watch: {
+    perPage() {
+      this.activePage = 1;
+    },
+    searchQuery() {
+      this.activePage = 1;
+    },
+    displayItems() {
+      if (this.activePage > this.pageCount) this.activePage = 1;
     },
   },
 
@@ -581,8 +676,16 @@ export default {
 
 <style scoped>
 .page-content {
+  --mfu-red: #8c1515;
+  --mfu-red-deep: #6b0f0f;
+  --mfu-gold: #b58522;
+  --mfu-ivory: #f7f1ea;
+  --mfu-line: rgba(140, 21, 21, 0.14);
+  --mfu-line-soft: rgba(140, 21, 21, 0.12);
   padding: 24px 28px;
   flex: 1;
+  background: transparent;
+  border-radius: 0;
 }
 
 /* Widget cards: keep CoreUI look and clip decorative background inside card */
@@ -719,6 +822,295 @@ export default {
   font-weight: 600;
 }
 
+.status-progress-bar /deep/ .progress,
+.status-progress-bar >>> .progress,
+.status-progress-bar::v-deep .progress {
+  background: rgba(181, 133, 34, 0.12);
+}
+
+.user-dashboard-table-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+}
+
+.card-body-tight {
+  padding: 1rem;
+  background: #f7f1ea;
+}
+
+.reviewer-dashboard-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dashboard-card-header {
+  background: linear-gradient(90deg, rgba(140, 21, 21, 0.1), rgba(254, 194, 96, 0.22));
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 0 1.25rem;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.dashboard-card-header__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 64px;
+}
+
+.dashboard-card-title {
+  color: #6b0f0f;
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.user-count-badge {
+  background: rgba(140, 21, 21, 0.1);
+  color: #6b0f0f;
+  border: 1px solid rgba(140, 21, 21, 0.18);
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.header-tools {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-tools /deep/ .form-group,
+.header-tools >>> .form-group,
+.header-tools::v-deep .form-group {
+  margin: 0 !important;
+}
+
+.search-input {
+  min-width: 220px;
+}
+
+.search-input /deep/ input,
+.search-input >>> input,
+.search-input::v-deep input {
+  height: 34px;
+  border-radius: 8px;
+  border-color: rgba(181, 133, 34, 0.35);
+}
+
+.collapse-toggle {
+  height: 34px;
+  min-width: 34px;
+  padding: 0 0.5rem;
+  border-radius: 10px;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collapse-toggle:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #374151;
+}
+
+.collapse-toggle /deep/ svg,
+.collapse-toggle >>> svg,
+.collapse-toggle::v-deep svg {
+  width: 18px;
+  height: 18px;
+}
+
+.clear-filter-btn {
+  background: rgba(181, 133, 34, 0.1);
+  border-color: rgba(181, 133, 34, 0.22);
+  color: #6b0f0f;
+}
+
+.clear-filter-btn:hover {
+  background: rgba(181, 133, 34, 0.16);
+  border-color: rgba(181, 133, 34, 0.3);
+  color: #6b0f0f;
+}
+
+.table-surface {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(140, 21, 21, 0.14);
+  overflow: hidden;
+}
+
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid rgba(140, 21, 21, 0.12);
+  background: linear-gradient(90deg, rgba(140, 21, 21, 0.06), rgba(254, 194, 96, 0.14));
+}
+
+.table-footer__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.per-page-select {
+  width: 84px;
+}
+
+.table-footer__right {
+  display: flex;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.table-footer__right /deep/ .pagination,
+.table-footer__right >>> .pagination,
+.table-footer__right::v-deep .pagination {
+  margin: 0;
+  justify-content: flex-end;
+}
+
+.table-footer__right /deep/ .page-link,
+.table-footer__right >>> .page-link,
+.table-footer__right::v-deep .page-link {
+  color: #6b0f0f;
+  border-color: rgba(140, 21, 21, 0.18);
+}
+
+.table-footer__right /deep/ .page-item.active .page-link,
+.table-footer__right >>> .page-item.active .page-link,
+.table-footer__right::v-deep .page-item.active .page-link {
+  background: #8c1515;
+  border-color: #8c1515;
+  color: #ffffff;
+}
+
+.no-table-divider /deep/ .table,
+.no-table-divider >>> .table,
+.no-table-divider::v-deep .table,
+.no-table-divider /deep/ .table thead th,
+.no-table-divider >>> .table thead th,
+.no-table-divider::v-deep .table thead th,
+.no-table-divider /deep/ .table thead tr,
+.no-table-divider >>> .table thead tr,
+.no-table-divider::v-deep .table thead tr,
+.no-table-divider /deep/ .table thead,
+.no-table-divider >>> .table thead,
+.no-table-divider::v-deep .table thead,
+.no-table-divider /deep/ .table-responsive,
+.no-table-divider >>> .table-responsive,
+.no-table-divider::v-deep .table-responsive {
+  border-top: 0 !important;
+}
+
+.no-table-divider /deep/ .table-responsive,
+.no-table-divider >>> .table-responsive,
+.no-table-divider::v-deep .table-responsive {
+  box-shadow: none !important;
+}
+
+.no-table-divider /deep/ .table-responsive::before,
+.no-table-divider >>> .table-responsive::before,
+.no-table-divider::v-deep .table-responsive::before,
+.no-table-divider /deep/ .table-responsive::after,
+.no-table-divider >>> .table-responsive::after,
+.no-table-divider::v-deep .table-responsive::after {
+  content: none !important;
+}
+
+.table-surface /deep/ .table,
+.table-surface >>> .table,
+.table-surface::v-deep .table {
+  margin-bottom: 0;
+}
+
+.table-surface /deep/ .table thead th,
+.table-surface >>> .table thead th,
+.table-surface::v-deep .table thead th {
+  background: linear-gradient(90deg, var(--committee-red, #8c1515), rgba(107, 15, 15, 0.98)) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  border-bottom: 0 !important;
+  border-right: 1px solid rgba(254, 194, 96, 0.5) !important;
+}
+
+.table-surface /deep/ .table thead th:last-child,
+.table-surface >>> .table thead th:last-child,
+.table-surface::v-deep .table thead th:last-child {
+  border-right: 0;
+}
+
+.table-surface /deep/ .table tbody td,
+.table-surface >>> .table tbody td,
+.table-surface::v-deep .table tbody td {
+  border-bottom: 1px solid rgba(140, 21, 21, 0.12) !important;
+  border-right: 1px solid rgba(140, 21, 21, 0.12) !important;
+  vertical-align: middle !important;
+}
+
+.table-surface /deep/ .table tbody td:last-child,
+.table-surface >>> .table tbody td:last-child,
+.table-surface::v-deep .table tbody td:last-child {
+  border-right: 0;
+}
+
+.table-surface /deep/ .table tbody tr:hover,
+.table-surface >>> .table tbody tr:hover,
+.table-surface::v-deep .table tbody tr:hover {
+  background: var(--committee-gold-soft, rgba(254, 194, 96, 0.22)) !important;
+}
+
+.table-surface /deep/ .table-striped tbody tr:nth-of-type(odd),
+.table-surface >>> .table-striped tbody tr:nth-of-type(odd),
+.table-surface::v-deep .table-striped tbody tr:nth-of-type(odd) {
+  background-color: #ffffff;
+}
+
+/* Sorting arrow (CoreUI CDataTable) */
+.table-surface /deep/ .arrow-position,
+.table-surface >>> .arrow-position,
+.table-surface::v-deep .arrow-position {
+  color: rgba(254, 194, 96, 0.95);
+}
+
+.table-surface /deep/ .arrow-position.transparent,
+.table-surface >>> .arrow-position.transparent,
+.table-surface::v-deep .arrow-position.transparent {
+  opacity: 0.45 !important;
+  visibility: visible !important;
+}
+
+.table-surface /deep/ .arrow-position.rotate-icon,
+.table-surface >>> .arrow-position.rotate-icon,
+.table-surface::v-deep .arrow-position.rotate-icon {
+  opacity: 0.95 !important;
+}
+.table-surface /deep/ .btn-outline-primary,
+.table-surface >>> .btn-outline-primary,
+.table-surface::v-deep .btn-outline-primary {
+  color: #8c1515;
+  border-color: #8c1515;
+}
+
+.table-surface /deep/ .btn-outline-primary:hover,
+.table-surface >>> .btn-outline-primary:hover,
+.table-surface::v-deep .btn-outline-primary:hover {
+  color: #ffffff;
+  background: #8c1515;
+  border-color: #8c1515;
+}
+
 .state-text {
   font-size: 0.85rem;
   color: #94a3b8;
@@ -729,7 +1121,7 @@ export default {
   width: 34px;
   height: 34px;
   border: 3px solid #dbeafe;
-  border-top-color: #3b82f6;
+  border-top-color: var(--mfu-gold);
   border-radius: 50%;
   animation: spin 0.75s linear infinite;
   margin: 0 auto;
@@ -748,14 +1140,14 @@ export default {
   right: 28px;
   width: 52px;
   height: 52px;
-  background: #1d4ed8;
+  background: linear-gradient(135deg, var(--mfu-red), var(--mfu-red-deep));
   color: #fff;
   border: none;
   border-radius: 16px;
   font-size: 1.7rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(29, 78, 216, 0.38);
+  box-shadow: 0 10px 26px rgba(140, 21, 21, 0.28);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -765,6 +1157,7 @@ export default {
 
 .fab:hover {
   transform: translateY(-3px) scale(1.06);
-  box-shadow: 0 12px 28px rgba(29, 78, 216, 0.48);
+  box-shadow: 0 14px 32px rgba(140, 21, 21, 0.36);
 }
+
 </style>

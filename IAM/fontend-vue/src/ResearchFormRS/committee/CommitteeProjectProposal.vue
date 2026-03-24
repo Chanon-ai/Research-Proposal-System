@@ -68,7 +68,7 @@
                   :fields="fields"
                   :items-per-page="perPage"
                   :active-page="activePage"
-                  :sorter="false"
+                  sorter
                 >
                 <template #submissionDate="{ item }">
                   <td>
@@ -116,9 +116,11 @@
                   </div>
                   <div class="table-footer__right">
                     <CPagination
-                      v-show="pageCount > 1"
                       :pages="pageCount"
                       :active-page.sync="activePage"
+                      align="end"
+                      :arrows="true"
+                      :double-arrows="true"
                       size="sm"
                     />
                   </div>
@@ -1172,6 +1174,48 @@ export default {
 .table-surface >>> .table-striped tbody tr:nth-of-type(odd),
 .table-surface::v-deep .table-striped tbody tr:nth-of-type(odd) {
   background-color: #ffffff;
+}
+
+/* Sorting arrow (CoreUI CDataTable) */
+.table-surface /deep/ .arrow-position,
+.table-surface >>> .arrow-position,
+.table-surface::v-deep .arrow-position {
+  color: rgba(254, 194, 96, 0.95);
+}
+
+.table-surface /deep/ .arrow-position.transparent,
+.table-surface >>> .arrow-position.transparent,
+.table-surface::v-deep .arrow-position.transparent {
+  opacity: 0.45 !important; /* show arrow even before sorting */
+  visibility: visible !important;
+}
+
+.table-surface /deep/ .arrow-position.rotate-icon,
+.table-surface >>> .arrow-position.rotate-icon,
+.table-surface::v-deep .arrow-position.rotate-icon {
+  opacity: 0.95 !important;
+}
+
+.table-footer__right /deep/ .pagination,
+.table-footer__right >>> .pagination,
+.table-footer__right::v-deep .pagination {
+  margin: 0;
+  justify-content: flex-end;
+}
+
+.table-footer__right /deep/ .page-link,
+.table-footer__right >>> .page-link,
+.table-footer__right::v-deep .page-link {
+  color: #6b0f0f;
+  border-color: rgba(140, 21, 21, 0.18);
+}
+
+.table-footer__right /deep/ .page-item.active .page-link,
+.table-footer__right >>> .page-item.active .page-link,
+.table-footer__right::v-deep .page-item.active .page-link {
+  background: #8c1515;
+  border-color: #8c1515;
+  color: #ffffff;
 }
 
 .status-block {
