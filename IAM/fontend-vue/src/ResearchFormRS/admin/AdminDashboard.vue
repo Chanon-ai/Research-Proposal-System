@@ -61,120 +61,110 @@
     </div>
 
     <section ref="tableSection">
-      <CCard class="mb-3">
-        <CCardBody>
-          <CRow>
-            <CCol md="5" class="mb-2 mb-md-0">
-              <CInput
-                v-model="searchKeyword"
-                placeholder="ค้นหาชื่อโครงการ หรือ รหัส..."
-                @input="onSearch"
-              />
-            </CCol>
-            <CCol md="3" class="mb-2 mb-md-0">
+      <CCard class="mfu-dashboard-table-card mfu-no-table-divider">
+        <CCardHeader class="mfu-dashboard-card-header">
+          <div class="mfu-dashboard-card-header__row">
+            <div class="mfu-dashboard-card-title">
+              รายการข้อเสนอโครงการ
+              <CBadge class="ml-2 mfu-count-badge">{{ total }}</CBadge>
+            </div>
+            <div class="mfu-header-tools" aria-label="ตัวกรองตาราง">
               <CSelect
+                class="mfu-header-select"
                 :value="selectedStatus"
                 :options="statusFilterOptions"
                 @change="onStatusChange"
               />
-            </CCol>
-            <CCol md="2" class="mb-2 mb-md-0">
               <CSelect
+                class="mfu-header-select"
                 :value="selectedYear"
                 :options="yearFilterOptions"
                 @change="onYearChange"
               />
-            </CCol>
-            <CCol md="2">
-              <CButton color="secondary" variant="outline" block @click="onReset">รีเซ็ต</CButton>
-            </CCol>
-          </CRow>
-        </CCardBody>
-      </CCard>
-
-      <CCard>
-        <CCardHeader>
-          <strong>รายการข้อเสนอโครงการ</strong>
+              <CButton
+                color="secondary"
+                variant="outline"
+                class="mfu-reset-btn mfu-reset-btn--compact"
+                @click="onReset"
+              >รีเซ็ต</CButton>
+            </div>
+          </div>
         </CCardHeader>
-        <CCardBody>
+        <CCardBody class="mfu-card-body-tight">
           <div v-if="loadingTable" class="text-center py-5">
             <CSpinner color="primary" />
             <div class="mt-2 text-muted">กำลังโหลดรายการโครงการ...</div>
           </div>
 
           <div v-else>
-            <CDataTable
-              :items="tableItems"
-              :fields="tableFields"
-              hover
-              striped
-              bordered
-              small
-              :items-per-page="limit"
-              :no-items-view="{ noItems: 'ไม่พบข้อมูลโครงการ', noResults: 'ไม่พบข้อมูลโครงการ' }"
-            >
-              <template #index="{ item }">
-                <td>{{ item.index }}</td>
-              </template>
+            <div class="mfu-table-surface">
+              <CDataTable
+                :items="tableItems"
+                :fields="tableFields"
+                hover
+                striped
+                :items-per-page="limit"
+                :no-items-view="{ noItems: 'ไม่พบข้อมูลโครงการ', noResults: 'ไม่พบข้อมูลโครงการ' }"
+              >
+                <template #index="{ item }">
+                  <td>{{ item.index }}</td>
+                </template>
 
-              <template #projectTitleTh="{ item }">
-                <td>
-                  <div class="font-weight-bold">{{ item.projectTitleTh || '-' }}</div>
-                  <small class="text-muted" v-if="item.projectTitleEn">{{ item.projectTitleEn }}</small>
-                </td>
-              </template>
+                <template #projectTitleTh="{ item }">
+                  <td>
+                    <div class="font-weight-bold">{{ item.projectTitleTh || '-' }}</div>
+                    <small class="text-muted" v-if="item.projectTitleEn">{{ item.projectTitleEn }}</small>
+                  </td>
+                </template>
 
-              <template #fundingType="{ item }">
-                <td>{{ item.fundingType || '-' }}</td>
-              </template>
+                <template #fundingType="{ item }">
+                  <td>{{ item.fundingType || '-' }}</td>
+                </template>
 
-              <template #currentStatus="{ item }">
-                <td>
-                  <CBadge :color="getStatusBadgeColor(item.currentStatus)">
-                    {{ getStatusLabel(item.currentStatus) }}
-                  </CBadge>
-                </td>
-              </template>
+                <template #currentStatus="{ item }">
+                  <td>
+                    <CBadge :color="getStatusBadgeColor(item.currentStatus)">
+                      {{ getStatusLabel(item.currentStatus) }}
+                    </CBadge>
+                  </td>
+                </template>
 
-              <template #currentRound="{ item }">
-                <td>{{ item.currentRound ? `รอบ ${item.currentRound}` : '-' }}</td>
-              </template>
+                <template #currentRound="{ item }">
+                  <td>{{ item.currentRound ? `รอบ ${item.currentRound}` : '-' }}</td>
+                </template>
 
-              <template #updatedAt="{ item }">
-                <td>{{ formatDate(item.updatedAt) }}</td>
-              </template>
+                <template #updatedAt="{ item }">
+                  <td>{{ formatDate(item.updatedAt) }}</td>
+                </template>
 
-              <template #actions="{ item }">
-                <td class="text-nowrap">
-                  <div class="admin-actions">
-                    <CButton color="primary" size="sm" class="admin-action-btn" @click="viewDetail(item)">ดูรายละเอียด</CButton>
-                  </div>
-                </td>
-              </template>
-            </CDataTable>
+                <template #actions="{ item }">
+                  <td class="text-nowrap">
+                    <div class="admin-actions">
+                      <CButton color="primary" variant="outline" size="sm" class="admin-action-btn" @click="viewDetail(item)">ดูรายละเอียด</CButton>
+                    </div>
+                  </td>
+                </template>
+              </CDataTable>
+            </div>
 
-            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap" style="gap: 8px;">
-              <small class="text-muted">หน้าที่ {{ page }} / {{ totalPages }}</small>
-              <div>
-                <CButton
+            <div class="mfu-table-footer">
+              <div class="mfu-table-footer__left">
+                <span class="mfu-table-footer__label">แสดงต่อหน้า</span>
+                <select v-model.number="limit" class="form-control form-control-sm mfu-per-page-select" aria-label="แสดงต่อหน้า" @change="onLimitChange">
+                  <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
+                </select>
+                <span class="mfu-table-footer__suffix">รายการ</span>
+              </div>
+              <div class="mfu-table-footer__right">
+                <CPagination
+                  :pages="totalPages"
+                  :active-page="page"
+                  align="end"
+                  :arrows="true"
+                  :double-arrows="true"
                   size="sm"
-                  color="secondary"
-                  variant="outline"
-                  class="mr-2"
-                  :disabled="page <= 1 || loadingTable"
-                  @click="onPageChange(page - 1)"
-                >
-                  ก่อนหน้า
-                </CButton>
-                <CButton
-                  size="sm"
-                  color="secondary"
-                  variant="outline"
-                  :disabled="page >= totalPages || loadingTable"
-                  @click="onPageChange(page + 1)"
-                >
-                  ถัดไป
-                </CButton>
+                  @update:activePage="onPageChange"
+                />
               </div>
             </div>
           </div>
@@ -457,11 +447,10 @@ export default {
       totalPages: 1,
       loadingSummary: false,
       loadingTable: false,
-      searchKeyword: '',
       selectedStatus: '',
       selectedYear: '',
-      searchTimer: null,
       limit: 10,
+      perPageOptions: [5, 10, 20, 50],
 
       showStatusModal: false,
       selectedProposal: null,
@@ -580,11 +569,6 @@ export default {
     this.fetchWorkflowApprovalPolicy()
     this.fetchSummary()
     this.fetchProposals()
-  },
-  beforeDestroy () {
-    if (this.searchTimer) {
-      clearTimeout(this.searchTimer)
-    }
   },
   methods: {
     hasAssignedCommittee (proposal) {
@@ -721,7 +705,6 @@ export default {
           page: this.page,
           limit: this.limit
         }
-        if (this.searchKeyword) params.keyword = this.searchKeyword
         if (this.selectedStatus) params.status = this.selectedStatus
         if (this.selectedYear) params.fiscalYear = this.selectedYear
 
@@ -756,13 +739,6 @@ export default {
         }
       })
     },
-    onSearch () {
-      if (this.searchTimer) clearTimeout(this.searchTimer)
-      this.searchTimer = setTimeout(() => {
-        this.page = 1
-        this.fetchProposals()
-      }, 500)
-    },
     onStatusChange (val) {
       this.selectedStatus = this.getSelectValue(val)
       this.page = 1
@@ -773,8 +749,11 @@ export default {
       this.page = 1
       this.fetchProposals()
     },
+    onLimitChange () {
+      this.page = 1
+      this.fetchProposals()
+    },
     onReset () {
-      this.searchKeyword = ''
       this.selectedStatus = ''
       this.selectedYear = ''
       this.page = 1
@@ -1087,6 +1066,259 @@ export default {
   display: inline-flex;
   justify-content: center;
   min-width: 140px;
+}
+
+/* Admin proposals table: match UserDashboard table styling (no search box) */
+.mfu-dashboard-table-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+}
+
+.mfu-card-body-tight {
+  padding: 1rem;
+  background: #f7f1ea;
+}
+
+.mfu-dashboard-card-header {
+  background: linear-gradient(90deg, rgba(140, 21, 21, 0.1), rgba(254, 194, 96, 0.22));
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 0 1.25rem;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.mfu-dashboard-card-header__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 56px;
+}
+
+.mfu-dashboard-card-title {
+  color: #6b0f0f;
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.mfu-reset-btn {
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(181, 133, 34, 0.1);
+  border-color: rgba(181, 133, 34, 0.3);
+  color: #6b0f0f;
+}
+
+.mfu-reset-btn:hover {
+  background: rgba(181, 133, 34, 0.16);
+  border-color: rgba(181, 133, 34, 0.42);
+  color: #6b0f0f;
+}
+
+.mfu-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.mfu-header-tools /deep/ .form-group,
+.mfu-header-tools >>> .form-group,
+.mfu-header-tools::v-deep .form-group {
+  margin: 0 !important;
+}
+
+.mfu-header-select {
+  min-width: 170px;
+}
+
+.mfu-header-tools /deep/ .custom-select,
+.mfu-header-tools >>> .custom-select,
+.mfu-header-tools::v-deep .custom-select,
+.mfu-header-tools /deep/ .form-control,
+.mfu-header-tools >>> .form-control,
+.mfu-header-tools::v-deep .form-control {
+  height: 34px;
+  min-height: 34px;
+  border-radius: 10px;
+  border-color: rgba(181, 133, 34, 0.35);
+}
+
+.mfu-header-tools /deep/ .custom-select:focus,
+.mfu-header-tools >>> .custom-select:focus,
+.mfu-header-tools::v-deep .custom-select:focus,
+.mfu-header-tools /deep/ .form-control:focus,
+.mfu-header-tools >>> .form-control:focus,
+.mfu-header-tools::v-deep .form-control:focus {
+  border-color: rgba(181, 133, 34, 0.7);
+  box-shadow: 0 0 0 3px rgba(181, 133, 34, 0.16);
+}
+
+.mfu-reset-btn--compact {
+  padding: 0 14px;
+}
+
+.mfu-count-badge {
+  background: rgba(140, 21, 21, 0.1);
+  color: #6b0f0f;
+  border: 1px solid rgba(140, 21, 21, 0.18);
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.mfu-table-surface {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(140, 21, 21, 0.14);
+  overflow: hidden;
+}
+
+.mfu-table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid rgba(140, 21, 21, 0.12);
+  background: linear-gradient(90deg, rgba(140, 21, 21, 0.06), rgba(254, 194, 96, 0.14));
+}
+
+.mfu-table-footer__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.mfu-per-page-select {
+  width: 84px;
+  height: 34px;
+  border-radius: 8px;
+  border-color: rgba(140, 21, 21, 0.18);
+}
+
+.mfu-table-footer__right {
+  display: flex;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.mfu-table-footer__right /deep/ .pagination,
+.mfu-table-footer__right >>> .pagination,
+.mfu-table-footer__right::v-deep .pagination {
+  margin: 0;
+  justify-content: flex-end;
+}
+
+.mfu-table-footer__right /deep/ .page-link,
+.mfu-table-footer__right >>> .page-link,
+.mfu-table-footer__right::v-deep .page-link {
+  color: #6b0f0f;
+  border-color: rgba(140, 21, 21, 0.18);
+}
+
+.mfu-table-footer__right /deep/ .page-item.active .page-link,
+.mfu-table-footer__right >>> .page-item.active .page-link,
+.mfu-table-footer__right::v-deep .page-item.active .page-link {
+  background: #8c1515;
+  border-color: #8c1515;
+  color: #ffffff;
+}
+
+.mfu-no-table-divider /deep/ .table,
+.mfu-no-table-divider >>> .table,
+.mfu-no-table-divider::v-deep .table,
+.mfu-no-table-divider /deep/ .table thead th,
+.mfu-no-table-divider >>> .table thead th,
+.mfu-no-table-divider::v-deep .table thead th,
+.mfu-no-table-divider /deep/ .table thead tr,
+.mfu-no-table-divider >>> .table thead tr,
+.mfu-no-table-divider::v-deep .table thead tr,
+.mfu-no-table-divider /deep/ .table thead,
+.mfu-no-table-divider >>> .table thead,
+.mfu-no-table-divider::v-deep .table thead,
+.mfu-no-table-divider /deep/ .table-responsive,
+.mfu-no-table-divider >>> .table-responsive,
+.mfu-no-table-divider::v-deep .table-responsive {
+  border-top: 0 !important;
+}
+
+.mfu-no-table-divider /deep/ .table-responsive,
+.mfu-no-table-divider >>> .table-responsive,
+.mfu-no-table-divider::v-deep .table-responsive {
+  box-shadow: none !important;
+}
+
+.mfu-table-surface /deep/ .table,
+.mfu-table-surface >>> .table,
+.mfu-table-surface::v-deep .table {
+  margin-bottom: 0;
+}
+
+.mfu-table-surface /deep/ .table thead th,
+.mfu-table-surface >>> .table thead th,
+.mfu-table-surface::v-deep .table thead th {
+  background: linear-gradient(90deg, #8c1515, rgba(107, 15, 15, 0.98)) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  border-bottom: 0 !important;
+  border-right: 1px solid rgba(254, 194, 96, 0.5) !important;
+}
+
+.mfu-table-surface /deep/ .table thead th:last-child,
+.mfu-table-surface >>> .table thead th:last-child,
+.mfu-table-surface::v-deep .table thead th:last-child {
+  border-right: 0;
+}
+
+.mfu-table-surface /deep/ .table tbody td,
+.mfu-table-surface >>> .table tbody td,
+.mfu-table-surface::v-deep .table tbody td {
+  border-bottom: 1px solid rgba(140, 21, 21, 0.12) !important;
+  border-right: 1px solid rgba(140, 21, 21, 0.12) !important;
+  vertical-align: middle !important;
+  text-align: center !important;
+}
+
+.mfu-table-surface /deep/ .table tbody td:last-child,
+.mfu-table-surface >>> .table tbody td:last-child,
+.mfu-table-surface::v-deep .table tbody td:last-child {
+  border-right: 0;
+}
+
+.mfu-table-surface /deep/ .table tbody tr:hover,
+.mfu-table-surface >>> .table tbody tr:hover,
+.mfu-table-surface::v-deep .table tbody tr:hover {
+  background: rgba(254, 194, 96, 0.22) !important;
+}
+
+.mfu-table-surface /deep/ .table-striped tbody tr:nth-of-type(odd),
+.mfu-table-surface >>> .table-striped tbody tr:nth-of-type(odd),
+.mfu-table-surface::v-deep .table-striped tbody tr:nth-of-type(odd) {
+  background-color: #ffffff;
+}
+
+.mfu-table-surface /deep/ .btn-outline-primary,
+.mfu-table-surface >>> .btn-outline-primary,
+.mfu-table-surface::v-deep .btn-outline-primary {
+  color: #8c1515;
+  border-color: #8c1515;
+}
+
+.mfu-table-surface /deep/ .btn-outline-primary:hover,
+.mfu-table-surface >>> .btn-outline-primary:hover,
+.mfu-table-surface::v-deep .btn-outline-primary:hover {
+  color: #ffffff;
+  background: #8c1515;
+  border-color: #8c1515;
 }
 
 .committee-modal-body {
