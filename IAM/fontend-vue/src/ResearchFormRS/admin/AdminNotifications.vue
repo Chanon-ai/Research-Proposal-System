@@ -406,9 +406,67 @@ export default {
       if (this.sendForm.recipientType === 'specific' && this.sendForm.recipientIds.length === 0) { await Swal.fire({ icon: 'warning', title: 'ยังไม่เลือกผู้รับ', text: 'กรุณาเลือกผู้รับอย่างน้อย 1 คน' }); return }
       this.sendLoading = true
       try {
-        await axios.post('/api/v1/notifications/send', { recipientType: this.sendForm.recipientType, recipientIds: this.sendForm.recipientType === 'specific' ? this.sendForm.recipientIds : [], type: this.sendForm.type, title: this.sendForm.title, message: this.sendForm.message, proposalId: this.sendForm.proposalId || null })
+        const response = await axios.post('/api/v1/notifications/send', { recipientType: this.sendForm.recipientType, recipientIds: this.sendForm.recipientType === 'specific' ? this.sendForm.recipientIds : [], type: this.sendForm.type, title: this.sendForm.title, message: this.sendForm.message, proposalId: this.sendForm.proposalId || null })
+        const payload = (response && response.data) || {}
+        const summary = payload.summary || {}
+        const diagnostics = payload.diagnostics || {}
+        const legacy = payload.data || {}
+
+        const inAppCount = Number(summary.inAppCount !== undefined ? summary.inAppCount : (legacy.inAppCount || 0))
+        const emailSentCount = Number(summary.emailSentCount !== undefined ? summary.emailSentCount : (legacy.emailSentCount || 0))
+        const emailFailedCount = Number(summary.emailFailedCount !== undefined ? summary.emailFailedCount : (legacy.emailFailedCount || 0))
+        const emailSkippedCount = Number(summary.emailSkippedCount !== undefined ? summary.emailSkippedCount : (legacy.emailSkippedCount || 0))
+        const skippedReason = diagnostics.skippedReason || legacy.skippedReason || ''
+        const failedRecipients = Array.isArray(diagnostics.failedRecipients) ? diagnostics.failedRecipients : (Array.isArray(legacy.failedRecipients) ? legacy.failedRecipients : [])
+        const skippedRecipients = Array.isArray(diagnostics.skippedRecipients) ? diagnostics.skippedRecipients : (Array.isArray(legacy.skippedRecipients) ? legacy.skippedRecipients : [])
+        const reasons = Array.isArray(diagnostics.reasons) ? diagnostics.reasons : []
+
         this.closeSendModal(); await this.fetchNotifications()
-        await Swal.fire({ icon: 'success', title: 'ส่งการแจ้งเตือนสำเร็จ', timer: 1500, showConfirmButton: false })
+
+        if (emailFailedCount > 0 || emailSkippedCount > 0 || skippedReason) {
+          const failedPreview = failedRecipients
+            .slice(0, 5)
+            .map(item => (item && item.email) ? item.email : '-')
+            .join(', ')
+          const skippedPreview = skippedRecipients
+            .slice(0, 5)
+            .map(item => {
+              const email = (item && item.email) ? item.email : '-'
+              const reason = (item && (item.reason || item.reasonCode)) ? (item.reason || item.reasonCode) : 'ไม่ทราบสาเหตุ'
+              return `${email} (${reason})`
+            })
+            .join(', ')
+          const reasonLine = skippedReason
+            ? `เหตุผลหลักที่ข้ามส่งอีเมล: ${skippedReason}`
+            : (reasons.length > 0
+              ? `เหตุผลที่ข้าม/ล้มเหลว: ${reasons.slice(0, 3).map(r => `${r.reasonCode || '-'}(${Number(r.count || 0)})`).join(', ')}`
+              : '')
+          const failedLine = emailFailedCount > 0
+            ? `อีเมลล้มเหลว ${emailFailedCount} ราย${failedPreview ? ` (${failedPreview})` : ''}`
+            : ''
+          const skippedLine = emailSkippedCount > 0
+            ? `อีเมลถูกข้าม ${emailSkippedCount} ราย${skippedPreview ? ` (${skippedPreview})` : ''}`
+            : ''
+          await Swal.fire({
+            icon: 'warning',
+            title: 'ส่งแจ้งเตือนสำเร็จบางส่วน',
+            text: [
+              `ส่งแจ้งเตือนในระบบสำเร็จ ${inAppCount} ราย`,
+              `ส่งอีเมลสำเร็จ ${emailSentCount} ราย`,
+              failedLine,
+              skippedLine,
+              reasonLine
+            ].filter(Boolean).join(' | ')
+          })
+        } else {
+          await Swal.fire({
+            icon: 'success',
+            title: 'ส่งการแจ้งเตือนสำเร็จ',
+            text: `ส่งแจ้งเตือนในระบบสำเร็จ ${inAppCount} ราย | ส่งอีเมลสำเร็จ ${emailSentCount} ราย`,
+            timer: 1700,
+            showConfirmButton: false
+          })
+        }
       } catch (error) {
         await Swal.fire({ icon: 'error', title: 'ส่งการแจ้งเตือนไม่สำเร็จ', text: (error && error.response && error.response.data && error.response.data.message) || 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' })
       } finally { this.sendLoading = false }

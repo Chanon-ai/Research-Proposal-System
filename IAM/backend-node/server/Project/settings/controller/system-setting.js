@@ -101,7 +101,7 @@ exports.listEmailLogs = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const filter = {};
-    if (req.query.status && ['sent', 'failed'].includes(req.query.status)) {
+    if (req.query.status && ['sent', 'failed', 'skipped'].includes(req.query.status)) {
       filter.status = req.query.status;
     }
     if (req.query.eventKey) {

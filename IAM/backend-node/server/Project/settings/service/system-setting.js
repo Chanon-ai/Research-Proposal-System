@@ -30,6 +30,76 @@ function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
+function toBool(value, fallback = true) {
+  if (value === undefined || value === null) return fallback;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  const text = String(value).trim().toLowerCase();
+  if (!text) return fallback;
+  if (['1', 'true', 'yes', 'y', 'on', 'enabled', 'enable'].includes(text)) return true;
+  if (['0', 'false', 'no', 'n', 'off', 'disabled', 'disable'].includes(text)) return false;
+  return fallback;
+}
+
+function resolveManualAdminEmailPolicy(settings = {}) {
+  const workflowOnly = settings.workflow_only_email_enabled;
+  if (workflowOnly !== undefined && toBool(workflowOnly, false)) {
+    return {
+      enabled: false,
+      source: 'workflow_only_email_enabled',
+      reasonCode: 'workflow-only-mode-enabled',
+      reasonMessage: 'Workflow-only mode enabled'
+    };
+  }
+
+  if (settings.manual_admin_notification_email_enabled !== undefined) {
+    const enabled = toBool(settings.manual_admin_notification_email_enabled, true);
+    return {
+      enabled,
+      source: 'manual_admin_notification_email_enabled',
+      reasonCode: enabled ? '' : 'manual-admin-email-disabled',
+      reasonMessage: enabled ? '' : 'Manual admin notification email disabled by toggle'
+    };
+  }
+
+  if (settings.admin_notification_email_enabled !== undefined) {
+    const enabled = toBool(settings.admin_notification_email_enabled, true);
+    return {
+      enabled,
+      source: 'admin_notification_email_enabled',
+      reasonCode: enabled ? '' : 'admin-notification-email-disabled',
+      reasonMessage: enabled ? '' : 'Admin notification email disabled by toggle'
+    };
+  }
+
+  if (settings.email_notifications_enabled !== undefined) {
+    const enabled = toBool(settings.email_notifications_enabled, true);
+    return {
+      enabled,
+      source: 'email_notifications_enabled',
+      reasonCode: enabled ? '' : 'email-notifications-disabled',
+      reasonMessage: enabled ? '' : 'Email notifications disabled by toggle'
+    };
+  }
+
+  if (settings.notification_email_enabled !== undefined) {
+    const enabled = toBool(settings.notification_email_enabled, true);
+    return {
+      enabled,
+      source: 'notification_email_enabled',
+      reasonCode: enabled ? '' : 'legacy-notification-email-disabled',
+      reasonMessage: enabled ? '' : 'Legacy notification email disabled by toggle'
+    };
+  }
+
+  return {
+    enabled: true,
+    source: 'default',
+    reasonCode: '',
+    reasonMessage: ''
+  };
+}
+
 function isPlaceholderEmail(email) {
   const normalized = normalizeEmail(email);
   if (!normalized) return true;
@@ -548,6 +618,7 @@ module.exports = {
   deleteSetting,
   bulkUpsertSettings,
   getSettingMap,
+  resolveManualAdminEmailPolicy,
   testEmail,
   clearCache
 };

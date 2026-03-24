@@ -175,6 +175,45 @@
         <template slot="title">อีเมล</template>
 
         <CCard class="mt-3">
+          <CCardHeader>นโยบายการส่งอีเมล</CCardHeader>
+          <CCardBody>
+            <CRow>
+              <CCol md="4" class="mb-2">
+                <label class="d-block mb-1">Workflow Auto Email</label>
+                <CSwitch color="success" :checked.sync="emailNotificationsEnabled" />
+                <small class="text-muted d-block">ควบคุมการส่งอีเมลจาก workflow อัตโนมัติ</small>
+              </CCol>
+              <CCol md="4" class="mb-2">
+                <label class="d-block mb-1">Manual Admin Notification Email</label>
+                <CSwitch color="success" :checked.sync="manualAdminNotificationEmailEnabled" />
+                <small class="text-muted d-block">ควบคุมอีเมลที่ส่งจากหน้า Admin Notifications</small>
+              </CCol>
+              <CCol md="4" class="mb-2">
+                <label class="d-block mb-1">Workflow Only Mode</label>
+                <CSwitch color="warning" :checked.sync="workflowOnlyEmailEnabled" />
+                <small class="text-muted d-block">เมื่อเปิดไว้ ระบบจะข้าม manual admin email แม้ toggle อื่นเปิดอยู่</small>
+              </CCol>
+            </CRow>
+
+            <CRow>
+              <CCol md="6" class="mb-2">
+                <label class="d-block mb-1">Admin Notification Email (Legacy Fallback)</label>
+                <CSwitch color="secondary" :checked.sync="adminNotificationEmailEnabled" />
+                <small class="text-muted d-block">ใช้เป็น fallback หากไม่ตั้งค่า manual_admin_notification_email_enabled</small>
+              </CCol>
+              <CCol md="6" class="mb-2 d-flex align-items-end">
+                <div class="text-muted">
+                  <small class="d-block">ลำดับการตีความ toggle ของ manual admin email:</small>
+                  <small class="d-block">manual_admin_notification_email_enabled -> admin_notification_email_enabled -> email_notifications_enabled</small>
+                </div>
+              </CCol>
+            </CRow>
+
+            <CButton color="primary" @click="saveEmailPolicySettings">บันทึกนโยบายการส่งอีเมล</CButton>
+          </CCardBody>
+        </CCard>
+
+        <CCard class="mt-3">
           <CCardHeader>Email Templates</CCardHeader>
           <CCardBody>
             <CCallout color="warning" class="mb-3">
@@ -207,7 +246,8 @@
                 :options="[
                   { value: '', label: 'ทุกสถานะ' },
                   { value: 'sent', label: 'สำเร็จ' },
-                  { value: 'failed', label: 'ล้มเหลว' }
+                  { value: 'failed', label: 'ล้มเหลว' },
+                  { value: 'skipped', label: 'ข้ามการส่ง' }
                 ]"
                 @change="onEmailLogFilterChange"
               />
@@ -623,6 +663,9 @@ export default {
       smtpPasswordConfigured: false,
       showPassword: false,
       emailNotificationsEnabled: true,
+      manualAdminNotificationEmailEnabled: true,
+      adminNotificationEmailEnabled: true,
+      workflowOnlyEmailEnabled: false,
       emailTemplates: JSON.parse(JSON.stringify(DEFAULT_TEMPLATES)),
       testRecipientEmail: '',
       testTemplateKey: '',
@@ -883,6 +926,15 @@ export default {
       this.workflowForm = { ...this.workflowForm, minScore: this.toNum(map.workflow_min_score, this.workflowForm.minScore), minCommittee: this.toNum(map.workflow_min_committee, this.workflowForm.minCommittee), maxRounds: this.toNum(map.workflow_max_rounds, this.workflowForm.maxRounds), allowRevisionAfterMeeting: map.workflow_allow_revision_after_meeting !== undefined ? this.toBool(map.workflow_allow_revision_after_meeting, this.workflowForm.allowRevisionAfterMeeting) : this.workflowForm.allowRevisionAfterMeeting, stepDeadlines: { step1: this.toNum(map.workflow_step1_days, this.workflowForm.stepDeadlines.step1), step2: this.toNum(map.workflow_step2_days, this.workflowForm.stepDeadlines.step2), step3: this.toNum(map.workflow_step3_days, this.workflowForm.stepDeadlines.step3), step4: this.toNum(map.workflow_step4_days, this.workflowForm.stepDeadlines.step4), step5: this.toNum(map.workflow_step5_days, this.workflowForm.stepDeadlines.step5) } }
       this.smtpForm = this.normalizeSmtpForm({ smtp_host: map.smtp_host, smtp_port: map.smtp_port, smtp_username: map.smtp_username, smtp_password: '', smtp_from_name: map.smtp_from_name, smtp_from_email: map.smtp_from_email, smtp_use_ssl: map.smtp_use_ssl })
       if (map.email_notifications_enabled !== undefined) this.emailNotificationsEnabled = this.toBool(map.email_notifications_enabled, true)
+      this.manualAdminNotificationEmailEnabled = map.manual_admin_notification_email_enabled !== undefined
+        ? this.toBool(map.manual_admin_notification_email_enabled, true)
+        : true
+      this.adminNotificationEmailEnabled = map.admin_notification_email_enabled !== undefined
+        ? this.toBool(map.admin_notification_email_enabled, true)
+        : this.manualAdminNotificationEmailEnabled
+      this.workflowOnlyEmailEnabled = map.workflow_only_email_enabled !== undefined
+        ? this.toBool(map.workflow_only_email_enabled, false)
+        : false
       const smtpPasswordSetting = this.settings.find(s => s && s.key === 'smtp_password')
       this.smtpPasswordConfigured = Boolean(smtpPasswordSetting && (smtpPasswordSetting.isConfigured || (smtpPasswordSetting.value !== undefined && smtpPasswordSetting.value !== null && String(smtpPasswordSetting.value).trim() !== '')))
       if (map.email_templates_json) {
@@ -912,6 +964,40 @@ export default {
           { key: 'workflow_step4_days', value: d.step4, valueType: 'number', label: 'ขอแก้ไข -> นักวิจัยส่งกลับ' },
           { key: 'workflow_step5_days', value: d.step5, valueType: 'number', label: 'ส่งแก้ไข -> พิจารณารอบ 2' }
         ]
+      }
+    },
+    buildEmailPolicySettingsPayload () {
+      return {
+        group: 'email',
+        settings: [
+          { key: 'email_notifications_enabled', value: Boolean(this.emailNotificationsEnabled), valueType: 'boolean', label: 'เปิดใช้งานอีเมลสำหรับ workflow อัตโนมัติ' },
+          { key: 'manual_admin_notification_email_enabled', value: Boolean(this.manualAdminNotificationEmailEnabled), valueType: 'boolean', label: 'เปิดใช้งานอีเมลจากการส่งแจ้งเตือน manual โดย admin' },
+          { key: 'admin_notification_email_enabled', value: Boolean(this.adminNotificationEmailEnabled), valueType: 'boolean', label: 'fallback toggle สำหรับระบบเดิม (admin notification email)' },
+          { key: 'workflow_only_email_enabled', value: Boolean(this.workflowOnlyEmailEnabled), valueType: 'boolean', label: 'ส่งอีเมลเฉพาะ workflow อัตโนมัติ (ปิด manual admin email)' }
+        ]
+      }
+    },
+    async saveEmailPolicySettings () {
+      try {
+        const payload = this.buildEmailPolicySettingsPayload()
+        const response = await axios.put('/api/v1/setting/bulk', payload)
+        const result = response && response.data && response.data.data ? response.data.data : {}
+        const failedKeys = Array.isArray(result.failedKeys) ? result.failedKeys : []
+        if (!response || !response.data || response.data.success !== true || failedKeys.length > 0) {
+          throw new Error('bulk email policy save returned failed keys')
+        }
+        await this.fetchSettings()
+        await Swal.fire({ icon: 'success', title: 'บันทึกนโยบายการส่งอีเมลสำเร็จ', timer: 1400, showConfirmButton: false })
+      } catch (error) {
+        console.error('[AdminSettings] saveEmailPolicySettings fallback:', error)
+        this.saveFallback({
+          emailPolicy: {
+            status: 'local_fallback',
+            savedAt: new Date().toISOString(),
+            reason: (error && error.message) ? error.message : 'unknown_error'
+          }
+        })
+        await Swal.fire({ icon: 'warning', title: 'บันทึกเฉพาะในเครื่องชั่วคราว', text: 'ไม่สามารถบันทึกนโยบายการส่งอีเมลลงฐานข้อมูลได้' })
       }
     },
     async saveGeneralSettings () {

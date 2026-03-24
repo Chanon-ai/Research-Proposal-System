@@ -40,7 +40,7 @@ const emailLogSchema = new mongoose.Schema(
     // Result
     status: {
       type: String,
-      enum: ['sent', 'failed'],
+      enum: ['sent', 'failed', 'skipped'],
       required: true,
       index: true
     },

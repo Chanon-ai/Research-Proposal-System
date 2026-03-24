@@ -56,6 +56,28 @@ function isWorkflowEmailEnabled(settings = {}) {
   return true;
 }
 
+function isManualAdminNotificationEmailEnabled(settings = {}) {
+  const manualToggle = settings.manual_admin_notification_email_enabled;
+  if (manualToggle !== undefined) return toBool(manualToggle, true);
+
+  const altManualToggle = settings.admin_notification_email_enabled;
+  if (altManualToggle !== undefined) return toBool(altManualToggle, true);
+
+  const workflowOnlyToggle = settings.workflow_only_email_enabled;
+  if (workflowOnlyToggle !== undefined && toBool(workflowOnlyToggle, false)) return false;
+
+  return isWorkflowEmailEnabled(settings);
+}
+
+function normalizeReasonItem(reasonCode, message, recipients = []) {
+  return {
+    reasonCode: asString(reasonCode, 'unknown'),
+    message: asString(message, 'Unknown reason'),
+    count: Array.isArray(recipients) ? recipients.length : 0,
+    recipients: Array.isArray(recipients) ? recipients : []
+  };
+}
+
 function toDateInputValue(value) {
   if (!value) return '-';
   const date = new Date(value);
@@ -369,6 +391,468 @@ async function sendWorkflowEventEmails({
   }
 }
 
+async function sendAdminNotificationEmails({
+  eventKey = 'announcement',
+  recipientIds = [],
+  proposal = null,
+  title = '',
+  message = '',
+  context = {}
+}) {
+  try {
+    const uniqueRecipientIds = Array.from(new Set((Array.isArray(recipientIds) ? recipientIds : [])
+      .map((id) => String(id || '').trim())
+      .filter(Boolean)));
+
+    const summary = {
+      inAppCount: uniqueRecipientIds.length,
+      emailSentCount: 0,
+      emailFailedCount: 0,
+      emailSkippedCount: 0
+    };
+
+    const diagnostics = {
+      failedRecipients: [],
+      skippedRecipients: [],
+      skippedReason: null,
+      reasons: []
+    };
+    const emailLogs = [];
+
+    async function writeLogTracked({ recipientEmail, recipientUserId, status, errorMessage }) {
+      const logEntry = {
+        eventKey,
+        recipientEmail: asString(recipientEmail || 'unknown').toLowerCase(),
+        recipientUserId: recipientUserId || null,
+        proposalId: proposal && proposal._id ? proposal._id : null,
+        proposalRef: proposal && (proposal.proposalCode || String(proposal._id)) || null,
+        meetingId: null,
+        status,
+        errorMessage: errorMessage || null,
+        sentAt: new Date()
+      };
+      emailLogs.push(logEntry);
+      await writeEmailLog(logEntry);
+    }
+
+    if (uniqueRecipientIds.length === 0) {
+      const reason = normalizeReasonItem('no-recipient', 'No recipient provided', []);
+      diagnostics.skippedReason = reason.message;
+      diagnostics.reasons.push(reason);
+      return {
+        attempted: false,
+        sent: 0,
+        failed: 0,
+        skipped: 0,
+        failures: [],
+        skippedRecipients: [],
+        skippedReason: reason.reasonCode,
+        summary,
+        diagnostics,
+        emailLogs
+      };
+    }
+
+    const recipients = await User.find({
+      _id: { $in: uniqueRecipientIds }
+    }).select('_id fullName email isActive isDeleted').lean();
+
+    if (!recipients || recipients.length === 0) {
+      const skippedRecipients = uniqueRecipientIds.map((id) => ({
+        userId: String(id),
+        email: '',
+        reasonCode: 'recipient-not-found',
+        reason: 'Recipient not found'
+      }));
+      diagnostics.skippedRecipients = skippedRecipients;
+      diagnostics.reasons.push(normalizeReasonItem('recipient-not-found', 'Recipient not found', skippedRecipients));
+      diagnostics.skippedReason = 'no-active-recipient';
+
+      await Promise.all(skippedRecipients.map((item) => writeLogTracked({
+        recipientEmail: item.email || 'unknown',
+        recipientUserId: item.userId || null,
+        status: 'skipped',
+        errorMessage: item.reason
+      })));
+
+      summary.emailSkippedCount = skippedRecipients.length;
+      return {
+        attempted: false,
+        sent: 0,
+        failed: 0,
+        skipped: skippedRecipients.length,
+        failures: [],
+        skippedRecipients,
+        skippedReason: 'no-active-recipient',
+        summary,
+        diagnostics,
+        emailLogs
+      };
+    }
+
+    const settings = await systemSettingService.getSettingMap();
+    const policy = systemSettingService.resolveManualAdminEmailPolicy
+      ? systemSettingService.resolveManualAdminEmailPolicy(settings || {})
+      : { enabled: isManualAdminNotificationEmailEnabled(settings || {}), source: 'fallback', reasonCode: 'manual-admin-email-disabled', reasonMessage: 'Manual admin notification email disabled by toggle' };
+
+    const recipientMap = new Map((recipients || []).map((user) => [String(user._id), user]));
+    const resolvedRecipients = [];
+    for (const userId of uniqueRecipientIds) {
+      const row = recipientMap.get(String(userId));
+      if (!row) {
+        diagnostics.skippedRecipients.push({
+          userId: String(userId),
+          email: '',
+          reasonCode: 'recipient-not-found',
+          reason: 'Recipient not found'
+        });
+        continue;
+      }
+
+      const email = asString(row.email).toLowerCase();
+      if (row.isDeleted === true || row.isActive === false) {
+        diagnostics.skippedRecipients.push({
+          userId: String(row._id),
+          email,
+          reasonCode: 'recipient-inactive-or-deleted',
+          reason: 'Recipient inactive or deleted'
+        });
+        continue;
+      }
+
+      if (!EMAIL_REGEX.test(email)) {
+        diagnostics.skippedRecipients.push({
+          userId: String(row._id),
+          email,
+          reasonCode: 'recipient-email-missing-or-invalid',
+          reason: 'Recipient email is missing or invalid'
+        });
+        continue;
+      }
+
+      resolvedRecipients.push({
+        ...row,
+        email
+      });
+    }
+
+    summary.emailSkippedCount = diagnostics.skippedRecipients.length;
+
+    if (!policy.enabled) {
+      const policySkipped = resolvedRecipients.map((recipient) => ({
+        userId: String(recipient._id),
+        email: recipient.email,
+        reasonCode: policy.reasonCode || 'manual-admin-email-disabled',
+        reason: policy.reasonMessage || 'Manual admin notification email disabled'
+      }));
+      diagnostics.skippedRecipients = [...diagnostics.skippedRecipients, ...policySkipped];
+      summary.emailSkippedCount = diagnostics.skippedRecipients.length;
+
+      const grouped = {};
+      diagnostics.skippedRecipients.forEach((item) => {
+        const key = item.reasonCode || 'unknown';
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(item);
+      });
+      diagnostics.reasons = Object.keys(grouped).map((key) => normalizeReasonItem(key, grouped[key][0].reason, grouped[key]));
+      diagnostics.skippedReason = policy.reasonCode || 'manual-admin-email-disabled';
+
+      await Promise.all(diagnostics.skippedRecipients.map((item) => writeLogTracked({
+        recipientEmail: item.email || 'unknown',
+        recipientUserId: item.userId || null,
+        status: 'skipped',
+        errorMessage: item.reason
+      })));
+
+      return {
+        attempted: false,
+        sent: 0,
+        failed: 0,
+        skipped: diagnostics.skippedRecipients.length,
+        failures: [],
+        skippedRecipients: diagnostics.skippedRecipients,
+        skippedReason: diagnostics.skippedReason,
+        summary,
+        diagnostics,
+        emailLogs
+      };
+    }
+
+    if (resolvedRecipients.length === 0) {
+      const grouped = {};
+      diagnostics.skippedRecipients.forEach((item) => {
+        const key = item.reasonCode || 'unknown';
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(item);
+      });
+      diagnostics.reasons = Object.keys(grouped).map((key) => normalizeReasonItem(key, grouped[key][0].reason, grouped[key]));
+      diagnostics.skippedReason = 'no-valid-recipient-email';
+
+      await Promise.all(diagnostics.skippedRecipients.map((item) => writeLogTracked({
+        recipientEmail: item.email || 'unknown',
+        recipientUserId: item.userId || null,
+        status: 'skipped',
+        errorMessage: item.reason
+      })));
+
+      return {
+        attempted: false,
+        sent: 0,
+        failed: 0,
+        skipped: diagnostics.skippedRecipients.length,
+        failures: [],
+        skippedRecipients: diagnostics.skippedRecipients,
+        skippedReason: diagnostics.skippedReason,
+        summary,
+        diagnostics,
+        emailLogs
+      };
+    }
+
+    const templates = parseEmailTemplates(settings && settings.email_templates_json);
+    const providedTitle = asString(title);
+    const providedMessage = asString(message);
+
+    let template = null;
+    if (!providedTitle && !providedMessage) {
+      if (!templates || !templates[eventKey]) {
+        const templateSkipped = resolvedRecipients.map((recipient) => ({
+          userId: String(recipient._id),
+          email: recipient.email,
+          reasonCode: 'template-not-found',
+          reason: `No email template found for eventKey: ${eventKey}`
+        }));
+        diagnostics.skippedRecipients = [...diagnostics.skippedRecipients, ...templateSkipped];
+        summary.emailSkippedCount = diagnostics.skippedRecipients.length;
+        diagnostics.reasons.push(normalizeReasonItem('template-not-found', `No email template found for eventKey: ${eventKey}`, templateSkipped));
+        diagnostics.skippedReason = 'template-not-found';
+
+        await Promise.all(diagnostics.skippedRecipients.map((item) => writeLogTracked({
+          recipientEmail: item.email || 'unknown',
+          recipientUserId: item.userId || null,
+          status: 'skipped',
+          errorMessage: item.reason
+        })));
+
+        return {
+          attempted: false,
+          sent: 0,
+          failed: 0,
+          skipped: diagnostics.skippedRecipients.length,
+          failures: [],
+          skippedRecipients: diagnostics.skippedRecipients,
+          skippedReason: diagnostics.skippedReason,
+          summary,
+          diagnostics,
+          emailLogs
+        };
+      }
+
+      template = templates[eventKey];
+      if (!template || !asString(template.subject) || !asString(template.body)) {
+        const templateInvalidSkipped = resolvedRecipients.map((recipient) => ({
+          userId: String(recipient._id),
+          email: recipient.email,
+          reasonCode: 'template-invalid',
+          reason: `Invalid email template for eventKey: ${eventKey}`
+        }));
+        diagnostics.skippedRecipients = [...diagnostics.skippedRecipients, ...templateInvalidSkipped];
+        summary.emailSkippedCount = diagnostics.skippedRecipients.length;
+        diagnostics.reasons.push(normalizeReasonItem('template-invalid', `Invalid email template for eventKey: ${eventKey}`, templateInvalidSkipped));
+        diagnostics.skippedReason = 'template-invalid';
+
+        await Promise.all(diagnostics.skippedRecipients.map((item) => writeLogTracked({
+          recipientEmail: item.email || 'unknown',
+          recipientUserId: item.userId || null,
+          status: 'skipped',
+          errorMessage: item.reason
+        })));
+
+        return {
+          attempted: false,
+          sent: 0,
+          failed: 0,
+          skipped: diagnostics.skippedRecipients.length,
+          failures: [],
+          skippedRecipients: diagnostics.skippedRecipients,
+          skippedReason: diagnostics.skippedReason,
+          summary,
+          diagnostics,
+          emailLogs
+        };
+      }
+    }
+
+    const config = buildTransportConfig(settings || {});
+    const transportError = validateTransportConfig({ config, settings: settings || {} });
+    if (transportError) {
+      const transportSkipped = resolvedRecipients.map((recipient) => ({
+        userId: String(recipient._id),
+        email: recipient.email,
+        reasonCode: 'smtp-not-configured',
+        reason: transportError
+      }));
+      diagnostics.skippedRecipients = [...diagnostics.skippedRecipients, ...transportSkipped];
+      summary.emailSkippedCount = diagnostics.skippedRecipients.length;
+      diagnostics.reasons.push(normalizeReasonItem('smtp-not-configured', transportError, transportSkipped));
+      diagnostics.skippedReason = 'smtp-not-configured';
+
+      await Promise.all(diagnostics.skippedRecipients.map((item) => writeLogTracked({
+        recipientEmail: item.email || 'unknown',
+        recipientUserId: item.userId || null,
+        status: 'skipped',
+        errorMessage: item.reason
+      })));
+
+      return {
+        attempted: false,
+        sent: 0,
+        failed: 0,
+        skipped: diagnostics.skippedRecipients.length,
+        failures: [],
+        skippedRecipients: diagnostics.skippedRecipients,
+        skippedReason: diagnostics.skippedReason,
+        summary,
+        diagnostics,
+        emailLogs
+      };
+    }
+
+    const transporter = nodemailer.createTransport(config);
+    const fromAddress = asString(settings.smtp_from_email || settings.smtp_username);
+    const fromName = asString(settings.smtp_from_name, 'MFU Research Platform');
+
+    let sent = 0;
+    let failed = 0;
+    const failures = [];
+
+    for (const recipient of resolvedRecipients) {
+      const rawEmail = asString(recipient && recipient.email).toLowerCase();
+      const vars = {
+        recipientName: asString(recipient.fullName, rawEmail),
+        proposalCode: asString(proposal && proposal.proposalCode, '-'),
+        projectTitle: asString(proposal && proposal.projectTitleTh, '-'),
+        remarks: asString(context.remarks, providedMessage || '-'),
+        meetingTitle: asString(context.meetingTitle, '-'),
+        meetingDate: asString(context.meetingDate, toDateInputValue(context.meetingDate)),
+        meetingTime: asString(context.meetingTime, '-')
+      };
+
+      const subject = providedTitle || renderTemplate((template && template.subject) || '', vars);
+      const text = providedMessage || renderTemplate((template && template.body) || '', vars);
+
+      try {
+        await transporter.sendMail({
+          from: fromName ? { name: fromName, address: fromAddress } : fromAddress,
+          to: rawEmail,
+          subject,
+          text
+        });
+        sent += 1;
+
+        await writeLogTracked({
+          recipientEmail: rawEmail,
+          recipientUserId: recipient._id,
+          status: 'sent',
+          errorMessage: null
+        });
+      } catch (err) {
+        failed += 1;
+        const errMsg = err && err.message ? err.message : 'Unknown error';
+        failures.push({
+          userId: String(recipient._id),
+          email: rawEmail,
+          error: errMsg
+        });
+
+        await writeLogTracked({
+          recipientEmail: rawEmail,
+          recipientUserId: recipient._id,
+          status: 'failed',
+          errorMessage: errMsg
+        });
+      }
+    }
+
+    diagnostics.failedRecipients = failures;
+    const grouped = {};
+    diagnostics.skippedRecipients.forEach((item) => {
+      const key = item.reasonCode || 'unknown';
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    });
+    diagnostics.reasons = [
+      ...Object.keys(grouped).map((key) => normalizeReasonItem(key, grouped[key][0].reason, grouped[key])),
+      ...(failures.length > 0 ? [normalizeReasonItem('smtp-send-failed', 'SMTP send failed for some recipients', failures)] : [])
+    ];
+    diagnostics.skippedReason = diagnostics.skippedRecipients.length > 0
+      ? diagnostics.skippedRecipients[0].reasonCode
+      : null;
+
+    if (diagnostics.skippedRecipients.length > 0) {
+      await Promise.all(diagnostics.skippedRecipients.map((item) => writeLogTracked({
+        recipientEmail: item.email || 'unknown',
+        recipientUserId: item.userId || null,
+        status: 'skipped',
+        errorMessage: item.reason
+      })));
+    }
+
+    summary.emailSentCount = sent;
+    summary.emailFailedCount = failed;
+    summary.emailSkippedCount = diagnostics.skippedRecipients.length;
+
+    return {
+      attempted: true,
+      sent,
+      failed,
+      skipped: diagnostics.skippedRecipients.length,
+      failures,
+      skippedRecipients: diagnostics.skippedRecipients,
+      skippedReason: diagnostics.skippedReason,
+      summary,
+      diagnostics,
+      emailLogs
+    };
+  } catch (err) {
+    const fallbackSummary = {
+      inAppCount: Array.isArray(recipientIds) ? recipientIds.length : 0,
+      emailSentCount: 0,
+      emailFailedCount: Array.isArray(recipientIds) ? recipientIds.length : 0,
+      emailSkippedCount: 0
+    };
+    const fallbackFailures = [{ error: err && err.message ? err.message : 'Unexpected admin notification email error' }];
+    return {
+      attempted: true,
+      sent: 0,
+      failed: Array.isArray(recipientIds) ? recipientIds.length : 0,
+      skipped: 0,
+      failures: fallbackFailures,
+      skippedRecipients: [],
+      skippedReason: null,
+      summary: fallbackSummary,
+      diagnostics: {
+        failedRecipients: fallbackFailures,
+        skippedRecipients: [],
+        skippedReason: null,
+        reasons: [normalizeReasonItem('unexpected-error', fallbackFailures[0].error, fallbackFailures)]
+      },
+      emailLogs: fallbackFailures.map((item) => ({
+        eventKey,
+        recipientEmail: 'unknown',
+        recipientUserId: null,
+        proposalId: proposal && proposal._id ? proposal._id : null,
+        proposalRef: proposal && (proposal.proposalCode || String(proposal._id)) || null,
+        meetingId: null,
+        status: 'failed',
+        errorMessage: item.error,
+        sentAt: new Date()
+      }))
+    };
+  }
+}
+
 module.exports = {
-  sendWorkflowEventEmails
+  sendWorkflowEventEmails,
+  sendAdminNotificationEmails
 };
