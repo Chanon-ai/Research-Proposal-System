@@ -9,6 +9,7 @@ const UserDashboard = () => import('@/ResearchFormRS/user/UserDashboard.vue')
 const UserProfile = () => import('@/ResearchFormRS/user/UserProfile.vue')
 const UserHistory = () => import('@/ResearchFormRS/user/UserHistory.vue')
 const UserNotification = () => import('@/ResearchFormRS/user/UserNotification.vue')
+const UserMeetings = () => import('@/ResearchFormRS/user/UserMeetings.vue')
 
 const AdminDashboard = () => import('@/ResearchFormRS/admin/AdminDashboard.vue')
 const AdminProposalList = () => import('@/ResearchFormRS/admin/AdminProposalList.vue')
@@ -156,6 +157,12 @@ const router = new Router({
           path: 'user/notification',
           name: 'UserNotification',
           component: UserNotification,
+          meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman'] }
+        },
+        {
+          path: 'user/meetings',
+          name: 'UserMeetings',
+          component: UserMeetings,
           meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman'] }
         },
         {

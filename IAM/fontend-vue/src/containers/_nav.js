@@ -7,13 +7,6 @@ export default [{
   _name: 'CSidebarNav',
   _children: [
     {
-      _name: 'CSidebarNavItem',
-      name: 'Dashboard',
-      to: '/dashboard',
-      icon: 'cil-speedometer',
-      roles: ['admin', 'legacy_admin']
-    },
-    {
       _name: 'CSidebarNavTitle',
       roles: ['researcher', 'chairman'],
       _children: ['เมนูนักวิจัย']
@@ -42,6 +35,13 @@ export default [{
       name: 'User Dashboard',
       to: '/userdashboard',
       icon: 'cil-user',
+      roles: ['researcher', 'chairman']
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'กำหนดการประชุม',
+      to: '/user/meetings',
+      icon: 'cil-calendar',
       roles: ['researcher', 'chairman']
     },
     {

@@ -164,11 +164,16 @@
             hover
             striped
           >
+            <template #proposalCode="{ item }">
+              <td class="proposal-code-cell">
+                {{ item.proposalCode || '-' }}
+              </td>
+            </template>
+
             <template #projectTitleTh="{ item }">
               <td class="project-info-cell">
                 <div class="project-meta">
                   <div class="project-title">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
-                  <div class="project-code">{{ item.proposalCode || '-' }}</div>
                   <div class="project-owner">{{ item.projectLeaderName || '-' }}</div>
                 </div>
               </td>
@@ -272,6 +277,12 @@ export default {
       perPageOptions: [5, 10, 20, 50],
       activePage: 1,
       tableFields: [
+        {
+          key: 'proposalCode',
+          label: 'รหัสโครงการ',
+          _style: 'width:170px; text-align:center;',
+          _classes: 'proposal-code-column'
+        },
         {
           key: 'projectTitleTh',
           label: 'ชื่อโครงการวิจัย / หัวหน้าโครงการ',
@@ -1078,6 +1089,12 @@ export default {
   text-align: center !important;
 }
 
+.table-surface /deep/ .table thead th.proposal-code-column,
+.table-surface >>> .table thead th.proposal-code-column,
+.table-surface::v-deep .table thead th.proposal-code-column {
+  text-align: center !important;
+}
+
 .table-surface /deep/ .table tbody td,
 .table-surface >>> .table tbody td,
 .table-surface::v-deep .table tbody td {
@@ -1098,6 +1115,9 @@ export default {
   text-align: left !important;
 }
 
+.table-surface /deep/ .table tbody td.proposal-code-column,
+.table-surface >>> .table tbody td.proposal-code-column,
+.table-surface::v-deep .table tbody td.proposal-code-column,
 .table-surface /deep/ .table tbody td.submitted-date-column,
 .table-surface >>> .table tbody td.submitted-date-column,
 .table-surface::v-deep .table tbody td.submitted-date-column,
@@ -1105,6 +1125,17 @@ export default {
 .table-surface >>> .table tbody td.action-column,
 .table-surface::v-deep .table tbody td.action-column {
   text-align: center !important;
+}
+
+.proposal-code-cell {
+  text-align: center !important;
+  vertical-align: middle;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #374151;
+  white-space: nowrap;
 }
 
 .project-info-cell {
@@ -1126,13 +1157,8 @@ export default {
   color: #111827;
 }
 
-.project-code,
 .project-owner {
   font-size: 12px;
-}
-
-.project-code {
-  color: #888;
 }
 
 .project-owner {
@@ -1272,6 +1298,8 @@ body.c-dark-theme .project-title {
 
 [data-coreui-theme='dark'] .project-code,
 body.c-dark-theme .project-code,
+[data-coreui-theme='dark'] .proposal-code-cell,
+body.c-dark-theme .proposal-code-cell,
 [data-coreui-theme='dark'] .project-owner,
 body.c-dark-theme .project-owner,
 [data-coreui-theme='dark'] .status-progress-label,
