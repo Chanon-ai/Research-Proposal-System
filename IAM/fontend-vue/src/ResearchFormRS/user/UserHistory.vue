@@ -270,7 +270,7 @@ export default {
 
 .history-page.is-dark .pill {
   border-color: rgba(148, 163, 184, 0.38);
-  background: rgba(30, 41, 59, 0.45);
+
   color: #e5e7eb;
 }
 

@@ -564,6 +564,10 @@ export default {
 .filter-tab.active {
   background: #8b1212;
   color: #fff;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+  filter: none !important;
 }
 
 .header-left { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -582,7 +586,7 @@ export default {
 
 .btn-mark-all {
   font-size: 13px;
-  color: #4a7c59;
+  color: #8b1212;
   background: none;
   border: none;
   cursor: pointer;
@@ -659,9 +663,10 @@ export default {
 }
 
 .page-wrapper.is-dark .notif-action-btn {
-  background: linear-gradient(180deg, #2b6b3a 0%, #234f2e 60%, #183826 100%);
-  color: #c6f7d1;
-  box-shadow: 0 6px 14px rgba(16, 44, 30, 0.22), inset 0 -3px 6px rgba(0,0,0,0.18);
+  /* use the same red action tone in dark mode (darker gradient) */
+  background: linear-gradient(180deg, #7a0f0f 0%, #5b0b0b 60%, #3c0808 100%);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(139,18,18,0.18), inset 0 -3px 6px rgba(0,0,0,0.12);
 }
 
 .page-wrapper.is-dark .notif-action-btn:hover {
@@ -671,7 +676,7 @@ export default {
 }
 
 .page-wrapper.is-dark .btn-mark-all {
-  color: #9fd4b3;
+  color: #8b1212;
 }
 
 .page-wrapper.is-dark .notif-header {
@@ -1081,6 +1086,19 @@ export default {
 .bell-btn svg {
   stroke: currentColor !important;
   stroke-width: 0.9 !important;
+}
+
+/* Force-remove any thick border/halo left by other global styles or browser UA styles */
+.page-wrapper .filter-tab,
+.page-wrapper .filter-tab:focus,
+.page-wrapper .filter-tab:focus-visible,
+.page-wrapper .filter-tab.active,
+.page-wrapper .filter-tab::before,
+.page-wrapper .filter-tab::after {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background-clip: padding-box !important;
 }
 
 </style>
