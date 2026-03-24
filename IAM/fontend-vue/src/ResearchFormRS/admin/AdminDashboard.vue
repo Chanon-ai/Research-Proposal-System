@@ -237,7 +237,8 @@
           </div>
 
           <div class="committee-selection-panel">
-            <div class="mb-2"><strong>คณะกรรมการที่เลือก ({{ selectedCommitteeIds.length }}/3)</strong></div>
+            <div class="mb-2"><strong>คณะกรรมการที่เลือก ({{ selectedCommitteeIds.length }} คน)</strong></div>
+            <small class="text-muted d-block mb-2">ต้องมีกรรมการอย่างน้อย {{ requiredCommitteeCount }} คนตามนโยบายระบบ</small>
             <div class="committee-selection-summary">
             <span v-if="selectedCommitteeProfiles.length === 0" class="text-muted">ยังไม่ได้เลือกคณะกรรมการ</span>
             <span
@@ -324,7 +325,6 @@
                 type="checkbox"
                 class="committee-user-checkbox"
                 :checked="isSelectedCommittee(u._id)"
-                :disabled="!isSelectedCommittee(u._id) && selectedCommitteeIds.length >= 3"
                 @change="toggleCommitteeSelection(u)"
               />
               <div class="committee-user-details">
@@ -335,14 +335,14 @@
               </div>
             </label>
           </div>
-          <small class="committee-modal-note text-muted">เลือกได้สูงสุด 3 คน</small>
+          <small class="committee-modal-note text-muted">ตรวจสอบจำนวนขั้นต่ำตามนโยบายระบบก่อนยืนยัน</small>
         </div>
       </template>
 
       <template #footer-wrapper>
         <div class="committee-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
           <CButton color="secondary" class="mr-2" @click="closeCommitteeModal">ยกเลิก</CButton>
-          <CButton color="success" :disabled="submittingCommittee || selectedCommitteeIds.length === 0" @click="confirmAssignCommittee">
+          <CButton color="success" :disabled="submittingCommittee || selectedCommitteeIds.length < requiredCommitteeCount" @click="confirmAssignCommittee">
             {{ submittingCommittee ? 'กำลังบันทึก...' : 'ยืนยัน' }}
           </CButton>
         </div>
@@ -469,6 +469,12 @@ export default {
       selectedCommitteeDepartment: '',
       committeeDepartments: [],
       proposalDepartmentHint: '',
+      workflowApprovalPolicy: {
+        minScore: 60,
+        minCommittee: 3,
+        maxRounds: 2,
+        allowRevisionAfterMeeting: true
+      },
 
       tableFields: [
         { key: 'index', label: '#' },
@@ -552,9 +558,15 @@ export default {
       return (this.selectedCommitteeIds || [])
         .map(id => byId.get(String(id)))
         .filter(Boolean)
+    },
+    requiredCommitteeCount () {
+      const n = Number(this.workflowApprovalPolicy && this.workflowApprovalPolicy.minCommittee)
+      if (!Number.isFinite(n) || n < 1) return 1
+      return Math.floor(n)
     }
   },
   mounted () {
+    this.fetchWorkflowApprovalPolicy()
     this.fetchSummary()
     this.fetchProposals()
   },
@@ -574,7 +586,6 @@ export default {
       if (idx >= 0) {
         current.splice(idx, 1)
       } else {
-        if (current.length >= 3) return
         current.push(key)
       }
       this.selectedCommitteeIds = current
@@ -592,6 +603,21 @@ export default {
     onCommitteeDepartmentChange (val) {
       this.selectedCommitteeDepartment = this.getSelectValue(val)
       this.committeeFilterMode = this.selectedCommitteeDepartment ? 'department' : 'all'
+    },
+    async fetchWorkflowApprovalPolicy () {
+      try {
+        const response = await axios.get('/api/v1/setting/workflow-policy')
+        const payload = response && response.data && response.data.data ? response.data.data : {}
+        this.workflowApprovalPolicy = {
+          ...this.workflowApprovalPolicy,
+          minScore: Number.isFinite(Number(payload.minScore)) ? Number(payload.minScore) : this.workflowApprovalPolicy.minScore,
+          minCommittee: Number.isFinite(Number(payload.minCommittee)) ? Number(payload.minCommittee) : this.workflowApprovalPolicy.minCommittee,
+          maxRounds: Number.isFinite(Number(payload.maxRounds)) ? Number(payload.maxRounds) : this.workflowApprovalPolicy.maxRounds,
+          allowRevisionAfterMeeting: payload.allowRevisionAfterMeeting !== undefined
+            ? Boolean(payload.allowRevisionAfterMeeting)
+            : this.workflowApprovalPolicy.allowRevisionAfterMeeting
+        }
+      } catch (_) {}
     },
     async fetchCommitteeUsers () {
       this.committeeUsersLoading = true
@@ -810,15 +836,16 @@ export default {
         this.submittingStatus = false
       }
     },
-    openCommitteeModal (proposal) {
+    async openCommitteeModal (proposal) {
       this.selectedProposal = proposal
+      await this.fetchWorkflowApprovalPolicy()
       this.committeeSearch = ''
       this.committeeFilterMode = 'all'
       this.selectedCommitteeDepartment = ''
       this.committeeDepartments = []
       this.proposalDepartmentHint = ''
       const ids = Array.isArray(proposal && proposal.committeeIds) ? proposal.committeeIds : []
-      this.selectedCommitteeIds = ids.map(String).slice(0, 3)
+      this.selectedCommitteeIds = ids.map(String)
       this.showCommitteeModal = true
       this.fetchCommitteeUsers()
     },
@@ -838,13 +865,9 @@ export default {
         return
       }
 
-      if (!this.selectedCommitteeIds.length) {
-        await Swal.fire('กรุณาเลือกคณะกรรมการ', '', 'warning')
-        return
-      }
-
-      if (this.selectedCommitteeIds.length > 3) {
-        await Swal.fire('เลือกได้สูงสุด 3 คน', '', 'warning')
+      const minRequired = this.requiredCommitteeCount
+      if (this.selectedCommitteeIds.length < minRequired) {
+        await Swal.fire('กรุณาเลือกคณะกรรมการ', `ต้องเลือกอย่างน้อย ${minRequired} คนตามนโยบายระบบ`, 'warning')
         return
       }
 

@@ -165,15 +165,17 @@
             striped
           >
             <template #projectTitleTh="{ item }">
-              <td>
-                <div style="font-weight:500">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
-                <div style="font-size:12px;color:#888">{{ item.proposalCode }}</div>
-                <div style="font-size:12px;color:#aaa">{{ item.projectLeaderName || '-' }}</div>
+              <td class="project-info-cell">
+                <div class="project-meta">
+                  <div class="project-title">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
+                  <div class="project-code">รหัสโครงการ: {{ item.proposalCode || '-' }}</div>
+                  <div class="project-owner">หัวหน้าโครงการ: {{ item.projectLeaderName || '-' }}</div>
+                </div>
               </td>
             </template>
 
             <template #updatedAt="{ item }">
-              <td style="text-align:center; vertical-align:middle">
+              <td class="submitted-date-cell">
                 {{ item.updatedAt
                   ? new Date(item.updatedAt).toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' })
                   : '-' }}
@@ -204,15 +206,17 @@
             </template>
 
             <template #show_details="{ item }">
-              <td style="text-align:center; vertical-align:middle">
-                <CButton
-                  size="sm"
-                  color="primary"
-                  variant="outline"
-                  @click="$router.push('/research-form/' + item._id)"
-                >
-                  {{ $t('common.show') }}
-                </CButton>
+              <td class="action-body-cell">
+                <div class="action-cell">
+                  <CButton
+                    size="sm"
+                    color="primary"
+                    variant="outline"
+                    @click="$router.push('/research-form/' + item._id)"
+                  >
+                    {{ $t('common.show') }}
+                  </CButton>
+                </div>
               </td>
             </template>
           </CDataTable>
@@ -271,7 +275,8 @@ export default {
         {
           key: 'projectTitleTh',
           label: 'ชื่อโครงการวิจัย / หัวหน้าโครงการ',
-          _style: 'min-width:250px; text-align:center;'
+          _style: 'min-width:300px;',
+          _classes: 'project-info-column'
         },
         {
           key: 'currentStatus',
@@ -281,12 +286,14 @@ export default {
         {
           key: 'updatedAt',
           label: 'วันที่ยื่น',
-          _style: 'width:140px; text-align:center;'
+          _style: 'width:150px; text-align:center;',
+          _classes: 'submitted-date-column'
         },
         {
           key: 'show_details',
           label: 'Action',
-          _style: 'width:80px; text-align:center;',
+          _style: 'width:110px; text-align:center;',
+          _classes: 'action-column',
           filter: false,
           sorter: false
         }
@@ -1051,6 +1058,12 @@ export default {
   border-right: 0;
 }
 
+.table-surface /deep/ .table thead th.action-column,
+.table-surface >>> .table thead th.action-column,
+.table-surface::v-deep .table thead th.action-column {
+  text-align: center !important;
+}
+
 .table-surface /deep/ .table tbody td,
 .table-surface >>> .table tbody td,
 .table-surface::v-deep .table tbody td {
@@ -1063,6 +1076,67 @@ export default {
 .table-surface >>> .table tbody td:last-child,
 .table-surface::v-deep .table tbody td:last-child {
   border-right: 0;
+}
+
+.table-surface /deep/ .table tbody td.project-info-column,
+.table-surface >>> .table tbody td.project-info-column,
+.table-surface::v-deep .table tbody td.project-info-column {
+  text-align: center !important;
+}
+
+.table-surface /deep/ .table tbody td.submitted-date-column,
+.table-surface >>> .table tbody td.submitted-date-column,
+.table-surface::v-deep .table tbody td.submitted-date-column,
+.table-surface /deep/ .table tbody td.action-column,
+.table-surface >>> .table tbody td.action-column,
+.table-surface::v-deep .table tbody td.action-column {
+  text-align: center !important;
+}
+
+.project-info-cell {
+  text-align: center;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.project-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.35;
+}
+
+.project-title {
+  font-weight: 700;
+  font-size: 0.96rem;
+  color: #111827;
+}
+
+.project-code,
+.project-owner {
+  font-size: 0.79rem;
+  color: #6b7280;
+}
+
+.submitted-date-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.action-body-cell {
+  vertical-align: middle;
+}
+
+.action-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.action-cell .btn {
+  white-space: nowrap;
 }
 
 .table-surface /deep/ .table tbody tr:hover,
