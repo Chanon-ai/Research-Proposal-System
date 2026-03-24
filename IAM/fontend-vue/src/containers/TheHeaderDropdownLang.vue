@@ -1,40 +1,16 @@
 <template>
-  <CDropdown
-    placement="bottom-end"
-    :caret="false"
-    in-nav
-    class="c-header-nav-item mx-1"
-  >
-    <template #toggler>
-      <CHeaderNavLink class="header-switch-link">
-        <CIcon name="cil-language" size="lg"/>
-      </CHeaderNavLink>
-    </template>
-
-    <CDropdownHeader tag="div" class="text-center bg-light">
-      <strong>{{ $t('header.language') }}</strong>
-    </CDropdownHeader>
-
-    <CDropdownItem
-      class="lang-item"
-      :class="{ active: currentLanguage === 'th' }"
-      @click="setLanguage('th')"
+  <CHeaderNavItem class="c-header-nav-item mx-1">
+    <button
+      type="button"
+      class="c-header-nav-btn header-switch-link"
+      :class="{ 'is-animating': isAnimating }"
+      :title="$t('header.language')"
+      @click="toggleLanguage"
+      @animationend="isAnimating = false"
     >
-      <span class="flag mr-2">🇹🇭</span>
-      <span class="mr-auto">{{ $t('lang.th') }}</span>
-      <CIcon v-if="currentLanguage === 'th'" name="cil-check"/>
-    </CDropdownItem>
-
-    <CDropdownItem
-      class="lang-item"
-      :class="{ active: currentLanguage === 'en' }"
-      @click="setLanguage('en')"
-    >
-      <span class="flag mr-2">🇬🇧</span>
-      <span class="mr-auto">{{ $t('lang.en') }}</span>
-      <CIcon v-if="currentLanguage === 'en'" name="cil-check"/>
-    </CDropdownItem>
-  </CDropdown>
+      <CIcon name="cil-language" size="lg" class="switch-icon"/>
+    </button>
+  </CHeaderNavItem>
 </template>
 
 <script>
@@ -42,14 +18,25 @@ import { mapGetters } from 'vuex'
 
 export default {
   name: 'TheHeaderDropdownLang',
+  data () {
+    return {
+      isAnimating: false
+    }
+  },
   computed: {
     ...mapGetters({
       currentLanguage: 'setting/lang'
     })
   },
   methods: {
-    setLanguage (lang) {
-      this.$store.commit('setting/lang', lang)
+    toggleLanguage () {
+      const next = this.currentLanguage === 'th' ? 'en' : 'th'
+      this.isAnimating = false
+      // ensure animation re-triggers on rapid clicks
+      this.$nextTick(() => {
+        this.isAnimating = true
+      })
+      this.$store.commit('setting/lang', next)
     }
   }
 }
@@ -58,28 +45,29 @@ export default {
 <style scoped>
 .header-switch-link {
   padding: 0.35rem 0.45rem;
+  line-height: 1;
 }
 
-.lang-item {
-  display: flex;
-  align-items: center;
-  min-width: 180px;
-  gap: 8px;
+.switch-icon {
+  will-change: transform, opacity;
 }
 
-:deep(.c-dark-theme) .lang-item,
-:deep([data-coreui-theme='dark']) .lang-item {
-  color: #dce7f3;
+.is-animating .switch-icon {
+  animation: switchPop 220ms ease;
 }
 
-:deep(.c-dark-theme) .lang-item.active,
-:deep([data-coreui-theme='dark']) .lang-item.active {
-  background: #2a3645;
-}
-
-.flag {
-  font-size: 16px;
-  width: 18px;
-  text-align: center;
+@keyframes switchPop {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.18) rotate(10deg);
+    opacity: 0.92;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
 }
 </style>

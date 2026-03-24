@@ -268,7 +268,7 @@ export default {
 }
 
 .notification-header {
-  min-width: 360px;
+  min-width: 320px;
   padding: 0.66rem 1rem;
   background: var(--notif-header-bg, #f8f9fa);
   border-bottom: 1px solid var(--notif-border, #e5e7eb);
@@ -276,7 +276,7 @@ export default {
 }
 
 .notification-list {
-  max-height: 356px;
+  max-height: 300px;
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--notif-dropdown-bg, #fff);
@@ -389,15 +389,15 @@ export default {
 }
 
 :deep(.notification-menu) {
-  width: 440px;
-  min-width: 420px;
-  max-width: min(460px, calc(100vw - 20px));
-  max-height: min(560px, calc(100vh - 90px));
+  width: 380px !important;
+  min-width: 340px !important;
+  max-width: min(420px, calc(100vw - 20px)) !important;
+  max-height: min(460px, calc(100vh - 110px)) !important;
   overflow: hidden;
   border-radius: 0.7rem;
   padding-bottom: 0;
   left: auto !important;
-  right: -10px !important;
+  right: -6px !important;
   transform: translate3d(0, 0, 0) !important;
   --notif-dropdown-bg: var(--cui-dropdown-bg, #fff);
   --notif-header-bg: var(--cui-tertiary-bg, #f8f9fa);
@@ -515,7 +515,7 @@ export default {
 }
 
 :deep(.notification-dropdown__menu--dark) .notification-dropdown__list {
-  max-height: 418px;
+  max-height: 300px;
   background: var(--notif-dropdown-bg);
 }
 
@@ -545,7 +545,7 @@ export default {
 
 @media (max-width: 767.98px) {
   .notification-header {
-    min-width: 300px;
+    min-width: 260px;
   }
 
   .notification-item {
@@ -554,9 +554,13 @@ export default {
 
   :deep(.notification-menu) {
     min-width: 0;
-    width: min(360px, calc(100vw - 16px));
-    max-width: calc(100vw - 16px);
+    width: min(320px, calc(100vw - 16px)) !important;
+    max-width: calc(100vw - 16px) !important;
     right: 0 !important;
+  }
+
+  .notification-list {
+    max-height: min(260px, calc(100vh - 160px));
   }
 }
 </style>
