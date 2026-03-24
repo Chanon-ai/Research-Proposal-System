@@ -34,12 +34,61 @@ logger.on('error', function (err) {
 
 // Truncate large data to prevent BSON overflow
 function safeForLog(data) {
-    try {
-        var str = JSON.stringify(data);
-        if (str && str.length > 10000) {
-            return { _truncated: true, length: str.length };
+    var maxDepth = 4;
+    var maxArrayItems = 25;
+    var maxObjectKeys = 40;
+    var maxStringLength = 1500;
+    var seen = new WeakSet();
+
+    function trimString(value) {
+        var text = String(value || '');
+        if (text.length <= maxStringLength) return text;
+        return text.slice(0, maxStringLength) + '...[truncated]';
+    }
+
+    function walk(value, depth) {
+        if (value === null || value === undefined) return value;
+        if (typeof value === 'string') return trimString(value);
+        if (typeof value === 'number' || typeof value === 'boolean') return value;
+        if (value instanceof Date) return value.toISOString();
+        if (Buffer.isBuffer(value)) {
+            return { _type: 'Buffer', length: value.length, _truncated: true };
         }
-        return JSON.parse(str);
+        if (depth >= maxDepth) {
+            if (Array.isArray(value)) return { _type: 'Array', length: value.length, _truncated: true };
+            if (typeof value === 'object') return { _type: 'Object', _truncated: true };
+            return value;
+        }
+        if (typeof value === 'object') {
+            if (seen.has(value)) return { _circular: true };
+            seen.add(value);
+
+            if (Array.isArray(value)) {
+                var list = value.slice(0, maxArrayItems).map(function (item) {
+                    return walk(item, depth + 1);
+                });
+                if (value.length > maxArrayItems) {
+                    list.push({ _truncatedItems: value.length - maxArrayItems });
+                }
+                return list;
+            }
+
+            var keys = Object.keys(value);
+            var limitedKeys = keys.slice(0, maxObjectKeys);
+            var output = {};
+            limitedKeys.forEach(function (key) {
+                output[key] = walk(value[key], depth + 1);
+            });
+            if (keys.length > maxObjectKeys) {
+                output._truncatedKeys = keys.length - maxObjectKeys;
+            }
+            return output;
+        }
+        return String(value);
+    }
+
+    try {
+        return walk(data, 0);
     } catch (e) {
         return { _error: 'could not serialize' };
     }
