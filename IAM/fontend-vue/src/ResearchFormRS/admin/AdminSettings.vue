@@ -70,6 +70,17 @@
             <CButton color="primary" @click="saveGeneralSettings">บันทึก</CButton>
           </CCardBody>
         </CCard>
+
+        <CCard class="mt-3">
+          <CCardHeader>ข้อมูลระบบ (Read-only)</CCardHeader>
+          <CCardBody>
+            <div><strong>เวอร์ชันระบบ:</strong> 1.0.0</div>
+            <div><strong>Backend:</strong> Node.js + Express</div>
+            <div><strong>Database:</strong> MongoDB</div>
+            <div><strong>สถานะระบบ:</strong> <span class="text-success">ปกติ</span></div>
+            <div><strong>เชื่อมต่อ Database:</strong> <span :class="settings.length > 0 || apiConnected ? 'text-success' : 'text-warning'">{{ settings.length > 0 || apiConnected ? 'เชื่อมต่อได้' : 'ยังไม่ยืนยัน' }}</span></div>
+          </CCardBody>
+        </CCard>
       </CTab>
 
       <CTab>
@@ -278,86 +289,6 @@
               <CButton size="sm" color="secondary" variant="outline" @click="loadMoreEmailLogs" :disabled="emailLogLoading">
                 โหลดเพิ่มเติม ({{ emailLogs.length }}/{{ emailLogTotal }})
               </CButton>
-            </div>
-          </CCardBody>
-        </CCard>
-      </CTab>
-
-      <CTab>
-        <template slot="title">ผู้ดูแลระบบ</template>
-
-        <CCard class="mt-3">
-          <CCardHeader>ข้อมูลระบบ (Read-only)</CCardHeader>
-          <CCardBody>
-            <div><strong>เวอร์ชันระบบ:</strong> 1.0.0</div>
-            <div><strong>Backend:</strong> Node.js + Express</div>
-            <div><strong>Database:</strong> MongoDB</div>
-            <div><strong>สถานะระบบ:</strong> <span class="text-success">ปกติ</span></div>
-            <div><strong>เชื่อมต่อ Database:</strong> <span :class="settings.length > 0 || apiConnected ? 'text-success' : 'text-warning'">{{ settings.length > 0 || apiConnected ? 'เชื่อมต่อได้' : 'ยังไม่ยืนยัน' }}</span></div>
-          </CCardBody>
-        </CCard>
-
-        <CCard>
-          <CCardHeader class="d-flex justify-content-between align-items-center flex-wrap" style="gap:8px;">
-            <span>จัดการ Settings (Raw)</span>
-            <CButton size="sm" color="primary" @click="showAddSettingModal = true">+ เพิ่ม Setting ใหม่</CButton>
-          </CCardHeader>
-          <CCardBody>
-            <div class="table-responsive">
-              <table class="table table-bordered table-striped mb-0">
-                <thead>
-                  <tr>
-                    <th>Key</th>
-                    <th>Value</th>
-                    <th>Group</th>
-                    <th>คำอธิบาย</th>
-                    <th style="width:120px;">แก้ไข</th>
-                    <th style="width:80px;">ลบ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="s in settings" :key="s._id || s.key">
-                    <td><code>{{ s.key }}</code></td>
-                    <td>
-                      <CInput
-                        v-if="editingSettingId === (s._id || s.key)"
-                        v-model="editingSettingValue"
-                        :type="editingSettingIsSecret ? 'password' : 'text'"
-                        :placeholder="editingSettingIsSecret ? 'มีการตั้งค่าไว้แล้ว (กรอกใหม่เพื่อเปลี่ยน)' : ''"
-                        :name="editingSettingIsSecret ? 'setting_secret_value' : 'setting_value'"
-                        :autocomplete="editingSettingIsSecret ? 'new-password' : 'off'"
-                      />
-                      <span v-else>{{ renderSettingValue(s) }}</span>
-                    </td>
-                    <td>{{ s.group || '-' }}</td>
-                    <td>
-                      <CInput v-if="editingSettingId === (s._id || s.key)" v-model="editingSettingDescription" />
-                      <span v-else>{{ s.description || '-' }}</span>
-                    </td>
-                    <td>
-                      <div v-if="editingSettingId === (s._id || s.key)" class="d-flex" style="gap:6px;">
-                        <CButton size="sm" color="primary" @click="editSetting(s)">บันทึก</CButton>
-                        <CButton size="sm" color="secondary" variant="outline" @click="cancelEditSetting">ยกเลิก</CButton>
-                      </div>
-                      <CButton v-else size="sm" color="warning" @click="startEditSetting(s)">แก้ไข</CButton>
-                    </td>
-                    <td><CButton size="sm" color="danger" @click="deleteSetting(s)">ลบ</CButton></td>
-                  </tr>
-                  <tr v-if="settings.length === 0">
-                    <td colspan="6" class="text-center text-muted">ยังไม่มีข้อมูล setting</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </CCardBody>
-        </CCard>
-
-        <CCard class="danger-zone mt-3">
-          <CCardHeader>Danger Zone</CCardHeader>
-          <CCardBody>
-            <div class="d-flex flex-wrap" style="gap:8px;">
-              <CButton color="warning" @click="clearCache">ล้างข้อมูล Cache</CButton>
-              <CButton color="secondary" @click="exportSettings">Export การตั้งค่าทั้งหมด</CButton>
             </div>
           </CCardBody>
         </CCard>
@@ -581,11 +512,10 @@ const SETTINGS_TAB_INDEX = {
   general: 0,
   workflow: 1,
   email: 2,
-  admin: 3,
-  users: 4
+  users: 3
 }
 
-const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'workflow', 'email', 'admin', 'users']
+const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'workflow', 'email', 'users']
 
 export default {
   name: 'AdminSettings',
@@ -710,17 +640,33 @@ export default {
     },
 
     // ─── Tab routing ──────────────────────────────────────────────────────
-    getTabIndexFromQuery (tabKey) {
-      if (!tabKey) return null
+    resolveTabKey (tabKey) {
+      if (!tabKey) return ''
       const key = String(tabKey).trim().toLowerCase()
+      const legacyMap = {
+        admin: 'general',
+        admins: 'general',
+        system_admin: 'general',
+        'system-admin': 'general'
+      }
+      return legacyMap[key] || key
+    },
+    getTabIndexFromQuery (tabKey) {
+      const key = this.resolveTabKey(tabKey)
+      if (!key) return null
       return Object.prototype.hasOwnProperty.call(SETTINGS_TAB_INDEX, key)
         ? SETTINGS_TAB_INDEX[key]
         : null
     },
     applyTabFromRoute () {
+      const resolvedTabKey = this.resolveTabKey(this.$route.query.tab)
       const nextTab = this.getTabIndexFromQuery(this.$route.query.tab)
-      if (nextTab === null || this.activeTab === nextTab) return
-      this.activeTab = nextTab
+      if (nextTab === null) return
+      if (this.activeTab !== nextTab) this.activeTab = nextTab
+      const currentTab = String(this.$route.query.tab || '').trim().toLowerCase()
+      if (resolvedTabKey && currentTab !== resolvedTabKey) {
+        this.$router.replace({ path: this.$route.path, query: { ...this.$route.query, tab: resolvedTabKey } }).catch(() => {})
+      }
     },
     syncRouteTabQuery () {
       const tabKey = SETTINGS_TAB_KEY_BY_INDEX[this.activeTab]
@@ -1288,8 +1234,8 @@ export default {
   color: #e55353;
 }
 
-.danger-zone {
-  border: 1px solid #e55353;
+[class*='c-dark-theme'] .status-flow-divider {
+  background-color: rgba(255, 255, 255, 0.16);
 }
 
 .admin-email-widget__fab {

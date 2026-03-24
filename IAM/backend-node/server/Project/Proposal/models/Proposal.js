@@ -67,7 +67,7 @@ const proposalSchema = new mongoose.Schema(
     },
     currentRound: {
       type: Number,
-      enum: [1, 2],
+      min: 1,
       default: 1
     },
     abstractText: {

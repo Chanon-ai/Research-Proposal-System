@@ -25,6 +25,18 @@ const PLACEHOLDER_EMAIL_REGEX = [
   /^seed[\w.+-]*@/i,
   /@example\.(com|org|net)$/i
 ];
+const WORKFLOW_POLICY_CACHE_TTL_MS = 15000;
+const WORKFLOW_POLICY_DEFAULTS = {
+  minScore: 60,
+  minCommittee: 3,
+  maxRounds: 2,
+  allowRevisionAfterMeeting: true
+};
+
+let workflowPolicyCache = {
+  value: null,
+  expiresAt: 0
+};
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -39,6 +51,35 @@ function toBool(value, fallback = true) {
   if (['1', 'true', 'yes', 'y', 'on', 'enabled', 'enable'].includes(text)) return true;
   if (['0', 'false', 'no', 'n', 'off', 'disabled', 'disable'].includes(text)) return false;
   return fallback;
+}
+
+function toNumber(value, fallback = 0) {
+  if (value === undefined || value === null || value === '') return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function normalizeWorkflowApprovalPolicy(raw = {}) {
+  const minScore = Math.min(Math.max(toNumber(raw.workflow_min_score, WORKFLOW_POLICY_DEFAULTS.minScore), 0), 100);
+  const minCommittee = Math.max(Math.floor(toNumber(raw.workflow_min_committee, WORKFLOW_POLICY_DEFAULTS.minCommittee)), 1);
+  const maxRounds = Math.max(Math.floor(toNumber(raw.workflow_max_rounds, WORKFLOW_POLICY_DEFAULTS.maxRounds)), 1);
+  const allowRevisionAfterMeeting = toBool(
+    raw.workflow_allow_revision_after_meeting,
+    WORKFLOW_POLICY_DEFAULTS.allowRevisionAfterMeeting
+  );
+
+  return {
+    minScore,
+    minCommittee,
+    maxRounds,
+    allowRevisionAfterMeeting,
+    source: {
+      workflow_min_score: raw.workflow_min_score !== undefined ? 'setting' : 'default',
+      workflow_min_committee: raw.workflow_min_committee !== undefined ? 'setting' : 'default',
+      workflow_max_rounds: raw.workflow_max_rounds !== undefined ? 'setting' : 'default',
+      workflow_allow_revision_after_meeting: raw.workflow_allow_revision_after_meeting !== undefined ? 'setting' : 'default'
+    }
+  };
 }
 
 function resolveManualAdminEmailPolicy(settings = {}) {
@@ -273,6 +314,23 @@ async function getSettingMap() {
   }, {});
 }
 
+async function getWorkflowApprovalPolicy(options = {}) {
+  const forceRefresh = Boolean(options && options.forceRefresh);
+  const now = Date.now();
+
+  if (!forceRefresh && workflowPolicyCache.value && workflowPolicyCache.expiresAt > now) {
+    return workflowPolicyCache.value;
+  }
+
+  const settings = await getSettingMap();
+  const policy = normalizeWorkflowApprovalPolicy(settings || {});
+  workflowPolicyCache = {
+    value: policy,
+    expiresAt: now + WORKFLOW_POLICY_CACHE_TTL_MS
+  };
+  return policy;
+}
+
 function normalizeBulkSettingItem(item = {}) {
   const key = String(item.key || '').trim();
   const valueType = String(item.valueType || '').trim();
@@ -354,6 +412,9 @@ function buildBulkOperations({ settings, group, user }) {
 async function bulkUpsertSettings(payload = {}, user = null) {
   const { group, settings } = normalizeBulkPayload(payload);
   const savedKeys = settings.map((item) => item.key);
+  if (savedKeys.some((key) => key.startsWith('workflow_'))) {
+    workflowPolicyCache = { value: null, expiresAt: 0 };
+  }
   const operations = buildBulkOperations({ settings, group, user });
 
   let session = null;
@@ -618,6 +679,7 @@ module.exports = {
   deleteSetting,
   bulkUpsertSettings,
   getSettingMap,
+  getWorkflowApprovalPolicy,
   resolveManualAdminEmailPolicy,
   testEmail,
   clearCache

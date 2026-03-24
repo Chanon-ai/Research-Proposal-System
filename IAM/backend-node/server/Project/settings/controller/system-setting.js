@@ -118,3 +118,12 @@ exports.listEmailLogs = async (req, res) => {
     return handleError(res, err, 500);
   }
 };
+
+exports.workflowPolicy = async (req, res) => {
+  try {
+    const policy = await service.getWorkflowApprovalPolicy();
+    return res.json({ success: true, data: policy });
+  } catch (err) {
+    return handleError(res, err, 500);
+  }
+};

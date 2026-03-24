@@ -8,6 +8,7 @@ const ProposalStatusLog = require('../models/ProposalStatusLog');
 const ProposalReview = require('../models/ProposalReview');
 const Notification = require('../models/Notification');
 const User = require('../../Auth/models/User');
+const systemSettingService = require('../../settings/service/system-setting');
 const STATUS = require('../constants/proposal-status');
 const { sendWorkflowEventEmails } = require('./workflow-notification.service');
 
@@ -164,6 +165,35 @@ function applyDraftPayload(target, payload = {}, fallback = {}) {
 
   normalizeDraftCoreFields(doc, base);
   return doc;
+}
+
+function normalizeRoundNo(value, fallback = 1) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 1) return fallback;
+  return Math.floor(n);
+}
+
+function dedupeCommitteeIds(committeeIds = []) {
+  const seen = new Set();
+  const result = [];
+  for (const id of committeeIds) {
+    const key = String(id || '').trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(key);
+  }
+  return result;
+}
+
+async function getSubmittedReviewsForRound(proposalId, roundNo) {
+  const targetRound = normalizeRoundNo(roundNo, 1);
+  return ProposalReview.find({
+    proposalId,
+    roundNo: targetRound,
+    reviewStatus: 'submitted'
+  })
+    .select('totalScore reviewerUserId roundNo reviewStatus')
+    .lean();
 }
 
 async function generateProposalCode() {
@@ -387,6 +417,9 @@ async function submitProposal(id, user) {
 async function changeProposalStatus(id, toStatus, remark, user) {
   const proposal = await Proposal.findById(id);
   if (!proposal) throw new Error('Proposal not found');
+
+  const workflowPolicy = await systemSettingService.getWorkflowApprovalPolicy();
+  const currentRound = normalizeRoundNo(proposal.currentRound, 1);
   const fromStatus = proposal.currentStatus;
   let allowed = ALLOWED_TRANSITIONS[fromStatus] || [];
   const submittedReviewCount = await ProposalReview.countDocuments({
@@ -403,6 +436,44 @@ async function changeProposalStatus(id, toStatus, remark, user) {
 
   if (!allowed.includes(toStatus)) {
     throw new Error(`Cannot transition from ${fromStatus} to ${toStatus}`);
+  }
+
+  if (
+    fromStatus === STATUS.MEETING_COMPLETED &&
+    toStatus === STATUS.REVISION_REQUESTED &&
+    !workflowPolicy.allowRevisionAfterMeeting
+  ) {
+    throw new Error('Revision after meeting is disabled by workflow policy');
+  }
+
+  if (toStatus === STATUS.REVISION_REQUESTED && currentRound >= workflowPolicy.maxRounds) {
+    throw new Error(`Cannot request revision: maximum review rounds (${workflowPolicy.maxRounds}) reached`);
+  }
+
+  if (toStatus === STATUS.SECOND_ROUND_REVIEW && currentRound >= workflowPolicy.maxRounds) {
+    throw new Error(`Cannot move to next round: maximum review rounds (${workflowPolicy.maxRounds}) reached`);
+  }
+
+  if (toStatus === STATUS.APPROVED) {
+    const submittedRoundReviews = await getSubmittedReviewsForRound(proposal._id, currentRound);
+    const submittedCountForCurrentRound = submittedRoundReviews.length;
+
+    if (submittedCountForCurrentRound < workflowPolicy.minCommittee) {
+      throw new Error(`Cannot approve: requires at least ${workflowPolicy.minCommittee} submitted committee reviews`);
+    }
+
+    const scores = submittedRoundReviews
+      .map((row) => Number(row && row.totalScore))
+      .filter((value) => Number.isFinite(value));
+
+    if (!scores.length) {
+      throw new Error('Cannot approve: no valid committee score submitted for current round');
+    }
+
+    const averageScore = scores.reduce((sum, value) => sum + value, 0) / scores.length;
+    if (averageScore < workflowPolicy.minScore) {
+      throw new Error(`Cannot approve: average score ${averageScore.toFixed(2)} is below minimum threshold ${workflowPolicy.minScore}`);
+    }
   }
 
   // Only update status-related fields; avoid overwriting unrelated fields (e.g. committeeIds)
@@ -426,7 +497,7 @@ async function changeProposalStatus(id, toStatus, remark, user) {
       updates.requiresRevision = false;
       break;
     case STATUS.SECOND_ROUND_REVIEW:
-      updates.currentRound = 2;
+      updates.currentRound = Math.max(currentRound + 1, 2);
       break;
     case STATUS.APPROVED:
       updates.approvedAt = now;
@@ -534,18 +605,26 @@ async function changeProposalStatus(id, toStatus, remark, user) {
 async function assignCommittee(id, committeeIds = [], user) {
   const proposal = await Proposal.findById(id);
   if (!proposal) throw new Error('Proposal not found');
+
   // Validate committeeIds is an array
   if (!Array.isArray(committeeIds)) {
     throw new Error('committeeIds must be an array');
   }
+
+  const workflowPolicy = await systemSettingService.getWorkflowApprovalPolicy();
+  const normalizedCommitteeIds = dedupeCommitteeIds(committeeIds);
   // Prevent committee assignment to finalized proposals
   const terminalStates = [STATUS.APPROVED, STATUS.REJECTED, STATUS.ANNOUNCED];
   if (terminalStates.includes(proposal.currentStatus)) {
     throw new Error('Cannot assign committee to a finalized proposal');
   }
-  // Note: Empty array allowed; policy on minimum committee size may be enforced in future
+
+  if (normalizedCommitteeIds.length < workflowPolicy.minCommittee) {
+    throw new Error(`At least ${workflowPolicy.minCommittee} committee members are required by workflow policy`);
+  }
+
   const fromStatus = proposal.currentStatus;
-  proposal.committeeIds = committeeIds;
+  proposal.committeeIds = normalizedCommitteeIds;
   proposal.updatedBy = user._id;
   let statusChanged = false;
   if (![STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW].includes(proposal.currentStatus)) {
@@ -578,7 +657,7 @@ async function assignCommittee(id, committeeIds = [], user) {
   }
 
   // notify each committee member
-  for (const reviewerId of committeeIds) {
+  for (const reviewerId of normalizedCommitteeIds) {
     await createNotification({
       userId: reviewerId,
       proposalId: proposal._id,
@@ -590,10 +669,10 @@ async function assignCommittee(id, committeeIds = [], user) {
     });
   }
 
-  if (committeeIds.length > 0) {
+  if (normalizedCommitteeIds.length > 0) {
     const emailResult = await sendWorkflowEventEmails({
       eventKey: 'committee_assigned',
-      recipientIds: committeeIds,
+      recipientIds: normalizedCommitteeIds,
       proposal
     });
 
@@ -727,7 +806,7 @@ async function getProposalFeedback(proposalId, user) {
     throw new Error('Forbidden');
   }
 
-  const activeRoundNo = Number(proposal.currentRound) === 2 ? 2 : 1;
+  const activeRoundNo = normalizeRoundNo(proposal.currentRound, 1);
 
   const [latestDecisionLog, reviews] = await Promise.all([
     ProposalStatusLog.findOne({
