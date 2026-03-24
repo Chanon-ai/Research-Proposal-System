@@ -1,6 +1,12 @@
 @import "@/projects/views/setting/components/setting-modal.shared.scss";
 @import "@/projects/views/accounts/account-edit-modal.shared.scss";
 
+body.theme-switching,
+body.theme-switching * {
+	transition: background-color 220ms ease, color 220ms ease, border-color 220ms ease,
+		box-shadow 220ms ease, fill 220ms ease;
+}
+
 [data-coreui-theme='dark'] .notification-menu,
 body.c-dark-theme .notification-menu {
 	background: #1b2431 !important;

@@ -175,41 +175,24 @@
         <template slot="title">อีเมล</template>
 
         <CCard class="mt-3">
-          <CCardHeader>นโยบายการส่งอีเมล</CCardHeader>
+          <CCardHeader>การแจ้งเตือนทางอีเมล</CCardHeader>
           <CCardBody>
             <CRow>
-              <CCol md="4" class="mb-2">
-                <label class="d-block mb-1">Workflow Auto Email</label>
-                <CSwitch color="success" :checked.sync="emailNotificationsEnabled" />
-                <small class="text-muted d-block">ควบคุมการส่งอีเมลจาก workflow อัตโนมัติ</small>
-              </CCol>
-              <CCol md="4" class="mb-2">
-                <label class="d-block mb-1">Manual Admin Notification Email</label>
-                <CSwitch color="success" :checked.sync="manualAdminNotificationEmailEnabled" />
-                <small class="text-muted d-block">ควบคุมอีเมลที่ส่งจากหน้า Admin Notifications</small>
-              </CCol>
-              <CCol md="4" class="mb-2">
-                <label class="d-block mb-1">Workflow Only Mode</label>
-                <CSwitch color="warning" :checked.sync="workflowOnlyEmailEnabled" />
-                <small class="text-muted d-block">เมื่อเปิดไว้ ระบบจะข้าม manual admin email แม้ toggle อื่นเปิดอยู่</small>
-              </CCol>
-            </CRow>
-
-            <CRow>
               <CCol md="6" class="mb-2">
-                <label class="d-block mb-1">Admin Notification Email (Legacy Fallback)</label>
-                <CSwitch color="secondary" :checked.sync="adminNotificationEmailEnabled" />
-                <small class="text-muted d-block">ใช้เป็น fallback หากไม่ตั้งค่า manual_admin_notification_email_enabled</small>
+                <label class="d-block mb-1">ส่งอีเมลอัตโนมัติจากระบบ</label>
+                <CSwitch color="success" :checked.sync="emailNotificationsEnabled" />
+                <small class="text-muted d-block">ควบคุมการส่งอีเมลจากเหตุการณ์สำคัญของระบบ เช่น เปลี่ยนสถานะโครงการ ประกาศผล และคอมเมนต์สำคัญ</small>
               </CCol>
-              <CCol md="6" class="mb-2 d-flex align-items-end">
-                <div class="text-muted">
-                  <small class="d-block">ลำดับการตีความ toggle ของ manual admin email:</small>
-                  <small class="d-block">manual_admin_notification_email_enabled -> admin_notification_email_enabled -> email_notifications_enabled</small>
-                </div>
+              <CCol md="6" class="mb-2">
+                <label class="d-block mb-1">อนุญาตให้แอดมินส่งอีเมลจากหน้า Notifications</label>
+                <CSwitch color="success" :checked.sync="manualAdminNotificationEmailEnabled" />
+                <small class="text-muted d-block">เมื่อเปิดไว้ ผู้ดูแลระบบสามารถส่งแจ้งเตือนจากหน้า Notifications พร้อมส่งอีเมลถึงผู้รับได้</small>
               </CCol>
             </CRow>
 
-            <CButton color="primary" @click="saveEmailPolicySettings">บันทึกนโยบายการส่งอีเมล</CButton>
+            <small class="text-muted d-block mb-3">ระบบยังคงจัดการค่าขั้นสูงภายในให้อัตโนมัติ เพื่อคงความเข้ากันได้กับการตั้งค่าเดิม</small>
+
+            <CButton color="primary" @click="saveEmailPolicySettings">บันทึกการตั้งค่าอีเมล</CButton>
           </CCardBody>
         </CCard>
 

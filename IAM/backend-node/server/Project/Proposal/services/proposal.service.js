@@ -621,24 +621,47 @@ async function saveReview(proposalId, payload, user) {
     totalScore,
     isSubmit
   } = payload;
-  const filter = { proposalId, reviewerUserId: user._id, roundNo };
+  if (!user || !user._id) throw new Error('Unauthorized');
+
+  const round = parseInt(roundNo, 10) || 1;
+  const filter = { proposalId, reviewerUserId: user._id, roundNo: round };
+
+  // Access control: committee can only review proposals they are assigned to.
+  if (user.role === 'committee') {
+    const proposal = await Proposal.findById(proposalId).select('_id committeeIds').lean();
+    if (!proposal) throw new Error('Proposal not found');
+    const committeeIds = Array.isArray(proposal.committeeIds) ? proposal.committeeIds.map(String) : [];
+    if (!committeeIds.includes(String(user._id))) {
+      throw new Error('Forbidden');
+    }
+  }
+
+  const existing = await ProposalReview.findOne(filter).select('_id reviewStatus submittedAt').lean();
+  if (existing && existing.reviewStatus === 'submitted') {
+    // One submission per reviewer per proposal/round (no resubmission).
+    throw new Error('REVIEW_ALREADY_SUBMITTED');
+  }
+
+  const nextStatus = isSubmit === true
+    ? 'submitted'
+    : (existing && existing.reviewStatus ? existing.reviewStatus : 'in_progress');
+
   const update = {
     proposalId,
     reviewerUserId: user._id,
-    roundNo,
+    roundNo: round,
     commentItems,
     scoreItems,
     decision,
     summaryComment,
-    totalScore
+    totalScore,
+    reviewStatus: nextStatus
   };
-  if (isSubmit === true) {
-    update.reviewStatus = 'submitted';
+
+  if (nextStatus === 'submitted') {
     update.submittedAt = new Date();
-  } else {
-    // keep in progress if not already submitted
-    update.reviewStatus = update.reviewStatus || 'in_progress';
   }
+
   const review = await ProposalReview.findOneAndUpdate(filter, update, { upsert: true, new: true });
   return review;
 }
