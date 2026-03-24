@@ -31,7 +31,7 @@
                   <div v-if="!isReadOnly" class="d-inline-block mr-2">
                     <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('plantApproved')">แนบเอกสาร</CButton>
                   </div>
-                  <CButton color="info" variant="outline" size="sm">ตัวอย่างเอกสาร</CButton>
+                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('section53Notification')">ตัวอย่างเอกสาร</CButton>
                   <div class="mt-2">
                     <AttachmentCard
                       :file="attachmentFor('plantApproved')"
@@ -50,7 +50,7 @@
                   <div v-if="!isReadOnly" class="d-inline-block mr-2">
                     <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('plantPending')">แนบเอกสารหลักฐาน</CButton>
                   </div>
-                  <CButton color="info" variant="outline" size="sm">ตัวอย่างเอกสาร</CButton>
+                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('section53Notification')">ตัวอย่างเอกสาร</CButton>
                   <div class="mt-2">
                     <AttachmentCard
                       :file="attachmentFor('plantPending')"
@@ -89,7 +89,7 @@
                   <div v-if="!isReadOnly" class="d-inline-block mr-2">
                     <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('humanApproved')">แนบเอกสาร</CButton>
                   </div>
-                  <CButton color="info" variant="outline" size="sm">ตัวอย่างเอกสาร</CButton>
+                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('humanEthicsCertificate')">ตัวอย่างเอกสาร</CButton>
                   <div class="mt-2">
                     <AttachmentCard
                       :file="attachmentFor('humanApproved')"
@@ -108,7 +108,7 @@
                   <div v-if="!isReadOnly" class="d-inline-block mr-2">
                     <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('humanPending')">แนบเอกสารหลักฐาน</CButton>
                   </div>
-                  <CButton color="info" variant="outline" size="sm">ตัวอย่างเอกสาร</CButton>
+                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('humanEthicsCertificate')">ตัวอย่างเอกสาร</CButton>
                   <div class="mt-2">
                     <AttachmentCard
                       :file="attachmentFor('humanPending')"
@@ -134,7 +134,7 @@
                   <div v-if="!isReadOnly" class="d-inline-block mr-2">
                     <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('animalApproved')">แนบเอกสาร</CButton>
                   </div>
-                  <CButton color="info" variant="outline" size="sm">ตัวอย่างเอกสาร</CButton>
+                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('animalEthicsCertificate')">ตัวอย่างเอกสาร</CButton>
                   <div class="mt-2">
                     <AttachmentCard
                       :file="attachmentFor('animalApproved')"
@@ -153,7 +153,7 @@
                   <div v-if="!isReadOnly" class="d-inline-block mr-2">
                     <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('animalPending')">แนบเอกสารหลักฐาน</CButton>
                   </div>
-                  <CButton color="info" variant="outline" size="sm">ตัวอย่างเอกสาร</CButton>
+                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('animalEthicsCertificate')">ตัวอย่างเอกสาร</CButton>
                   <div class="mt-2">
                     <AttachmentCard
                       :file="attachmentFor('animalPending')"
@@ -181,6 +181,17 @@ const DEFAULT_ATTACHMENTS = {
   animalApproved: null,
   animalPending: null
 }
+
+const SAMPLE_DOC_URLS = {
+  // Official form for Section 53 notification (Plant Varieties Protection Act B.E. 2542)
+  section53Notification: 'https://www.doa.go.th/pvp/wp-content/uploads/2024/11/m53.pdf',
+  section53FormsPage: 'https://www.doa.go.th/pvp/?page_id=13853',
+  // Human research ethics (official university ethics portal with forms/details)
+  humanEthicsCertificate: 'https://sites.google.com/ku.th/kurec/%E0%B9%81%E0%B8%9A%E0%B8%9A%E0%B8%9F%E0%B8%AD%E0%B8%A3%E0%B8%A1%E0%B8%82%E0%B8%AD%E0%B8%A3%E0%B8%9A%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%A3%E0%B8%9A%E0%B8%A3%E0%B8%AD%E0%B8%87%E0%B8%88%E0%B8%A3%E0%B8%A2%E0%B8%98%E0%B8%A3%E0%B8%A3%E0%B8%A1%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%A7%E0%B8%88%E0%B8%A2%E0%B9%83%E0%B8%99%E0%B8%A1%E0%B8%99%E0%B8%A9%E0%B8%A2%E0%B8%A1%E0%B8%AB%E0%B8%B2%E0%B8%A7%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%A5%E0%B8%A2%E0%B9%80%E0%B8%81%E0%B8%A9%E0%B8%95%E0%B8%A3%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3',
+  // Animal use ethics/certificate resources (official IACUC page)
+  animalEthicsCertificate: 'https://researchvetku.com/iacuc/'
+}
+const EXAMPLE_DOC_WINDOW_NAME = 'research-standard-example-doc'
 
 const AttachmentCard = {
   name: 'ResearchStandardAttachmentCard',
@@ -232,7 +243,9 @@ export default {
   },
   data () {
     return {
-      activeAttachmentKey: ''
+      activeAttachmentKey: '',
+      exampleDocPopup: null,
+      lastExampleDocOpenAt: 0
     }
   },
   computed: {
@@ -364,6 +377,27 @@ export default {
       const file = this.attachmentFor(key)
       if (!file) return
       this.$emit('open-attachment', { slotKey: key, file })
+    },
+    openExampleDoc (docKey = 'section53Notification') {
+      const url = SAMPLE_DOC_URLS[docKey] || SAMPLE_DOC_URLS.section53Notification
+      if (!url || typeof window === 'undefined') return
+      const now = Date.now()
+      if (now - this.lastExampleDocOpenAt < 500) return
+      this.lastExampleDocOpenAt = now
+      if (this.exampleDocPopup && !this.exampleDocPopup.closed) {
+        try {
+          this.exampleDocPopup.location.href = url
+          this.exampleDocPopup.focus()
+          return
+        } catch (_) {
+          this.exampleDocPopup = null
+        }
+      }
+      const popup = window.open(url, EXAMPLE_DOC_WINDOW_NAME)
+      if (popup && typeof popup.focus === 'function') {
+        this.exampleDocPopup = popup
+        popup.focus()
+      }
     },
     removeAttachment (key) {
       const file = this.attachmentFor(key)
@@ -498,3 +532,4 @@ export default {
   color: #e7eef7;
 }
 </style>
+
