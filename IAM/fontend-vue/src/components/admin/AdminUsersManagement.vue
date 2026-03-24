@@ -322,7 +322,7 @@ export default {
       users: [],
       loading: false,
       apiNotReady: false,
-      quickFilter: '',
+      quickFilter: 'all',
       summary: {
         totalUsers: 0,
         totalCommittees: 0,
@@ -466,31 +466,38 @@ export default {
         return
       }
       if (!role && !status) {
-        this.quickFilter = ''
+        this.quickFilter = 'all'
         return
       }
 
       this.quickFilter = ''
     },
-    onQuickFilterCardClick (key) {
-      if (key === 'all') {
-        const isTogglingOff = this.quickFilter === 'all'
-        this.filters.role = ''
+    applyQuickFilter (key) {
+      if (key === 'committee') {
+        this.filters.role = 'committee'
         this.filters.isActive = ''
-        this.quickFilter = isTogglingOff ? '' : 'all'
-      } else {
-        const isSameActive = this.quickFilter === key
-
-        if (key === 'committee' || key === 'admin') {
-          this.filters.role = isSameActive ? '' : key
-          this.quickFilter = isSameActive ? '' : key
-        } else if (key === 'active') {
-          this.filters.isActive = isSameActive ? '' : 'true'
-          this.quickFilter = isSameActive ? '' : 'active'
-        }
+        this.quickFilter = 'committee'
+        return
+      }
+      if (key === 'admin') {
+        this.filters.role = 'admin'
+        this.filters.isActive = ''
+        this.quickFilter = 'admin'
+        return
+      }
+      if (key === 'active') {
+        this.filters.role = ''
+        this.filters.isActive = 'true'
+        this.quickFilter = 'active'
+        return
       }
 
-      this.syncQuickFilterFromDropdowns()
+      this.filters.role = ''
+      this.filters.isActive = ''
+      this.quickFilter = 'all'
+    },
+    onQuickFilterCardClick (key) {
+      this.applyQuickFilter(key)
       this.page = 1
       this.fetchUsers()
     },
@@ -564,7 +571,7 @@ export default {
       this.filters.role = ''
       this.filters.department = ''
       this.filters.isActive = ''
-      this.quickFilter = ''
+      this.quickFilter = 'all'
       this.page = 1
       this.fetchUsers()
     },
@@ -847,5 +854,36 @@ export default {
   border-color: #8c1515;
   background-color: rgba(254, 194, 96, 0.18);
   box-shadow: 0 0 0 2px rgba(140, 21, 21, 0.16);
+}
+
+[data-coreui-theme='dark'] .admin-users-page,
+body.c-dark-theme .admin-users-page {
+  color: #e6edf6;
+}
+
+[data-coreui-theme='dark'] .summary-widget,
+body.c-dark-theme .summary-widget {
+  background-color: #1d2a39;
+  border-color: rgba(117, 144, 173, 0.34);
+  color: #edf3fb;
+}
+
+[data-coreui-theme='dark'] .summary-widget:hover,
+body.c-dark-theme .summary-widget:hover {
+  background-color: #243244;
+  border-color: rgba(134, 164, 196, 0.46);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+}
+
+[data-coreui-theme='dark'] .summary-widget.is-active,
+body.c-dark-theme .summary-widget.is-active {
+  border-color: #7ea4cf;
+  background-color: rgba(77, 109, 143, 0.45);
+  box-shadow: 0 0 0 2px rgba(126, 164, 207, 0.24);
+}
+
+[data-coreui-theme='dark'] .summary-widget small,
+body.c-dark-theme .summary-widget small {
+  color: #a8bdd2 !important;
 }
 </style>

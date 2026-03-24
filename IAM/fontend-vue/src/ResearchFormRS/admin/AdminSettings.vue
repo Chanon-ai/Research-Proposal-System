@@ -96,7 +96,7 @@
 
         <CAlert
           show
-          class="mt-3"
+          class="mt-3 workflow-alert workflow-alert--source"
           :color="workflowDataSource === 'database' ? 'success' : (workflowDataSource === 'local_fallback' ? 'warning' : 'secondary')"
         >
           <strong>แหล่งข้อมูลที่กำลังใช้งาน:</strong>
@@ -109,6 +109,7 @@
         <CAlert
           v-if="workflowSaveStatus !== 'idle' && workflowSaveMessage"
           show
+          class="workflow-alert workflow-alert--save"
           :color="workflowSaveStatus === 'db_saved' ? 'success' : (workflowSaveStatus === 'local_fallback' ? 'warning' : 'danger')"
         >
           {{ workflowSaveMessage }}
@@ -309,82 +310,6 @@
         </div>
       </CTab>
     </CTabs>
-
-    <button
-      type="button"
-      class="admin-email-widget__fab"
-      :class="{ 'is-open': isEmailWidgetOpen }"
-      aria-label="เปิดฟอร์มส่งอีเมล"
-      @click="toggleEmailWidget"
-    >
-      <CIcon :name="isEmailWidgetOpen ? 'cil-x' : 'cil-envelope-open'" size="lg" />
-    </button>
-
-    <div
-      v-if="isEmailWidgetOpen"
-      class="admin-email-widget__backdrop"
-      @click="closeEmailWidget"
-    >
-      <CCard
-        class="admin-email-widget__panel"
-        @click.stop
-      >
-        <CCardHeader class="admin-email-widget__header d-flex justify-content-between align-items-start">
-          <div>
-            <div class="admin-email-widget__eyebrow">ADMIN EMAIL</div>
-            <h5 class="mb-1">Send a message</h5>
-            <small class="text-muted">ส่งอีเมลทดสอบผ่านระบบ SMTP ที่ตั้งค่าไว้</small>
-          </div>
-          <CButton color="secondary" variant="ghost" size="sm" class="admin-email-widget__close-btn" @click="closeEmailWidget">ปิด</CButton>
-        </CCardHeader>
-
-        <CCardBody class="admin-email-widget__body">
-          <CAlert
-            v-if="emailWidgetFeedback.message"
-            :color="emailWidgetFeedback.type === 'success' ? 'success' : 'danger'"
-            show
-            class="mb-3"
-          >
-            {{ emailWidgetFeedback.message }}
-          </CAlert>
-
-          <CInput label="Name / ชื่อผู้ส่ง" v-model="emailWidgetForm.senderName" placeholder="เช่น ผู้ดูแลระบบ" />
-          <CInput label="Subject / หัวข้อ" v-model="emailWidgetForm.subject" placeholder="เช่น ทดสอบระบบแจ้งเตือน" />
-          <CInput label="Email address / อีเมลผู้รับ" type="email" v-model="emailWidgetForm.recipientEmail" placeholder="ต้องเป็นอีเมลผู้ใช้จริงในระบบ" />
-
-          <label class="d-block mb-1">Template (ถ้าต้องการ)</label>
-          <CSelect
-            class="mb-3"
-            :value="emailWidgetForm.templateKey"
-            :options="[
-              { value: '', label: '(ใช้หัวข้อ/ข้อความที่กรอกเอง)' },
-              ...Object.keys(emailTemplates).map(key => ({ value: key, label: getTemplateLabel(key) }))
-            ]"
-            @change="onWidgetTemplateChange"
-          />
-
-          <label class="d-block mb-1">Message / รายละเอียดข้อความ</label>
-          <textarea
-            v-model="emailWidgetForm.message"
-            rows="6"
-            class="form-control admin-email-widget__textarea"
-            placeholder="พิมพ์ข้อความที่ต้องการส่ง"
-          />
-        </CCardBody>
-
-        <CCardFooter class="admin-email-widget__footer">
-          <CButton
-            color="primary"
-            class="admin-email-widget__send-btn"
-            block
-            :disabled="emailWidgetSending"
-            @click="sendEmailFromWidget"
-          >
-            {{ emailWidgetSending ? 'กำลังส่ง...' : 'ส่งอีเมล' }}
-          </CButton>
-        </CCardFooter>
-      </CCard>
-    </div>
 
     <CModal class="send-modal" :show.sync="showAddSettingModal" centered title="เพิ่ม Setting ใหม่" :close-on-backdrop="false">
       <template #body-wrapper>
@@ -1170,6 +1095,11 @@ export default {
   width: 100%;
 }
 
+[data-coreui-theme='dark'] .admin-settings-page,
+body.c-dark-theme .admin-settings-page {
+  color: #e6edf6;
+}
+
 /* ── Theme (match committee) ───────────────────────────────────────────── */
 .settings-hero {
   border: 0;
@@ -1271,6 +1201,44 @@ export default {
   background: #f7f1ea;
 }
 
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .card,
+[data-coreui-theme='dark'] .admin-settings-page >>> .card,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .card,
+body.c-dark-theme .admin-settings-page /deep/ .card,
+body.c-dark-theme .admin-settings-page >>> .card,
+body.c-dark-theme .admin-settings-page::v-deep .card {
+  border-color: rgba(120, 142, 170, 0.35);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32);
+  background: #1f2a38;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .card-header,
+[data-coreui-theme='dark'] .admin-settings-page >>> .card-header,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .card-header,
+body.c-dark-theme .admin-settings-page /deep/ .card-header,
+body.c-dark-theme .admin-settings-page >>> .card-header,
+body.c-dark-theme .admin-settings-page::v-deep .card-header {
+  background: linear-gradient(90deg, rgba(25, 37, 52, 0.96), rgba(34, 49, 67, 0.96));
+  border-bottom-color: rgba(120, 142, 170, 0.35);
+  color: #f2f7ff;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .card-body,
+[data-coreui-theme='dark'] .admin-settings-page >>> .card-body,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .card-body,
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .card-footer,
+[data-coreui-theme='dark'] .admin-settings-page >>> .card-footer,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .card-footer,
+body.c-dark-theme .admin-settings-page /deep/ .card-body,
+body.c-dark-theme .admin-settings-page >>> .card-body,
+body.c-dark-theme .admin-settings-page::v-deep .card-body,
+body.c-dark-theme .admin-settings-page /deep/ .card-footer,
+body.c-dark-theme .admin-settings-page >>> .card-footer,
+body.c-dark-theme .admin-settings-page::v-deep .card-footer {
+  background: #243244;
+  color: #e6edf6;
+}
+
 .admin-settings-page /deep/ .form-control,
 .admin-settings-page >>> .form-control,
 .admin-settings-page::v-deep .form-control,
@@ -1279,6 +1247,42 @@ export default {
 .admin-settings-page::v-deep .custom-select {
   border-radius: 10px;
   border-color: rgba(181, 133, 34, 0.35);
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .form-control,
+[data-coreui-theme='dark'] .admin-settings-page >>> .form-control,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .form-control,
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .custom-select,
+[data-coreui-theme='dark'] .admin-settings-page >>> .custom-select,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .custom-select,
+body.c-dark-theme .admin-settings-page /deep/ .form-control,
+body.c-dark-theme .admin-settings-page >>> .form-control,
+body.c-dark-theme .admin-settings-page::v-deep .form-control,
+body.c-dark-theme .admin-settings-page /deep/ .custom-select,
+body.c-dark-theme .admin-settings-page >>> .custom-select,
+body.c-dark-theme .admin-settings-page::v-deep .custom-select {
+  background: #1b2735;
+  border-color: #48617d;
+  color: #edf3fb;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .form-control::placeholder,
+[data-coreui-theme='dark'] .admin-settings-page >>> .form-control::placeholder,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .form-control::placeholder,
+body.c-dark-theme .admin-settings-page /deep/ .form-control::placeholder,
+body.c-dark-theme .admin-settings-page >>> .form-control::placeholder,
+body.c-dark-theme .admin-settings-page::v-deep .form-control::placeholder {
+  color: #a7bbcf;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .custom-select option,
+[data-coreui-theme='dark'] .admin-settings-page >>> .custom-select option,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .custom-select option,
+body.c-dark-theme .admin-settings-page /deep/ .custom-select option,
+body.c-dark-theme .admin-settings-page >>> .custom-select option,
+body.c-dark-theme .admin-settings-page::v-deep .custom-select option {
+  background: #182230;
+  color: #edf3fb;
 }
 
 .admin-settings-page /deep/ .form-control:focus,
@@ -1328,6 +1332,16 @@ export default {
   overflow: hidden;
 }
 
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .table-responsive,
+[data-coreui-theme='dark'] .admin-settings-page >>> .table-responsive,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .table-responsive,
+body.c-dark-theme .admin-settings-page /deep/ .table-responsive,
+body.c-dark-theme .admin-settings-page >>> .table-responsive,
+body.c-dark-theme .admin-settings-page::v-deep .table-responsive {
+  background: #1b2735;
+  border-color: #415974;
+}
+
 .admin-settings-page /deep/ .table,
 .admin-settings-page >>> .table,
 .admin-settings-page::v-deep .table {
@@ -1359,6 +1373,46 @@ export default {
   vertical-align: middle !important;
 }
 
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .table,
+[data-coreui-theme='dark'] .admin-settings-page >>> .table,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .table,
+body.c-dark-theme .admin-settings-page /deep/ .table,
+body.c-dark-theme .admin-settings-page >>> .table,
+body.c-dark-theme .admin-settings-page::v-deep .table {
+  color: #edf3fb;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .table thead th,
+[data-coreui-theme='dark'] .admin-settings-page >>> .table thead th,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .table thead th,
+body.c-dark-theme .admin-settings-page /deep/ .table thead th,
+body.c-dark-theme .admin-settings-page >>> .table thead th,
+body.c-dark-theme .admin-settings-page::v-deep .table thead th {
+  background: linear-gradient(90deg, #162333, #22344a) !important;
+  border-right-color: rgba(152, 176, 206, 0.35) !important;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .table tbody td,
+[data-coreui-theme='dark'] .admin-settings-page >>> .table tbody td,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .table tbody td,
+body.c-dark-theme .admin-settings-page /deep/ .table tbody td,
+body.c-dark-theme .admin-settings-page >>> .table tbody td,
+body.c-dark-theme .admin-settings-page::v-deep .table tbody td {
+  background: #1d2a39 !important;
+  border-bottom-color: rgba(135, 160, 188, 0.26) !important;
+  border-right-color: rgba(135, 160, 188, 0.26) !important;
+  color: #edf3fb !important;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .table-striped tbody tr:nth-of-type(odd),
+[data-coreui-theme='dark'] .admin-settings-page >>> .table-striped tbody tr:nth-of-type(odd),
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .table-striped tbody tr:nth-of-type(odd),
+body.c-dark-theme .admin-settings-page /deep/ .table-striped tbody tr:nth-of-type(odd),
+body.c-dark-theme .admin-settings-page >>> .table-striped tbody tr:nth-of-type(odd),
+body.c-dark-theme .admin-settings-page::v-deep .table-striped tbody tr:nth-of-type(odd) {
+  background-color: #1a2634 !important;
+}
+
 .admin-settings-page /deep/ .table tbody td:last-child,
 .admin-settings-page >>> .table tbody td:last-child,
 .admin-settings-page::v-deep .table tbody td:last-child {
@@ -1369,6 +1423,94 @@ export default {
 .admin-settings-page >>> .table tbody tr:hover,
 .admin-settings-page::v-deep .table tbody tr:hover {
   background: rgba(254, 194, 96, 0.22) !important;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .table tbody tr:hover,
+[data-coreui-theme='dark'] .admin-settings-page >>> .table tbody tr:hover,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .table tbody tr:hover,
+body.c-dark-theme .admin-settings-page /deep/ .table tbody tr:hover,
+body.c-dark-theme .admin-settings-page >>> .table tbody tr:hover,
+body.c-dark-theme .admin-settings-page::v-deep .table tbody tr:hover {
+  background: rgba(90, 117, 146, 0.32) !important;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .text-muted,
+[data-coreui-theme='dark'] .admin-settings-page >>> .text-muted,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .text-muted,
+body.c-dark-theme .admin-settings-page /deep/ .text-muted,
+body.c-dark-theme .admin-settings-page >>> .text-muted,
+body.c-dark-theme .admin-settings-page::v-deep .text-muted {
+  color: #a7bbcf !important;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .text-danger,
+[data-coreui-theme='dark'] .admin-settings-page >>> .text-danger,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .text-danger,
+body.c-dark-theme .admin-settings-page /deep/ .text-danger,
+body.c-dark-theme .admin-settings-page >>> .text-danger,
+body.c-dark-theme .admin-settings-page::v-deep .text-danger {
+  color: #ff8e8e !important;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .alert,
+[data-coreui-theme='dark'] .admin-settings-page >>> .alert,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .alert,
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .callout,
+[data-coreui-theme='dark'] .admin-settings-page >>> .callout,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .callout,
+body.c-dark-theme .admin-settings-page /deep/ .alert,
+body.c-dark-theme .admin-settings-page >>> .alert,
+body.c-dark-theme .admin-settings-page::v-deep .alert,
+body.c-dark-theme .admin-settings-page /deep/ .callout,
+body.c-dark-theme .admin-settings-page >>> .callout,
+body.c-dark-theme .admin-settings-page::v-deep .callout {
+  border-color: rgba(131, 156, 185, 0.45);
+  color: #e7eff8;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .badge,
+[data-coreui-theme='dark'] .admin-settings-page >>> .badge,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .badge,
+body.c-dark-theme .admin-settings-page /deep/ .badge,
+body.c-dark-theme .admin-settings-page >>> .badge,
+body.c-dark-theme .admin-settings-page::v-deep .badge {
+  color: #f7fbff;
+}
+
+[data-coreui-theme='dark'] .settings-tabs /deep/ .nav,
+[data-coreui-theme='dark'] .settings-tabs >>> .nav,
+[data-coreui-theme='dark'] .settings-tabs::v-deep .nav,
+body.c-dark-theme .settings-tabs /deep/ .nav,
+body.c-dark-theme .settings-tabs >>> .nav,
+body.c-dark-theme .settings-tabs::v-deep .nav {
+  border-bottom-color: rgba(130, 155, 184, 0.3);
+}
+
+[data-coreui-theme='dark'] .settings-tabs /deep/ .nav-link,
+[data-coreui-theme='dark'] .settings-tabs >>> .nav-link,
+[data-coreui-theme='dark'] .settings-tabs::v-deep .nav-link,
+body.c-dark-theme .settings-tabs /deep/ .nav-link,
+body.c-dark-theme .settings-tabs >>> .nav-link,
+body.c-dark-theme .settings-tabs::v-deep .nav-link {
+  color: #afc3d8;
+}
+
+[data-coreui-theme='dark'] .settings-tabs /deep/ .nav-link.active,
+[data-coreui-theme='dark'] .settings-tabs >>> .nav-link.active,
+[data-coreui-theme='dark'] .settings-tabs::v-deep .nav-link.active,
+body.c-dark-theme .settings-tabs /deep/ .nav-link.active,
+body.c-dark-theme .settings-tabs >>> .nav-link.active,
+body.c-dark-theme .settings-tabs::v-deep .nav-link.active {
+  color: #f1f7ff;
+}
+
+[data-coreui-theme='dark'] .settings-tabs /deep/ .nav-underline .nav-link.active::after,
+[data-coreui-theme='dark'] .settings-tabs >>> .nav-underline .nav-link.active::after,
+[data-coreui-theme='dark'] .settings-tabs::v-deep .nav-underline .nav-link.active::after,
+body.c-dark-theme .settings-tabs /deep/ .nav-underline .nav-link.active::after,
+body.c-dark-theme .settings-tabs >>> .nav-underline .nav-link.active::after,
+body.c-dark-theme .settings-tabs::v-deep .nav-underline .nav-link.active::after {
+  background-color: #7fa6d1;
 }
 
 /* ─── Status flow ─────────────────────────────────────── */
@@ -1433,6 +1575,37 @@ export default {
   background: #f4c0d1;
   color: #4b1528;
 }
+
+[data-coreui-theme='dark'] .status-chip--from,
+body.c-dark-theme .status-chip--from {
+  background: #1b2938;
+  color: #cfe0f2;
+  border-color: #4b6480;
+}
+
+[data-coreui-theme='dark'] .status-chip--to,
+body.c-dark-theme .status-chip--to {
+  background: #2a3a56;
+  color: #d9e7f7;
+}
+
+[data-coreui-theme='dark'] .status-chip--approve,
+body.c-dark-theme .status-chip--approve {
+  background: #285035;
+  color: #d9f3e0;
+}
+
+[data-coreui-theme='dark'] .status-chip--reject,
+body.c-dark-theme .status-chip--reject {
+  background: #5e2b2b;
+  color: #ffe3e3;
+}
+
+[data-coreui-theme='dark'] .status-chip--alt,
+body.c-dark-theme .status-chip--alt {
+  background: #4b3455;
+  color: #f0dff8;
+}
 /* ──────────────────────────────────────────────────────── */
 
 .transition-row {
@@ -1445,6 +1618,49 @@ export default {
 
 [class*='c-dark-theme'] .status-flow-divider {
   background-color: rgba(255, 255, 255, 0.16);
+}
+
+.workflow-alert {
+  border-radius: 10px;
+}
+
+[data-coreui-theme='dark'] .workflow-alert,
+body.c-dark-theme .workflow-alert {
+  border-width: 1px;
+  border-style: solid;
+}
+
+[data-coreui-theme='dark'] .workflow-alert.alert-success,
+body.c-dark-theme .workflow-alert.alert-success {
+  background: rgba(44, 104, 77, 0.25);
+  border-color: rgba(99, 184, 145, 0.55);
+  color: #d7f3e7;
+}
+
+[data-coreui-theme='dark'] .workflow-alert.alert-warning,
+body.c-dark-theme .workflow-alert.alert-warning {
+  background: rgba(130, 95, 42, 0.28);
+  border-color: rgba(239, 188, 101, 0.55);
+  color: #fde8c2;
+}
+
+[data-coreui-theme='dark'] .workflow-alert.alert-secondary,
+body.c-dark-theme .workflow-alert.alert-secondary {
+  background: rgba(68, 86, 108, 0.35);
+  border-color: rgba(150, 172, 198, 0.5);
+  color: #dbe8f6;
+}
+
+[data-coreui-theme='dark'] .workflow-alert.alert-danger,
+body.c-dark-theme .workflow-alert.alert-danger {
+  background: rgba(116, 42, 47, 0.28);
+  border-color: rgba(234, 122, 132, 0.55);
+  color: #ffdce0;
+}
+
+[data-coreui-theme='dark'] .workflow-alert strong,
+body.c-dark-theme .workflow-alert strong {
+  color: #f4f9ff;
 }
 
 .admin-email-widget__fab {
@@ -1520,6 +1736,209 @@ export default {
 .admin-email-widget__textarea {
   resize: vertical;
   min-height: 124px;
+}
+
+[data-coreui-theme='dark'] .admin-email-widget__backdrop,
+body.c-dark-theme .admin-email-widget__backdrop {
+  background: rgba(7, 13, 22, 0.58);
+}
+
+[data-coreui-theme='dark'] .admin-email-widget__panel,
+body.c-dark-theme .admin-email-widget__panel {
+  border-color: #476280;
+  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.55);
+}
+
+[data-coreui-theme='dark'] .admin-email-widget__header,
+body.c-dark-theme .admin-email-widget__header {
+  background: #1b2736;
+  border-bottom-color: #48617d;
+}
+
+[data-coreui-theme='dark'] .admin-email-widget__header h5,
+body.c-dark-theme .admin-email-widget__header h5 {
+  color: #f0f6ff;
+}
+
+[data-coreui-theme='dark'] .admin-email-widget__eyebrow,
+body.c-dark-theme .admin-email-widget__eyebrow {
+  color: #8eb7e0;
+}
+
+[data-coreui-theme='dark'] .admin-email-widget__body,
+body.c-dark-theme .admin-email-widget__body {
+  background: #243244;
+  color: #e6edf6;
+}
+
+[data-coreui-theme='dark'] .admin-email-widget__body label,
+body.c-dark-theme .admin-email-widget__body label {
+  color: #d5e5f6;
+}
+
+[data-coreui-theme='dark'] .admin-email-widget__footer,
+body.c-dark-theme .admin-email-widget__footer {
+  background: #1b2736;
+  border-top-color: #48617d;
+}
+
+[data-coreui-theme='dark'] .admin-email-widget__close-btn,
+body.c-dark-theme .admin-email-widget__close-btn {
+  color: #d3e3f5;
+}
+
+[data-coreui-theme='dark'] .admin-email-widget__close-btn:hover,
+body.c-dark-theme .admin-email-widget__close-btn:hover {
+  color: #f5f9ff;
+  background: rgba(143, 173, 206, 0.16);
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .send-modal .modal-content,
+[data-coreui-theme='dark'] .admin-settings-page >>> .send-modal .modal-content,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .send-modal .modal-content,
+body.c-dark-theme .admin-settings-page /deep/ .send-modal .modal-content,
+body.c-dark-theme .admin-settings-page >>> .send-modal .modal-content,
+body.c-dark-theme .admin-settings-page::v-deep .send-modal .modal-content {
+  background: #1f2b3a;
+  border-color: #4b6783;
+  color: #ebf3fc;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .send-modal .modal-header,
+[data-coreui-theme='dark'] .admin-settings-page >>> .send-modal .modal-header,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .send-modal .modal-header,
+body.c-dark-theme .admin-settings-page /deep/ .send-modal .modal-header,
+body.c-dark-theme .admin-settings-page >>> .send-modal .modal-header,
+body.c-dark-theme .admin-settings-page::v-deep .send-modal .modal-header {
+  background: #192534;
+  border-bottom-color: #48617d;
+  color: #f1f7ff;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .send-modal .modal-title,
+[data-coreui-theme='dark'] .admin-settings-page >>> .send-modal .modal-title,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .send-modal .modal-title,
+body.c-dark-theme .admin-settings-page /deep/ .send-modal .modal-title,
+body.c-dark-theme .admin-settings-page >>> .send-modal .modal-title,
+body.c-dark-theme .admin-settings-page::v-deep .send-modal .modal-title {
+  color: #f1f7ff;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .send-modal .close,
+[data-coreui-theme='dark'] .admin-settings-page >>> .send-modal .close,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .send-modal .close,
+body.c-dark-theme .admin-settings-page /deep/ .send-modal .close,
+body.c-dark-theme .admin-settings-page >>> .send-modal .close,
+body.c-dark-theme .admin-settings-page::v-deep .send-modal .close {
+  color: #f1f7ff;
+  text-shadow: none;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .send-modal .send-modal-inner,
+[data-coreui-theme='dark'] .admin-settings-page >>> .send-modal .send-modal-inner,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .send-modal .send-modal-inner,
+body.c-dark-theme .admin-settings-page /deep/ .send-modal .send-modal-inner,
+body.c-dark-theme .admin-settings-page >>> .send-modal .send-modal-inner,
+body.c-dark-theme .admin-settings-page::v-deep .send-modal .send-modal-inner {
+  background: #1f2b3a;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .send-modal label,
+[data-coreui-theme='dark'] .admin-settings-page >>> .send-modal label,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .send-modal label,
+body.c-dark-theme .admin-settings-page /deep/ .send-modal label,
+body.c-dark-theme .admin-settings-page >>> .send-modal label,
+body.c-dark-theme .admin-settings-page::v-deep .send-modal label {
+  color: #d5e5f6;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .send-modal .form-control,
+[data-coreui-theme='dark'] .admin-settings-page >>> .send-modal .form-control,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .send-modal .form-control,
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .send-modal .custom-select,
+[data-coreui-theme='dark'] .admin-settings-page >>> .send-modal .custom-select,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .send-modal .custom-select,
+body.c-dark-theme .admin-settings-page /deep/ .send-modal .form-control,
+body.c-dark-theme .admin-settings-page >>> .send-modal .form-control,
+body.c-dark-theme .admin-settings-page::v-deep .send-modal .form-control,
+body.c-dark-theme .admin-settings-page /deep/ .send-modal .custom-select,
+body.c-dark-theme .admin-settings-page >>> .send-modal .custom-select,
+body.c-dark-theme .admin-settings-page::v-deep .send-modal .custom-select {
+  background: #182230;
+  border-color: #48617d;
+  color: #edf3fb;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .send-modal .modal-footer,
+[data-coreui-theme='dark'] .admin-settings-page >>> .send-modal .modal-footer,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .send-modal .modal-footer,
+body.c-dark-theme .admin-settings-page /deep/ .send-modal .modal-footer,
+body.c-dark-theme .admin-settings-page >>> .send-modal .modal-footer,
+body.c-dark-theme .admin-settings-page::v-deep .send-modal .modal-footer {
+  background: #192534 !important;
+  border-top-color: #48617d !important;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .admin-users-page .summary-widget,
+[data-coreui-theme='dark'] .admin-settings-page >>> .admin-users-page .summary-widget,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .admin-users-page .summary-widget,
+body.c-dark-theme .admin-settings-page /deep/ .admin-users-page .summary-widget,
+body.c-dark-theme .admin-settings-page >>> .admin-users-page .summary-widget,
+body.c-dark-theme .admin-settings-page::v-deep .admin-users-page .summary-widget {
+  background: #1d2a39;
+  color: #edf3fb;
+  border-color: rgba(117, 144, 173, 0.34);
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .admin-users-page .summary-widget:hover,
+[data-coreui-theme='dark'] .admin-settings-page >>> .admin-users-page .summary-widget:hover,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .admin-users-page .summary-widget:hover,
+body.c-dark-theme .admin-settings-page /deep/ .admin-users-page .summary-widget:hover,
+body.c-dark-theme .admin-settings-page >>> .admin-users-page .summary-widget:hover,
+body.c-dark-theme .admin-settings-page::v-deep .admin-users-page .summary-widget:hover {
+  background: #243244;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .admin-users-page .summary-widget.is-active,
+[data-coreui-theme='dark'] .admin-settings-page >>> .admin-users-page .summary-widget.is-active,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .admin-users-page .summary-widget.is-active,
+body.c-dark-theme .admin-settings-page /deep/ .admin-users-page .summary-widget.is-active,
+body.c-dark-theme .admin-settings-page >>> .admin-users-page .summary-widget.is-active,
+body.c-dark-theme .admin-settings-page::v-deep .admin-users-page .summary-widget.is-active {
+  background: rgba(77, 109, 143, 0.45);
+  border-color: #7ea4cf;
+  box-shadow: 0 0 0 2px rgba(126, 164, 207, 0.24);
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .admin-users-page .c-datatable,
+[data-coreui-theme='dark'] .admin-settings-page >>> .admin-users-page .c-datatable,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .admin-users-page .c-datatable,
+body.c-dark-theme .admin-settings-page /deep/ .admin-users-page .c-datatable,
+body.c-dark-theme .admin-settings-page >>> .admin-users-page .c-datatable,
+body.c-dark-theme .admin-settings-page::v-deep .admin-users-page .c-datatable {
+  color: #edf3fb;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .admin-users-page .pagination .page-link,
+[data-coreui-theme='dark'] .admin-settings-page >>> .admin-users-page .pagination .page-link,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .admin-users-page .pagination .page-link,
+body.c-dark-theme .admin-settings-page /deep/ .admin-users-page .pagination .page-link,
+body.c-dark-theme .admin-settings-page >>> .admin-users-page .pagination .page-link,
+body.c-dark-theme .admin-settings-page::v-deep .admin-users-page .pagination .page-link {
+  background: #1b2735;
+  border-color: #48617d;
+  color: #d7e7f8;
+}
+
+[data-coreui-theme='dark'] .admin-settings-page /deep/ .admin-users-page .pagination .page-item.active .page-link,
+[data-coreui-theme='dark'] .admin-settings-page >>> .admin-users-page .pagination .page-item.active .page-link,
+[data-coreui-theme='dark'] .admin-settings-page::v-deep .admin-users-page .pagination .page-item.active .page-link,
+body.c-dark-theme .admin-settings-page /deep/ .admin-users-page .pagination .page-item.active .page-link,
+body.c-dark-theme .admin-settings-page >>> .admin-users-page .pagination .page-item.active .page-link,
+body.c-dark-theme .admin-settings-page::v-deep .admin-users-page .pagination .page-item.active .page-link {
+  background: #2e4f72;
+  border-color: #7ea4cf;
+  color: #f5f9ff;
 }
 
 @media (max-width: 768px) {
