@@ -323,7 +323,10 @@ export default {
       loading: false,
       apiNotReady: false,
       quickFilter: 'all',
+<<<<<<< HEAD
       fetchSeq: 0,
+=======
+>>>>>>> 0d09fcb8f2291ce2cd745b42cf2afdab222dd2af
       summary: {
         totalUsers: 0,
         totalCommittees: 0,
@@ -465,9 +468,17 @@ export default {
         this.quickFilter = 'active'
         return
       }
+<<<<<<< HEAD
+=======
+      if (!role && !status) {
+        this.quickFilter = 'all'
+        return
+      }
+>>>>>>> 0d09fcb8f2291ce2cd745b42cf2afdab222dd2af
 
       this.quickFilter = (!role && !status) ? 'all' : ''
     },
+<<<<<<< HEAD
     onQuickFilterCardClick (key) {
       if (key === 'all') {
         const isTogglingOff = this.quickFilter === 'all'
@@ -488,9 +499,34 @@ export default {
           this.filters.role = ''
           this.quickFilter = isSameActive ? '' : 'active'
         }
+=======
+    applyQuickFilter (key) {
+      if (key === 'committee') {
+        this.filters.role = 'committee'
+        this.filters.isActive = ''
+        this.quickFilter = 'committee'
+        return
+      }
+      if (key === 'admin') {
+        this.filters.role = 'admin'
+        this.filters.isActive = ''
+        this.quickFilter = 'admin'
+        return
+      }
+      if (key === 'active') {
+        this.filters.role = ''
+        this.filters.isActive = 'true'
+        this.quickFilter = 'active'
+        return
+>>>>>>> 0d09fcb8f2291ce2cd745b42cf2afdab222dd2af
       }
 
-      this.syncQuickFilterFromDropdowns()
+      this.filters.role = ''
+      this.filters.isActive = ''
+      this.quickFilter = 'all'
+    },
+    onQuickFilterCardClick (key) {
+      this.applyQuickFilter(key)
       this.page = 1
       this.fetchUsers()
     },
@@ -913,5 +949,36 @@ export default {
   --summary-start: #16a34a;
   --summary-end: #15803d;
   --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
+}
+
+[data-coreui-theme='dark'] .admin-users-page,
+body.c-dark-theme .admin-users-page {
+  color: #e6edf6;
+}
+
+[data-coreui-theme='dark'] .summary-widget,
+body.c-dark-theme .summary-widget {
+  background-color: #1d2a39;
+  border-color: rgba(117, 144, 173, 0.34);
+  color: #edf3fb;
+}
+
+[data-coreui-theme='dark'] .summary-widget:hover,
+body.c-dark-theme .summary-widget:hover {
+  background-color: #243244;
+  border-color: rgba(134, 164, 196, 0.46);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+}
+
+[data-coreui-theme='dark'] .summary-widget.is-active,
+body.c-dark-theme .summary-widget.is-active {
+  border-color: #7ea4cf;
+  background-color: rgba(77, 109, 143, 0.45);
+  box-shadow: 0 0 0 2px rgba(126, 164, 207, 0.24);
+}
+
+[data-coreui-theme='dark'] .summary-widget small,
+body.c-dark-theme .summary-widget small {
+  color: #a8bdd2 !important;
 }
 </style>
