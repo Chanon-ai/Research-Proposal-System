@@ -617,7 +617,7 @@ export default {
             ? Boolean(payload.allowRevisionAfterMeeting)
             : this.workflowApprovalPolicy.allowRevisionAfterMeeting
         }
-      } catch (_) {}
+      } catch (_) { /* ignore */ }
     },
     async fetchCommitteeUsers () {
       this.committeeUsersLoading = true

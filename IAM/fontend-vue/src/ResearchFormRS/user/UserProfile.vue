@@ -198,7 +198,7 @@ export default {
           left: Math.max(0, btnRect.left - wrapRect.left) + 'px',
           width: Math.max(24, btnRect.width) + 'px'
         }
-      } catch (e) {}
+      } catch (e) { /* ignore */ }
     },
 
     async fetchProfile () {
@@ -225,7 +225,7 @@ export default {
           birthdate:       user.birthdate || '',
           gender:          user.gender || ''
         }
-      } catch (err) {}
+      } catch (err) { /* ignore */ }
     },
 
     startEdit ()  { this.formBackup = { ...this.form }; this.editing = true },
