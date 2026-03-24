@@ -4,7 +4,6 @@
       <h2 class="mb-0">ระบบแจ้งเตือน (Admin)</h2>
       <div class="d-flex" style="gap: 8px;">
         <CButton color="secondary" @click="markAllRead">ทำเครื่องหมายอ่านทั้งหมด</CButton>
-        <CButton color="primary" @click="openSendModal">+ ส่งการแจ้งเตือน</CButton>
       </div>
     </div>
 
@@ -189,6 +188,16 @@
         </div>
       </template>
     </CModal>
+
+    <button
+      type="button"
+      class="admin-email-widget__fab"
+      :class="{ 'is-open': showSendModal }"
+      aria-label="เปิดฟอร์มส่งการแจ้งเตือน"
+      @click="toggleSendModal"
+    >
+      <CIcon :name="showSendModal ? 'cil-x' : 'cil-envelope-open'" size="lg" />
+    </button>
   </div>
 </template>
 
@@ -380,6 +389,13 @@ export default {
       this.showSendModal = true
     },
     closeSendModal () { this.showSendModal = false; this.sendLoading = false },
+    async toggleSendModal () {
+      if (this.showSendModal) {
+        this.closeSendModal()
+        return
+      }
+      await this.openSendModal()
+    },
     onRecipientTypeChange (val) { this.sendForm.recipientType = this.getSelectValue(val); if (this.sendForm.recipientType !== 'specific') this.sendForm.recipientIds = [] },
     onProposalChange (val) { this.sendForm.proposalId = this.getSelectValue(val) },
     onTypeChange (val) { this.sendForm.type = this.getSelectValue(val); if (this.hasTemplateForType(this.sendForm.type)) this.applyTemplate() },
@@ -461,4 +477,33 @@ export default {
   white-space: nowrap;
 }
 .preview-box__text { font-size: 13px; color: #4a5568; }
+
+.admin-email-widget__fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2f6de1 0%, #1748a3 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(20, 46, 101, 0.35);
+  z-index: 1100;
+  cursor: pointer;
+}
+
+.admin-email-widget__fab.is-open {
+  background: linear-gradient(135deg, #4a5f84 0%, #2b3d5e 100%);
+}
+
+@media (max-width: 768px) {
+  .admin-email-widget__fab {
+    right: 16px;
+    bottom: 16px;
+  }
+}
 </style>
