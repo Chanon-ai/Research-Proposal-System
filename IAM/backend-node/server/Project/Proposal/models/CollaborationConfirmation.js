@@ -62,6 +62,14 @@ const collaborationConfirmationSchema = new mongoose.Schema(
       sparse: true,
       index: true
     },
+    // Backward compatibility with older deployments that already created
+    // a unique index named decisionTokenHash_1 on this collection.
+    decisionTokenHash: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true
+    },
     tokenExpiresAt: {
       type: Date,
       default: null

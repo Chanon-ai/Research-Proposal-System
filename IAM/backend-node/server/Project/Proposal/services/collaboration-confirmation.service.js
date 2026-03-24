@@ -15,6 +15,15 @@ function asString(value, fallback = '') {
   return text || fallback;
 }
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function normalizeEmail(email) {
   return asString(email).toLowerCase();
 }
@@ -209,7 +218,7 @@ function buildProposalPreview(proposal) {
   };
 }
 
-async function sendConsentRequestEmail({ recipient, proposalPreview, consentUrl }) {
+async function sendConsentRequestEmail({ recipient, proposalPreview, viewUrl, acceptUrl, rejectUrl }) {
   const settings = await systemSettingService.getSettingMap();
   if (!isWorkflowEmailEnabled(settings || {})) {
     return { ok: false, skippedReason: 'email-notifications-disabled' };
@@ -223,33 +232,50 @@ async function sendConsentRequestEmail({ recipient, proposalPreview, consentUrl 
 
   const transporter = nodemailer.createTransport(config);
   const fromAddress = asString(settings.smtp_from_email || settings.smtp_username);
-  const fromName = asString(settings.smtp_from_name, 'Research Proposal System');
+  const fromName = asString(settings.smtp_from_name, 'ส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง');
   const recipientName = asString(recipient.participantName, recipient.participantEmail);
+  const detailText = `โครงการ ${asString(proposalPreview.projectTitle, '-')} (รหัส ${asString(proposalPreview.proposalCode, '-')})`;
 
-  const subject = `Consent Request: ${proposalPreview.projectTitle} (${proposalPreview.proposalCode})`;
+  const subject = `ขอแจ้งพิจารณาเข้าร่วมโครงการวิจัย - ${asString(proposalPreview.proposalCode, '-')}`;
   const text = [
-    `Dear ${recipientName},`,
+    `เรียน ${recipientName}`,
     '',
-    'You are invited to confirm your participation in a research proposal.',
+    'ขอแจ้งพิจารณาเข้าร่วมโครงการวิจัย',
     '',
-    `Proposal code: ${proposalPreview.proposalCode}`,
-    `Project title: ${proposalPreview.projectTitle}`,
-    `Project leader: ${proposalPreview.projectLeaderName}`,
+    `รายละเอียด: ${detailText}`,
     '',
-    'Please review the proposal summary and provide your signature/decision at:',
-    consentUrl,
+    `ดูเอกสาร: ${viewUrl}`,
+    `ยินยอม: ${acceptUrl}`,
+    `ไม่ยินยอม: ${rejectUrl}`,
     '',
-    'This link is unique to you.',
-    '',
-    'Best regards,',
-    'Research Proposal System'
+    'ขอแสดงความนับถือ',
+    'ส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
   ].join('\n');
+
+  const html = `
+<div style="font-family:Tahoma,Arial,sans-serif;font-size:15px;line-height:1.7;color:#1f2937">
+  <p>เรียน ${escapeHtml(recipientName)}</p>
+  <p>ขอแจ้งพิจารณาเข้าร่วมโครงการวิจัย</p>
+  <p>รายละเอียด: ${escapeHtml(detailText)}</p>
+  <p>
+    <a href="${escapeHtml(viewUrl)}" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;margin-right:6px">ดูเอกสาร</a>
+    <a href="${escapeHtml(acceptUrl)}" style="display:inline-block;background:#047857;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;margin-right:6px">ยินยอม</a>
+    <a href="${escapeHtml(rejectUrl)}" style="display:inline-block;background:#b91c1c;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px">ไม่ยินยอม</a>
+  </p>
+  <p>ขอแสดงความนับถือ<br/>ส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง</p>
+</div>`;
 
   await transporter.sendMail({
     from: fromName ? { name: fromName, address: fromAddress } : fromAddress,
     to: recipient.participantEmail,
     subject,
-    text
+    text,
+    html,
+    textEncoding: 'base64',
+    headers: {
+      'Content-Language': 'th',
+      'X-Content-Type-Options': 'nosniff'
+    }
   });
 
   return { ok: true };
@@ -276,7 +302,8 @@ async function issueCollaborationConfirmations({ proposalId, invitedByUserId = n
   for (const participant of participants) {
     const hasEmail = EMAIL_REGEX.test(participant.participantEmail);
     const token = hasEmail ? generateToken() : '';
-    const tokenHash = hasEmail ? hashToken(token) : '';
+    const tokenHash = hasEmail ? hashToken(token) : hashToken(generateToken());
+    const decisionTokenHash = tokenHash;
     const tokenExpiresAt = hasEmail ? getTokenExpiryDate() : null;
 
     const doc = await CollaborationConfirmation.create({
@@ -290,6 +317,7 @@ async function issueCollaborationConfirmations({ proposalId, invitedByUserId = n
       sourceUserId: participant.sourceUserId || null,
       status: hasEmail ? 'pending' : 'email_missing',
       invitationTokenHash: hasEmail ? tokenHash : undefined,
+      decisionTokenHash,
       tokenExpiresAt,
       deliveryStatus: hasEmail ? 'failed' : 'not_applicable'
     });
@@ -305,13 +333,17 @@ async function issueCollaborationConfirmations({ proposalId, invitedByUserId = n
       continue;
     }
 
-    const consentUrl = buildConsentUrl({ token, requestOrigin });
+    const viewUrl = buildConsentUrl({ token, requestOrigin });
+    const acceptUrl = `${viewUrl}&intent=accept`;
+    const rejectUrl = `${viewUrl}&intent=reject`;
 
     try {
       const emailResult = await sendConsentRequestEmail({
         recipient: participant,
         proposalPreview,
-        consentUrl
+        viewUrl,
+        acceptUrl,
+        rejectUrl
       });
 
       if (!emailResult || !emailResult.ok) {
@@ -363,7 +395,12 @@ function validateTokenInput(token) {
 async function getConfirmationByToken(token) {
   const safeToken = validateTokenInput(token);
   const tokenHash = hashToken(safeToken);
-  const confirmation = await CollaborationConfirmation.findOne({ invitationTokenHash: tokenHash });
+  const confirmation = await CollaborationConfirmation.findOne({
+    $or: [
+      { invitationTokenHash: tokenHash },
+      { decisionTokenHash: tokenHash }
+    ]
+  });
   if (!confirmation) throw new Error('Confirmation not found');
   return confirmation;
 }
@@ -431,6 +468,91 @@ function validateSignatureData(signatureData) {
   return raw;
 }
 
+function mapSignatureKey(confirmation = {}) {
+  const index = Number(confirmation.participantIndex || 0);
+  if (!Number.isFinite(index) || index < 0) return '';
+  if (confirmation.participantType === 'co_researcher') {
+    return `coResearcher-${Math.floor(index)}`;
+  }
+  if (confirmation.participantType === 'advisor') {
+    return `advisor-${Math.floor(index)}`;
+  }
+  return '';
+}
+
+function formatSignatureTimestamp(value) {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().replace('T', ' ').slice(0, 16);
+}
+
+function applyConsentMetaToTeam(snapshot = {}, confirmation = {}, nextStatus = '') {
+  const nextSnapshot = snapshot && typeof snapshot === 'object' ? { ...snapshot } : {};
+  const team = nextSnapshot.researchTeam && typeof nextSnapshot.researchTeam === 'object'
+    ? { ...nextSnapshot.researchTeam }
+    : null;
+  if (!team) return nextSnapshot;
+
+  const key = confirmation.participantType === 'co_researcher' ? 'coResearchers' : (
+    confirmation.participantType === 'advisor' ? 'advisors' : ''
+  );
+  if (!key) return nextSnapshot;
+
+  const list = Array.isArray(team[key]) ? [...team[key]] : [];
+  const index = Number(confirmation.participantIndex || 0);
+  if (!Number.isFinite(index) || index < 0 || index >= list.length) return nextSnapshot;
+
+  const row = list[index] && typeof list[index] === 'object' ? { ...list[index] } : {};
+  row.consentStatus = asString(nextStatus || 'pending', 'pending');
+  row.consentRespondedAt = confirmation.respondedAt || null;
+  row.consentSignatureUpdatedAt = confirmation.respondedAt || null;
+  list[index] = row;
+  team[key] = list;
+  nextSnapshot.researchTeam = team;
+  return nextSnapshot;
+}
+
+async function applySignatureToProposalDocument({
+  proposalId,
+  confirmation,
+  nextStatus,
+  signatureData
+}) {
+  if (!proposalId) return;
+  if (!confirmation || typeof confirmation !== 'object') return;
+
+  const proposal = await Proposal.findById(proposalId);
+  if (!proposal) return;
+
+  const snapshot = proposal.formSnapshotJson && typeof proposal.formSnapshotJson === 'object'
+    ? { ...proposal.formSnapshotJson }
+    : {};
+
+  const signatures = snapshot.signatures && typeof snapshot.signatures === 'object'
+    ? { ...snapshot.signatures }
+    : {};
+
+  const signatureKey = mapSignatureKey(confirmation);
+  if (signatureKey && nextStatus === 'accepted' && asString(signatureData)) {
+    const current = signatures[signatureKey] && typeof signatures[signatureKey] === 'object'
+      ? { ...signatures[signatureKey] }
+      : {};
+
+    signatures[signatureKey] = {
+      ...current,
+      data: signatureData,
+      completed: true,
+      mode: 'upload',
+      timestamp: formatSignatureTimestamp(confirmation.respondedAt)
+    };
+  }
+
+  snapshot.signatures = signatures;
+  proposal.formSnapshotJson = applyConsentMetaToTeam(snapshot, confirmation, nextStatus);
+  proposal.markModified('formSnapshotJson');
+  await proposal.save();
+}
+
 async function notifyProposalOwnerOnDecision({ proposal, confirmation, status }) {
   const ownerId = proposal && proposal.applicantUserId ? proposal.applicantUserId : null;
   if (!ownerId) return;
@@ -486,6 +608,13 @@ async function respondCollaborationConfirmation({
   confirmation.responderIp = asString(ipAddress);
   confirmation.responderUserAgent = asString(userAgent);
   await confirmation.save();
+
+  await applySignatureToProposalDocument({
+    proposalId: confirmation.proposalId,
+    confirmation,
+    nextStatus,
+    signatureData: savedSignature
+  });
 
   await syncProposalConfirmationSummary(confirmation.proposalId);
 
