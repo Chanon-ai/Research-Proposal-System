@@ -585,6 +585,7 @@
             <div class="field full-field">
               <label class="form-label">ผู้เข้าร่วมเพิ่มเติม (ไม่บังคับ)</label>
               <multiselect
+                class="full"
                 v-model="adminSelectedParticipantOptions"
                 :options="adminParticipantOptions"
                 :searchable="true"
@@ -615,18 +616,50 @@
               <CInput class="full" v-model="adminMeetingForm.title" placeholder="กรอกชื่อการประชุม" />
             </div>
 
-            <div class="row small-row">
+            <div class="small-row">
               <div class="field small-field">
                 <label class="form-label">วันที่ประชุม <span class="required">*</span></label>
-                <CInput class="full" type="date" v-model="adminMeetingForm.meetingDate" />
+                <v-date-picker v-model="adminMeetingDatePickerValue" :min-date="minMeetingDateObj"
+                  :popover="{ visibility: 'focus', placement: 'bottom-start' }">
+                  <template #default="{ inputEvents }">
+                    <div class="input-icon__wrap" data-tone="primary">
+                      <input ref="adminMeetingDateInput" class="form-control input-icon__control"
+                        :value="adminMeetingDatePickerValue ? formatThaiDateExampleShort(adminMeetingDatePickerValue) : ''"
+                        v-on="inputEvents" readonly placeholder="เลือกวันที่">
+                      <button type="button" class="input-icon__suffix" @mousedown.prevent
+                        @click="focusPicker('adminMeetingDateInput')">
+                        <CIcon name="cil-calendar" width="16" class="input-icon__ic" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </template>
+                </v-date-picker>
+                <small v-if="adminMeetingDatePickerValue" class="text-muted d-block mt-1">{{
+                  formatThaiDateBelow(adminMeetingDatePickerValue)
+                }}</small>
               </div>
               <div class="field small-field">
                 <label class="form-label">เวลาเริ่ม <span class="required">*</span></label>
-                <CInput class="full" type="time" v-model="adminMeetingForm.startTime" />
+                <div class="input-icon__wrap" data-tone="info">
+                  <input ref="startTimeTrigger" class="form-control input-icon__control time-trigger" type="text"
+                    :value="adminMeetingForm.startTime ? formatTime12h(adminMeetingForm.startTime) : ''"
+                    placeholder="เลือกเวลาเริ่ม" readonly @click="toggleTimeDropdown('start')" />
+                  <button type="button" class="input-icon__suffix" @mousedown.prevent @click="toggleTimeDropdown('start')">
+                    <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
+                  </button>
+                </div>
               </div>
               <div class="field small-field">
                 <label class="form-label">เวลาสิ้นสุด</label>
-                <CInput class="full" type="time" v-model="adminMeetingForm.endTime" />
+                <div class="input-icon__wrap" data-tone="info">
+                  <input ref="endTimeTrigger" class="form-control input-icon__control time-trigger" type="text"
+                    :value="adminMeetingForm.endTime ? formatTime12h(adminMeetingForm.endTime) : ''"
+                    :placeholder="adminMeetingForm.startTime ? '-' : 'เลือกเวลาสิ้นสุด'" readonly
+                    :disabled="!adminMeetingForm.startTime" @click="toggleTimeDropdown('end')" />
+                  <button type="button" class="input-icon__suffix" @mousedown.prevent :disabled="!adminMeetingForm.startTime"
+                    @click="toggleTimeDropdown('end')">
+                    <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -691,6 +724,21 @@
         </template>
       </CModal>
 
+      <div v-if="adminShowMeetingPopup && timeDropdown.openFor" class="time-dropdown__backdrop" @mousedown="closeTimeDropdown"></div>
+      <div v-if="adminShowMeetingPopup && timeDropdown.openFor" class="time-dropdown" ref="timeDropdownPanel" :style="{
+        top: timeDropdown.top + 'px',
+        left: timeDropdown.left + 'px',
+        width: timeDropdown.width + 'px',
+        maxHeight: timeDropdown.maxHeight + 'px'
+      }" @mousedown.stop>
+        <button v-for="opt in (timeDropdown.openFor === 'start' ? startTimeOptions : endTimeOptions)"
+          :key="(timeDropdown.openFor || '') + '-' + (opt.value || 'empty')" type="button" class="time-dropdown__item"
+          :class="{ 'is-selected': isTimeSelected(timeDropdown.openFor, opt.value) }"
+          @click="selectTimeOption(timeDropdown.openFor, opt.value)">
+          {{ opt.label }}
+        </button>
+      </div>
+
       <div class="report-export-host" aria-hidden="true">
         <ReportView
           v-if="reportExportForm"
@@ -710,6 +758,8 @@ import SignatureCard from '@/ResearchFormRS/component/SignatureCard.vue'
 import StatusBadge from '@/ResearchFormRS/component/StatusBadge.vue'
 import FeedbackSection from '@/ResearchFormRS/component/FeedbackSection.vue'
 import ReportView from './Report.vue'
+import Multiselect from 'vue-multiselect'
+import { DatePicker } from 'v-calendar'
 import { COMMITTEE_SECTION_FEEDBACK_MAP, getCommitteeFeedbackMeta } from '@/ResearchFormRS/constants/committeeFeedback'
 import Swal from 'sweetalert2'
 import Service, { instance as axios } from '@/service/api'
@@ -717,6 +767,7 @@ import Service, { instance as axios } from '@/service/api'
 const ACTIVE_DRAFT_STORAGE_KEY = 'research_form_active_draft_id'
 const FEEDBACK_SECTION_PROGRESS_STORAGE_PREFIX = 'research_form_feedback_section_progress'
 const FEEDBACK_SECTION_BASELINE_STORAGE_PREFIX = 'research_form_feedback_section_baseline'
+const BASE_MEETING_START_TIME = '06:00'
 
 const ADMIN_ALLOWED_TRANSITIONS = {
   submitted: ['faculty_review_pending'],
@@ -795,7 +846,9 @@ export default {
     SignatureCard,
     StatusBadge,
     FeedbackSection,
-    ReportView
+    ReportView,
+    Multiselect,
+    'v-date-picker': DatePicker
   },
   data() {
       return {
@@ -829,11 +882,23 @@ export default {
 
       adminShowMeetingPopup: false,
       adminMeetingSubmitting: false,
+      adminParticipantOptions: [],
+      adminParticipantOptionsLoading: false,
+      adminParticipantOptionsError: null,
+      adminSelectedParticipantOptions: [],
+      timeDropdown: {
+        openFor: null,
+        top: 0,
+        left: 0,
+        width: 0,
+        maxHeight: 320
+      },
       adminMeetingForm: {
         title: '',
         meetingDate: '',
         startTime: '',
         endTime: '',
+        meetingType: 'online',
         location: '',
         videoLink: '',
         agenda: '',
@@ -1325,9 +1390,72 @@ export default {
       if (show === false) return false
       // 'responsive' means: show on desktop, overlay/hidden on smaller screens.
       return show === 'responsive' && Number(this.windowWidth) >= 992
+    },
+    adminMeetingDatePickerValue: {
+      get() {
+        return this.parseLocalYmd(this.adminMeetingForm && this.adminMeetingForm.meetingDate ? this.adminMeetingForm.meetingDate : '')
+      },
+      set(val) {
+        this.adminMeetingForm.meetingDate = val ? this.formatYmd(val) : ''
+      }
+    },
+    minMeetingDateObj() {
+      const now = new Date()
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    },
+    minStartTime() {
+      const selected = this.parseLocalYmd(this.adminMeetingForm && this.adminMeetingForm.meetingDate ? this.adminMeetingForm.meetingDate : '')
+      const baseMinutes = this.timeToMinutes(BASE_MEETING_START_TIME)
+      if (!selected) return BASE_MEETING_START_TIME
+      const today = new Date()
+      const sameDay = selected.getFullYear() === today.getFullYear()
+        && selected.getMonth() === today.getMonth()
+        && selected.getDate() === today.getDate()
+      if (!sameDay) return BASE_MEETING_START_TIME
+      const minutes = (today.getHours() * 60) + today.getMinutes()
+      const nowCeil = this.ceilMinutesToStep(minutes, 15)
+      const minMinutes = Number.isFinite(baseMinutes) ? Math.max(baseMinutes, nowCeil) : nowCeil
+      return this.minutesToTime(minMinutes)
+    },
+    minEndTime() {
+      const start = this.adminMeetingForm && this.adminMeetingForm.startTime ? String(this.adminMeetingForm.startTime) : ''
+      if (start) return start
+      return this.minStartTime || BASE_MEETING_START_TIME
+    },
+    startTimeOptions() {
+      return this.buildTimeOptions({
+        min: this.minStartTime || BASE_MEETING_START_TIME,
+        step: 15,
+        includeEmpty: false,
+        formatLabel: (value) => this.formatTime12h(value)
+      })
+    },
+    endTimeOptions() {
+      const start = this.adminMeetingForm && this.adminMeetingForm.startTime ? String(this.adminMeetingForm.startTime) : ''
+      return this.buildTimeOptions({
+        min: this.minEndTime || (this.minStartTime || BASE_MEETING_START_TIME),
+        step: 15,
+        includeEmpty: true,
+        formatLabel: (value) => {
+          if (!value) return '-'
+          const label = this.formatTime12h(value)
+          if (!start) return label
+          const duration = this.timeToMinutes(value) - this.timeToMinutes(start)
+          if (!Number.isFinite(duration) || duration <= 0) return label
+          return `${label} (${this.formatDuration(duration)})`
+        }
+      })
     }
   },
   watch: {
+    'adminMeetingForm.meetingType'(next) {
+      if (!this.adminMeetingForm) return
+      if (next === 'online') {
+        this.adminMeetingForm.location = ''
+      } else if (next === 'onsite') {
+        this.adminMeetingForm.videoLink = ''
+      }
+    },
     feedbackEditableSections: {
       immediate: true,
       handler (sections) {
@@ -2009,6 +2137,216 @@ export default {
         this.adminSubmittingCommittee = false
       }
     },
+    formatAdminParticipantLabel (u) {
+      if (!u) return '-'
+      return u.fullName || u.email || '-'
+    },
+    async fetchAdminParticipantOptions () {
+      this.adminParticipantOptionsLoading = true
+      this.adminParticipantOptionsError = null
+      try {
+        const response = await axios.get('/api/v1/users', { params: { page: 1, limit: 200 } })
+        const payload = (response && response.data && response.data.data) || {}
+        const list = Array.isArray(payload.users) ? payload.users : []
+        this.adminParticipantOptions = list.map(u => {
+          const name = (u && u.fullName) ? String(u.fullName) : ''
+          const email = (u && u.email) ? String(u.email) : ''
+          return { ...u, searchText: `${name} ${email}`.trim() }
+        })
+      } catch (err) {
+        console.error('[ResearchForm] Error fetching users for participant select:', err)
+        this.adminParticipantOptions = []
+        this.adminParticipantOptionsError = (err && err.message) || 'โหลดข้อมูลไม่สำเร็จ'
+      } finally {
+        this.adminParticipantOptionsLoading = false
+      }
+    },
+    formatThaiDateBelow(date) {
+      const d = date instanceof Date ? date : new Date(date)
+      if (Number.isNaN(d.getTime())) return ''
+      try {
+        return d.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      } catch (err) {
+        return this.formatThaiDateExampleShort(d)
+      }
+    },
+    formatThaiDateExampleShort(date) {
+      const d = date instanceof Date ? date : new Date(date)
+      if (Number.isNaN(d.getTime())) return ''
+      try {
+        const parts = new Intl.DateTimeFormat('th-TH', { weekday: 'short', month: 'short', day: 'numeric' }).formatToParts(d)
+        const weekday = (parts.find(p => p.type === 'weekday') || {}).value || ''
+        const day = (parts.find(p => p.type === 'day') || {}).value || ''
+        const month = (parts.find(p => p.type === 'month') || {}).value || ''
+        const w = weekday ? `${weekday.replace(/\s+/g, '')},` : ''
+        return `${w} ${day} ${month}`.trim()
+      } catch (err) {
+        const thaiWeekdays = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
+        const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+        const weekday = thaiWeekdays[d.getDay()] || ''
+        const day = String(d.getDate())
+        const month = thaiMonths[d.getMonth()] || ''
+        return `${weekday}, ${day} ${month}`.trim()
+      }
+    },
+    focusPicker(refName) {
+      this.$nextTick(() => {
+        const el = this.$refs && this.$refs[refName] ? this.$refs[refName] : null
+        if (!el) return
+        try {
+          el.focus && el.focus()
+          el.click && el.click()
+        } catch (err) { void err }
+      })
+    },
+    pad2(n) {
+      const x = parseInt(n, 10)
+      if (!Number.isFinite(x)) return '00'
+      return x < 10 ? `0${x}` : String(x)
+    },
+    formatYmd(d) {
+      const date = d instanceof Date ? d : new Date(d)
+      if (Number.isNaN(date.getTime())) return ''
+      return `${date.getFullYear()}-${this.pad2(date.getMonth() + 1)}-${this.pad2(date.getDate())}`
+    },
+    parseLocalYmd(ymd) {
+      const raw = String(ymd || '').trim()
+      if (!raw) return null
+      const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+      if (!m) return null
+      const y = parseInt(m[1], 10)
+      const mo = parseInt(m[2], 10) - 1
+      const da = parseInt(m[3], 10)
+      const d = new Date(y, mo, da)
+      return Number.isNaN(d.getTime()) ? null : d
+    },
+    timeToMinutes(value) {
+      const v = String(value || '').trim()
+      if (!v) return NaN
+      const m = v.match(/^(\d{1,2}):(\d{2})$/)
+      if (!m) return NaN
+      const h = parseInt(m[1], 10)
+      const min = parseInt(m[2], 10)
+      if (!Number.isFinite(h) || !Number.isFinite(min)) return NaN
+      return (h * 60) + min
+    },
+    minutesToTime(minutes) {
+      const m = parseInt(minutes, 10)
+      if (!Number.isFinite(m) || m < 0) return ''
+      const h = Math.floor(m / 60)
+      const mi = m % 60
+      return `${this.pad2(h)}:${this.pad2(mi)}`
+    },
+    ceilMinutesToStep(minutes, step = 15) {
+      const m = parseInt(minutes, 10)
+      const s = parseInt(step, 10)
+      if (!Number.isFinite(m) || !Number.isFinite(s) || s <= 0) return m
+      return Math.ceil(m / s) * s
+    },
+    formatDuration(totalMinutes) {
+      const mins = parseInt(totalMinutes, 10)
+      if (!Number.isFinite(mins) || mins <= 0) return ''
+      const h = Math.floor(mins / 60)
+      const m = mins % 60
+      if (h > 0 && m > 0) return `${h} ชม. ${m} นาที`
+      if (h > 0) return `${h} ชม.`
+      return `${m} นาที`
+    },
+    formatTime12h(value) {
+      const v = String(value || '').trim()
+      if (!v) return ''
+      const m = v.match(/^(\d{1,2}):(\d{2})$/)
+      if (!m) return v
+      const hh = parseInt(m[1], 10)
+      const mm = m[2]
+      if (!Number.isFinite(hh)) return v
+      return `${this.pad2(hh)}:${mm}น.`
+    },
+    buildTimeOptions({ min = BASE_MEETING_START_TIME, max = '23:45', step = 15, includeEmpty = false, formatLabel } = {}) {
+      const minMinutes = this.timeToMinutes(min)
+      const maxMinutes = this.timeToMinutes(max)
+      const s = parseInt(step, 10)
+      const out = []
+      if (includeEmpty) out.push({ value: '', label: (typeof formatLabel === 'function') ? formatLabel('') : '-' })
+      if (!Number.isFinite(minMinutes) || !Number.isFinite(maxMinutes) || !Number.isFinite(s) || s <= 0) return out
+      for (let t = minMinutes; t <= maxMinutes; t += s) {
+        const value = this.minutesToTime(t)
+        const label = (typeof formatLabel === 'function') ? formatLabel(value) : value
+        out.push({ value, label })
+      }
+      return out
+    },
+    isTimeSelected(kind, value) {
+      if (!kind) return false
+      const v = String(value || '')
+      if (kind === 'start') return String(this.adminMeetingForm.startTime || '') === v
+      if (kind === 'end') return String(this.adminMeetingForm.endTime || '') === v
+      return false
+    },
+    selectTimeOption(kind, value) {
+      if (kind === 'start') {
+        this.adminMeetingForm.startTime = String(value || '')
+        const end = this.adminMeetingForm && this.adminMeetingForm.endTime ? String(this.adminMeetingForm.endTime) : ''
+        if (end && this.timeToMinutes(end) < this.timeToMinutes(this.adminMeetingForm.startTime)) {
+          this.adminMeetingForm.endTime = ''
+        }
+      } else if (kind === 'end') {
+        const nextValue = String(value || '')
+        const start = this.adminMeetingForm && this.adminMeetingForm.startTime ? String(this.adminMeetingForm.startTime) : ''
+        if (nextValue && start && this.timeToMinutes(nextValue) < this.timeToMinutes(start)) return
+        this.adminMeetingForm.endTime = nextValue
+      }
+      this.closeTimeDropdown()
+    },
+    toggleTimeDropdown(kind) {
+      if (kind === 'end' && !(this.adminMeetingForm && this.adminMeetingForm.startTime)) return
+      if (this.timeDropdown.openFor === kind) {
+        this.closeTimeDropdown()
+        return
+      }
+      this.openTimeDropdown(kind)
+    },
+    openTimeDropdown(kind) {
+      const refName = kind === 'start' ? 'startTimeTrigger' : 'endTimeTrigger'
+      this.$nextTick(() => {
+        const el = this.$refs && this.$refs[refName] ? this.$refs[refName] : null
+        if (!el || !el.getBoundingClientRect) return
+        const rect = el.getBoundingClientRect()
+        const desiredLeft = rect.left
+        const desiredTop = rect.bottom + 6
+        const width = rect.width
+        const padding = 12
+        const left = Math.max(padding, Math.min(desiredLeft, window.innerWidth - width - padding))
+        const maxHeight = Math.max(160, Math.min(320, window.innerHeight - desiredTop - padding))
+
+        this.timeDropdown = {
+          openFor: kind,
+          top: desiredTop,
+          left,
+          width,
+          maxHeight
+        }
+
+        window.addEventListener('resize', this.closeTimeDropdown, { once: true })
+        document.addEventListener('keydown', this.onTimeDropdownKeydown)
+        document.addEventListener('scroll', this.onTimeDropdownScroll, true)
+      })
+    },
+    onTimeDropdownKeydown(e) {
+      if (e && e.key === 'Escape') this.closeTimeDropdown()
+    },
+    onTimeDropdownScroll(e) {
+      const panel = this.$refs && this.$refs.timeDropdownPanel ? this.$refs.timeDropdownPanel : null
+      const target = e && e.target ? e.target : null
+      if (panel && target && (target === panel || panel.contains(target))) return
+      this.closeTimeDropdown()
+    },
+    closeTimeDropdown() {
+      if (!this.timeDropdown.openFor) return
+      this.timeDropdown.openFor = null
+      document.removeEventListener('keydown', this.onTimeDropdownKeydown)
+      document.removeEventListener('scroll', this.onTimeDropdownScroll, true)
+    },
     openAdminMeetingManage () {
       if (!this.isAdminView || !this.viewProposalId) return
       const p = this.loadedProposal || {}
@@ -2019,28 +2357,56 @@ export default {
         meetingDate: '',
         startTime: '',
         endTime: '',
+        meetingType: 'online',
         location: '',
         videoLink: '',
         agenda: projectTitle ? `โครงการ: ${projectTitle}` : '',
         status: 'scheduled'
       }
+      this.adminSelectedParticipantOptions = []
+      if (!this.adminParticipantOptionsLoading && (!this.adminParticipantOptions || !this.adminParticipantOptions.length)) {
+        this.fetchAdminParticipantOptions()
+      }
       this.adminShowMeetingPopup = true
     },
     closeAdminMeetingPopup () {
       this.adminShowMeetingPopup = false
+      this.closeTimeDropdown()
     },
     async submitAdminMeeting () {
       if (!this.isAdminView || !this.viewProposalId) return
       if (!this.adminMeetingForm.title || !this.adminMeetingForm.meetingDate || !this.adminMeetingForm.startTime) return
+
+      const meetingType = this.adminMeetingForm && this.adminMeetingForm.meetingType
+        ? String(this.adminMeetingForm.meetingType)
+        : 'online'
+      const location = this.adminMeetingForm && this.adminMeetingForm.location ? String(this.adminMeetingForm.location).trim() : ''
+      const videoLink = this.adminMeetingForm && this.adminMeetingForm.videoLink ? String(this.adminMeetingForm.videoLink).trim() : ''
+
+      if (meetingType === 'onsite' && !location) {
+        await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'การประชุมแบบออนไซต์ต้องระบุสถานที่' })
+        return
+      }
+
+      if (meetingType === 'online' && !videoLink) {
+        await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'การประชุมแบบออนไลน์ต้องระบุลิงก์วิดีโอประชุม' })
+        return
+      }
+
       this.adminMeetingSubmitting = true
       try {
+        const participantIds = Array.isArray(this.adminSelectedParticipantOptions)
+          ? this.adminSelectedParticipantOptions.map(u => String(u && u._id)).filter(Boolean)
+          : []
         const body = {
           title: String(this.adminMeetingForm.title || '').trim(),
           meetingDate: this.adminMeetingForm.meetingDate,
           startTime: this.adminMeetingForm.startTime,
           endTime: this.adminMeetingForm.endTime || '',
-          location: this.adminMeetingForm.location || '',
-          videoLink: this.adminMeetingForm.videoLink || '',
+          meetingType,
+          location: meetingType === 'online' ? '' : location,
+          videoLink,
+          participantIds,
           agenda: this.adminMeetingForm.agenda || '',
           status: this.adminMeetingForm.status || 'scheduled',
           proposalIds: [String(this.viewProposalId)]
@@ -4746,13 +5112,13 @@ export default {
 }
 
 .meeting-modal .meeting-form .small-row {
-  margin-left: -8px;
-  margin-right: -8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .meeting-modal .meeting-form .small-row .field {
-  padding-left: 8px;
-  padding-right: 8px;
+  min-width: 0;
 }
 
 .meeting-modal .form-label {
@@ -4767,6 +5133,174 @@ export default {
 
 .meeting-modal .full {
   width: 100%;
+}
+
+.input-icon__wrap {
+  display: flex;
+  align-items: stretch;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(197, 155, 58, 0.65);
+  background: #ffffff;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+}
+
+.input-icon__control {
+  flex: 1;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: 1rem;
+  background: transparent !important;
+}
+
+.input-icon__control[readonly] {
+  cursor: pointer;
+}
+
+.input-icon__suffix {
+  width: 52px;
+  border: 0;
+  border-left: 1px solid rgba(197, 155, 58, 0.65);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0;
+  cursor: pointer;
+}
+
+.input-icon__wrap[data-tone="primary"] .input-icon__suffix {
+  background: linear-gradient(135deg, #8b1212 0%, #c59b3a 115%);
+}
+
+.input-icon__wrap[data-tone="info"] .input-icon__suffix {
+  background: linear-gradient(135deg, #c59b3a 0%, #8b1212 115%);
+}
+
+.input-icon__suffix:hover {
+  filter: brightness(1.03);
+}
+
+.input-icon__suffix:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(197, 155, 58, 0.22);
+}
+
+.input-icon__ic {
+  opacity: 0.88;
+}
+
+.time-trigger {
+  cursor: pointer;
+}
+
+.time-trigger:disabled {
+  cursor: not-allowed;
+}
+
+.time-dropdown__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+}
+
+.time-dropdown {
+  position: fixed;
+  z-index: 20001;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.2);
+  padding: 6px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.time-dropdown__item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 1rem;
+  line-height: 1.25;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.time-dropdown__item:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.time-dropdown__item.is-selected {
+  background: linear-gradient(135deg, rgba(139, 18, 18, 0.14), rgba(197, 155, 58, 0.14));
+  color: #8b1212;
+  font-weight: 800;
+}
+
+.meeting-type-toggle {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: linear-gradient(180deg, rgba(197, 155, 58, 0.10), rgba(15, 23, 42, 0.00));
+  min-height: 44px;
+  align-items: center;
+}
+
+.meeting-type-toggle__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.meeting-type-toggle__label {
+  flex: 1;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: rgba(15, 23, 42, 0.55);
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.meeting-type-toggle__input:checked + .meeting-type-toggle__label {
+  color: #ffffff;
+  background: linear-gradient(135deg, #8b1212 0%, #c59b3a 115%);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.16);
+}
+
+.meeting-type-toggle__label:active {
+  transform: translateY(1px);
+}
+
+.meeting-modal ::v-deep .vc-popover-content {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.18);
+  border: 1px solid rgba(197, 155, 58, 0.22);
+}
+
+.meeting-modal ::v-deep .vc-title {
+  color: #8b1212;
+  font-weight: 900;
+}
+
+.meeting-modal ::v-deep .vc-day-content.vc-highlight-content {
+  color: #ffffff !important;
+}
+
+.meeting-modal ::v-deep .vc-highlight {
+  background: linear-gradient(135deg, #8b1212 0%, #c59b3a 115%) !important;
 }
 
 .meeting-modal ::v-deep .modal-footer {
@@ -4785,6 +5319,7 @@ export default {
   border-radius: 10px !important;
   font-weight: 900 !important;
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+  margin-right: 12px;
 }
 
 .meeting-modal .btn-cancel {
@@ -5471,6 +6006,15 @@ export default {
   color: rgba(15, 23, 42, 0.78) !important;
   cursor: not-allowed;
   box-shadow: none !important;
+}
+
+.research-form .meeting-modal ::v-deep .input-icon__control[readonly],
+.research-form .meeting-modal ::v-deep input.time-trigger[readonly].form-control {
+  cursor: pointer !important;
+}
+
+.research-form .meeting-modal ::v-deep .input-icon__suffix {
+  cursor: pointer;
 }
 
 .research-form ::v-deep .form-control:disabled::placeholder,

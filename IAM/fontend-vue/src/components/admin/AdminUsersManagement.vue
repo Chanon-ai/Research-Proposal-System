@@ -12,9 +12,9 @@
           :class="['mb-0', 'summary-widget', { 'is-active': quickFilter === 'all' }]"
           role="button"
           tabindex="0"
-          @click="onQuickFilterCardClick('all')"
-          @keyup.enter="onQuickFilterCardClick('all')"
-          @keyup.space="onQuickFilterCardClick('all')"
+          @click.native="onQuickFilterCardClick('all')"
+          @keyup.enter.native="onQuickFilterCardClick('all')"
+          @keyup.space.native="onQuickFilterCardClick('all')"
         >
           <small class="text-muted">ผู้ใช้ทั้งหมด</small><br>
           <strong class="h5">{{ summary.totalUsers }}</strong>
@@ -26,9 +26,9 @@
           :class="['mb-0', 'summary-widget', { 'is-active': quickFilter === 'committee' }]"
           role="button"
           tabindex="0"
-          @click="onQuickFilterCardClick('committee')"
-          @keyup.enter="onQuickFilterCardClick('committee')"
-          @keyup.space="onQuickFilterCardClick('committee')"
+          @click.native="onQuickFilterCardClick('committee')"
+          @keyup.enter.native="onQuickFilterCardClick('committee')"
+          @keyup.space.native="onQuickFilterCardClick('committee')"
         >
           <small class="text-muted">คณะกรรมการทั้งหมด</small><br>
           <strong class="h5">{{ summary.totalCommittees }}</strong>
@@ -40,9 +40,9 @@
           :class="['mb-0', 'summary-widget', { 'is-active': quickFilter === 'admin' }]"
           role="button"
           tabindex="0"
-          @click="onQuickFilterCardClick('admin')"
-          @keyup.enter="onQuickFilterCardClick('admin')"
-          @keyup.space="onQuickFilterCardClick('admin')"
+          @click.native="onQuickFilterCardClick('admin')"
+          @keyup.enter.native="onQuickFilterCardClick('admin')"
+          @keyup.space.native="onQuickFilterCardClick('admin')"
         >
           <small class="text-muted">ผู้ดูแลระบบทั้งหมด</small><br>
           <strong class="h5">{{ summary.totalAdmins }}</strong>
@@ -54,9 +54,9 @@
           :class="['mb-0', 'summary-widget', { 'is-active': quickFilter === 'active' }]"
           role="button"
           tabindex="0"
-          @click="onQuickFilterCardClick('active')"
-          @keyup.enter="onQuickFilterCardClick('active')"
-          @keyup.space="onQuickFilterCardClick('active')"
+          @click.native="onQuickFilterCardClick('active')"
+          @keyup.enter.native="onQuickFilterCardClick('active')"
+          @keyup.space.native="onQuickFilterCardClick('active')"
         >
           <small class="text-muted">ใช้งานอยู่ทั้งหมด</small><br>
           <strong class="h5">{{ summary.totalActiveUsers }}</strong>
@@ -323,6 +323,7 @@ export default {
       loading: false,
       apiNotReady: false,
       quickFilter: 'all',
+      fetchSeq: 0,
       summary: {
         totalUsers: 0,
         totalCommittees: 0,
@@ -417,7 +418,7 @@ export default {
         this.filters.role ||
         this.filters.department ||
         this.filters.isActive ||
-        this.quickFilter
+        (this.quickFilter && this.quickFilter !== 'all')
       )
     },
     noItemsView () {
@@ -452,13 +453,6 @@ export default {
     syncQuickFilterFromDropdowns () {
       const role = String(this.filters.role || '').trim()
       const status = String(this.filters.isActive || '').trim()
-      const keyword = String(this.filters.keyword || '').trim()
-      const department = String(this.filters.department || '').trim()
-
-      if (!keyword && !department && !role && !status) {
-        this.quickFilter = 'all'
-        return
-      }
       if (role === 'committee' && !status) {
         this.quickFilter = 'committee'
         return
@@ -472,7 +466,7 @@ export default {
         return
       }
 
-      this.quickFilter = ''
+      this.quickFilter = (!role && !status) ? 'all' : ''
     },
     onQuickFilterCardClick (key) {
       if (key === 'all') {
@@ -501,6 +495,7 @@ export default {
       this.fetchUsers()
     },
     async fetchUsers () {
+      const seq = ++this.fetchSeq
       this.loading = true
       try {
         const params = {
@@ -513,6 +508,7 @@ export default {
         if (this.filters.isActive !== '') params.isActive = this.filters.isActive
 
         const response = await axios.get('/api/v1/admin/users', { params })
+        if (seq !== this.fetchSeq) return
         const payload = (response && response.data && response.data.data) || {}
 
         const list = Array.isArray(payload.users)
@@ -532,6 +528,7 @@ export default {
         this.departments = Array.isArray(payload.departments) ? payload.departments : []
         this.apiNotReady = false
       } catch (error) {
+        if (seq !== this.fetchSeq) return
         console.error('[AdminUsers] Error fetching users:', error)
         this.users = []
         this.total = 0
@@ -545,7 +542,7 @@ export default {
         this.departments = []
         this.apiNotReady = true
       } finally {
-        this.loading = false
+        if (seq === this.fetchSeq) this.loading = false
       }
     },
     onRoleChange (val) {
@@ -820,50 +817,101 @@ export default {
 }
 
 .summary-widget {
+  position: relative;
   cursor: pointer;
-  border: 1px solid rgba(223, 230, 238, 0.9);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 250, 252, 0.98));
-  box-shadow: 0 14px 30px rgba(44, 52, 71, 0.06);
-  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
-  border-radius: 1.35rem;
+  border-radius: 12px;
+  overflow: hidden;
   padding: 16px 18px;
   min-height: 86px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
+  margin: 0 !important;
+  border: 0 !important;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.14);
+  background: linear-gradient(135deg, var(--summary-start, #8c1515), var(--summary-end, #6b0f0f));
+  transform: translateY(0);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  isolation: isolate;
 }
 
-.summary-widget small {
-  font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 0.11em;
-  font-weight: 800;
+.summary-widget::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--summary-graphic);
+  background-repeat: no-repeat;
+  background-size: 122px 122px;
+  background-position: calc(100% + 10px) -12px;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.summary-widget::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.summary-widget > * {
+  position: relative;
+  z-index: 1;
+}
+
+.summary-widget small.text-muted {
+  color: rgba(255, 255, 255, 0.92) !important;
+  font-weight: 600;
+  font-size: 0.86rem;
 }
 
 .summary-widget strong.h5 {
-  font-size: 1.72rem;
-  font-weight: 800;
+  color: #ffffff !important;
+  font-size: 1.9rem;
+  font-weight: 900;
   line-height: 1.1;
-  letter-spacing: -0.03em;
+  margin-top: 6px;
 }
 
 .summary-widget:hover {
-  transform: translateY(-1px);
-  border-color: rgba(197, 155, 58, 0.55);
-  background: linear-gradient(180deg, rgba(255, 250, 242, 1), rgba(249, 250, 252, 0.98));
-  box-shadow: 0 18px 36px rgba(44, 52, 71, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.18);
+}
+
+.summary-widget.is-active {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 16px 28px rgba(15, 23, 42, 0.22);
 }
 
 .summary-widget:focus-visible {
   outline: none;
-  box-shadow: 0 18px 36px rgba(44, 52, 71, 0.12), 0 0 0 0.2rem rgba(140, 21, 21, 0.12);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.7), 0 0 0 0.2rem rgba(255, 255, 255, 0.18), 0 16px 28px rgba(15, 23, 42, 0.22);
 }
 
-.summary-widget.is-active {
-  border-color: rgba(140, 21, 21, 0.75);
-  background: linear-gradient(180deg, rgba(254, 194, 96, 0.16), rgba(249, 250, 252, 0.98));
-  box-shadow: 0 18px 36px rgba(44, 52, 71, 0.12), 0 0 0 0.2rem rgba(140, 21, 21, 0.12);
+/* Tones (match AdminDashboard summary-card style) */
+.summary-widget.c-callout-primary {
+  --summary-start: #8c1515;
+  --summary-end: #6b0f0f;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M24 70h56l20 18V32L80 50H24z' fill='white' fill-opacity='0.88'/%3E%3Ccircle cx='36' cy='86' r='6' fill='white' fill-opacity='0.7'/%3E%3Ccircle cx='56' cy='86' r='6' fill='white' fill-opacity='0.58'/%3E%3C/svg%3E");
+}
+
+.summary-widget.c-callout-info {
+  --summary-start: #0ea5e9;
+  --summary-end: #0369a1;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='38' cy='46' r='12' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='62' cy='40' r='10' fill='white' fill-opacity='0.86'/%3E%3Ccircle cx='83' cy='48' r='11' fill='white' fill-opacity='0.82'/%3E%3Crect x='28' y='64' width='62' height='26' rx='13' fill='white' fill-opacity='0.72'/%3E%3C/svg%3E");
+}
+
+.summary-widget.c-callout-danger {
+  --summary-start: #7c3aed;
+  --summary-end: #4c1d95;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M60 16l34 14v25c0 26-14 41-34 49-20-8-34-23-34-49V30z' fill='white' fill-opacity='0.88'/%3E%3Cpath d='M60 38v18' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-opacity='0.22'/%3E%3Ccircle cx='60' cy='70' r='5' fill='%23000000' fill-opacity='0.22'/%3E%3C/svg%3E");
+}
+
+.summary-widget.c-callout-warning {
+  --summary-start: #16a34a;
+  --summary-end: #15803d;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
 }
 </style>

@@ -7,6 +7,45 @@ body.theme-switching * {
 		box-shadow 220ms ease, fill 220ms ease;
 }
 
+/* Notification dropdown sizing + stacking (global, not scoped). */
+.notification-menu,
+.notification-dropdown .dropdown-menu {
+	width: min(300px, calc(100vw - 16px)) !important;
+	min-width: 200px !important;
+	max-width: calc(100vw - 16px) !important;
+	z-index: 1040 !important;
+}
+
+/* Remove default dropdown padding so backgrounds align with the frame. */
+.notification-dropdown .dropdown-menu {
+	padding: 0 !important;
+	overflow: hidden;
+	border-radius: 0.7rem;
+}
+
+/* Ensure header/list/footer span the same full width as the dropdown menu. */
+.notification-dropdown .notification-dropdown__header,
+.notification-dropdown .notification-dropdown__list,
+.notification-dropdown .notification-dropdown__footer {
+	display: block !important;
+	width: 100% !important;
+}
+
+@media (min-width: 768px) {
+	.notification-menu,
+	.notification-dropdown .dropdown-menu {
+		width: min(300px, calc(100vw - 256px - 24px)) !important;
+		max-width: min(300px, calc(100vw - 256px - 24px)) !important;
+	}
+}
+
+@media (max-width: 767.98px) {
+	.notification-menu,
+	.notification-dropdown .dropdown-menu {
+		width: min(280px, calc(100vw - 16px)) !important;
+	}
+}
+
 [data-coreui-theme='dark'] .notification-menu,
 body.c-dark-theme .notification-menu {
 	background: #1b2431 !important;

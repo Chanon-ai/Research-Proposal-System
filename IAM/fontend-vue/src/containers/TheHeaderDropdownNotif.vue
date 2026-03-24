@@ -292,7 +292,9 @@ export default {
 }
 
 .notification-header {
-  min-width: 320px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
   padding: 0.66rem 1rem;
   background: var(--notif-header-bg, linear-gradient(90deg, #8c1515, rgba(107, 15, 15, 0.98)));
   border-bottom: 1px solid var(--notif-border, #e5e7eb);
@@ -413,14 +415,15 @@ export default {
   flex: 0 0 auto;
 }
 
-:deep(.notification-menu) {
-  width: min(520px, calc(100vw - 16px)) !important;
-  min-width: 280px !important;
+::v-deep(.notification-menu) {
+  width: min(300px, calc(100vw - 16px)) !important;
+  min-width: 200px !important;
   max-width: calc(100vw - 16px) !important;
   max-height: min(520px, calc(100vh - 96px)) !important;
   overflow: hidden;
   border-radius: 0.7rem;
   padding-bottom: 0;
+  z-index: 1040 !important;
   --notif-dropdown-bg: #ffffff;
   --notif-header-bg: linear-gradient(90deg, #8c1515, rgba(107, 15, 15, 0.98));
   --notif-header-text: #ffffff;
@@ -440,11 +443,18 @@ export default {
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.2);
 }
 
-:deep(.notification-dropdown__menu) .dropdown-item {
+::v-deep(.notification-dropdown__menu) .dropdown-item {
   white-space: normal;
 }
 
-:deep(.notification-dropdown__menu--dark) {
+@media (min-width: 768px) {
+  ::v-deep(.notification-menu) {
+    width: min(300px, calc(100vw - 256px - 24px)) !important;
+    max-width: min(300px, calc(100vw - 256px - 24px)) !important;
+  }
+}
+
+::v-deep(.notification-dropdown__menu--dark) {
   --notif-dropdown-bg: #111827;
   --notif-header-bg: linear-gradient(90deg, #1f2937, #111827);
   --notif-header-text: #f8fafc;
@@ -464,123 +474,123 @@ export default {
   box-shadow: 0 20px 44px rgba(2, 6, 23, 0.52);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__header {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__header {
   color: var(--notif-text-main);
   background: var(--notif-header-bg);
   border-bottom-color: var(--notif-border);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__item {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__item {
   color: var(--notif-text-main);
   background: transparent;
   border-bottom-color: rgba(148, 163, 184, 0.22);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__item:hover {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__item:hover {
   background: var(--notif-item-hover);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__item:active {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__item:active {
   background: rgba(51, 65, 85, 0.9);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__item .notification-dropdown__title.is-unread {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__item .notification-dropdown__title.is-unread {
   color: var(--notif-title-unread);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__footer {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__footer {
   background: var(--notif-dropdown-bg);
   color: var(--notif-footer);
   border-top-color: var(--notif-border) !important;
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__footer:hover {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__footer:hover {
   background: var(--notif-footer-hover);
   color: #f5f8fd;
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-empty {
+::v-deep(.notification-dropdown__menu--dark) .notification-empty {
   background: var(--notif-dropdown-bg);
   color: var(--notif-muted) !important;
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-type-icon.type-warning {
+::v-deep(.notification-dropdown__menu--dark) .notification-type-icon.type-warning {
   color: #fbbf24;
   background: rgba(251, 191, 36, 0.2);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-type-icon.type-info {
+::v-deep(.notification-dropdown__menu--dark) .notification-type-icon.type-info {
   color: #cbd5e1;
   background: rgba(148, 163, 184, 0.2);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-type-icon.type-primary {
+::v-deep(.notification-dropdown__menu--dark) .notification-type-icon.type-primary {
   color: #93c5fd;
   background: rgba(59, 130, 246, 0.2);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-type-icon.type-success {
+::v-deep(.notification-dropdown__menu--dark) .notification-type-icon.type-success {
   color: #fde68a;
   background: rgba(245, 158, 11, 0.22);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__sender {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__sender {
   color: var(--notif-sender);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__time {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__time {
   color: var(--notif-time);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__title {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__title {
   color: var(--notif-title);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__message {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__message {
   color: var(--notif-muted);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__list {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__list {
   max-height: 300px;
   background: var(--notif-dropdown-bg);
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__list::-webkit-scrollbar {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__list::-webkit-scrollbar {
   width: 8px;
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__list::-webkit-scrollbar-track {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__list::-webkit-scrollbar-track {
   background: #17212d;
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__list::-webkit-scrollbar-thumb {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__list::-webkit-scrollbar-thumb {
   background: #324355;
   border-radius: 999px;
   border: 2px solid #17212d;
 }
 
-:deep(.notification-dropdown__menu--dark) .notification-dropdown__list {
+::v-deep(.notification-dropdown__menu--dark) .notification-dropdown__list {
   scrollbar-color: #324355 #17212d;
 }
 
-:deep([data-coreui-theme='dark'] .notification-menu),
-:deep(.c-dark-theme .notification-menu) {
+::v-deep([data-coreui-theme='dark'] .notification-menu),
+::v-deep(.c-dark-theme .notification-menu) {
   background: #111827;
   border-color: rgba(148, 163, 184, 0.34);
 }
 
 @media (max-width: 767.98px) {
   .notification-header {
-    min-width: 260px;
+    min-width: 0;
   }
 
   .notification-item {
     padding: 0.62rem 0.76rem;
   }
 
-  :deep(.notification-menu) {
+  ::v-deep(.notification-menu) {
     min-width: 0;
-    width: min(320px, calc(100vw - 16px)) !important;
+    width: min(280px, calc(100vw - 16px)) !important;
     max-width: calc(100vw - 16px) !important;
     right: 0 !important;
   }
