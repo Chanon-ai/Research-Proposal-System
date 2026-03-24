@@ -4,8 +4,8 @@
       <h2 class="mb-0">จัดการโครงการ (Admin)</h2>
     </div>
 
-    <CCard class="mb-3">
-      <CCardBody>
+    <CCard class="mb-3 admin-proposal-list__filter-card">
+      <CCardBody class="admin-proposal-list__filter-body">
         <CRow>
           <CCol md="5" class="mb-2 mb-md-0">
             <CInput
@@ -34,65 +34,67 @@
       </CCardBody>
     </CCard>
 
-    <CCard>
-      <CCardHeader>
+    <CCard class="admin-proposal-list__table-card">
+      <CCardHeader class="admin-proposal-list__table-header">
         <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
           <strong>รายการโครงการ</strong>
           <small class="text-muted">แสดง {{ displayFrom }}-{{ displayTo }} จาก {{ total }} รายการ</small>
         </div>
       </CCardHeader>
-      <CCardBody>
+      <CCardBody class="admin-proposal-list__table-body">
         <div v-if="loading" class="text-center py-5">
           <CSpinner color="primary" />
           <div class="mt-2 text-muted">กำลังโหลดข้อมูล...</div>
         </div>
 
         <div v-else>
-          <CDataTable
-            :items="tableItems"
-            :fields="fields"
-            hover
-            striped
-            bordered
-            small
-            :items-per-page="limit"
-            :no-items-view="{ noResults: 'ไม่พบข้อมูล', noItems: 'ยังไม่มีรายการโครงการ' }"
-          >
-            <template #index="{ item }">
-              <td>{{ item.index }}</td>
-            </template>
+          <div class="admin-proposal-list__table-surface">
+            <CDataTable
+              :items="tableItems"
+              :fields="fields"
+              hover
+              striped
+              bordered
+              small
+              :items-per-page="limit"
+              :no-items-view="{ noResults: 'ไม่พบข้อมูล', noItems: 'ยังไม่มีรายการโครงการ' }"
+            >
+              <template #index="{ item }">
+                <td>{{ item.index }}</td>
+              </template>
 
-            <template #projectTitleTh="{ item }">
-              <td>
-                <div class="font-weight-bold">{{ item.projectTitleTh || '-' }}</div>
-                <small class="text-muted" v-if="item.projectTitleEn">{{ item.projectTitleEn }}</small>
-              </td>
-            </template>
+              <template #projectTitleTh="{ item }">
+                <td>
+                  <div class="font-weight-bold">{{ item.projectTitleTh || '-' }}</div>
+                  <small class="text-muted" v-if="item.projectTitleEn">{{ item.projectTitleEn }}</small>
+                </td>
+              </template>
 
-            <template #currentStatus="{ item }">
-              <td>
-                <CBadge :color="getStatusColor(item.currentStatus)">
-                  {{ getStatusLabel(item.currentStatus) }}
-                </CBadge>
-              </td>
-            </template>
+              <template #currentStatus="{ item }">
+                <td>
+                  <CBadge :color="getStatusColor(item.currentStatus)">
+                    {{ getStatusLabel(item.currentStatus) }}
+                  </CBadge>
+                </td>
+              </template>
 
-            <template #currentRound="{ item }">
-              <td>{{ item.currentRound ? `รอบ ${item.currentRound}` : '-' }}</td>
-            </template>
+              <template #currentRound="{ item }">
+                <td>{{ item.currentRound ? `รอบ ${item.currentRound}` : '-' }}</td>
+              </template>
 
-            <template #updatedAt="{ item }">
-              <td>{{ formatDate(item.updatedAt) }}</td>
-            </template>
+              <template #updatedAt="{ item }">
+                <td>{{ formatDate(item.updatedAt) }}</td>
+              </template>
 
-            <template #actions="{ item }">
-              <td class="text-nowrap">
-                <CButton color="primary" size="sm" class="mr-1" @click="onView(item)">View</CButton>
-              </td>
-            </template>
-          </CDataTable>
+              <template #actions="{ item }">
+                <td class="text-nowrap">
+                  <CButton color="primary" size="sm" class="mr-1 admin-proposal-action-btn" @click="onView(item)">View</CButton>
+                </td>
+              </template>
+            </CDataTable>
+          </div>
 
-          <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap" style="gap: 8px;">
+          <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap admin-proposal-list__pager" style="gap: 8px;">
             <small class="text-muted">หน้าที่ {{ page }} / {{ totalPages }}</small>
             <div>
               <CButton
@@ -553,5 +555,147 @@ export default {
 <style scoped>
 .admin-proposal-list {
   width: 100%;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list,
+body.c-dark-theme .admin-proposal-list {
+  color: #e5e7eb;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list h2,
+body.c-dark-theme .admin-proposal-list h2 {
+  color: #f8fafc;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list .text-muted,
+body.c-dark-theme .admin-proposal-list .text-muted {
+  color: #9ca3af !important;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__filter-card,
+body.c-dark-theme .admin-proposal-list__filter-card,
+[data-coreui-theme='dark'] .admin-proposal-list__table-card,
+body.c-dark-theme .admin-proposal-list__table-card {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__filter-body,
+body.c-dark-theme .admin-proposal-list__filter-body,
+[data-coreui-theme='dark'] .admin-proposal-list__table-body,
+body.c-dark-theme .admin-proposal-list__table-body {
+  background: #0f172a;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__table-header,
+body.c-dark-theme .admin-proposal-list__table-header {
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.95));
+  border-bottom-color: rgba(148, 163, 184, 0.3);
+  color: #f8fafc;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list::v-deep .form-control,
+body.c-dark-theme .admin-proposal-list::v-deep .form-control,
+[data-coreui-theme='dark'] .admin-proposal-list::v-deep .custom-select,
+body.c-dark-theme .admin-proposal-list::v-deep .custom-select {
+  background: #111827;
+  border-color: rgba(148, 163, 184, 0.45);
+  color: #e5e7eb;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list::v-deep .form-control::placeholder,
+body.c-dark-theme .admin-proposal-list::v-deep .form-control::placeholder {
+  color: #94a3b8;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list::v-deep select option,
+body.c-dark-theme .admin-proposal-list::v-deep select option {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__table-surface,
+body.c-dark-theme .admin-proposal-list__table-surface {
+  background: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__table-surface::v-deep .table,
+body.c-dark-theme .admin-proposal-list__table-surface::v-deep .table {
+  margin-bottom: 0;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__table-surface::v-deep .table thead th,
+body.c-dark-theme .admin-proposal-list__table-surface::v-deep .table thead th {
+  background: linear-gradient(90deg, #1f2937, #111827) !important;
+  color: #f9fafb !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__table-surface::v-deep .table tbody td,
+body.c-dark-theme .admin-proposal-list__table-surface::v-deep .table tbody td {
+  background: #111827;
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.24) !important;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__table-surface::v-deep .table-striped tbody tr:nth-of-type(odd),
+body.c-dark-theme .admin-proposal-list__table-surface::v-deep .table-striped tbody tr:nth-of-type(odd) {
+  background-color: #0f172a;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__table-surface::v-deep .table tbody tr:hover,
+body.c-dark-theme .admin-proposal-list__table-surface::v-deep .table tbody tr:hover {
+  background: rgba(51, 65, 85, 0.75) !important;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__table-surface::v-deep .small,
+body.c-dark-theme .admin-proposal-list__table-surface::v-deep .small {
+  color: #cbd5e1 !important;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__table-surface::v-deep td.c-datatable-empty,
+body.c-dark-theme .admin-proposal-list__table-surface::v-deep td.c-datatable-empty {
+  color: #9ca3af;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__pager .btn-outline-secondary,
+body.c-dark-theme .admin-proposal-list__pager .btn-outline-secondary {
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.45);
+  background: rgba(30, 41, 59, 0.35);
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list__pager .btn-outline-secondary:hover,
+body.c-dark-theme .admin-proposal-list__pager .btn-outline-secondary:hover {
+  background: rgba(71, 85, 105, 0.45);
+  color: #ffffff;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-action-btn,
+body.c-dark-theme .admin-proposal-action-btn {
+  border-color: rgba(96, 165, 250, 0.7);
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list::v-deep .modal-content,
+body.c-dark-theme .admin-proposal-list::v-deep .modal-content {
+  background: #0f172a;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #e5e7eb;
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list::v-deep .modal-header,
+body.c-dark-theme .admin-proposal-list::v-deep .modal-header,
+[data-coreui-theme='dark'] .admin-proposal-list::v-deep .modal-footer,
+body.c-dark-theme .admin-proposal-list::v-deep .modal-footer {
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+[data-coreui-theme='dark'] .admin-proposal-list::v-deep textarea.form-control,
+body.c-dark-theme .admin-proposal-list::v-deep textarea.form-control {
+  background: #111827;
+  color: #e5e7eb;
 }
 </style>
