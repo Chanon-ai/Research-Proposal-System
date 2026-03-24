@@ -323,10 +323,7 @@ export default {
       loading: false,
       apiNotReady: false,
       quickFilter: 'all',
-<<<<<<< HEAD
       fetchSeq: 0,
-=======
->>>>>>> 0d09fcb8f2291ce2cd745b42cf2afdab222dd2af
       summary: {
         totalUsers: 0,
         totalCommittees: 0,
@@ -468,38 +465,9 @@ export default {
         this.quickFilter = 'active'
         return
       }
-<<<<<<< HEAD
-=======
-      if (!role && !status) {
-        this.quickFilter = 'all'
-        return
-      }
->>>>>>> 0d09fcb8f2291ce2cd745b42cf2afdab222dd2af
 
       this.quickFilter = (!role && !status) ? 'all' : ''
     },
-<<<<<<< HEAD
-    onQuickFilterCardClick (key) {
-      if (key === 'all') {
-        const isTogglingOff = this.quickFilter === 'all'
-        this.filters.keyword = ''
-        this.filters.role = ''
-        this.filters.department = ''
-        this.filters.isActive = ''
-        this.quickFilter = isTogglingOff ? '' : 'all'
-      } else {
-        const isSameActive = this.quickFilter === key
-
-        if (key === 'committee' || key === 'admin') {
-          this.filters.role = isSameActive ? '' : key
-          this.filters.isActive = ''
-          this.quickFilter = isSameActive ? '' : key
-        } else if (key === 'active') {
-          this.filters.isActive = isSameActive ? '' : 'true'
-          this.filters.role = ''
-          this.quickFilter = isSameActive ? '' : 'active'
-        }
-=======
     applyQuickFilter (key) {
       if (key === 'committee') {
         this.filters.role = 'committee'
@@ -518,10 +486,12 @@ export default {
         this.filters.isActive = 'true'
         this.quickFilter = 'active'
         return
->>>>>>> 0d09fcb8f2291ce2cd745b42cf2afdab222dd2af
       }
 
+      // all
+      this.filters.keyword = ''
       this.filters.role = ''
+      this.filters.department = ''
       this.filters.isActive = ''
       this.quickFilter = 'all'
     },
