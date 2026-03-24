@@ -474,7 +474,7 @@ const STATUS_LABELS = {
   office_received: 'ส่วนบริหารรับแล้ว',
   document_checking: 'ตรวจสอบเอกสาร',
   assigned_to_committee: 'มอบหมายกรรมการแล้ว',
-  under_review: 'กำลังพิจารณา',
+  under_review: 'กรรมการได้ให้ความเห็นแล้ว',
   meeting_completed: 'ประชุมเสร็จแล้ว',
   revision_requested: 'ขอแก้ไข',
   resubmitted: 'ส่งแก้ไขแล้ว',
