@@ -263,6 +263,13 @@ export default {
     proposalId() {
       return this.proposal && this.proposal._id ? this.proposal._id : (this.$route.params.id || '')
     },
+    currentUserId () {
+      const user = this.$store && this.$store.getters
+        ? this.$store.getters['Authentication/currentUser']
+        : null
+      const id = user && (user._id || user.id)
+      return id ? String(id) : ''
+    },
     activeRoundNo() {
       const status = String(this.proposal && this.proposal.currentStatus ? this.proposal.currentStatus : '').toLowerCase()
       if (status === 'second_round_review') return 2
@@ -421,6 +428,10 @@ export default {
       try {
         const raw = localStorage.getItem(this.submissionKey())
         if (raw) {
+          const parsed = JSON.parse(raw)
+          // Only lock when the submission belongs to the currently logged in reviewer.
+          if (!parsed || typeof parsed !== 'object') return
+          if (String(parsed.userId || '') !== String(this.currentUserId || '')) return
           this.isEvaluationLocked = true
           this.submittedBannerVisible = true
         }
@@ -428,25 +439,17 @@ export default {
     },
     draftKey() {
       const pid = this.proposal ? (this.proposal._id || this.proposal.id) : ''
-      return pid ? `committeeDraft:${pid}:round:${this.activeRoundNo}` : ''
-    },
-    legacyDraftKey() {
-      const pid = this.proposal ? (this.proposal._id || this.proposal.id) : ''
-      return pid ? `committeeDraft:${pid}` : ''
+      const uid = this.currentUserId || 'unknown'
+      return pid ? `committeeDraft:${pid}:round:${this.activeRoundNo}:user:${uid}` : ''
     },
     submissionKey() {
       const pid = this.proposal ? (this.proposal._id || this.proposal.id) : ''
-      return pid ? `committeeSubmission:${pid}:round:${this.activeRoundNo}` : ''
+      const uid = this.currentUserId || 'unknown'
+      return pid ? `committeeSubmission:${pid}:round:${this.activeRoundNo}:user:${uid}` : ''
     },
     loadDraft() {
       try {
-        let raw = localStorage.getItem(this.draftKey())
-        if (!raw) {
-          raw = localStorage.getItem(this.legacyDraftKey())
-          if (raw) {
-            localStorage.setItem(this.draftKey(), raw)
-          }
-        }
+        const raw = localStorage.getItem(this.draftKey())
         if (!raw) return
         const draft = JSON.parse(raw)
         const draftForm = (draft && typeof draft === 'object' && draft.form && typeof draft.form === 'object')
@@ -470,7 +473,8 @@ export default {
             ...this.form,
             selectedFundType: this.selectedFundType
           },
-          savedAt: new Date().toISOString()
+          savedAt: new Date().toISOString(),
+          userId: this.currentUserId || ''
         }))
       } catch (e) { void e }
       this.draftSaved = true
@@ -518,13 +522,13 @@ export default {
 
         localStorage.setItem(this.submissionKey(), JSON.stringify({
           ...payload,
+          userId: this.currentUserId || '',
           submittedAt: new Date().toISOString(),
           maxScore: this.maxScore,
           selectedFundType: this.selectedFundType,
           form: { ...this.form }
         }))
         localStorage.removeItem(this.draftKey())
-        localStorage.removeItem(this.legacyDraftKey())
 
         this.isEvaluationLocked = true
         this.submittedBannerVisible = true
