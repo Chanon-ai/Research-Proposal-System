@@ -1860,6 +1860,7 @@ export default {
   --am-bg: #fffaf2;
   --am-surface: #ffffff;
   --am-border: #eadfce;
+  --am-line: rgba(181, 133, 34, 0.35);
   --am-text: #1f2937;
   --am-muted: #6b7280;
   --am-accent: #8b1212;
@@ -2033,6 +2034,15 @@ export default {
   border: 1px solid var(--am-border);
   background: var(--am-surface);
   margin-bottom: var(--am-section-gap);
+}
+
+.filter-card::v-deep .form-control {
+  border-color: var(--am-line);
+}
+
+.filter-card::v-deep .form-control:focus {
+  border-color: rgba(var(--am-gold-rgb), 0.75);
+  box-shadow: 0 0 0 3px rgba(var(--am-gold-rgb), 0.18);
 }
 
 .filter-card__title {
@@ -2635,8 +2645,8 @@ export default {
 
 .meeting-card__detail-list {
   padding: 14px 0;
-  border-top: 1px solid rgba(148, 163, 184, 0.22);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  border-top: 1px solid var(--am-line);
+  border-bottom: 1px solid var(--am-line);
 }
 
 .meeting-card__detail {
@@ -2646,7 +2656,7 @@ export default {
   gap: 12px;
   margin-bottom: 10px;
   padding-bottom: 10px;
-  border-bottom: 1px dashed rgba(148, 163, 184, 0.22);
+  border-bottom: 1px dashed var(--am-line);
 }
 
 .meeting-card__detail:last-child {
@@ -2806,7 +2816,7 @@ export default {
   height: 96px;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid var(--am-line);
   background: rgba(248, 250, 252, 0.9);
   color: #111827;
   font-size: 0.9rem;

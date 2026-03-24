@@ -11,7 +11,12 @@ export default [{
       name: 'Dashboard',
       to: '/dashboard',
       icon: 'cil-speedometer',
-      roles: ['admin', 'legacy_admin', 'researcher', 'chairman']
+      roles: ['admin', 'legacy_admin']
+    },
+    {
+      _name: 'CSidebarNavTitle',
+      roles: ['researcher', 'chairman'],
+      _children: ['เมนูนักวิจัย']
     },
     {
       _name: 'CSidebarNavDropdown',
@@ -20,11 +25,6 @@ export default [{
       icon: 'cil-user',
       roles: ['researcher', 'chairman'],
       items: [
-        {
-          name: 'User Dashboard',
-          to: '/userdashboard',
-          roles: ['researcher', 'chairman']
-        },
         {
           name: 'Profile',
           to: '/user/profile',
@@ -36,6 +36,13 @@ export default [{
           roles: ['chairman']
         }
       ]
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'User Dashboard',
+      to: '/userdashboard',
+      icon: 'cil-user',
+      roles: ['researcher', 'chairman']
     },
     {
       _name: 'CSidebarNavDropdown',
