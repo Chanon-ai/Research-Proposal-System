@@ -80,7 +80,9 @@
                     <div class="status-block">
                       <div class="status-line status-line--status">
                         <span class="status-dot" :class="statusLabelClass(item.committeeProgress || item.status)" aria-hidden="true"></span>
-                        <span class="status-text">{{ item.statusDisplay }}</span>
+                        <span class="status-text">
+                          {{ item.statusDisplay }}<template v-if="item.committeeProgress === 'review_submitted' && item.decisionDisplay && item.decisionDisplay !== 'ไม่ระบุ'">({{ item.decisionDisplay }})</template>
+                        </span>
                       </div>
                       <div class="status-line">
                         <span class="reviewer-label">โดย:</span>
@@ -272,8 +274,13 @@ export default {
         const proposalId = p._id ? String(p._id) : null
         const review = proposalId ? this.reviewMap[proposalId] : null
         const isReviewed = review && review.reviewStatus === 'submitted'
+        const decisionCode = review && review.decision ? String(review.decision).toLowerCase() : ''
+        const decisionTone = isReviewed
+          ? (decisionCode === 'approve' || decisionCode === 'revise' || decisionCode === 'reject' ? decisionCode : 'unknown')
+          : 'none'
+        const decisionDisplay = this.decisionLabel(decisionCode, isReviewed)
         const committeeProgress = isReviewed ? 'review_submitted' : 'waiting_for_review'
-        const committeeProgressDisplay = isReviewed ? 'ส่งผลประเมินแล้ว' : 'รอการประเมิน'
+        const committeeProgressDisplay = isReviewed ? 'ประเมินแล้ว' : 'รอการประเมิน'
         const latestTs = this.getLatestUpdatedAt(proposalId || p.proposalCode || p._id || '-', review && (review.updatedAt || review.submittedAt || p.updatedAt || p.createdAt))
 
         return {
@@ -288,6 +295,8 @@ export default {
           committeeProgressDisplay,
           reviewStatus: review && review.reviewStatus ? review.reviewStatus : null,
           reviewDecision: review && review.decision ? review.decision : null,
+          decisionTone,
+          decisionDisplay,
           reviewUpdatedAt: review && (review.updatedAt || review.submittedAt) ? (review.updatedAt || review.submittedAt) : null,
           reviewer: reviewerName,
           lastUpdatedAt: latestTs,
@@ -357,6 +366,7 @@ export default {
           item.researcherName,
           item.faculty,
           item.statusDisplay,
+          item.decisionDisplay,
           item.reviewer
         ].filter(Boolean).join(' ').toLowerCase()
         return haystack.includes(q)
@@ -377,6 +387,14 @@ export default {
     }
   },
   methods: {
+    decisionLabel (decision, isReviewed) {
+      if (!isReviewed) return 'ยังไม่ส่งผล'
+      const key = String(decision || '').toLowerCase()
+      if (key === 'approve') return 'อนุมัติ'
+      if (key === 'revise') return 'ขอแก้ไข'
+      if (key === 'reject') return 'ไม่อนุมัติ'
+      return 'ไม่ระบุ'
+    },
     timeAgo (value) {
       if (!value) return '-'
       const date = new Date(value)
@@ -708,6 +726,7 @@ export default {
   --committee-red-soft: rgba(140, 21, 21, 0.12);
   --committee-gold: #fec260;
   --committee-gold-soft: rgba(254, 194, 96, 0.22);
+  --kpi-accent-soft: var(--committee-gold-soft);
   max-width: 1240px;
   margin: 0 auto;
   padding: 16px;
@@ -733,9 +752,43 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  position: relative;
+  overflow: hidden;
   cursor: pointer;
   transition: all 0.18s ease;
   user-select: none;
+}
+
+.strip-card::before {
+  content: '';
+  position: absolute;
+  right: -42px;
+  top: -8px;
+  width: 120px;
+  height: 120px;
+  border-radius: 9999px;
+  background: var(--kpi-accent-soft, rgba(181, 133, 34, 0.12));
+  pointer-events: none;
+}
+
+.strip-card.strip-ALL {
+  --kpi-accent-soft: var(--committee-red-soft);
+}
+
+.strip-card.strip-PENDING {
+  --kpi-accent-soft: var(--committee-gold-soft);
+}
+
+.strip-card.strip-REVISION {
+  --kpi-accent-soft: rgba(185, 28, 28, 0.12);
+}
+
+.strip-card.strip-REVIEWED {
+  --kpi-accent-soft: rgba(22, 163, 74, 0.12);
+}
+
+.strip-card > * {
+  position: relative;
 }
 
 .strip-card:hover {

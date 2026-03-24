@@ -830,6 +830,10 @@ export default {
     if (query.readOnly === 'true') {
       this.isReadOnly = true
     }
+    // Committee can view research form only (force read-only regardless of URL flags).
+    if (this.currentUserRole === 'committee') {
+      this.isReadOnly = true
+    }
     if (query.mode === 'admin-view') {
       this.isAdminView = true
     }
@@ -905,6 +909,18 @@ export default {
   computed: {
     isDarkTheme () {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+    currentUserRole () {
+      const storeRole = this.$store && this.$store.getters ? this.$store.getters['Authentication/userRole'] : null
+      if (storeRole) return String(storeRole)
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        return parsed && parsed.role ? String(parsed.role) : null
+      } catch (e) {
+        return null
+      }
     },
 
     effectiveReadOnly () {

@@ -12,19 +12,52 @@
       </div>
       <div class="hero-actions mt-1">
         <div class="filter-bar">
-          <CSelect class="filter-select" :value="filterRound" :options="roundFilterOptions" @change="onRoundChange" />
-          <CSelect class="filter-select" :value="filterFundType" :options="fundTypeFilterOptions"
-            @change="onFundTypeChange" />
-          <CSelect class="filter-select" :value="filterDecision" :options="decisionFilterOptions"
-            @change="onDecisionChange" />
-          <CButton size="sm" color="secondary" variant="outline" class="filter-btn"
-            :disabled="loading || filteredAssignedProposals.length === 0" @click="exportOverviewCsv">
-            <CIcon name="cil-cloud-download" class="mr-1" />
-            Export CSV
-          </CButton>
-          <CButton size="sm" color="secondary" variant="outline" class="filter-btn" @click="resetFilters">
-            รีเซ็ต
-          </CButton>
+          <div class="filter-bar__selects">
+            <vSelect
+              class="filter-select"
+              :options="roundFilterOptions"
+              label="label"
+              :reduce="o => o.value"
+              :clearable="false"
+              :searchable="false"
+              :value="filterRound"
+              @input="onRoundChange"
+            />
+            <vSelect
+              class="filter-select"
+              :options="fundTypeFilterOptions"
+              label="label"
+              :reduce="o => o.value"
+              :clearable="false"
+              :searchable="false"
+              :value="filterFundType"
+              @input="onFundTypeChange"
+            />
+            <vSelect
+              class="filter-select"
+              :options="decisionFilterOptions"
+              label="label"
+              :reduce="o => o.value"
+              :clearable="false"
+              :searchable="false"
+              :value="filterDecision"
+              @input="onDecisionChange"
+            />
+          </div>
+
+          <div class="filter-bar__actions">
+            <CButton
+              size="sm"
+              color="secondary"
+              variant="outline"
+              class="filter-btn"
+              :disabled="loading || filteredAssignedProposals.length === 0"
+              @click="exportOverviewCsv"
+            >
+              <CIcon name="cil-cloud-download" class="mr-1" />
+              Export CSV
+            </CButton>
+          </div>
         </div>
       </div>
     </div>
@@ -65,27 +98,69 @@
         <CCard>
           <CCardHeader class="font-weight-bold">สรุปผลการพิจารณา (เฉพาะที่ส่งผลแล้ว)</CCardHeader>
           <CCardBody>
-            <div class="decision-grid">
-              <div class="decision-item decision-item--approve">
-                <div class="decision-item__label">อนุมัติ</div>
-                <div class="decision-item__value">{{ decisionStats.approve }}</div>
-                <CProgress class="progress-xs" color="success" :value="decisionStats.approvePct" />
+            <div class="decision-layout">
+              <div class="decision-left">
+                <div class="decision-grid">
+                  <div class="decision-item decision-item--approve">
+                    <div class="decision-item__label">อนุมัติ</div>
+                    <div class="decision-item__value">{{ decisionStats.approve }}</div>
+                    <CProgress class="progress-xs" color="success" :value="decisionStats.approvePct" />
+                  </div>
+                  <div class="decision-item decision-item--revise">
+                    <div class="decision-item__label">ขอแก้ไข</div>
+                    <div class="decision-item__value">{{ decisionStats.revise }}</div>
+                    <CProgress class="progress-xs" color="info" :value="decisionStats.revisePct" />
+                  </div>
+                  <div class="decision-item decision-item--reject">
+                    <div class="decision-item__label">ไม่อนุมัติ</div>
+                    <div class="decision-item__value">{{ decisionStats.reject }}</div>
+                    <CProgress class="progress-xs" color="danger" :value="decisionStats.rejectPct" />
+                  </div>
+                </div>
+                <div class="text-muted small mt-2">รวม {{ decisionStats.total }} รายการ</div>
               </div>
-              <div class="decision-item decision-item--revise">
-                <div class="decision-item__label">ขอแก้ไข</div>
-                <div class="decision-item__value">{{ decisionStats.revise }}</div>
-                <CProgress class="progress-xs" color="info" :value="decisionStats.revisePct" />
-              </div>
-              <div class="decision-item decision-item--reject">
-                <div class="decision-item__label">ไม่อนุมัติ</div>
-                <div class="decision-item__value">{{ decisionStats.reject }}</div>
-                <CProgress class="progress-xs" color="danger" :value="decisionStats.rejectPct" />
+
+              <div class="decision-right">
+                <div class="chart-title chart-title--tight">กราฟสรุปผลการพิจารณา</div>
+                <div v-if="decisionStats.total === 0" class="text-muted small text-center py-3">
+                  ยังไม่มีข้อมูลผลการพิจารณา
+                </div>
+                <div v-else class="chart-wrap chart-wrap--doughnut">
+                  <CChartDoughnut
+                    :datasets="decisionDoughnut.datasets"
+                    :labels="decisionDoughnut.labels"
+                    :options="doughnutOptions"
+                  />
+                </div>
               </div>
             </div>
-            <div class="text-muted small mt-2">รวม {{ decisionStats.total }} รายการ</div>
+          </CCardBody>
+        </CCard>
+
+        <CCard class="mt-1">
+          <CCardHeader class="font-weight-bold">สัดส่วนสถานะงานที่ได้รับมอบหมาย</CCardHeader>
+          <CCardBody>
+            <div v-if="loading" class="text-center py-4">
+              <CSpinner color="primary" size="sm" />
+              <span class="text-muted ml-2">กำลังโหลดข้อมูล...</span>
+            </div>
+            <div v-else-if="fetchError" class="text-center py-4">
+              <div class="text-danger mb-2">โหลดข้อมูลไม่สำเร็จ</div>
+              <small class="text-muted">{{ fetchError }}</small>
+            </div>
+            <div v-else>
+              <div class="chart-wrap chart-wrap--doughnut">
+                <CChartDoughnut
+                  :datasets="proposalDoughnut.datasets"
+                  :labels="proposalDoughnut.labels"
+                  :options="doughnutOptions"
+                />
+              </div>
+            </div>
           </CCardBody>
         </CCard>
       </CCol>
+
       <CCol lg="6" class="mb-2">
         <CCard>
           <CCardHeader class="font-weight-bold">คะแนนและงานค้าง</CCardHeader>
@@ -107,30 +182,8 @@
             </div>
           </CCardBody>
         </CCard>
-      </CCol>
-    </CRow>
 
-    <CRow class="mb-3">
-      <CCol lg="6" class="mb-2">
-        <CCard>
-          <CCardHeader class="font-weight-bold">สัดส่วนสถานะงานที่ได้รับมอบหมาย</CCardHeader>
-          <CCardBody>
-            <div v-if="loading" class="text-center py-4">
-              <CSpinner color="primary" size="sm" />
-              <span class="text-muted ml-2">กำลังโหลดข้อมูล...</span>
-            </div>
-            <div v-else-if="fetchError" class="text-center py-4">
-              <div class="text-danger mb-2">โหลดข้อมูลไม่สำเร็จ</div>
-              <small class="text-muted">{{ fetchError }}</small>
-            </div>
-            <div v-else>
-              <CChartDoughnut :datasets="proposalDoughnut.datasets" :labels="proposalDoughnut.labels" />
-            </div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-      <CCol lg="6" class="mb-2">
-        <CCard>
+        <CCard class="mt-1">
           <CCardHeader class="font-weight-bold">ภาพรวมการประชุม</CCardHeader>
           <CCardBody>
             <div v-if="meetingSummaryLoading" class="text-center py-4">
@@ -167,7 +220,9 @@
                 </CCol>
               </CRow>
 
-              <CChartBar :datasets="meetingBar.datasets" :labels="meetingBar.labels" :options="meetingBar.options" />
+              <div class="chart-wrap chart-wrap--bar">
+                <CChartBar :datasets="meetingBar.datasets" :labels="meetingBar.labels" :options="meetingBar.options" />
+              </div>
 
               <div class="text-right mt-3">
               </div>
@@ -182,10 +237,12 @@
 <script>
 import Service, { instance as axios } from '@/service/api'
 import { CChartBar, CChartDoughnut } from '@coreui/vue-chartjs'
+import vSelect from 'vue-select'
+import 'vue-select/dist/vue-select.css'
 
 export default {
   name: 'CommitteeDashboardSummary',
-  components: { CChartBar, CChartDoughnut },
+  components: { CChartBar, CChartDoughnut, vSelect },
   data() {
     return {
       loading: false,
@@ -310,10 +367,48 @@ export default {
         labels: ['รอการประเมิน', 'ขอแก้ไขเพิ่มเติม', 'ประเมินแล้ว'],
         datasets: [
           {
-            backgroundColor: ['#f59e0b', '#0ea5e9', '#22c55e'],
+            backgroundColor: ['rgba(197, 155, 58, 0.5)', 'rgba(139, 26, 26, 0.45)', 'rgba(22, 163, 74, 0.45)'],
+            borderColor: ['rgba(197, 155, 58, 1)', 'rgba(139, 26, 26, 1)', 'rgba(22, 163, 74, 1)'],
+            borderWidth: 1,
             data: [this.proposalKpis.pending, this.proposalKpis.revision, this.proposalKpis.reviewed]
           }
         ]
+      }
+    },
+    decisionDoughnut() {
+      return {
+        labels: ['อนุมัติ', 'ขอแก้ไข', 'ไม่อนุมัติ'],
+        datasets: [
+          {
+            backgroundColor: ['rgba(197, 155, 58, 0.5)', 'rgba(139, 26, 26, 0.45)', 'rgba(55, 65, 81, 0.4)'],
+            borderColor: ['rgba(197, 155, 58, 1)', 'rgba(139, 26, 26, 1)', 'rgba(55, 65, 81, 1)'],
+            borderWidth: 1,
+            data: [this.decisionStats.approve, this.decisionStats.revise, this.decisionStats.reject]
+          }
+        ]
+      }
+    },
+    doughnutOptions() {
+      return {
+        maintainAspectRatio: false,
+        legend: {
+          position: 'bottom',
+          labels: {
+            boxWidth: 10,
+            fontSize: 12
+          }
+        },
+        tooltips: {
+          callbacks: {
+            label: function (tooltipItem, data) {
+              const label = (data && data.labels && data.labels[tooltipItem.index]) ? data.labels[tooltipItem.index] : ''
+              const v = (data && data.datasets && data.datasets[0] && Array.isArray(data.datasets[0].data))
+                ? data.datasets[0].data[tooltipItem.index]
+                : ''
+              return `${label}: ${v}`
+            }
+          }
+        }
       }
     },
     roundFilterOptions() {
@@ -330,8 +425,24 @@ export default {
       const rows = this.assignedProposalsRaw || []
       const labels = rows.map(p => String(this.fundTypeLabel(p) || '-'))
       const unique = Array.from(new Set(labels.filter(Boolean)))
-      unique.sort((a, b) => a.localeCompare(b, 'th'))
-      return [{ value: 'all', label: 'ทุกประเภททุน' }].concat(unique.map(v => ({ value: v, label: v === '-' ? 'ไม่ระบุ' : v })))
+
+      const ordered = [
+        'ทุนนักวิจัยรุ่นใหม่',
+        'ทุนพัฒนานักวิจัย',
+        'ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์',
+        'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
+      ]
+
+      // Always show all 4 types (even if current data has none for some types).
+      const options = ordered.map(label => ({ value: label, label }))
+
+      // Keep unknown/missing types (and '-' if any) at the end.
+      const rest = unique
+        .filter(label => !ordered.includes(label))
+        .sort((a, b) => a.localeCompare(b, 'th'))
+        .map(v => ({ value: v, label: v === '-' ? 'ไม่ระบุ' : v }))
+
+      return [{ value: 'all', label: 'ทุกประเภททุน' }].concat(options, rest)
     },
     decisionFilterOptions() {
       return [
@@ -466,9 +577,10 @@ export default {
       const ft = proposal && proposal.fundingType ? String(proposal.fundingType) : ''
       const k = ft.toLowerCase()
       if (!k) return '-'
-      if (k === 'new-researcher' || k.includes('new')) return 'ทุนวิจัยใหม่'
-      if (k === 'researcher-development' || k.includes('develop') || k.includes('strategic')) return 'ทุนพัฒนา'
-      if (k === 'industry-extension' || k.includes('extension') || k.includes('industry')) return 'ทุนต่อยอด/อุตสาหกรรม'
+      if (k === 'new-researcher' || k.includes('new')) return 'ทุนนักวิจัยรุ่นใหม่'
+      if (k === 'researcher-development' || k.includes('develop')) return 'ทุนพัฒนานักวิจัย'
+      if (k.includes('strategic') || k.includes('strategy')) return 'ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์'
+      if (k === 'industry-extension' || k.includes('extension') || k.includes('industry')) return 'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
       return ft
     },
     async fetchAssignedProposals() {
@@ -635,7 +747,7 @@ export default {
     radial-gradient(circle at top right, rgba(255, 255, 255, 0.28), transparent 30%),
     linear-gradient(135deg, var(--theme-red) 0%, var(--theme-gold) 115%);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
@@ -643,7 +755,7 @@ export default {
 .hero-title {
   display: flex;
   gap: 10px;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .hero-icon {
@@ -665,12 +777,14 @@ export default {
   font-size: 1.65rem;
   font-weight: 800;
   color: #ffffff;
+  text-align: start;
 }
 
 .subtext {
   margin-top: 4px;
   color: rgba(255, 255, 255, 0.84);
   font-size: 0.95rem;
+  text-align: center;
 }
 
 .hero-actions {
@@ -680,22 +794,91 @@ export default {
 
 .filter-bar {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.filter-bar__selects {
+  display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
-.filter-select {
-  min-width: 180px;
+.filter-bar__actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
-.filter-select::v-deep select,
-.filter-select::v-deep .form-control {
-  height: 34px;
+.filter-select {
+  min-width: 140px;
+}
+
+.filter-select::v-deep .vs__dropdown-toggle {
+  min-height: 34px;
+  border-radius: 12px;
+  border: 2px solid rgba(181, 133, 34, 0.55);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+  padding: 1px 8px;
+  margin-bottom: 15px;
+}
+
+.filter-select::v-deep .vs__selected,
+.filter-select::v-deep .vs__search {
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0;
+}
+
+.filter-select::v-deep .vs__search::placeholder {
+  color: rgba(31, 41, 55, 0.62);
+  font-weight: 700;
+}
+
+.filter-select::v-deep .vs__actions {
+  padding: 0 2px 0 6px;
+}
+
+.filter-select::v-deep .vs__open-indicator {
+  fill: rgba(111, 17, 17, 0.92);
+}
+
+.filter-select.vs--open::v-deep .vs__dropdown-toggle,
+.filter-select.vs--focused::v-deep .vs__dropdown-toggle {
+  border-color: rgba(181, 133, 34, 0.92);
+  box-shadow: 0 0 0 3px rgba(181, 133, 34, 0.18), 0 12px 22px rgba(15, 23, 42, 0.09);
+}
+
+.filter-select::v-deep .vs__dropdown-menu {
+  margin-top: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(181, 133, 34, 0.55) !important;
+  background: #fffaf2 !important;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+  padding: 6px;
+  max-height: 260px;
+}
+
+.filter-select::v-deep .vs__dropdown-option {
   border-radius: 10px;
-  border-color: rgba(181, 133, 34, 0.95);
-  background: #ffffff;
+  padding: 10px 12px;
+  font-weight: 800;
+  color: #1f2937 !important;
+  background: transparent !important;
+}
+
+.filter-select::v-deep .vs__dropdown-option--highlight {
+  background: linear-gradient(135deg, rgba(139, 18, 18, 0.92), rgba(197, 155, 58, 0.92)) !important;
+  color: #ffffff !important;
+}
+
+.filter-select::v-deep .vs__dropdown-option--selected {
+  background: rgba(197, 155, 58, 0.18) !important;
+  color: #6f1111 !important;
 }
 
 .filter-btn {
@@ -790,6 +973,42 @@ export default {
   line-height: 1;
 }
 
+.chart-title {
+  font-weight: 900;
+  color: #111827;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.chart-title--tight {
+  margin-bottom: 4px;
+}
+
+.decision-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.decision-right {
+  border-left: 1px dashed rgba(181, 133, 34, 0.35);
+  padding-left: 12px;
+}
+
+.chart-wrap {
+  width: 100%;
+  position: relative;
+}
+
+.chart-wrap--doughnut {
+  height: 170px;
+}
+
+.chart-wrap--bar {
+  height: 180px;
+}
+
 .score-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -833,6 +1052,17 @@ export default {
 
   .decision-grid {
     grid-template-columns: 1fr;
+  }
+
+  .decision-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .decision-right {
+    border-left: 0;
+    padding-left: 0;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(181, 133, 34, 0.35);
   }
 
   .score-row {

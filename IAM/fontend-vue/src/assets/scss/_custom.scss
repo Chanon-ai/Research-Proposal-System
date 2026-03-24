@@ -1,5 +1,33 @@
 // Here you can add other styles
 
+// MFU sidebar: make active/hover highlight match the red+gold theme (avoid default purple/blue).
+.bg-style1 {
+  .c-sidebar-nav-link,
+  .c-sidebar-nav-dropdown-toggle {
+    border-left: 4px solid transparent;
+  }
+
+  .c-sidebar-nav-link.c-active,
+  .c-sidebar-nav-dropdown.c-show > .c-sidebar-nav-dropdown-toggle {
+    background: rgba(254, 194, 96, 0.22);
+    border-left-color: rgba(254, 194, 96, 0.95);
+  }
+
+  @media (hover: hover), (-ms-high-contrast: none) {
+    .c-sidebar-nav-link:hover,
+    .c-sidebar-nav-dropdown-toggle:hover {
+      background: rgba(254, 194, 96, 0.16);
+      border-left-color: rgba(254, 194, 96, 0.6);
+    }
+
+    .c-sidebar-nav-link.c-active:hover,
+    .c-sidebar-nav-dropdown.c-show > .c-sidebar-nav-dropdown-toggle:hover {
+      background: rgba(254, 194, 96, 0.26);
+      border-left-color: rgba(254, 194, 96, 0.95);
+    }
+  }
+}
+
 // Admin Meetings: meeting/minutes modals are rendered via portal/teleport in some cases.
 // Keep their styling global (bundled in main CSS) to avoid FOUC on hard-refresh.
 .meeting-modal,
