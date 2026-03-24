@@ -132,6 +132,15 @@ exports.saveReview = async (req, res, next) => {
     const review = await service.saveReview(req.params.id, req.body, user);
     return jsonResponse(res, { success: true, message: 'Review saved', data: review });
   } catch (err) {
+    if (err && err.message === 'REVIEW_ALREADY_SUBMITTED') {
+      return res.status(409).json({ success: false, message: 'Review already submitted' });
+    }
+    if (err && err.message === 'Forbidden') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    if (err && err.message === 'Unauthorized') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
     next(err);
   }
 };
