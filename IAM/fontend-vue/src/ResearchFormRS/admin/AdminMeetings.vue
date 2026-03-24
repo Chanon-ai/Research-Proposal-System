@@ -1946,7 +1946,7 @@ export default {
 .summary-row--filters .summary-card {
   cursor: pointer;
   user-select: none;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   outline: none;
 }
 
@@ -1956,12 +1956,12 @@ export default {
 }
 
 .summary-row--filters .summary-card:focus-visible {
-  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 18px 48px rgba(15, 23, 42, 0.09);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 18px 48px rgba(15, 23, 42, 0.16);
 }
 
 .summary-card--active {
-  border-color: rgba(139, 18, 18, 0.42) !important;
-  box-shadow: 0 0 0 3px var(--am-accent-ring), 0 18px 48px rgba(15, 23, 42, 0.09) !important;
+  transform: scale(1.02);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18) !important;
 }
 
 /* vue-multiselect: remove default green highlight/selected background */
@@ -1989,40 +1989,78 @@ export default {
 .summary-card {
   height: 100%;
   padding: 20px;
-  border: 1px solid var(--am-border);
-  border-radius: 20px;
-  background: var(--am-surface);
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  border: 0;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--summary-start, #8c1515), var(--summary-end, #6b0f0f));
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .summary-card--info {
-  border-top: 4px solid var(--am-gold);
+  --summary-start: #f59e0b;
+  --summary-end: #d97706;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M60 42v18l14 10' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
 }
 
 .summary-card--success {
-  border-top: 4px solid #22c55e;
+  --summary-start: #16a34a;
+  --summary-end: #15803d;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
 }
 
 .summary-card--danger {
-  border-top: 4px solid #ef4444;
+  --summary-start: #ef4444;
+  --summary-end: #dc2626;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='20' width='72' height='80' rx='12' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M44 44l32 32M76 44L44 76' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-opacity='0.22'/%3E%3C/svg%3E");
+}
+
+.summary-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--summary-graphic);
+  background-repeat: no-repeat;
+  background-size: 122px 122px;
+  background-position: calc(100% + 10px) -12px;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.summary-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 60%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.summary-card > * {
+  position: relative;
+  z-index: 2;
 }
 
 .summary-label {
-  color: var(--am-muted);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 .summary-number {
   margin: 10px 0 8px;
-  color: var(--am-text);
+  color: rgba(255, 255, 255, 0.98);
   font-size: 2rem;
   font-weight: 700;
   line-height: 1;
 }
 
 .summary-caption {
-  color: var(--am-muted);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.88rem;
   line-height: 1.5;
 }

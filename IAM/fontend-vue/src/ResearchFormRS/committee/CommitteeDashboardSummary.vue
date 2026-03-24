@@ -1077,18 +1077,19 @@ export default {
 }
 
 .kpi-card {
-  border: 1px solid rgba(181, 133, 34, 0.22);
-  border-radius: var(--card-radius);
-  background: #ffffff;
+  border: 0;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--summary-start, #8c1515), var(--summary-end, #6b0f0f));
   padding: 12px 14px;
-  box-shadow: 0 10px 22px rgba(111, 17, 17, 0.06);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
   height: 100%;
   position: relative;
   overflow: hidden;
+  isolation: isolate;
 }
 
 .kpi-label {
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.9);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -1097,51 +1098,66 @@ export default {
   font-size: 1.8rem;
   font-weight: 900;
   margin-top: 6px;
-  color: #111827;
+  color: rgba(255, 255, 255, 0.98);
 }
 
 .kpi-note {
   font-size: 0.9rem;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.9);
   margin-top: 2px;
 }
 
 .kpi-card::before {
   content: '';
   position: absolute;
-  right: -42px;
-  top: -42px;
-  width: 140px;
-  height: 140px;
-  border-radius: 9999px;
-  background: var(--kpi-accent-soft, rgba(181, 133, 34, 0.12));
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--summary-graphic);
+  background-repeat: no-repeat;
+  background-size: 122px 122px;
+  background-position: calc(100% + 10px) -12px;
+  opacity: 0.22;
   pointer-events: none;
+  z-index: 1;
+}
+
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 60%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.kpi-card > * {
+  position: relative;
+  z-index: 2;
 }
 
 .kpi-card--all {
-  /* Match Committee Meetings page background vibe (#fffaf2) */
-  --kpi-accent: #eadfce;
-  --kpi-accent-soft: rgba(234, 223, 206, 0.7);
-  border-top: 5px solid var(--kpi-accent);
-  background: #fffaf2;
+  --summary-start: #8c1515;
+  --summary-end: #6b0f0f;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='22' width='72' height='76' rx='12' fill='white' fill-opacity='0.9'/%3E%3Crect x='38' y='40' width='44' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='54' width='40' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='68' width='33' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3C/svg%3E");
 }
 
 .kpi-card--pending {
-  --kpi-accent: #f59e0b;
-  --kpi-accent-soft: rgba(245, 158, 11, 0.14);
-  border-top: 5px solid var(--kpi-accent);
+  --summary-start: #f59e0b;
+  --summary-end: #d97706;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M60 42v18l14 10' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
 }
 
 .kpi-card--revision {
-  --kpi-accent: var(--theme-red);
-  --kpi-accent-soft: rgba(139, 26, 26, 0.12);
-  border-top: 5px solid var(--kpi-accent);
+  --summary-start: #ef4444;
+  --summary-end: #dc2626;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='20' width='72' height='80' rx='12' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M72 34l12 12M61 45l23-23 12 12-23 23H61z' fill='%23000000' fill-opacity='0.2'/%3E%3Cpath d='M40 82h40' stroke='%23000000' stroke-width='6' stroke-linecap='round' stroke-opacity='0.18'/%3E%3C/svg%3E");
 }
 
 .kpi-card--reviewed {
-  --kpi-accent: #16a34a;
-  --kpi-accent-soft: rgba(22, 163, 74, 0.12);
-  border-top: 5px solid var(--kpi-accent);
+  --summary-start: #16a34a;
+  --summary-end: #15803d;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
 }
 
 .meeting-kpi {
