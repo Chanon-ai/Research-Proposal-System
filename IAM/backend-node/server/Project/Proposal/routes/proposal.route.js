@@ -23,9 +23,12 @@ router.get('/reviews/by-proposal/:id', authenticate, requireRole('admin', 'chair
 router.get('/:id/reviews/me', authenticate, requireRole('committee', 'admin'), controller.myReview);
 router.get('/:id/reviews', authenticate, requireRole('admin', 'chairman'), controller.listProposalReviews);
 router.get('/:id/feedback', authenticate, controller.proposalFeedback);
+router.get('/collaboration-consent/view', controller.renderCollaborationConsentPage);
+router.post('/collaboration-consent/respond', controller.respondCollaborationConsent);
 router.get('/:id', authenticate, controller.detail);
 router.patch('/:id', authenticate, controller.updateDraft);
 router.delete('/:id', authenticate, controller.deleteDraft);
+router.get('/:id/collaboration-confirmations', authenticate, controller.listCollaborationConfirmations);
 router.get('/:id/form-files', authenticate, controller.listFormFiles);
 router.post('/:id/form-files', authenticate, uploadMemory.single('file'), controller.uploadFormFile);
 router.get('/:id/form-files/:fileId', authenticate, controller.downloadFormFile);

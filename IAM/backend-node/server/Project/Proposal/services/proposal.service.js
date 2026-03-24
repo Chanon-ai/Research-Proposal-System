@@ -11,6 +11,7 @@ const User = require('../../Auth/models/User');
 const systemSettingService = require('../../settings/service/system-setting');
 const STATUS = require('../constants/proposal-status');
 const { sendWorkflowEventEmails } = require('./workflow-notification.service');
+const collaborationConfirmationService = require('./collaboration-confirmation.service');
 
 // allowed status transitions map
 const ALLOWED_TRANSITIONS = {
@@ -363,7 +364,7 @@ async function resubmitProposal(id, user) {
   return proposal;
 }
 
-async function submitProposal(id, user) {
+async function submitProposal(id, user, options = {}) {
   const proposal = await Proposal.findById(id);
   if (!proposal) throw new Error('Proposal not found');
   if (proposal.currentStatus !== STATUS.DRAFT) {
@@ -411,6 +412,17 @@ async function submitProposal(id, user) {
     message: `Proposal ${proposal.proposalCode || proposal._id} was submitted`,
     payload: {}
   });
+
+  try {
+    await collaborationConfirmationService.issueCollaborationConfirmations({
+      proposalId: proposal._id,
+      invitedByUserId: user && user._id ? user._id : null,
+      requestOrigin: options && options.requestOrigin ? options.requestOrigin : ''
+    });
+  } catch (err) {
+    console.error('[Proposal.submit] Collaboration confirmation dispatch failed:', err && err.message ? err.message : err);
+  }
+
   return proposal;
 }
 

@@ -209,6 +209,7 @@ export default {
     getCommitteeUsers: (params) => instance.get('/api/v1/proposals/committee-users', { params }),
     getById: (id) => instance.get(`/api/v1/proposals/${id}`),
     list: (params) => instance.get('/api/v1/proposals', { params }),
+    listCollaborationConfirmations: (id) => instance.get(`/api/v1/proposals/${id}/collaboration-confirmations`),
     listFormFiles: (id) => instance.get(`/api/v1/proposals/${id}/form-files`),
     uploadFormFile: (id, formData) =>
       instance.post(`/api/v1/proposals/${id}/form-files`, formData, {
