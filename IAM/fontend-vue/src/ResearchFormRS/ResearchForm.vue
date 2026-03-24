@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div
     class="research-form"
     :class="{
@@ -4495,6 +4495,154 @@ export default {
         errors
       }
     },
+    hasWorkPlanData (workPlan) {
+      if (Array.isArray(workPlan)) return workPlan.length > 0
+      if (!workPlan || typeof workPlan !== 'object') return false
+      const duration = Number(workPlan.duration || 0)
+      const activities = Array.isArray(workPlan.activities) ? workPlan.activities : []
+      return duration > 0 && activities.length > 0
+    },
+    getProjectDetailsValidationResult () {
+      const form = this.$refs.projectDetailsForm && typeof this.$refs.projectDetailsForm.getFormData === 'function'
+        ? this.$refs.projectDetailsForm.getFormData()
+        : null
+
+      if (!form || typeof form !== 'object') {
+        return { ok: false, message: 'กรุณากรอกข้อมูลหัวข้อรายละเอียดโครงการให้ครบถ้วน' }
+      }
+
+      const hasText = (value) => String(value || '').trim() !== ''
+      const fundingType = String(form.fundingType || '').trim()
+      const requiresFundingSubType = ['new-researcher', 'researcher-development', 'industry-extension'].includes(fundingType)
+      const missingSections = []
+
+      if (!hasText(form.projectNameThai) || !hasText(form.projectNameEnglish)) missingSections.push('1. ชื่อโครงการ')
+      if (!fundingType || (requiresFundingSubType && !hasText(form.fundingSubType))) missingSections.push('2. ประเภททุน')
+      if (!hasText(form.researchType)) missingSections.push('4. ประเภทงานวิจัย')
+      if (!hasText(form.keywords)) missingSections.push('5. คำสำคัญ (Keywords)')
+      if (!hasText(form.problemSignificance)) missingSections.push('6. ความสำคัญของปัญหาและแนวคิด')
+      if (!hasText(form.objectives)) missingSections.push('7. วัตถุประสงค์')
+      if (!hasText(form.literatureReview)) missingSections.push('8. ทบทวนวรรณกรรม')
+      if (!hasText(form.references)) missingSections.push('9. เอกสารอ้างอิง')
+      if (!hasText(form.researchMethodology)) missingSections.push('10. วิธีดำเนินการวิจัย')
+      if (!hasText(form.researchScope)) missingSections.push('11. ขอบเขตการวิจัย')
+      if (!this.hasWorkPlanData(form.workPlan)) missingSections.push('12. แผนการดำเนินงาน')
+      if (!hasText(form.milestones)) missingSections.push('13. ผลงานตามระยะเวลาการรายงาน')
+      if (!hasText(form.selectedOutcome)) missingSections.push('14. ผลลัพธ์ที่คาดว่าจะได้รับ')
+      if (!hasText(form.integration)) missingSections.push('15. การบูรณาการงานวิจัย')
+      if (!hasText(form.transferLevel)) missingSections.push('16. ระดับการถ่ายทอดสู่สังคม')
+
+      if (missingSections.length > 0) {
+        return {
+          ok: false,
+          message: `กรุณากรอกข้อมูลให้ครบถ้วนก่อนยื่นโครงการ\n- ${missingSections.join('\n- ')}`
+        }
+      }
+      return { ok: true }
+    },
+    getResearchStandardValidationResult () {
+      const section18AlertMessage = 'โปรดแนบเอกสารมาตรฐานการวิจัย'
+      const form = this.$refs.projectDetailsForm && typeof this.$refs.projectDetailsForm.getFormData === 'function'
+        ? this.$refs.projectDetailsForm.getFormData()
+        : null
+
+      const std = form && form.researchStandard && typeof form.researchStandard === 'object'
+        ? form.researchStandard
+        : null
+      const attachments = std && std.attachments && typeof std.attachments === 'object'
+        ? std.attachments
+        : {}
+
+      if (!std) {
+        return { ok: false, message: section18AlertMessage }
+      }
+
+      const mainType = String(std.mainType || '').trim()
+      if (!mainType) {
+        return { ok: false, message: section18AlertMessage }
+      }
+
+      const hasPlant = Boolean(std.isPlant)
+      const hasHuman = Boolean(std.isHuman)
+      const hasAnimal = Boolean(std.isAnimal)
+      const plantSubType = String(std.plantSubType || '').trim()
+      const humanSubType = String(std.humanSubType || '').trim()
+      const animalSubType = String(std.animalSubType || '').trim()
+      const missingSections = []
+      const hasAttachment = (file) => {
+        if (!file || typeof file !== 'object') return false
+        const fileId = String(file.fileId || file.id || file._id || '').trim()
+        const fileName = String(file.name || file.originalName || file.fileName || '').trim()
+        return fileId !== '' || fileName !== ''
+      }
+
+      if (mainType === 'none') {
+        if (hasPlant && !plantSubType) {
+          missingSections.push('18. Research standard (plant collection details)')
+        } else if (hasPlant && plantSubType === 'approved' && !hasAttachment(attachments.plantApproved)) {
+          missingSections.push('18. Research standard (attach Section 53 plant collection notification document)')
+        } else if (hasPlant && plantSubType === 'pending' && !hasAttachment(attachments.plantPending)) {
+          missingSections.push('18. Research standard (attach supporting document for pending plant collection request)')
+        }
+      }
+
+      if (mainType === 'human_animal') {
+        if (!hasHuman && !hasAnimal) {
+          missingSections.push('18. Research standard (select at least one: human research or animal use)')
+        }
+
+        if (hasHuman && !humanSubType) {
+          missingSections.push('18. Research standard (human research subtype)')
+        } else if (hasHuman && humanSubType === 'approved' && !hasAttachment(attachments.humanApproved)) {
+          missingSections.push('18. Research standard (attach human ethics approval document)')
+        } else if (hasHuman && humanSubType === 'pending' && !hasAttachment(attachments.humanPending)) {
+          missingSections.push('18. Research standard (attach proof of human ethics submission)')
+        }
+
+        if (hasAnimal && !animalSubType) {
+          missingSections.push('18. Research standard (animal use subtype)')
+        } else if (hasAnimal && animalSubType === 'approved' && !hasAttachment(attachments.animalApproved)) {
+          missingSections.push('18. Research standard (attach animal ethics approval document)')
+        } else if (hasAnimal && animalSubType === 'pending' && !hasAttachment(attachments.animalPending)) {
+          missingSections.push('18. Research standard (attach proof of animal ethics submission)')
+        }
+      }
+
+      if (missingSections.length > 0) {
+        return {
+          ok: false,
+          message: section18AlertMessage
+        }
+      }
+
+      return { ok: true }
+    },
+    getBudgetCompletenessValidationResult () {
+      const form = this.$refs.projectDetailsForm && typeof this.$refs.projectDetailsForm.getFormData === 'function'
+        ? this.$refs.projectDetailsForm.getFormData()
+        : null
+      const budget = form && form.budget ? form.budget : null
+      const categories = budget && Array.isArray(budget.categories) ? budget.categories : []
+      const items = categories.reduce((list, category) => {
+        const categoryItems = category && Array.isArray(category.items) ? category.items : []
+        return list.concat(categoryItems)
+      }, [])
+      const computedGrandTotal = this.normalizeBudgetNumber(
+        items.reduce((sum, item) => sum + (Number(item && item.total) || 0), 0)
+      )
+      const grandTotal = this.normalizeBudgetNumber(
+        (budget && budget.grandTotal) || computedGrandTotal
+      )
+
+      if (grandTotal <= 0) {
+        return {
+          ok: false,
+          message: 'กรุณากรอกข้อมูลให้ครบถ้วนก่อนยื่นโครงการ\n- 17. งบประมาณโครงการ (ยอดรวมงบประมาณต้องมากกว่า 0)'
+        }
+      }
+
+      return { ok: true }
+    },
 
     validateBeforeSubmit (options = {}) {
       const focusOnError = options.focusOnError !== false
@@ -4534,16 +4682,26 @@ export default {
         return { ok: false, message: 'กรุณากรอกข้อมูลให้ครบถ้วนก่อนยื่นโครงการ' }
       }
 
-      // 3) Extra rule: research standard selection (from ProjectDetailsForm.submitForm)
-      const form = this.$refs.projectDetailsForm && typeof this.$refs.projectDetailsForm.getFormData === 'function'
-        ? this.$refs.projectDetailsForm.getFormData()
-        : null
-      const std = form && form.researchStandard ? form.researchStandard : null
-      if (std && std.mainType === 'human_animal' && !std.isHuman && !std.isAnimal) {
-        return { ok: false, message: 'กรุณาระบุมาตรฐานการวิจัยให้ครบถ้วน (เลือก มนุษย์ หรือ สัตว์ทดลอง อย่างน้อย 1 รายการ)' }
+      // 3) Validate project details completeness by section (only on submit).
+      const detailsValidation = this.getProjectDetailsValidationResult()
+      if (!detailsValidation.ok) {
+        return detailsValidation
       }
 
-      // 4) Special rule: section 17 budget must satisfy submission criteria
+      // 4) Validate research standard completeness (section 18 with *)
+      const researchStandardValidation = this.getResearchStandardValidationResult()
+      if (!researchStandardValidation.ok) {
+        return researchStandardValidation
+      }
+
+      // 5) Validate budget completeness (section 17 with *)
+      const budgetCompletenessValidation = this.getBudgetCompletenessValidationResult()
+      if (!budgetCompletenessValidation.ok) {
+        if (focusOnError) this.focusBudgetSection()
+        return budgetCompletenessValidation
+      }
+
+      // 6) Special rule: section 17 budget must satisfy submission criteria
       const budgetValidation = this.getBudgetValidationResult()
       if (!budgetValidation.ok) {
         if (focusOnError) this.focusBudgetSection()
