@@ -504,7 +504,7 @@ export default {
 ══════════════════════════════════ */
 .page-wrapper {
   margin-top: 60px;
-  background: transparent;
+  background: #e8eaf0;
   padding: 16px;
   min-height: calc(100vh - 60px);
   width: 100%;
@@ -514,14 +514,14 @@ export default {
 }
 
 .notif-card {
-  background: #ffffff;
+  background: #fff;
   border-radius: 16px;
-  border: 1px solid rgba(140, 21, 21, 0.14);
+  border: none;
   overflow: hidden;
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  box-shadow: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
 /* ══════════════════════════════════
@@ -534,14 +534,12 @@ export default {
   gap: 20px;
   padding: 16px 28px;
   flex-wrap: nowrap;
-  background: linear-gradient(90deg, rgba(140, 21, 21, 1), rgba(107, 15, 15, 0.98));
-  border-bottom: 1px solid rgba(254, 194, 96, 0.5);
 }
 
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #ffffff;
+  color: #111827;
   margin: 0;
 }
 
@@ -553,25 +551,19 @@ export default {
 .filter-tab {
   padding: 7px 18px;
   border-radius: 99px;
-  border: 1px solid transparent;
+  border: none;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   font-family: 'Sarabun', sans-serif;
-  background: rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.9);
+  background: #f3f4f6;
+  color: #6b7280;
   transition: background 0.2s, color 0.2s;
 }
 
 .filter-tab.active {
-<<<<<<< HEAD
   background: #8b1212;
   color: #fff;
-=======
-  background: rgba(254, 194, 96, 0.2);
-  border-color: rgba(254, 194, 96, 0.5);
-  color: #ffffff;
->>>>>>> 479f907cd8df65209401071e7b85db13b7bb05eb
 }
 
 .header-left { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -586,11 +578,11 @@ export default {
   gap: 8px;
 }
 
-.unread-count { font-size: 13px; color: rgba(255, 255, 255, 0.82); }
+.unread-count { font-size: 13px; color: #9ca3af; }
 
 .btn-mark-all {
   font-size: 13px;
-  color: #fde68a;
+  color: #4a7c59;
   background: none;
   border: none;
   cursor: pointer;
@@ -606,16 +598,14 @@ export default {
 .notif-group { margin-bottom: 4px; }
 
 .group-header {
-  background: linear-gradient(90deg, rgba(140, 21, 21, 0.06), rgba(254, 194, 96, 0.12));
+  background: transparent;
   padding: 12px 28px;
-  border-top: 1px solid rgba(140, 21, 21, 0.12);
-  border-bottom: 1px solid rgba(140, 21, 21, 0.12);
 }
 
 .group-label {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
-  color: #6b0f0f;
+  color: #111827;
 }
 
 .page-wrapper.is-dark {
@@ -623,9 +613,9 @@ export default {
 }
 
 .notif-card.is-dark {
-  background: #111827;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  box-shadow: none;
+  background: #1f2933;
+  border: 1px solid #334155;
+  box-shadow: 0 1px 0 rgba(148, 163, 184, 0.08);
 }
 
 .page-wrapper.is-dark .page-title,
@@ -647,34 +637,28 @@ export default {
 } */
 
 .page-wrapper.is-dark .filter-tab.active {
-<<<<<<< HEAD
   background: #8b1212;
-=======
-  background: rgba(56, 189, 248, 0.2);
-  border-color: rgba(56, 189, 248, 0.5);
->>>>>>> 479f907cd8df65209401071e7b85db13b7bb05eb
   color: #fff;
 }
 
 .page-wrapper.is-dark .notif-item {
-  background: #111827;
-  border-bottom-color: rgba(148, 163, 184, 0.24);
+  background: #1f2933;
+  border-bottom-color: #334155;
 }
 
 .page-wrapper.is-dark .notif-item:hover {
-  background: rgba(51, 65, 85, 0.76);
+  background: #253240;
 }
 
 .page-wrapper.is-dark .notif-item.unread {
-  background: #0f172a;
+  background: #20303f;
 }
 
 .page-wrapper.is-dark .notif-item.unread:hover {
-  background: rgba(51, 65, 85, 0.86);
+  background: #27384a;
 }
 
 .page-wrapper.is-dark .notif-action-btn {
-<<<<<<< HEAD
   background: linear-gradient(180deg, #2b6b3a 0%, #234f2e 60%, #183826 100%);
   color: #c6f7d1;
   box-shadow: 0 6px 14px rgba(16, 44, 30, 0.22), inset 0 -3px 6px rgba(0,0,0,0.18);
@@ -684,16 +668,6 @@ export default {
   transform: translateY(-1px);
   filter: brightness(1.08);
   box-shadow: 0 10px 22px rgba(16,44,30,0.28), inset 0 -2px 4px rgba(255,255,255,0.02);
-=======
-  background: transparent;
-  color: #fde68a;
-  border-color: #f59e0b;
-}
-
-.page-wrapper.is-dark .notif-action-btn:hover {
-  background: #fbbf24;
-  color: #111827;
->>>>>>> 479f907cd8df65209401071e7b85db13b7bb05eb
 }
 
 .page-wrapper.is-dark .btn-mark-all {
@@ -701,8 +675,7 @@ export default {
 }
 
 .page-wrapper.is-dark .notif-header {
-  background: linear-gradient(90deg, #1f2937, #111827);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.32);
+  border-bottom: 1px solid #334155;
 }
 
 .page-wrapper.is-dark .notif-group {
@@ -710,9 +683,7 @@ export default {
 }
 
 .page-wrapper.is-dark .group-header {
-  background: linear-gradient(90deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
-  border-top: 1px solid rgba(148, 163, 184, 0.24);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+  border-top: 1px solid #334155;
 }
 
 .page-wrapper.is-dark .group-header:first-of-type {
@@ -755,15 +726,15 @@ export default {
   align-items: flex-start;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(140, 21, 21, 0.12);
+  border-bottom: 1px solid #eef2ff;
   cursor: pointer;
   transition: background 0.15s;
   background: #fff;
 }
 .notif-item:last-child { border-bottom: none; }
-.notif-item:hover { background: rgba(254, 194, 96, 0.22); }
-.notif-item.unread { background: #fffaf0; }
-.notif-item.unread:hover { background: rgba(254, 194, 96, 0.28); }
+.notif-item:hover { background: #f9fafb; }
+.notif-item.unread { background: #f0faf3; }
+.notif-item.unread:hover { background: #e6f7ed; }
 
 /* Icon */
 .notif-icon {
@@ -812,10 +783,10 @@ export default {
 }
 
 .icon-blue   { background: #eef2ff; color: #2563eb; }
-.icon-orange { background: #fff8ef; color: #d97706; }
-.icon-green  { background: #fef3c7; color: #8c1515; }
-.icon-gray   { background: #f3f4f6; color: #6b7280; }
-.icon-red    { background: #fee2e2; color: #b91c1c; }
+.icon-orange { background: #fff8ef; color: #f97316; }
+.icon-green  { background: #f0fdf4; color: #16a34a; }
+.icon-gray   { background: #f7fafb; color: #4b5563; }
+.icon-red    { background: #fee2e2; color: #dc2626; }
 
 /* Content */
 .notif-content { flex: 1; min-width: 0; }
@@ -823,7 +794,7 @@ export default {
 .notif-title {
   font-size: 14px;
   font-weight: 700;
-  color: #1f2937;
+  color: #111827;
   margin-bottom: 4px;
   line-height: 1.4;
 }
@@ -840,20 +811,13 @@ export default {
 .notif-action-btn {
   padding: 5px 14px;
   border-radius: 99px;
-<<<<<<< HEAD
   border: none;
   background: linear-gradient(180deg, #8b1212 0%, rgba(197, 155, 58, 0.98) 100%);
   color: #ffffff;
-=======
-  border: 1px solid #8c1515;
-  background: transparent;
-  color: #8c1515;
->>>>>>> 479f907cd8df65209401071e7b85db13b7bb05eb
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   font-family: 'Sarabun', sans-serif;
-<<<<<<< HEAD
   box-shadow: 0 6px 14px rgba(139,18,18,0.18), inset 0 -3px 6px rgba(0,0,0,0.12);
   transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
@@ -874,11 +838,6 @@ export default {
   outline: none;
   box-shadow: 0 10px 20px rgba(139,18,18,0.18), 0 0 0 6px rgba(178,31,31,0.12);
 }
-=======
-  transition: background 0.2s, color 0.2s;
-}
-.notif-action-btn:hover { background: #8c1515; color: #ffffff; }
->>>>>>> 479f907cd8df65209401071e7b85db13b7bb05eb
 
 /* Meta */
 .notif-meta {
@@ -1000,17 +959,10 @@ export default {
   display: flex; align-items: center; justify-content: center;
   margin-top: 2px;
 }
-<<<<<<< HEAD
 .icon-blue   { background: #dbeafe; color: #1d4ed8; }
 .icon-orange { background: #ffedd5; color: #c2410c; }
 .icon-green  { background: #dcfce7; color: #15803d; }
 .icon-gray   { background: #f3f4f6; color: #4b5563; }
-=======
-.dp-icon.icon-blue   { background: #1e3a5f; color: #60a5fa; }
-.dp-icon.icon-orange { background: #3d2408; color: #fb923c; }
-.dp-icon.icon-green  { background: #14301e; color: #4ade80; }
-.dp-icon.icon-gray   { background: #2a2a2a; color: #9ca3af; }
->>>>>>> 479f907cd8df65209401071e7b85db13b7bb05eb
 
 .dp-content { flex: 1; min-width: 0; }
 .dp-item-title {
@@ -1081,7 +1033,28 @@ export default {
   .empty-state { padding: 40px 12px }
 }
 
-/* Keep controls clean without nuking table-like borders */
+/* Force remove dark borders on notification UI when user reports no visible change */
+.notif-card.is-dark,
+.page-wrapper.is-dark .notif-header,
+.dropdown-panel,
+.dropdown-panel::before,
+.bell-badge,
+.dp-item,
+.dp-footer {
+  border-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* If any outline/pseudo-element adds a ring, hide it */
+.notif-card.is-dark::before,
+.dropdown-panel::after,
+.bell-badge::before,
+.notif-item::before {
+  display: none !important;
+  border: none !important;
+}
+/* High-specificity override: remove persistent black rings/borders on tabs and buttons */
 .page-wrapper .filter-tab,
 .page-wrapper .filter-tab *,
 .page-wrapper .filter-tab svg,
@@ -1092,10 +1065,11 @@ export default {
 .page-wrapper .btn-mark-all *,
 .bell-btn,
 .bell-btn * {
-  box-shadow: none;
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
   outline: none !important;
-  -webkit-appearance: none;
-  background-clip: padding-box;
+  background-clip: padding-box !important;
 }
 
 .page-wrapper .filter-tab.active {
