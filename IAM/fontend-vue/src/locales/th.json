@@ -20,10 +20,20 @@
   },
   "nav": {
     "dashboard": "แดชบอร์ด",
+    "researcherMenu": "เมนูนักวิจัย",
+    "adminMenu": "เมนูผู้ดูแลระบบ",
+    "committeeMenu": "เมนูคณะกรรมการ",
     "userPanel": "แผงผู้ใช้",
     "userDashboard": "โครงการของฉัน",
+    "userMeetings": "กำหนดการประชุม",
     "profile": "โปรไฟล์",
     "history": "ประวัติ",
+    "adminDashboard": "แดชบอร์ดผู้ดูแลระบบ",
+    "meetings": "กำหนดการประชุม",
+    "reports": "รายงาน",
+    "settings": "ตั้งค่า",
+    "assignedTasks": "งานที่ได้รับมอบหมาย",
+    "committeeSummary": "สรุปภาพรวม",
     "researchForm": "แบบฟอร์มวิจัย"
   },
   "status": {

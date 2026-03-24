@@ -90,6 +90,22 @@ export default {
       return this.isDarkTheme
         ? 'pt-0 notification-menu notification-dropdown__menu notification-dropdown__menu--dark'
         : 'pt-0 notification-menu notification-dropdown__menu'
+    },
+
+    currentRole () {
+      const storeRole = this.$store && this.$store.getters
+        ? this.$store.getters['Authentication/userRole']
+        : null
+      if (storeRole) return storeRole
+
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        return parsed && parsed.role ? parsed.role : null
+      } catch (e) {
+        return null
+      }
     }
   },
 
@@ -236,6 +252,13 @@ export default {
 
     viewAll () {
       this.isNotificationOpen = false
+
+      const role = this.currentRole
+      if (['admin', 'legacy_admin', 'chairman'].includes(String(role || ''))) {
+        this.$router.push('/admin/notifications')
+        return
+      }
+
       this.$router.push('/user/notification')
     }
   }

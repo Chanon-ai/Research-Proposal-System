@@ -9,22 +9,22 @@ export default [{
     {
       _name: 'CSidebarNavTitle',
       roles: ['researcher', 'chairman'],
-      _children: ['เมนูนักวิจัย']
+      _children: ['nav.researcherMenu']
     },
     {
       _name: 'CSidebarNavDropdown',
-      name: 'User Panel',
+      name: 'nav.userPanel',
       route: '/user',
       icon: 'cil-user',
       roles: ['researcher', 'chairman'],
       items: [
         {
-          name: 'Profile',
+          name: 'nav.profile',
           to: '/user/profile',
           roles: ['chairman']
         },
         {
-          name: 'History',
+          name: 'nav.history',
           to: '/user/history',
           roles: ['chairman']
         }
@@ -32,76 +32,80 @@ export default [{
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'User Dashboard',
+      name: 'nav.userDashboard',
       to: '/userdashboard',
       icon: 'cil-user',
       roles: ['researcher', 'chairman']
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'กำหนดการประชุม',
+      name: 'nav.userMeetings',
       to: '/user/meetings',
       icon: 'cil-calendar',
       roles: ['researcher', 'chairman']
     },
     {
-      _name: 'CSidebarNavDropdown',
-      name: 'Admin Panel',
-      route: '/admin',
+      _name: 'CSidebarNavTitle',
+      roles: ['admin', 'legacy_admin', 'chairman'],
+      _children: ['nav.adminMenu']
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'nav.adminDashboard',
+      to: '/admin/dashboard',
+      icon: 'cil-speedometer',
+      roles: ['admin', 'legacy_admin', 'chairman']
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'nav.meetings',
+      to: '/admin/meetings',
+      icon: 'cil-calendar',
+      roles: ['admin', 'legacy_admin', 'chairman']
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'nav.reports',
+      to: '/admin/reports',
+      icon: 'cil-chart-pie',
+      roles: ['admin', 'legacy_admin', 'chairman']
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'nav.settings',
+      to: '/admin/settings',
       icon: 'cil-settings',
-      roles: ['admin', 'chairman'],
-      items: [
-        {
-          name: 'Admin Dashboard',
-          to: '/admin/dashboard'
-        },
-        {
-          name: 'Meetings',
-          to: '/admin/meetings'
-        },
-        {
-          name: 'Notifications',
-          to: '/admin/notifications'
-        },
-        {
-          name: 'Reports',
-          to: '/admin/reports'
-        },
-        {
-          name: 'Settings',
-          to: '/admin/settings'
-        }
-      ]
+      roles: ['admin', 'legacy_admin', 'chairman']
     },
     {
       _name: 'CSidebarNavTitle',
       roles: ['committee'],
-      _children: ['เมนูคณะกรรมการ']
+      _children: ['nav.committeeMenu']
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'งานที่ได้รับมอบหมาย',
+      name: 'nav.assignedTasks',
       to: '/committee/assigned',
       icon: 'cil-list',
       roles: ['committee']
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'กำหนดการประชุม',
+      name: 'nav.meetings',
       to: '/committee/meetings',
       icon: 'cil-calendar',
       roles: ['committee']
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'สรุปภาพรวม',
+      name: 'nav.committeeSummary',
       to: '/committee/dashboard',
       icon: 'cil-speedometer',
       roles: ['committee']
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'Research Form',
+      name: 'nav.researchForm',
       to: '/research-form',
       icon: 'cil-notes',
       roles: ['researcher', 'admin', 'chairman', 'committee']

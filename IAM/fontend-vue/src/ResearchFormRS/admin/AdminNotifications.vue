@@ -1,53 +1,54 @@
 <template>
   <div class="admin-notifications-page">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap" style="gap: 8px;">
-      <h2 class="mb-0">ระบบแจ้งเตือน (Admin)</h2>
-      <div class="d-flex" style="gap: 8px;">
-        <CButton color="secondary" @click="markAllRead">ทำเครื่องหมายอ่านทั้งหมด</CButton>
+    <section class="notif-hero mb-4">
+      <div class="notif-hero__content">
+        <div class="notif-hero__eyebrow">ADMIN NOTIFICATIONS</div>
+        <h2 class="notif-hero__title">ระบบแจ้งเตือน</h2>
+        <p class="notif-hero__subtitle mb-0">จัดการและติดตามการแจ้งเตือนทั้งระบบ</p>
       </div>
-    </div>
+      <div class="notif-hero__action">
+        <CButton color="primary" size="lg" class="notif-hero__btn" @click="markAllRead">ทำเครื่องหมายอ่านทั้งหมด</CButton>
+      </div>
+    </section>
 
     <CRow class="mb-3">
       <CCol sm="6" lg="3" class="mb-3 mb-lg-0">
-        <div class="summary-card border-primary">
-          <small class="text-muted">แจ้งเตือนทั้งหมด</small>
-          <div class="summary-number">{{ total }}</div>
+        <div class="notif-summary-card notif-tone-total">
+          <div class="notif-summary-bg" aria-hidden="true"></div>
+          <div class="notif-summary-content">
+            <small class="notif-summary-label">แจ้งเตือนทั้งหมด</small>
+            <div class="notif-summary-number">{{ total }}</div>
+          </div>
         </div>
       </CCol>
       <CCol sm="6" lg="3" class="mb-3 mb-lg-0">
-        <div class="summary-card border-warning">
-          <small class="text-muted">ยังไม่อ่าน</small>
-          <div class="summary-number">{{ summaryUnread }}</div>
+        <div class="notif-summary-card notif-tone-unread">
+          <div class="notif-summary-bg" aria-hidden="true"></div>
+          <div class="notif-summary-content">
+            <small class="notif-summary-label">ยังไม่อ่าน</small>
+            <div class="notif-summary-number">{{ summaryUnread }}</div>
+          </div>
         </div>
       </CCol>
       <CCol sm="6" lg="3" class="mb-3 mb-sm-0">
-        <div class="summary-card border-success">
-          <small class="text-muted">อ่านแล้ว</small>
-          <div class="summary-number">{{ summaryRead }}</div>
+        <div class="notif-summary-card notif-tone-read">
+          <div class="notif-summary-bg" aria-hidden="true"></div>
+          <div class="notif-summary-content">
+            <small class="notif-summary-label">อ่านแล้ว</small>
+            <div class="notif-summary-number">{{ summaryRead }}</div>
+          </div>
         </div>
       </CCol>
       <CCol sm="6" lg="3">
-        <div class="summary-card border-info">
-          <small class="text-muted">ส่งวันนี้</small>
-          <div class="summary-number">{{ summaryToday }}</div>
+        <div class="notif-summary-card notif-tone-today">
+          <div class="notif-summary-bg" aria-hidden="true"></div>
+          <div class="notif-summary-content">
+            <small class="notif-summary-label">ส่งวันนี้</small>
+            <div class="notif-summary-number">{{ summaryToday }}</div>
+          </div>
         </div>
       </CCol>
     </CRow>
-
-    <CCard class="mb-3">
-      <CCardBody>
-        <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
-          <div class="d-flex flex-wrap" style="gap: 8px;">
-            <CButton :color="activeTab === 'all' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('all')">ทั้งหมด</CButton>
-            <CButton :color="activeTab === 'unread' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('unread')">ยังไม่อ่าน</CButton>
-            <CButton :color="activeTab === 'read' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('read')">อ่านแล้ว</CButton>
-          </div>
-          <div style="min-width: 280px;">
-            <CSelect :value="filterType" :options="typeFilterOptions" @change="onTypeFilterChange" />
-          </div>
-        </div>
-      </CCardBody>
-    </CCard>
 
     <div v-if="apiNotReady" class="alert alert-warning">
       ยังไม่มีข้อมูล (API ยังไม่พร้อม)
@@ -58,44 +59,62 @@
       <div class="mt-2 text-muted">กำลังโหลดการแจ้งเตือน...</div>
     </div>
 
-    <div v-else>
-      <div v-if="notifications.length === 0" class="empty-state">ไม่พบข้อมูลการแจ้งเตือน</div>
-
-      <div v-for="notif in notifications" :key="notif._id" class="notification-card" :class="notif.isRead ? 'read' : 'unread'">
-        <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
-          <div>
-            <span class="mr-2">🔔</span>
-            <CBadge :color="getTypeBadgeColor(notif.type)" class="mr-2">{{ getTypeLabel(notif.type) }}</CBadge>
-            <CBadge v-if="!notif.isRead" color="info">ยังไม่อ่าน</CBadge>
+    <CCard v-else class="reviewer-dashboard-card no-table-divider notif-list-card">
+      <CCardHeader class="dashboard-card-header">
+        <div class="dashboard-card-header__row">
+          <div class="dashboard-card-title">
+            รายการแจ้งเตือน
+            <CBadge class="ml-2 notif-count-badge">{{ total }}</CBadge>
           </div>
-          <small class="text-muted">{{ formatDate(notif.sentAt || notif.createdAt) }}</small>
-        </div>
-
-        <div class="mt-2" :class="{ 'font-weight-bold': !notif.isRead }">{{ notif.title || '-' }}</div>
-        <div class="text-muted message-clamp mt-1">{{ notif.message || '-' }}</div>
-
-        <div class="d-flex justify-content-between align-items-end flex-wrap mt-2" style="gap: 8px;">
-          <small class="text-muted">
-            👤 ผู้รับ: {{ notif.recipientName || notif.recipientEmail || '-' }}
-            <span v-if="notif.proposalCode"> | 📋 {{ notif.proposalCode }}</span>
-          </small>
-          <div>
-            <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="notif.isRead" @click="markAsRead(notif)">
-              ทำเครื่องหมายอ่าน
-            </CButton>
-            <CButton size="sm" color="danger" @click="deleteNotification(notif)">ลบ</CButton>
+          <div class="header-tools">
+            <div class="notif-tabs">
+              <CButton :color="activeTab === 'all' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('all')">ทั้งหมด</CButton>
+              <CButton :color="activeTab === 'unread' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('unread')">ยังไม่อ่าน</CButton>
+              <CButton :color="activeTab === 'read' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('read')">อ่านแล้ว</CButton>
+            </div>
+            <CSelect class="notif-type-select" :value="filterType" :options="typeFilterOptions" @change="onTypeFilterChange" />
           </div>
         </div>
-      </div>
+      </CCardHeader>
+      <CCardBody class="card-body-tight">
+        <div v-if="notifications.length === 0" class="empty-state">ไม่พบข้อมูลการแจ้งเตือน</div>
 
-      <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap" style="gap: 8px;">
-        <small class="text-muted">หน้าที่ {{ page }} / {{ totalPages }}</small>
-        <div>
-          <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="page <= 1 || loading" @click="onPageChange(page - 1)">ก่อนหน้า</CButton>
-          <CButton size="sm" color="secondary" variant="outline" :disabled="page >= totalPages || loading" @click="onPageChange(page + 1)">ถัดไป</CButton>
+        <div v-for="notif in notifications" :key="notif._id" class="notification-card" :class="notif.isRead ? 'read' : 'unread'">
+          <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
+            <div>
+              <span class="mr-2">🔔</span>
+              <CBadge :color="getTypeBadgeColor(notif.type)" class="mr-2">{{ getTypeLabel(notif.type) }}</CBadge>
+              <CBadge v-if="!notif.isRead" color="info">ยังไม่อ่าน</CBadge>
+            </div>
+            <small class="text-muted">{{ formatDate(notif.sentAt || notif.createdAt) }}</small>
+          </div>
+
+          <div class="mt-2" :class="{ 'font-weight-bold': !notif.isRead }">{{ notif.title || '-' }}</div>
+          <div class="text-muted message-clamp mt-1">{{ notif.message || '-' }}</div>
+
+          <div class="d-flex justify-content-between align-items-end flex-wrap mt-2" style="gap: 8px;">
+            <small class="text-muted">
+              👤 ผู้รับ: {{ notif.recipientName || notif.recipientEmail || '-' }}
+              <span v-if="notif.proposalCode"> | 📋 {{ notif.proposalCode }}</span>
+            </small>
+            <div>
+              <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="notif.isRead" @click="markAsRead(notif)">
+                ทำเครื่องหมายอ่าน
+              </CButton>
+              <CButton size="sm" color="danger" @click="deleteNotification(notif)">ลบ</CButton>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+
+        <div class="notif-footer">
+          <small class="text-muted">หน้าที่ {{ page }} / {{ totalPages }}</small>
+          <div>
+            <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="page <= 1 || loading" @click="onPageChange(page - 1)">ก่อนหน้า</CButton>
+            <CButton size="sm" color="secondary" variant="outline" :disabled="page >= totalPages || loading" @click="onPageChange(page + 1)">ถัดไป</CButton>
+          </div>
+        </div>
+      </CCardBody>
+    </CCard>
 
     <CModal
       :show.sync="showSendModal"
@@ -478,25 +497,277 @@ export default {
 <style scoped>
 .admin-notifications-page { width: 100%; }
 
-.summary-card {
-  background: #ffffff;
-  border: 1px solid #e9ecef;
-  border-left-width: 5px;
-  border-radius: 8px;
-  padding: 14px 16px;
+.card-body-tight {
+  padding: 1rem;
+  background: #f7f1ea;
 }
-.summary-number { font-size: 1.65rem; font-weight: 700; line-height: 1.1; }
+
+.reviewer-dashboard-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dashboard-card-header {
+  background: linear-gradient(90deg, rgba(140, 21, 21, 0.1), rgba(254, 194, 96, 0.22));
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 0 1.25rem;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.dashboard-card-header__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 64px;
+}
+
+.dashboard-card-title {
+  color: #6b0f0f;
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header-tools /deep/ .form-group,
+.header-tools >>> .form-group,
+.header-tools::v-deep .form-group {
+  margin: 0 !important;
+}
+
+.notif-type-select {
+  min-width: 260px;
+}
+
+.notif-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Make outline-primary match MFU theme */
+.admin-notifications-page /deep/ .btn-outline-primary,
+.admin-notifications-page >>> .btn-outline-primary,
+.admin-notifications-page::v-deep .btn-outline-primary {
+  color: #8c1515;
+  border-color: #8c1515;
+}
+
+.admin-notifications-page /deep/ .btn-outline-primary:hover,
+.admin-notifications-page >>> .btn-outline-primary:hover,
+.admin-notifications-page::v-deep .btn-outline-primary:hover {
+  color: #ffffff;
+  background: #8c1515;
+  border-color: #8c1515;
+}
+
+.admin-notifications-page /deep/ .btn-primary,
+.admin-notifications-page >>> .btn-primary,
+.admin-notifications-page::v-deep .btn-primary {
+  background: #8c1515;
+  border-color: #8c1515;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+.notif-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 28px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.28), transparent 30%),
+    linear-gradient(135deg, #8b1212 0%, #c59b3a 115%);
+  color: #ffffff;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.16);
+}
+
+.notif-hero__content { max-width: 720px; }
+
+.notif-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.notif-hero__title {
+  margin-bottom: 10px;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.notif-hero__subtitle {
+  max-width: 620px;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 0.98rem;
+  line-height: 1.7;
+}
+
+.notif-hero__btn {
+  min-width: 240px;
+  border-radius: 14px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+  background: linear-gradient(135deg, rgba(197, 155, 58, 0.98), rgba(139, 18, 18, 0.98)) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+}
+
+.notif-hero__btn:hover { filter: brightness(1.03); }
+
+/* Summary cards (match AdminDashboard look) */
+.notif-summary-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 16px 18px;
+  min-height: 86px;
+  cursor: default;
+  transform: translateY(0);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  isolation: isolate;
+}
+
+.notif-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
+}
+
+.notif-summary-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  z-index: 1;
+  background: linear-gradient(135deg, var(--summary-start, #8c1515), var(--summary-end, #6b0f0f));
+}
+
+.notif-summary-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--summary-graphic);
+  background-repeat: no-repeat;
+  background-size: 122px 122px;
+  background-position: calc(100% + 10px) -12px;
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+.notif-summary-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 60%);
+  pointer-events: none;
+}
+
+.notif-summary-content {
+  position: relative;
+  z-index: 2;
+}
+
+.notif-summary-label {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+
+.notif-summary-number {
+  font-size: 1.9rem;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #ffffff;
+  margin-top: 6px;
+}
+
+.notif-tone-total {
+  --summary-start: #8c1515;
+  --summary-end: #6b0f0f;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M24 70h56l20 18V32L80 50H24z' fill='white' fill-opacity='0.88'/%3E%3Ccircle cx='36' cy='86' r='6' fill='white' fill-opacity='0.7'/%3E%3Ccircle cx='56' cy='86' r='6' fill='white' fill-opacity='0.58'/%3E%3C/svg%3E");
+}
+
+.notif-tone-unread {
+  --summary-start: #f59e0b;
+  --summary-end: #d97706;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M60 40v24' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-opacity='0.22'/%3E%3Ccircle cx='60' cy='78' r='5' fill='%23000000' fill-opacity='0.22'/%3E%3C/svg%3E");
+}
+
+.notif-tone-read {
+  --summary-start: #16a34a;
+  --summary-end: #15803d;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
+}
+
+.notif-tone-today {
+  --summary-start: #0ea5e9;
+  --summary-end: #0369a1;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='20' y='24' width='80' height='72' rx='12' fill='white' fill-opacity='0.9'/%3E%3Crect x='20' y='36' width='80' height='14' fill='%23000000' fill-opacity='0.13'/%3E%3Ccircle cx='38' cy='64' r='7' fill='%23000000' fill-opacity='0.18'/%3E%3Ccircle cx='60' cy='64' r='7' fill='%23000000' fill-opacity='0.18'/%3E%3Ccircle cx='82' cy='64' r='7' fill='%23000000' fill-opacity='0.18'/%3E%3C/svg%3E");
+}
 
 .notification-card {
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 14px;
+  border: 1px solid rgba(140, 21, 21, 0.14);
+  border-radius: 12px;
+  padding: 14px 16px;
   margin-bottom: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+  transition: transform 0.12s ease, background-color 0.18s ease, border-color 0.18s ease;
 }
-.notification-card.unread { background: #eef6ff; border-left: 5px solid #39f; }
-.notification-card.read { background: #f8f9fa; }
+.notification-card:hover { transform: translateY(-1px); background: #fffaf2; border-color: rgba(181, 133, 34, 0.45); }
+.notification-card.unread { border-left: 5px solid #8c1515; }
+.notification-card.read { background: #ffffff; opacity: 0.92; }
 
 .message-clamp { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.message-clamp { -webkit-line-clamp: 2; }
+
+.empty-state {
+  border: 1px dashed rgba(140, 21, 21, 0.22);
+  background: rgba(254, 194, 96, 0.14);
+  color: #6b0f0f;
+  padding: 16px 14px;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.notif-count-badge {
+  background: rgba(140, 21, 21, 0.1);
+  color: #6b0f0f;
+  border: 1px solid rgba(140, 21, 21, 0.18);
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.notif-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(140, 21, 21, 0.12);
+}
 
 .empty-state { border: 1px dashed #c8ced3; border-radius: 8px; padding: 20px; text-align: center; color: #768192; }
 
@@ -592,19 +863,19 @@ body.c-dark-theme .admin-notifications-page h2 {
   color: #f4f8ff;
 }
 
-[data-coreui-theme='dark'] .summary-card,
-body.c-dark-theme .summary-card {
+[data-coreui-theme='dark'] .notif-summary-card,
+body.c-dark-theme .notif-summary-card {
   background: #162235;
   border-color: #2f3e55;
 }
 
-[data-coreui-theme='dark'] .summary-card .text-muted,
-body.c-dark-theme .summary-card .text-muted {
+[data-coreui-theme='dark'] .notif-summary-label,
+body.c-dark-theme .notif-summary-label {
   color: #b3c2dd !important;
 }
 
-[data-coreui-theme='dark'] .summary-number,
-body.c-dark-theme .summary-number {
+[data-coreui-theme='dark'] .notif-summary-number,
+body.c-dark-theme .notif-summary-number {
   color: #eef4ff;
 }
 

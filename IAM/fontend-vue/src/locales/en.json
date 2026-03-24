@@ -20,10 +20,20 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "researcherMenu": "Researcher Menu",
+    "adminMenu": "Admin Menu",
+    "committeeMenu": "Committee Menu",
     "userPanel": "User Panel",
     "userDashboard": "My Projects",
+    "userMeetings": "My Meetings",
     "profile": "Profile",
     "history": "History",
+    "adminDashboard": "Admin Dashboard",
+    "meetings": "Meetings",
+    "reports": "Reports",
+    "settings": "Settings",
+    "assignedTasks": "Assigned Tasks",
+    "committeeSummary": "Overview",
     "researchForm": "Research Form"
   },
   "status": {

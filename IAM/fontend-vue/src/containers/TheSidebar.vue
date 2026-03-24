@@ -120,6 +120,9 @@ export default {
   },
   methods: {
     translateLabel (label) {
+      if (typeof label === 'string' && (label.startsWith('nav.') || label.startsWith('common.') || label.startsWith('header.'))) {
+        return this.$t(label)
+      }
       const map = {
         Dashboard: this.$t('nav.dashboard'),
         'User Panel': this.$t('nav.userPanel'),
