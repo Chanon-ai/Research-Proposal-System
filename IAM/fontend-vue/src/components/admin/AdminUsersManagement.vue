@@ -818,18 +818,34 @@ export default {
   border: 2px solid transparent;
   background-color: #ffffff;
   transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  border-radius: 12px;
+  padding: 16px 18px;
+  min-height: 86px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.summary-widget small {
+  font-size: 0.9rem;
+}
+
+.summary-widget strong.h5 {
+  font-size: 1.75rem;
+  font-weight: 900;
+  line-height: 1.1;
 }
 
 .summary-widget:hover {
   transform: translateY(-1px);
-  border-color: rgba(44, 56, 74, 0.22);
-  background-color: #f7fafc;
+  border-color: rgba(181, 133, 34, 0.42);
+  background-color: #fffaf2;
   box-shadow: 0 5px 14px rgba(0, 0, 0, 0.1);
 }
 
 .summary-widget.is-active {
-  border-color: #321fdb;
-  background-color: #eef1ff;
-  box-shadow: 0 0 0 2px rgba(50, 31, 219, 0.18);
+  border-color: #8c1515;
+  background-color: rgba(254, 194, 96, 0.18);
+  box-shadow: 0 0 0 2px rgba(140, 21, 21, 0.16);
 }
 </style>
