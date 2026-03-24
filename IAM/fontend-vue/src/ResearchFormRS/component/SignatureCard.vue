@@ -21,6 +21,14 @@
                     - ไม่มีลายเซ็น -
                   </div>
 
+                  <div
+                    v-else-if="!canEditSignature('projectLeader')"
+                    class="upload-container signature-locked-note text-center p-3 border rounded bg-light text-muted d-flex align-items-center justify-content-center"
+                    style="min-height: 150px;"
+                  >
+                    ลงนามได้เฉพาะผู้มีชื่อในช่องนี้เท่านั้น
+                  </div>
+
                   <div v-else>
                     <div class="btn-group w-100 mb-2" role="group">
                       <button type="button" class="btn btn-sm" :class="signatures.projectLeader.mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('projectLeader', 'draw')">วาดลายเซ็น</button>
@@ -59,7 +67,7 @@
               <p class="text-center mb-1">หัวหน้าโครงการวิจัย</p>
               <p class="text-center text-muted small mb-3">วันที่ {{ signatures.projectLeader.timestamp || '....................................' }}</p>
 
-              <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly">
+              <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly && canEditSignature('projectLeader')">
                 <template v-if="!signatures.projectLeader.completed">
                   <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('projectLeader')" v-if="signatures.projectLeader.mode === 'draw'">ลบ</button>
                   <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('projectLeader')" v-if="signatures.projectLeader.mode === 'draw'">บันทึก</button>
@@ -85,6 +93,14 @@
                   
                   <div v-if="isReadOnly" class="upload-container text-center p-3 border rounded bg-light text-muted d-flex align-items-center justify-content-center" style="min-height: 150px;">
                     - ไม่มีลายเซ็น -
+                  </div>
+
+                  <div
+                    v-else-if="!canEditSignature('coResearcher-' + index)"
+                    class="upload-container signature-locked-note text-center p-3 border rounded bg-light text-muted d-flex align-items-center justify-content-center"
+                    style="min-height: 150px;"
+                  >
+                    ลงนามได้เฉพาะผู้มีชื่อในช่องนี้เท่านั้น
                   </div>
 
                   <div v-else>
@@ -124,7 +140,7 @@
               <p class="text-center mb-1">ผู้ร่วมโครงการวิจัย</p>
               <p class="text-center text-muted small mb-3">วันที่ {{ signatures['coResearcher-' + index].timestamp || '....................................' }}</p>
 
-              <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly">
+              <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly && canEditSignature('coResearcher-' + index)">
                 <template v-if="!signatures['coResearcher-' + index].completed">
                   <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('coResearcher-' + index)" v-if="signatures['coResearcher-' + index].mode === 'draw'">ลบ</button>
                   <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('coResearcher-' + index)" v-if="signatures['coResearcher-' + index].mode === 'draw'">บันทึก</button>
@@ -150,6 +166,14 @@
                   
                   <div v-if="isReadOnly" class="upload-container text-center p-3 border rounded bg-light text-muted d-flex align-items-center justify-content-center" style="min-height: 150px;">
                     - ไม่มีลายเซ็น -
+                  </div>
+
+                  <div
+                    v-else-if="!canEditSignature('advisor-' + index)"
+                    class="upload-container signature-locked-note text-center p-3 border rounded bg-light text-muted d-flex align-items-center justify-content-center"
+                    style="min-height: 150px;"
+                  >
+                    ลงนามได้เฉพาะผู้มีชื่อในช่องนี้เท่านั้น
                   </div>
 
                   <div v-else>
@@ -189,7 +213,7 @@
               <p class="text-center mb-1">ที่ปรึกษาโครงการวิจัย</p>
               <p class="text-center text-muted small mb-3">วันที่ {{ signatures['advisor-' + index].timestamp || '....................................' }}</p>
 
-              <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly">
+              <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly && canEditSignature('advisor-' + index)">
                 <template v-if="!signatures['advisor-' + index].completed">
                   <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('advisor-' + index)" v-if="signatures['advisor-' + index].mode === 'draw'">ลบ</button>
                   <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('advisor-' + index)" v-if="signatures['advisor-' + index].mode === 'draw'">บันทึก</button>
@@ -292,9 +316,89 @@ export default {
   computed: {
     isDarkTheme () {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+    currentUser () {
+      const user = this.$store && this.$store.getters
+        ? this.$store.getters['Authentication/currentUser']
+        : null
+      if (user && typeof user === 'object') return user
+      try {
+        const raw = localStorage.getItem('auth_user')
+        return raw ? JSON.parse(raw) : null
+      } catch (err) {
+        return null
+      }
+    },
+    currentUserId () {
+      const user = this.currentUser
+      if (!user || typeof user !== 'object') return ''
+      const id = user._id || user.id || ''
+      return id ? String(id).trim() : ''
+    },
+    currentUserEmail () {
+      const user = this.currentUser
+      if (!user || typeof user !== 'object') return ''
+      return String(user.email || '').trim().toLowerCase()
     }
   },
   methods: {
+    normalizeText (value) {
+      if (value === undefined || value === null) return ''
+      return String(value).trim()
+    },
+    normalizeLowerText (value) {
+      return this.normalizeText(value).toLowerCase()
+    },
+    extractPersonId (person) {
+      const source = person && typeof person === 'object' ? person : {}
+      const id = source.sourceUserId || source.userId || source._id || source.id || ''
+      return this.normalizeText(id)
+    },
+    extractPersonEmail (person) {
+      const source = person && typeof person === 'object' ? person : {}
+      return this.normalizeLowerText(source.email || '')
+    },
+    resolvePersonBySignatureId (signatureId) {
+      if (signatureId === 'projectLeader') {
+        return this.projectLeader && typeof this.projectLeader === 'object'
+          ? this.projectLeader
+          : null
+      }
+
+      if (typeof signatureId !== 'string') return null
+
+      if (signatureId.startsWith('coResearcher-')) {
+        const index = Number(signatureId.split('-')[1])
+        if (!Number.isFinite(index) || index < 0) return null
+        return Array.isArray(this.coResearchers) ? (this.coResearchers[index] || null) : null
+      }
+
+      if (signatureId.startsWith('advisor-')) {
+        const index = Number(signatureId.split('-')[1])
+        if (!Number.isFinite(index) || index < 0) return null
+        return Array.isArray(this.advisors) ? (this.advisors[index] || null) : null
+      }
+
+      return null
+    },
+    canEditSignature (signatureId) {
+      if (this.isReadOnly) return false
+      const person = this.resolvePersonBySignatureId(signatureId)
+      if (!person) return false
+
+      const personId = this.extractPersonId(person)
+      const personEmail = this.extractPersonEmail(person)
+
+      if (personId && this.currentUserId && personId === this.currentUserId) return true
+      if (personEmail && this.currentUserEmail && personEmail === this.currentUserEmail) return true
+
+      // Backward compatibility: older project leader records may not persist identity fields yet.
+      if (signatureId === 'projectLeader' && !personId && !personEmail) {
+        return Boolean(this.currentUserId || this.currentUserEmail)
+      }
+
+      return false
+    },
     cloneSignatures(payload) {
       // Break shared references between parent (v-model) and internal state.
       // Safe here because signatures only contain plain objects + base64 strings.
@@ -349,6 +453,8 @@ export default {
     },
     
     setSignatureMode(signatureId, mode) {
+      if (!this.canEditSignature(signatureId)) return;
+      if (!this.signatures[signatureId]) return;
       this.signatures[signatureId].mode = mode;
       if (mode === 'draw') {
         this.$nextTick(() => {
@@ -358,6 +464,8 @@ export default {
     },
 
     handleFileUpload(signatureId, event) {
+      if (!this.canEditSignature(signatureId)) return;
+      if (!this.signatures[signatureId]) return;
       const file = event.target.files[0];
       if (!file) return;
 
@@ -395,15 +503,27 @@ export default {
     },
 
     setupCanvases() {
-      if (this.isReadOnly) return; // ไม่จำเป็นต้องเซ็ตอัป canvas ถ้าเป็นโหมด Read-only
-      if (!this.signatures.projectLeader.completed && this.signatures.projectLeader.mode === 'draw') this.setupCanvas('projectLeader');
+      if (this.isReadOnly) return;
+      if (
+        this.canEditSignature('projectLeader') &&
+        !this.signatures.projectLeader.completed &&
+        this.signatures.projectLeader.mode === 'draw'
+      ) this.setupCanvas('projectLeader');
       
       this.coResearchers.forEach((_, index) => {
-        if (!this.signatures['coResearcher-' + index].completed && this.signatures['coResearcher-' + index].mode === 'draw') this.setupCanvas('coResearcher-' + index);
+        const signatureId = 'coResearcher-' + index;
+        const signature = this.signatures[signatureId];
+        if (!signature) return;
+        if (!this.canEditSignature(signatureId)) return;
+        if (!signature.completed && signature.mode === 'draw') this.setupCanvas(signatureId);
       });
       
       this.advisors.forEach((_, index) => {
-        if (!this.signatures['advisor-' + index].completed && this.signatures['advisor-' + index].mode === 'draw') this.setupCanvas('advisor-' + index);
+        const signatureId = 'advisor-' + index;
+        const signature = this.signatures[signatureId];
+        if (!signature) return;
+        if (!this.canEditSignature(signatureId)) return;
+        if (!signature.completed && signature.mode === 'draw') this.setupCanvas(signatureId);
       });
     },
     
@@ -432,6 +552,7 @@ export default {
     },
 
     startDrawing(signatureId, event) {
+      if (!this.canEditSignature(signatureId)) return;
       this.$set(this.isDrawing, signatureId, true);
       const canvas = event.target;
       const ctx = canvas.getContext('2d');
@@ -442,6 +563,7 @@ export default {
     },
     
     draw(signatureId, event) {
+      if (!this.canEditSignature(signatureId)) return;
       if (!this.isDrawing[signatureId]) return;
       const canvas = event.target;
       const ctx = canvas.getContext('2d');
@@ -456,6 +578,7 @@ export default {
     },
     
     clearSignature(signatureId) {
+      if (!this.canEditSignature(signatureId)) return;
       const canvas = this.getCanvasElement(signatureId);
       if (canvas) {
         const ctx = canvas.getContext('2d');
@@ -464,6 +587,8 @@ export default {
     },
     
     saveSignature(signatureId) {
+      if (!this.canEditSignature(signatureId)) return;
+      if (!this.signatures[signatureId]) return;
       const canvas = this.getCanvasElement(signatureId);
       if (canvas) {
         const dataURL = canvas.toDataURL('image/png');
@@ -475,6 +600,8 @@ export default {
     },
     
     editSignature(signatureId) {
+      if (!this.canEditSignature(signatureId)) return;
+      if (!this.signatures[signatureId]) return;
       this.signatures[signatureId].completed = false;
       this.signatures[signatureId].data = null;
       this.signatures[signatureId].timestamp = null;
@@ -607,6 +734,11 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.signature-locked-note {
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .signature-completed {
