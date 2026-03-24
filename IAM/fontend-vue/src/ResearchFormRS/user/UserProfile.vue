@@ -26,13 +26,11 @@
           <!-- Tab: ข้อมูลส่วนตัว -->
           <div v-if="activeTab === 'info'" class="tab-content tab-info">
             <div class="section-title">ข้อมูลส่วนตัว</div>
-
             <div class="form-grid">
               <div class="form-group full-width">
                 <label>ชื่อผู้ใช้ (USERNAME)</label>
                 <input v-model="form.username" class="form-input" disabled />
               </div>
-
               <div class="form-group">
                 <label>คำนำหน้า</label>
                 <input v-model="form.prefix" class="form-input" :disabled="!editing" />
@@ -65,24 +63,21 @@
                 <label>เพศ</label>
                 <input v-model="form.gender" class="form-input" :disabled="!editing" />
               </div>
-
               <div class="form-group full-width address-field">
                 <textarea v-model="form.address" class="form-input form-textarea address-text" :disabled="!editing" rows="3" />
               </div>
             </div>
           </div>
 
-          <!-- Tab: ที่อยู่ -->
-          <div v-if="activeTab === 'address'" class="tab-content">
+          <!-- Tab: ที่อยู่ — tab-address ลด padding ด้านล่าง -->
+          <div v-if="activeTab === 'address'" class="tab-content tab-address">
             <div class="section-title">ที่อยู่</div>
-
             <div class="form-grid">
-              <!-- ที่อยู่ — full width พร้อม icon -->
               <div class="form-group full-width">
                 <label>ที่อยู่</label>
                 <div class="input-wrap icon-left full">
                   <span class="input-icon">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4a7c59" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b1212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M21 10c0 6-9 13-9 13S3 16 3 10a9 9 0 1 1 18 0z"/>
                       <circle cx="12" cy="10" r="2"/>
                     </svg>
@@ -91,12 +86,11 @@
                 </div>
               </div>
 
-              <!-- ตำบล / อำเภอ — 2 คอลัมน์ พร้อม icon -->
               <div class="form-group">
                 <label>ตำบล / แขวง</label>
                 <div class="input-wrap icon-left full">
                   <span class="input-icon">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4a7c59" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b1212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M21 10c0 6-9 13-9 13S3 16 3 10a9 9 0 1 1 18 0z"/>
                       <circle cx="12" cy="10" r="2"/>
                     </svg>
@@ -108,7 +102,7 @@
                 <label>อำเภอ / เขต</label>
                 <div class="input-wrap icon-left full">
                   <span class="input-icon">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4a7c59" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b1212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M21 10c0 6-9 13-9 13S3 16 3 10a9 9 0 1 1 18 0z"/>
                       <circle cx="12" cy="10" r="2"/>
                     </svg>
@@ -117,7 +111,6 @@
                 </div>
               </div>
 
-              <!-- จังหวัด / รหัสไปรษณีย์ — 2 คอลัมน์ ไม่มี icon -->
               <div class="form-group">
                 <label>จังหวัด</label>
                 <input v-model="form.addrProvince" class="form-input" :disabled="true" placeholder="จังหวัด" />
@@ -160,27 +153,14 @@ export default {
         { key: 'info',    label: 'ข้อมูลส่วนตัว' },
         { key: 'address', label: 'ที่อยู่' }
       ],
-
       editing: false,
       form: {
-        username: '',
-        prefix: '',
-        name: '',
-        email: '',
-        phone: '',
-        position: '',
-        department: '',
-        address: '',
-        addrLine: '',
-        addrSubdistrict: '',
-        addrDistrict: '',
-        addrProvince: '',
-        addrPostal: '',
-        birthdate: '',
-        gender: ''
+        username: '', prefix: '', name: '', email: '', phone: '',
+        position: '', department: '', address: '',
+        addrLine: '', addrSubdistrict: '', addrDistrict: '',
+        addrProvince: '', addrPostal: '', birthdate: '', gender: ''
       },
       formBackup: null,
-
       toast: { show: false, msg: '', type: 'success' },
       sliderStyle: { left: '0px', width: '0px' }
     }
@@ -218,7 +198,7 @@ export default {
           left: Math.max(0, btnRect.left - wrapRect.left) + 'px',
           width: Math.max(24, btnRect.width) + 'px'
         }
-      } catch (e) { /* ignore */ }
+      } catch (e) {}
     },
 
     async fetchProfile () {
@@ -245,7 +225,7 @@ export default {
           birthdate:       user.birthdate || '',
           gender:          user.gender || ''
         }
-      } catch (err) { /* keep page usable */ }
+      } catch (err) {}
     },
 
     startEdit ()  { this.formBackup = { ...this.form }; this.editing = true },
@@ -285,23 +265,15 @@ export default {
 <style scoped>
 .app-layout { display: flex; min-height: 100vh; }
 
-/* ── Page wrapper ── */
 .page-wrapper {
   background: transparent;
   padding: 24px 28px;
-  min-height: 100%;
   box-sizing: border-box;
   width: 100%;
 }
 
-/* ── Container: single column now ── */
-.profile-container {
-  display: block;          /* ลบ left card → ไม่ต้อง grid แล้ว */
-  width: 100%;
-  box-sizing: border-box;
-}
+.profile-container { display: block; width: 100%; box-sizing: border-box; }
 
-/* ── Right panel (now full width) ── */
 .profile-right {
   background: #fff;
   border-radius: 20px;
@@ -336,19 +308,27 @@ export default {
 
 .tab-slider {
   position: absolute; bottom: 0;
-  height: 3px; background: #8b1212;
-  border-radius: 3px;
+  height: 3px; background: #8b1212; border-radius: 3px;
   transition: left 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1);
 }
 
 /* ── Tab content ── */
 .tab-content { padding: 20px 24px 24px; }
 
+/* ✅ แก้พื้นที่ว่างด้านล่าง tab ที่อยู่ โดยไม่กระทบ tab อื่น */
+.tab-content.tab-address { padding-bottom: 8px; }
+.tab-content.tab-address .form-grid { margin-bottom: 0; }
+
 .section-title {
   font-size: 16px; font-weight: 700;
   color: #111827; margin-bottom: 24px;
   padding-bottom: 12px;
   border-bottom: 1px solid #f3f4f6;
+}
+/* ใน App.vue หรือ layout wrapper */
+.c-main, .c-wrapper, .c-body {
+  height: auto !important;
+  min-height: unset !important;
 }
 
 /* ── Form ── */
@@ -400,17 +380,6 @@ export default {
   pointer-events: none;
 }
 
-/* Address summary */
-.address-summary {
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 12px 16px;
-  background: #f0faf3;
-  border: 1px solid #d1fae5;
-  border-radius: 10px;
-  font-size: 13px; color: #374151;
-  line-height: 1.6;
-}
-
 /* ── Form actions ── */
 .form-actions { display: flex; justify-content: flex-end; gap: 12px; }
 
@@ -437,7 +406,7 @@ export default {
   display: flex; align-items: center; gap: 10px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 999;
 }
-.toast-msg.success { background:#8b1212; color: #fff; }
+.toast-msg.success { background: #8b1212; color: #fff; }
 .toast-msg.error   { background: #ef5350; color: #fff; }
 
 .toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
@@ -458,7 +427,6 @@ export default {
 .page-wrapper.is-dark .form-input::placeholder { color: #8fa3b8; }
 .page-wrapper.is-dark .form-input:focus:not(:disabled) { border-color: #6d8bad; }
 .page-wrapper.is-dark .form-input:disabled { background: #1b2633; border-color: #334155; color: #9fb0c3; }
-.page-wrapper.is-dark .address-summary { background: #253240; color: #d0deed; }
 .page-wrapper.is-dark .btn-cancel { background: #2a3949; color: #d0deed; }
 .page-wrapper.is-dark .btn-cancel:hover { background: #334659; }
 </style>

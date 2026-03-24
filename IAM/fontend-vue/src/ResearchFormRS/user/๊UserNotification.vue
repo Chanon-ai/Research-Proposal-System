@@ -562,7 +562,7 @@ export default {
 }
 
 .filter-tab.active {
-  background: #2563eb;
+  background: #8b1212;
   color: #fff;
 }
 
@@ -637,7 +637,7 @@ export default {
 } */
 
 .page-wrapper.is-dark .filter-tab.active {
-  background: #3b82f6;
+  background: #8b1212;
   color: #fff;
 }
 
@@ -659,12 +659,15 @@ export default {
 }
 
 .page-wrapper.is-dark .notif-action-btn {
-  background: #1f4b2d;
-  color: #7ee2a3;
+  background: linear-gradient(180deg, #2b6b3a 0%, #234f2e 60%, #183826 100%);
+  color: #c6f7d1;
+  box-shadow: 0 6px 14px rgba(16, 44, 30, 0.22), inset 0 -3px 6px rgba(0,0,0,0.18);
 }
 
 .page-wrapper.is-dark .notif-action-btn:hover {
-  background: #245b36;
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 0 10px 22px rgba(16,44,30,0.28), inset 0 -2px 4px rgba(255,255,255,0.02);
 }
 
 .page-wrapper.is-dark .btn-mark-all {
@@ -809,15 +812,32 @@ export default {
   padding: 5px 14px;
   border-radius: 99px;
   border: none;
-  background: #dcfce7;
-  color: #15803d;
+  background: linear-gradient(180deg, #8b1212 0%, rgba(197, 155, 58, 0.98) 100%);
+  color: #ffffff;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   font-family: 'Sarabun', sans-serif;
-  transition: background 0.2s;
+  box-shadow: 0 6px 14px rgba(139,18,18,0.18), inset 0 -3px 6px rgba(0,0,0,0.12);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
-.notif-action-btn:hover { background: #bbf7d0; }
+
+.notif-action-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: 0 10px 20px rgba(139,18,18,0.22), inset 0 -2px 4px rgba(255,255,255,0.03);
+}
+
+.notif-action-btn:active {
+  transform: translateY(0);
+  filter: brightness(0.96);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.18), inset 0 3px 6px rgba(0,0,0,0.12);
+}
+
+.notif-action-btn:focus {
+  outline: none;
+  box-shadow: 0 10px 20px rgba(139,18,18,0.18), 0 0 0 6px rgba(178,31,31,0.12);
+}
 
 /* Meta */
 .notif-meta {
@@ -939,10 +959,10 @@ export default {
   display: flex; align-items: center; justify-content: center;
   margin-top: 2px;
 }
-.icon-blue   { background: #1e3a5f; color: #60a5fa; }
-.icon-orange { background: #3d2408; color: #fb923c; }
-.icon-green  { background: #14301e; color: #4ade80; }
-.icon-gray   { background: #2a2a2a; color: #9ca3af; }
+.icon-blue   { background: #dbeafe; color: #1d4ed8; }
+.icon-orange { background: #ffedd5; color: #c2410c; }
+.icon-green  { background: #dcfce7; color: #15803d; }
+.icon-gray   { background: #f3f4f6; color: #4b5563; }
 
 .dp-content { flex: 1; min-width: 0; }
 .dp-item-title {
