@@ -1,15 +1,23 @@
 <template>
   <div class="admin-settings-page">
-    <div class="mb-4">
-      <h2 class="mb-0">ตั้งค่าระบบ (Admin)</h2>
-    </div>
+    <CCard class="settings-hero mb-4">
+      <CCardBody class="settings-hero__body">
+        <div class="settings-hero__row">
+          <div class="settings-hero__left">
+            <div class="settings-hero__pill">ADMIN SETTINGS</div>
+            <h2 class="settings-hero__title">ตั้งค่าระบบ</h2>
+            <p class="settings-hero__subtitle">กำหนดค่า Workflow, อีเมล และการแสดงผลของระบบ</p>
+          </div>
+        </div>
+      </CCardBody>
+    </CCard>
 
     <div v-if="loadingSettings" class="text-center py-4">
       <CSpinner color="primary" />
       <div class="mt-2 text-muted">กำลังโหลดการตั้งค่า...</div>
     </div>
 
-    <CTabs :active-tab.sync="activeTab" tabs class="nav-underline nav-underline-primary">
+    <CTabs :active-tab.sync="activeTab" tabs class="settings-tabs nav-underline nav-underline-primary">
       <CTab>
         <template slot="title">ทั่วไป</template>
 
@@ -68,6 +76,17 @@
               <CCol md="3"><CInput type="number" label="จำนวนรายการต่อหน้า" v-model.number="generalForm.itemsPerPage" /></CCol>
             </CRow>
             <CButton color="primary" @click="saveGeneralSettings">บันทึก</CButton>
+          </CCardBody>
+        </CCard>
+
+        <CCard class="mt-3">
+          <CCardHeader>ข้อมูลระบบ (Read-only)</CCardHeader>
+          <CCardBody>
+            <div><strong>เวอร์ชันระบบ:</strong> 1.0.0</div>
+            <div><strong>Backend:</strong> Node.js + Express</div>
+            <div><strong>Database:</strong> MongoDB</div>
+            <div><strong>สถานะระบบ:</strong> <span class="text-success">ปกติ</span></div>
+            <div><strong>เชื่อมต่อ Database:</strong> <span :class="settings.length > 0 || apiConnected ? 'text-success' : 'text-warning'">{{ settings.length > 0 || apiConnected ? 'เชื่อมต่อได้' : 'ยังไม่ยืนยัน' }}</span></div>
           </CCardBody>
         </CCard>
       </CTab>
@@ -278,86 +297,6 @@
               <CButton size="sm" color="secondary" variant="outline" @click="loadMoreEmailLogs" :disabled="emailLogLoading">
                 โหลดเพิ่มเติม ({{ emailLogs.length }}/{{ emailLogTotal }})
               </CButton>
-            </div>
-          </CCardBody>
-        </CCard>
-      </CTab>
-
-      <CTab>
-        <template slot="title">ผู้ดูแลระบบ</template>
-
-        <CCard class="mt-3">
-          <CCardHeader>ข้อมูลระบบ (Read-only)</CCardHeader>
-          <CCardBody>
-            <div><strong>เวอร์ชันระบบ:</strong> 1.0.0</div>
-            <div><strong>Backend:</strong> Node.js + Express</div>
-            <div><strong>Database:</strong> MongoDB</div>
-            <div><strong>สถานะระบบ:</strong> <span class="text-success">ปกติ</span></div>
-            <div><strong>เชื่อมต่อ Database:</strong> <span :class="settings.length > 0 || apiConnected ? 'text-success' : 'text-warning'">{{ settings.length > 0 || apiConnected ? 'เชื่อมต่อได้' : 'ยังไม่ยืนยัน' }}</span></div>
-          </CCardBody>
-        </CCard>
-
-        <CCard>
-          <CCardHeader class="d-flex justify-content-between align-items-center flex-wrap" style="gap:8px;">
-            <span>จัดการ Settings (Raw)</span>
-            <CButton size="sm" color="primary" @click="showAddSettingModal = true">+ เพิ่ม Setting ใหม่</CButton>
-          </CCardHeader>
-          <CCardBody>
-            <div class="table-responsive">
-              <table class="table table-bordered table-striped mb-0">
-                <thead>
-                  <tr>
-                    <th>Key</th>
-                    <th>Value</th>
-                    <th>Group</th>
-                    <th>คำอธิบาย</th>
-                    <th style="width:120px;">แก้ไข</th>
-                    <th style="width:80px;">ลบ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="s in settings" :key="s._id || s.key">
-                    <td><code>{{ s.key }}</code></td>
-                    <td>
-                      <CInput
-                        v-if="editingSettingId === (s._id || s.key)"
-                        v-model="editingSettingValue"
-                        :type="editingSettingIsSecret ? 'password' : 'text'"
-                        :placeholder="editingSettingIsSecret ? 'มีการตั้งค่าไว้แล้ว (กรอกใหม่เพื่อเปลี่ยน)' : ''"
-                        :name="editingSettingIsSecret ? 'setting_secret_value' : 'setting_value'"
-                        :autocomplete="editingSettingIsSecret ? 'new-password' : 'off'"
-                      />
-                      <span v-else>{{ renderSettingValue(s) }}</span>
-                    </td>
-                    <td>{{ s.group || '-' }}</td>
-                    <td>
-                      <CInput v-if="editingSettingId === (s._id || s.key)" v-model="editingSettingDescription" />
-                      <span v-else>{{ s.description || '-' }}</span>
-                    </td>
-                    <td>
-                      <div v-if="editingSettingId === (s._id || s.key)" class="d-flex" style="gap:6px;">
-                        <CButton size="sm" color="primary" @click="editSetting(s)">บันทึก</CButton>
-                        <CButton size="sm" color="secondary" variant="outline" @click="cancelEditSetting">ยกเลิก</CButton>
-                      </div>
-                      <CButton v-else size="sm" color="warning" @click="startEditSetting(s)">แก้ไข</CButton>
-                    </td>
-                    <td><CButton size="sm" color="danger" @click="deleteSetting(s)">ลบ</CButton></td>
-                  </tr>
-                  <tr v-if="settings.length === 0">
-                    <td colspan="6" class="text-center text-muted">ยังไม่มีข้อมูล setting</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </CCardBody>
-        </CCard>
-
-        <CCard class="danger-zone mt-3">
-          <CCardHeader>Danger Zone</CCardHeader>
-          <CCardBody>
-            <div class="d-flex flex-wrap" style="gap:8px;">
-              <CButton color="warning" @click="clearCache">ล้างข้อมูล Cache</CButton>
-              <CButton color="secondary" @click="exportSettings">Export การตั้งค่าทั้งหมด</CButton>
             </div>
           </CCardBody>
         </CCard>
@@ -581,11 +520,10 @@ const SETTINGS_TAB_INDEX = {
   general: 0,
   workflow: 1,
   email: 2,
-  admin: 3,
-  users: 4
+  users: 3
 }
 
-const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'workflow', 'email', 'admin', 'users']
+const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'workflow', 'email', 'users']
 
 export default {
   name: 'AdminSettings',
@@ -710,17 +648,33 @@ export default {
     },
 
     // ─── Tab routing ──────────────────────────────────────────────────────
-    getTabIndexFromQuery (tabKey) {
-      if (!tabKey) return null
+    resolveTabKey (tabKey) {
+      if (!tabKey) return ''
       const key = String(tabKey).trim().toLowerCase()
+      const legacyMap = {
+        admin: 'general',
+        admins: 'general',
+        system_admin: 'general',
+        'system-admin': 'general'
+      }
+      return legacyMap[key] || key
+    },
+    getTabIndexFromQuery (tabKey) {
+      const key = this.resolveTabKey(tabKey)
+      if (!key) return null
       return Object.prototype.hasOwnProperty.call(SETTINGS_TAB_INDEX, key)
         ? SETTINGS_TAB_INDEX[key]
         : null
     },
     applyTabFromRoute () {
+      const resolvedTabKey = this.resolveTabKey(this.$route.query.tab)
       const nextTab = this.getTabIndexFromQuery(this.$route.query.tab)
-      if (nextTab === null || this.activeTab === nextTab) return
-      this.activeTab = nextTab
+      if (nextTab === null) return
+      if (this.activeTab !== nextTab) this.activeTab = nextTab
+      const currentTab = String(this.$route.query.tab || '').trim().toLowerCase()
+      if (resolvedTabKey && currentTab !== resolvedTabKey) {
+        this.$router.replace({ path: this.$route.path, query: { ...this.$route.query, tab: resolvedTabKey } }).catch(() => {})
+      }
     },
     syncRouteTabQuery () {
       const tabKey = SETTINGS_TAB_KEY_BY_INDEX[this.activeTab]
@@ -1216,6 +1170,207 @@ export default {
   width: 100%;
 }
 
+/* ── Theme (match committee) ───────────────────────────────────────────── */
+.settings-hero {
+  border: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.28), transparent 30%),
+    linear-gradient(135deg, #8b1212 0%, #c59b3a 115%);
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.14);
+  color: #ffffff;
+}
+
+.settings-hero__body {
+  padding: 22px 24px;
+  background: transparent;
+}
+
+.settings-hero__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.settings-hero__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  width: fit-content;
+  margin-bottom: 8px;
+}
+
+.settings-hero__title {
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.settings-hero__subtitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 500;
+}
+
+.settings-tabs /deep/ .nav-link,
+.settings-tabs >>> .nav-link,
+.settings-tabs::v-deep .nav-link {
+  color: #6b0f0f;
+  font-weight: 700;
+}
+
+.settings-tabs /deep/ .nav-link.active,
+.settings-tabs >>> .nav-link.active,
+.settings-tabs::v-deep .nav-link.active {
+  color: #8c1515;
+}
+
+.settings-tabs /deep/ .nav-underline .nav-link.active::after,
+.settings-tabs >>> .nav-underline .nav-link.active::after,
+.settings-tabs::v-deep .nav-underline .nav-link.active::after {
+  background-color: #8c1515;
+}
+
+.admin-settings-page /deep/ .card,
+.admin-settings-page >>> .card,
+.admin-settings-page::v-deep .card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(140, 21, 21, 0.14);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+}
+
+.admin-settings-page /deep/ .settings-hero .card-body,
+.admin-settings-page >>> .settings-hero .card-body,
+.admin-settings-page::v-deep .settings-hero .card-body {
+  background: transparent !important;
+}
+
+.admin-settings-page /deep/ .card-header,
+.admin-settings-page >>> .card-header,
+.admin-settings-page::v-deep .card-header {
+  background: linear-gradient(90deg, rgba(140, 21, 21, 0.1), rgba(254, 194, 96, 0.22));
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  color: #6b0f0f;
+  font-weight: 900;
+}
+
+.admin-settings-page /deep/ .card-body,
+.admin-settings-page >>> .card-body,
+.admin-settings-page::v-deep .card-body {
+  background: #f7f1ea;
+}
+
+.admin-settings-page /deep/ .form-control,
+.admin-settings-page >>> .form-control,
+.admin-settings-page::v-deep .form-control,
+.admin-settings-page /deep/ .custom-select,
+.admin-settings-page >>> .custom-select,
+.admin-settings-page::v-deep .custom-select {
+  border-radius: 10px;
+  border-color: rgba(181, 133, 34, 0.35);
+}
+
+.admin-settings-page /deep/ .form-control:focus,
+.admin-settings-page >>> .form-control:focus,
+.admin-settings-page::v-deep .form-control:focus,
+.admin-settings-page /deep/ .custom-select:focus,
+.admin-settings-page >>> .custom-select:focus,
+.admin-settings-page::v-deep .custom-select:focus {
+  border-color: rgba(181, 133, 34, 0.7);
+  box-shadow: 0 0 0 3px rgba(181, 133, 34, 0.16);
+}
+
+.admin-settings-page /deep/ .btn-primary,
+.admin-settings-page >>> .btn-primary,
+.admin-settings-page::v-deep .btn-primary {
+  background: #8c1515;
+  border-color: #8c1515;
+}
+
+.admin-settings-page /deep/ .btn-primary:hover,
+.admin-settings-page >>> .btn-primary:hover,
+.admin-settings-page::v-deep .btn-primary:hover {
+  filter: brightness(1.02);
+}
+
+.admin-settings-page /deep/ .btn-outline-primary,
+.admin-settings-page >>> .btn-outline-primary,
+.admin-settings-page::v-deep .btn-outline-primary {
+  color: #8c1515;
+  border-color: #8c1515;
+}
+
+.admin-settings-page /deep/ .btn-outline-primary:hover,
+.admin-settings-page >>> .btn-outline-primary:hover,
+.admin-settings-page::v-deep .btn-outline-primary:hover {
+  color: #ffffff;
+  background: #8c1515;
+  border-color: #8c1515;
+}
+
+.admin-settings-page /deep/ .table-responsive,
+.admin-settings-page >>> .table-responsive,
+.admin-settings-page::v-deep .table-responsive {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(140, 21, 21, 0.14);
+  overflow: hidden;
+}
+
+.admin-settings-page /deep/ .table,
+.admin-settings-page >>> .table,
+.admin-settings-page::v-deep .table {
+  margin-bottom: 0;
+}
+
+.admin-settings-page /deep/ .table thead th,
+.admin-settings-page >>> .table thead th,
+.admin-settings-page::v-deep .table thead th {
+  background: linear-gradient(90deg, #8c1515, rgba(107, 15, 15, 0.98)) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  border-bottom: 0 !important;
+  border-right: 1px solid rgba(254, 194, 96, 0.5) !important;
+}
+
+.admin-settings-page /deep/ .table thead th:last-child,
+.admin-settings-page >>> .table thead th:last-child,
+.admin-settings-page::v-deep .table thead th:last-child {
+  border-right: 0 !important;
+}
+
+.admin-settings-page /deep/ .table tbody td,
+.admin-settings-page >>> .table tbody td,
+.admin-settings-page::v-deep .table tbody td {
+  border-bottom: 1px solid rgba(140, 21, 21, 0.12) !important;
+  border-right: 1px solid rgba(140, 21, 21, 0.12) !important;
+  vertical-align: middle !important;
+}
+
+.admin-settings-page /deep/ .table tbody td:last-child,
+.admin-settings-page >>> .table tbody td:last-child,
+.admin-settings-page::v-deep .table tbody td:last-child {
+  border-right: 0 !important;
+}
+
+.admin-settings-page /deep/ .table tbody tr:hover,
+.admin-settings-page >>> .table tbody tr:hover,
+.admin-settings-page::v-deep .table tbody tr:hover {
+  background: rgba(254, 194, 96, 0.22) !important;
+}
+
 /* ─── Status flow ─────────────────────────────────────── */
 .status-flow-list {
   display: flex;
@@ -1288,8 +1443,8 @@ export default {
   color: #e55353;
 }
 
-.danger-zone {
-  border: 1px solid #e55353;
+[class*='c-dark-theme'] .status-flow-divider {
+  background-color: rgba(255, 255, 255, 0.16);
 }
 
 .admin-email-widget__fab {

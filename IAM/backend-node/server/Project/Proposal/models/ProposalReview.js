@@ -74,7 +74,7 @@ const proposalReviewSchema = new mongoose.Schema(
     },
     roundNo: {
       type: Number,
-      enum: [1, 2],
+      min: 1,
       default: 1
     },
     reviewStatus: {

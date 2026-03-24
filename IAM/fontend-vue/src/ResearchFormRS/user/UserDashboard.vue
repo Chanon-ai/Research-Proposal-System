@@ -165,15 +165,17 @@
             striped
           >
             <template #projectTitleTh="{ item }">
-              <td>
-                <div style="font-weight:500">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
-                <div style="font-size:12px;color:#888">{{ item.proposalCode }}</div>
-                <div style="font-size:12px;color:#aaa">{{ item.projectLeaderName || '-' }}</div>
+              <td class="project-info-cell">
+                <div class="project-meta">
+                  <div class="project-title">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
+                  <div class="project-code">{{ item.proposalCode || '-' }}</div>
+                  <div class="project-owner">{{ item.projectLeaderName || '-' }}</div>
+                </div>
               </td>
             </template>
 
             <template #updatedAt="{ item }">
-              <td style="text-align:center; vertical-align:middle">
+              <td class="submitted-date-cell">
                 {{ item.updatedAt
                   ? new Date(item.updatedAt).toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' })
                   : '-' }}
@@ -181,7 +183,7 @@
             </template>
 
             <template #currentStatus="{ item }">
-              <td style="text-align:center; vertical-align:middle; min-width:220px">
+              <td class="current-status-cell">
                 <CBadge :color="getProgressColor(item.currentStatus)" class="mb-2" style="font-size:11px">
                   {{ getStatusLabel(item.currentStatus) }}
                 </CBadge>
@@ -197,22 +199,24 @@
                     class="status-progress-bar mb-1"
                   />
                 </div>
-                <div style="font-size:11px; color:#888">
+                <div class="status-progress-label">
                   {{ getProgressLabel(item.currentStatus) }}
                 </div>
               </td>
             </template>
 
             <template #show_details="{ item }">
-              <td style="text-align:center; vertical-align:middle">
-                <CButton
-                  size="sm"
-                  color="primary"
-                  variant="outline"
-                  @click="$router.push('/research-form/' + item._id)"
-                >
-                  {{ $t('common.show') }}
-                </CButton>
+              <td class="action-body-cell">
+                <div class="action-cell">
+                  <CButton
+                    size="sm"
+                    color="primary"
+                    variant="outline"
+                    @click="$router.push('/research-form/' + item._id)"
+                  >
+                    {{ $t('common.show') }}
+                  </CButton>
+                </div>
               </td>
             </template>
           </CDataTable>
@@ -271,22 +275,25 @@ export default {
         {
           key: 'projectTitleTh',
           label: 'ชื่อโครงการวิจัย / หัวหน้าโครงการ',
-          _style: 'min-width:250px; text-align:center;'
+          _style: 'min-width:260px;',
+          _classes: 'project-info-column'
         },
         {
           key: 'currentStatus',
           label: 'สถานะ',
-          _style: 'width:220px; text-align:center;'
+          _style: 'width:290px; text-align:center;'
         },
         {
           key: 'updatedAt',
           label: 'วันที่ยื่น',
-          _style: 'width:140px; text-align:center;'
+          _style: 'width:150px; text-align:center;',
+          _classes: 'submitted-date-column'
         },
         {
           key: 'show_details',
           label: 'Action',
-          _style: 'width:80px; text-align:center;',
+          _style: 'width:110px; text-align:center;',
+          _classes: 'action-column',
           filter: false,
           sorter: false
         }
@@ -803,8 +810,22 @@ export default {
 
 .status-progress-wrap {
   width: 100%;
-  max-width: 220px;
-  margin: 0 auto;
+  max-width: 270px;
+  margin: 0;
+}
+
+.current-status-cell {
+  text-align: center;
+  vertical-align: middle;
+  min-width: 290px;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.status-progress-label {
+  font-size: 11px;
+  color: #888;
+  text-align: center;
 }
 
 .status-progress-bar {
@@ -1051,6 +1072,12 @@ export default {
   border-right: 0;
 }
 
+.table-surface /deep/ .table thead th.action-column,
+.table-surface >>> .table thead th.action-column,
+.table-surface::v-deep .table thead th.action-column {
+  text-align: center !important;
+}
+
 .table-surface /deep/ .table tbody td,
 .table-surface >>> .table tbody td,
 .table-surface::v-deep .table tbody td {
@@ -1063,6 +1090,73 @@ export default {
 .table-surface >>> .table tbody td:last-child,
 .table-surface::v-deep .table tbody td:last-child {
   border-right: 0;
+}
+
+.table-surface /deep/ .table tbody td.project-info-column,
+.table-surface >>> .table tbody td.project-info-column,
+.table-surface::v-deep .table tbody td.project-info-column {
+  text-align: left !important;
+}
+
+.table-surface /deep/ .table tbody td.submitted-date-column,
+.table-surface >>> .table tbody td.submitted-date-column,
+.table-surface::v-deep .table tbody td.submitted-date-column,
+.table-surface /deep/ .table tbody td.action-column,
+.table-surface >>> .table tbody td.action-column,
+.table-surface::v-deep .table tbody td.action-column {
+  text-align: center !important;
+}
+
+.project-info-cell {
+  text-align: left;
+  padding-left: 1rem;
+  padding-right: 0.75rem;
+}
+
+.project-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  line-height: 1.35;
+}
+
+.project-title {
+  font-weight: 500;
+  color: #111827;
+}
+
+.project-code,
+.project-owner {
+  font-size: 12px;
+}
+
+.project-code {
+  color: #888;
+}
+
+.project-owner {
+  color: #aaa;
+}
+
+.submitted-date-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.action-body-cell {
+  vertical-align: middle;
+}
+
+.action-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.action-cell .btn {
+  white-space: nowrap;
 }
 
 .table-surface /deep/ .table tbody tr:hover,
@@ -1109,6 +1203,161 @@ export default {
   color: #ffffff;
   background: #8c1515;
   border-color: #8c1515;
+}
+
+[data-coreui-theme='dark'] .page-content,
+body.c-dark-theme .page-content {
+  background: #0b1220;
+  color: #e5e7eb;
+}
+
+[data-coreui-theme='dark'] .dashboard-card-header,
+body.c-dark-theme .dashboard-card-header {
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.95));
+  border-bottom-color: rgba(148, 163, 184, 0.28);
+}
+
+[data-coreui-theme='dark'] .dashboard-card-title,
+body.c-dark-theme .dashboard-card-title {
+  color: #f8fafc;
+}
+
+[data-coreui-theme='dark'] .user-count-badge,
+body.c-dark-theme .user-count-badge {
+  background: rgba(56, 189, 248, 0.14);
+  color: #bae6fd;
+  border-color: rgba(56, 189, 248, 0.36);
+}
+
+[data-coreui-theme='dark'] .card-body-tight,
+body.c-dark-theme .card-body-tight {
+  background: #0f172a;
+}
+
+[data-coreui-theme='dark'] .table-surface,
+body.c-dark-theme .table-surface {
+  background: #111827;
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+[data-coreui-theme='dark'] .table-surface::v-deep .table thead th,
+body.c-dark-theme .table-surface::v-deep .table thead th {
+  background: linear-gradient(90deg, #1f2937, #111827) !important;
+  color: #f9fafb !important;
+  border-right-color: rgba(148, 163, 184, 0.32) !important;
+}
+
+[data-coreui-theme='dark'] .table-surface::v-deep .table tbody td,
+body.c-dark-theme .table-surface::v-deep .table tbody td {
+  background: #111827;
+  color: #e5e7eb;
+  border-right-color: rgba(148, 163, 184, 0.24) !important;
+  border-bottom-color: rgba(148, 163, 184, 0.24) !important;
+}
+
+[data-coreui-theme='dark'] .table-surface::v-deep .table-striped tbody tr:nth-of-type(odd),
+body.c-dark-theme .table-surface::v-deep .table-striped tbody tr:nth-of-type(odd) {
+  background-color: #0f172a;
+}
+
+[data-coreui-theme='dark'] .table-surface::v-deep .table tbody tr:hover,
+body.c-dark-theme .table-surface::v-deep .table tbody tr:hover {
+  background: rgba(51, 65, 85, 0.76) !important;
+}
+
+[data-coreui-theme='dark'] .project-title,
+body.c-dark-theme .project-title {
+  color: #f3f4f6;
+}
+
+[data-coreui-theme='dark'] .project-code,
+body.c-dark-theme .project-code,
+[data-coreui-theme='dark'] .project-owner,
+body.c-dark-theme .project-owner,
+[data-coreui-theme='dark'] .status-progress-label,
+body.c-dark-theme .status-progress-label {
+  color: #9ca3af;
+}
+
+[data-coreui-theme='dark'] .table-footer,
+body.c-dark-theme .table-footer {
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+  border-top-color: rgba(148, 163, 184, 0.28);
+}
+
+[data-coreui-theme='dark'] .table-footer__left,
+body.c-dark-theme .table-footer__left {
+  color: #d1d5db;
+}
+
+[data-coreui-theme='dark'] .per-page-select,
+body.c-dark-theme .per-page-select,
+[data-coreui-theme='dark'] .search-input::v-deep input,
+body.c-dark-theme .search-input::v-deep input {
+  background: #111827;
+  border-color: rgba(148, 163, 184, 0.45);
+  color: #e5e7eb;
+}
+
+[data-coreui-theme='dark'] .search-input::v-deep input::placeholder,
+body.c-dark-theme .search-input::v-deep input::placeholder {
+  color: #94a3b8;
+}
+
+[data-coreui-theme='dark'] .per-page-select option,
+body.c-dark-theme .per-page-select option {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+[data-coreui-theme='dark'] .table-footer__right::v-deep .page-link,
+body.c-dark-theme .table-footer__right::v-deep .page-link {
+  background: #111827;
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+[data-coreui-theme='dark'] .table-footer__right::v-deep .page-item.active .page-link,
+body.c-dark-theme .table-footer__right::v-deep .page-item.active .page-link {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+[data-coreui-theme='dark'] .table-surface::v-deep .btn-outline-primary,
+body.c-dark-theme .table-surface::v-deep .btn-outline-primary {
+  color: #fde68a;
+  border-color: #f59e0b;
+}
+
+[data-coreui-theme='dark'] .table-surface::v-deep .btn-outline-primary:hover,
+body.c-dark-theme .table-surface::v-deep .btn-outline-primary:hover {
+  color: #111827;
+  background: #fbbf24;
+  border-color: #fbbf24;
+}
+
+[data-coreui-theme='dark'] .table-surface::v-deep td.c-datatable-empty,
+body.c-dark-theme .table-surface::v-deep td.c-datatable-empty,
+[data-coreui-theme='dark'] .state-text,
+body.c-dark-theme .state-text {
+  color: #9ca3af;
+}
+
+[data-coreui-theme='dark'] .clear-filter-btn,
+body.c-dark-theme .clear-filter-btn,
+[data-coreui-theme='dark'] .collapse-toggle,
+body.c-dark-theme .collapse-toggle {
+  background: rgba(71, 85, 105, 0.28);
+  border-color: rgba(148, 163, 184, 0.45);
+  color: #e5e7eb;
+}
+
+[data-coreui-theme='dark'] .collapse-toggle:hover,
+body.c-dark-theme .collapse-toggle:hover,
+[data-coreui-theme='dark'] .clear-filter-btn:hover,
+body.c-dark-theme .clear-filter-btn:hover {
+  background: rgba(71, 85, 105, 0.44);
+  color: #ffffff;
 }
 
 .state-text {

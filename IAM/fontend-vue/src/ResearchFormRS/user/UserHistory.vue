@@ -207,29 +207,29 @@ export default {
 </script>
 
 <style scoped>
-.history-card { background: #fff; border-radius: 12px; padding: 18px; width: 100%; max-width: 100%; margin: 0 auto; box-shadow: 0 1px 0 rgba(16,24,40,0.04); }
-.history-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px }
-.history-header h2 { margin:0; font-size:20px; font-weight:800 }
-.history-sub { margin:0; color:#6b7280; font-size:13px }
-.history-controls { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px }
+.history-card { background: #fff; border-radius: 16px; border: 1px solid rgba(140, 21, 21, 0.14); width: 100%; max-width: 100%; margin: 0 auto; box-shadow: none; overflow: hidden; }
+.history-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin:0; padding: 14px 18px; background: linear-gradient(90deg, #8c1515, rgba(107, 15, 15, 0.98)); border-bottom: 1px solid rgba(254, 194, 96, 0.5); }
+.history-header h2 { margin:0; font-size:20px; font-weight:800; color:#fff }
+.history-sub { margin:0; color:rgba(255,255,255,0.86); font-size:13px }
+.history-controls { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0; padding: 12px 16px; background: linear-gradient(90deg, rgba(140, 21, 21, 0.06), rgba(254, 194, 96, 0.12)); border-bottom: 1px solid rgba(140, 21, 21, 0.12); }
 .pills { display:flex; gap:8px; flex-wrap:wrap }
-.pill { padding:8px 12px; border-radius:999px; border:1px solid #e5e7eb; background:#fff; color:#374151; cursor:pointer; font-weight:600 }
-.pill.active { background:#111827; color:#fff; border-color:#111827 }
+.pill { padding:8px 12px; border-radius:999px; border:1px solid rgba(140, 21, 21, 0.28); background:#fff; color:#6b0f0f; cursor:pointer; font-weight:600 }
+.pill.active { background:#8c1515; color:#fff; border-color:#8c1515 }
 .history-actions { color:#6b7280; font-size:13px }
-.history-list { display:flex; flex-direction:column; gap:8px }
-.history-item { display:flex; align-items:flex-start; justify-content:space-between; padding:14px; border-radius:10px; background:#fff; border:1px solid #f3f4f6; transition: background 0.12s }
-.history-item:hover { background:#f8fafc }
-.history-item.selected { background:#f3f3f5 }
+.history-list { display:flex; flex-direction:column; gap:0 }
+.history-item { display:flex; align-items:flex-start; justify-content:space-between; padding:14px 16px; border-radius:0; background:#fff; border:0; border-bottom:1px solid rgba(140, 21, 21, 0.12); transition: background 0.12s }
+.history-item:hover { background:rgba(254, 194, 96, 0.22) }
+.history-item.selected { background:rgba(254, 194, 96, 0.3) }
 .history-left { max-width:85% }
-.history-title { color:#111827; font-weight:700 }
+.history-title { color:#1f2937; font-weight:700 }
 .small-code { font-weight:500; color:#6b7280; margin-left:8px; font-size:13px }
 .history-date { color:#6b7280; font-size:13px; margin-top:6px }
 .history-badge { padding:6px 12px; border-radius:18px; font-weight:700; font-size:13px }
 .s-waiting { background:#fef3c7; color:#92400e }
 .s-fix { background:#fff7ed; color:#92400e }
-.s-approved { background:#dcfce7; color:#166534 }
-.s-rejected { background:#fee2e2; color:#7f1d1d }
-.s-reviewing { background:#e0f2fe; color:#0369a1 }
+.s-approved { background:#fef3c7; color:#8c1515 }
+.s-rejected { background:#fee2e2; color:#b91c1c }
+.s-reviewing { background:#eef2ff; color:#2563eb }
 
 .page-wrapper { padding: 16px; width: 100%; max-width: 1240px; margin: 0 auto; box-sizing: border-box; }
 
@@ -242,9 +242,19 @@ export default {
 }
 
 .history-page.is-dark .history-card {
-  background: #1f2933;
-  box-shadow: 0 1px 0 rgba(148, 163, 184, 0.1);
-  border: 1px solid #334155;
+  background: #111827;
+  box-shadow: none;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+}
+
+.history-page.is-dark .history-header {
+  background: linear-gradient(90deg, #1f2937, #111827);
+  border-bottom-color: rgba(148, 163, 184, 0.32);
+}
+
+.history-page.is-dark .history-controls {
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+  border-bottom-color: rgba(148, 163, 184, 0.24);
 }
 
 .history-page.is-dark .history-header h2,
@@ -259,28 +269,28 @@ export default {
 }
 
 .history-page.is-dark .pill {
-  border-color: #334155;
-  background: #253240;
-  color: #dce7f3;
+  border-color: rgba(148, 163, 184, 0.38);
+  background: rgba(30, 41, 59, 0.45);
+  color: #e5e7eb;
 }
 
 .history-page.is-dark .pill.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
-  color: #fff;
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.48);
+  color: #ffffff;
 }
 
 .history-page.is-dark .history-item {
-  background: #1f2933;
-  border-color: #334155;
+  background: #111827;
+  border-bottom-color: rgba(148, 163, 184, 0.22);
 }
 
 .history-page.is-dark .history-item:hover {
-  background: #253240;
+  background: rgba(51, 65, 85, 0.76);
 }
 
 .history-page.is-dark .history-item.selected {
-  background: #2a3645;
+  background: rgba(51, 65, 85, 0.9);
 }
 
 .history-page.is-dark .history-list {
@@ -298,8 +308,8 @@ export default {
 }
 
 .history-page.is-dark .history-badge.s-approved {
-  background: rgba(52, 211, 153, 0.18);
-  color: #7ce3b3;
+  background: rgba(245, 158, 11, 0.22);
+  color: #fde68a;
 }
 
 .history-page.is-dark .history-badge.s-rejected {
@@ -308,8 +318,8 @@ export default {
 }
 
 .history-page.is-dark .history-badge.s-reviewing {
-  background: rgba(56, 189, 248, 0.18);
-  color: #7dd3fc;
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
 }
 
 /* Responsive: mobile adjustments */

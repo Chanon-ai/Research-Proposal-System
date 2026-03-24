@@ -438,7 +438,8 @@
             </div>
 
             <div class="committee-selection-panel">
-              <div class="mb-2"><strong>คณะกรรมการที่เลือก ({{ adminSelectedCommitteeIds.length }}/3)</strong></div>
+              <div class="mb-2"><strong>คณะกรรมการที่เลือก ({{ adminSelectedCommitteeIds.length }} คน)</strong></div>
+              <small class="text-muted d-block mb-2">ต้องมีกรรมการอย่างน้อย {{ adminRequiredCommitteeCount }} คนตามนโยบายระบบ</small>
               <div class="committee-selection-summary">
                 <span v-if="adminSelectedCommitteeProfiles.length === 0" class="text-muted">ยังไม่ได้เลือกคณะกรรมการ</span>
                 <span
@@ -525,7 +526,6 @@
                   <input
                     type="checkbox"
                     :checked="isAdminSelectedCommittee(u._id)"
-                    :disabled="!isAdminSelectedCommittee(u._id) && adminSelectedCommitteeIds.length >= 3"
                     @change="toggleAdminCommitteeSelection(u)"
                   />
                   <div>
@@ -545,7 +545,7 @@
         <template #footer-wrapper>
           <div class="committee-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
             <CButton color="secondary" class="mr-2" @click="closeAdminCommitteeModal">ยกเลิก</CButton>
-            <CButton color="success" :disabled="adminSubmittingCommittee || adminSelectedCommitteeIds.length === 0" @click="confirmAdminAssignCommittee">
+            <CButton color="success" :disabled="adminSubmittingCommittee || adminSelectedCommitteeIds.length < adminRequiredCommitteeCount" @click="confirmAdminAssignCommittee">
               {{ adminSubmittingCommittee ? 'กำลังบันทึก...' : 'ยืนยัน' }}
             </CButton>
           </div>
@@ -749,6 +749,12 @@ export default {
       adminSelectedCommitteeDepartment: '',
       adminCommitteeDepartments: [],
       adminProposalDepartmentHint: '',
+      workflowApprovalPolicy: {
+        minScore: 60,
+        minCommittee: 3,
+        maxRounds: 2,
+        allowRevisionAfterMeeting: true
+      },
 
       adminShowMeetingPopup: false,
       adminMeetingSubmitting: false,
@@ -980,6 +986,11 @@ export default {
       return (this.adminSelectedCommitteeIds || [])
         .map(id => byId.get(String(id)))
         .filter(Boolean)
+    },
+    adminRequiredCommitteeCount () {
+      const n = Number(this.workflowApprovalPolicy && this.workflowApprovalPolicy.minCommittee)
+      if (!Number.isFinite(n) || n < 1) return 1
+      return Math.floor(n)
     },
     shouldDisableProjectTitleSection () {
       return String(this.currentStatus || '').toLowerCase() !== 'draft'
@@ -1801,10 +1812,11 @@ export default {
         this.adminSubmittingStatus = false
       }
     },
-    openAdminCommitteeModal () {
+    async openAdminCommitteeModal () {
       if (!this.isAdminView || !this.viewProposalId) return
+      await this.fetchWorkflowApprovalPolicy()
       const ids = (this.loadedProposal && Array.isArray(this.loadedProposal.committeeIds)) ? this.loadedProposal.committeeIds : []
-      this.adminSelectedCommitteeIds = ids.map(String).slice(0, 3)
+      this.adminSelectedCommitteeIds = ids.map(String)
       this.adminCommitteeSearch = ''
       this.adminSelectedCommitteeDepartment = ''
       this.adminShowCommitteeModal = true
@@ -1828,7 +1840,6 @@ export default {
       if (idx >= 0) {
         current.splice(idx, 1)
       } else {
-        if (current.length >= 3) return
         current.push(key)
       }
       this.adminSelectedCommitteeIds = current
@@ -1846,6 +1857,21 @@ export default {
     onAdminCommitteeDepartmentChange (val) {
       this.adminSelectedCommitteeDepartment = this.adminGetSelectValue(val)
       this.adminCommitteeFilterMode = this.adminSelectedCommitteeDepartment ? 'department' : 'all'
+    },
+    async fetchWorkflowApprovalPolicy () {
+      try {
+        const response = await axios.get('/api/v1/setting/workflow-policy')
+        const payload = response && response.data && response.data.data ? response.data.data : {}
+        this.workflowApprovalPolicy = {
+          ...this.workflowApprovalPolicy,
+          minScore: Number.isFinite(Number(payload.minScore)) ? Number(payload.minScore) : this.workflowApprovalPolicy.minScore,
+          minCommittee: Number.isFinite(Number(payload.minCommittee)) ? Number(payload.minCommittee) : this.workflowApprovalPolicy.minCommittee,
+          maxRounds: Number.isFinite(Number(payload.maxRounds)) ? Number(payload.maxRounds) : this.workflowApprovalPolicy.maxRounds,
+          allowRevisionAfterMeeting: payload.allowRevisionAfterMeeting !== undefined
+            ? Boolean(payload.allowRevisionAfterMeeting)
+            : this.workflowApprovalPolicy.allowRevisionAfterMeeting
+        }
+      } catch (_) {}
     },
     async fetchAdminCommitteeUsers () {
       this.adminCommitteeUsersLoading = true
@@ -1894,12 +1920,9 @@ export default {
     },
     async confirmAdminAssignCommittee () {
       if (!this.isAdminView || !this.viewProposalId) return
-      if (!this.adminSelectedCommitteeIds.length) {
-        await Swal.fire('กรุณาเลือกคณะกรรมการ', 'เลือกอย่างน้อย 1 คน (สูงสุด 3 คน)', 'warning')
-        return
-      }
-      if (this.adminSelectedCommitteeIds.length > 3) {
-        await Swal.fire('เลือกได้สูงสุด 3 คน', '', 'warning')
+      const minRequired = this.adminRequiredCommitteeCount
+      if (this.adminSelectedCommitteeIds.length < minRequired) {
+        await Swal.fire('กรุณาเลือกคณะกรรมการ', `ต้องเลือกอย่างน้อย ${minRequired} คนตามนโยบายระบบ`, 'warning')
         return
       }
       this.adminSubmittingCommittee = true
