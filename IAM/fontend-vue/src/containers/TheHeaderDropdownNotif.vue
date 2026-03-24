@@ -135,17 +135,17 @@ export default {
 
     async fetchNotifications () {
       try {
-        const res = await Service.notification.list({ page: 1, limit: 6 })
+        const res = await Service.notification.list({ page: 1, limit: 4 })
         const payload = res && res.data && res.data.data ? res.data.data : {}
         const rows = Array.isArray(payload.notifications)
           ? payload.notifications
           : (Array.isArray(payload.items) ? payload.items : [])
 
-        const mapped = rows.map(this.normalizeNotification)
+        const mapped = rows.slice(0, 4).map(this.normalizeNotification)
         this.notifications = mapped
         this.notificationCount = mapped.filter(n => n.unread).length
       } catch (e) {
-        const mock = this.getMockNotifications()
+        const mock = this.getMockNotifications().slice(0, 4)
         this.notifications = mock
         this.notificationCount = mock.filter(n => n.unread).length
       }
@@ -256,6 +256,11 @@ export default {
       const role = this.currentRole
       if (['admin', 'legacy_admin', 'chairman'].includes(String(role || ''))) {
         this.$router.push('/admin/notifications')
+        return
+      }
+
+      if (String(role || '') === 'committee') {
+        this.$router.push('/committee/notifications')
         return
       }
 
