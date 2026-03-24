@@ -107,7 +107,7 @@
       class="send-modal"
     >
       <template #body-wrapper>
-        <div class="send-modal-inner" style="padding: 1.25rem 1.5rem; box-sizing: border-box;">
+        <div class="send-modal-inner">
 
           <CSelect
             label="ผู้รับ"
@@ -180,7 +180,7 @@
 
       <!-- ✅ footer: padding รอบด้าน, ปุ่มสีน้ำเงิน -->
       <template #footer-wrapper>
-        <div class="d-flex justify-content-end w-100" style="padding: 0.875rem 1.5rem 1.1rem; gap: 10px; border-top: 1px solid #e4e7ea; background: #f8f9fa; box-sizing: border-box;">
+        <div class="send-modal-footer d-flex justify-content-end w-100">
           <CButton color="secondary" variant="outline" class="modal-btn" @click="closeSendModal">ยกเลิก</CButton>
           <CButton color="primary" class="modal-btn btn-save" :disabled="sendLoading" @click="sendNotification">
             {{ sendLoading ? 'กำลังส่ง...' : 'ส่งการแจ้งเตือน' }}
@@ -442,8 +442,38 @@ export default {
 
 .empty-state { border: 1px dashed #c8ced3; border-radius: 8px; padding: 20px; text-align: center; color: #768192; }
 
-.recipient-box { border: 1px solid #d8dbe0; border-radius: 8px; padding: 10px; background: #fafbfc; }
-.recipient-list { max-height: 180px; overflow-y: auto; }
+.send-modal-inner {
+  padding: 1.25rem 1.5rem;
+  box-sizing: border-box;
+  max-height: min(68vh, calc(100vh - 260px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.send-modal-footer {
+  position: sticky;
+  bottom: 0;
+  padding: 0.875rem 1.5rem 1.1rem;
+  gap: 10px;
+  border-top: 1px solid #e4e7ea;
+  background: #f8f9fa;
+  box-sizing: border-box;
+  z-index: 2;
+}
+
+.recipient-box {
+  border: 1px solid #d8dbe0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fafbfc;
+}
+
+.recipient-list {
+  max-height: min(34vh, 260px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
 
 /* ─── modal field labels ─── */
 .modal-field-label {
@@ -478,6 +508,139 @@ export default {
 }
 .preview-box__text { font-size: 13px; color: #4a5568; }
 
+.send-modal ::v-deep .modal-dialog {
+  margin: 1rem auto;
+  max-height: calc(100vh - 2rem);
+}
+
+.send-modal ::v-deep .modal-content {
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.send-modal ::v-deep .modal-body {
+  padding: 0;
+  overflow: hidden;
+}
+
+[data-coreui-theme='dark'] .admin-notifications-page,
+body.c-dark-theme .admin-notifications-page {
+  color: #e7eeff;
+}
+
+[data-coreui-theme='dark'] .admin-notifications-page h2,
+body.c-dark-theme .admin-notifications-page h2 {
+  color: #f4f8ff;
+}
+
+[data-coreui-theme='dark'] .summary-card,
+body.c-dark-theme .summary-card {
+  background: #162235;
+  border-color: #2f3e55;
+}
+
+[data-coreui-theme='dark'] .summary-card .text-muted,
+body.c-dark-theme .summary-card .text-muted {
+  color: #b3c2dd !important;
+}
+
+[data-coreui-theme='dark'] .summary-number,
+body.c-dark-theme .summary-number {
+  color: #eef4ff;
+}
+
+[data-coreui-theme='dark'] .admin-notifications-page ::v-deep .card,
+body.c-dark-theme .admin-notifications-page ::v-deep .card {
+  background: #162235;
+  border-color: #2f3e55;
+  box-shadow: 0 14px 32px rgba(2, 6, 23, 0.38);
+}
+
+[data-coreui-theme='dark'] .admin-notifications-page ::v-deep .card-body,
+body.c-dark-theme .admin-notifications-page ::v-deep .card-body {
+  color: #e7eeff;
+}
+
+[data-coreui-theme='dark'] .admin-notifications-page ::v-deep .form-control,
+body.c-dark-theme .admin-notifications-page ::v-deep .form-control,
+[data-coreui-theme='dark'] .admin-notifications-page ::v-deep .custom-select,
+body.c-dark-theme .admin-notifications-page ::v-deep .custom-select,
+[data-coreui-theme='dark'] .admin-notifications-page ::v-deep select,
+body.c-dark-theme .admin-notifications-page ::v-deep select {
+  background: #121c2a;
+  border-color: #3a4b67;
+  color: #e7eeff;
+}
+
+[data-coreui-theme='dark'] .notification-card,
+body.c-dark-theme .notification-card {
+  border-color: #2f3e55;
+  background: #162235;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.3);
+}
+
+[data-coreui-theme='dark'] .notification-card.unread,
+body.c-dark-theme .notification-card.unread {
+  background: #1f2f45;
+  border-left-color: #4f8cff;
+}
+
+[data-coreui-theme='dark'] .notification-card.read,
+body.c-dark-theme .notification-card.read {
+  background: #162235;
+}
+
+[data-coreui-theme='dark'] .notification-card .text-muted,
+body.c-dark-theme .notification-card .text-muted {
+  color: #b3c2dd !important;
+}
+
+[data-coreui-theme='dark'] .message-clamp,
+body.c-dark-theme .message-clamp {
+  color: #d4deee !important;
+}
+
+[data-coreui-theme='dark'] .empty-state,
+body.c-dark-theme .empty-state {
+  border-color: #3a4b67;
+  background: #162235;
+  color: #b8c7dd;
+}
+
+[data-coreui-theme='dark'] .send-modal-inner,
+body.c-dark-theme .send-modal-inner {
+  background: #1a2739;
+}
+
+[data-coreui-theme='dark'] .recipient-box,
+body.c-dark-theme .recipient-box {
+  border-color: #3a4b67;
+  background: #121c2a;
+}
+
+[data-coreui-theme='dark'] .send-modal-footer,
+body.c-dark-theme .send-modal-footer {
+  border-top-color: #2f3e55;
+  background: #182233;
+}
+
+[data-coreui-theme='dark'] .preview-box,
+body.c-dark-theme .preview-box {
+  border-color: #3a4b67;
+  background: #121c2a;
+}
+
+[data-coreui-theme='dark'] .preview-box__label,
+body.c-dark-theme .preview-box__label {
+  color: #b3c2dd;
+}
+
+[data-coreui-theme='dark'] .preview-box__text,
+body.c-dark-theme .preview-box__text {
+  color: #e7eeff;
+}
+
 .admin-email-widget__fab {
   position: fixed;
   right: 24px;
@@ -501,6 +664,19 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .send-modal-inner {
+    padding: 1rem;
+    max-height: calc(100vh - 230px);
+  }
+
+  .send-modal-footer {
+    padding: 0.75rem 1rem 0.9rem;
+  }
+
+  .recipient-list {
+    max-height: min(32vh, 220px);
+  }
+
   .admin-email-widget__fab {
     right: 16px;
     bottom: 16px;

@@ -3468,6 +3468,218 @@ export default {
 .meeting-modal .btn-save {
   min-width: 110px !important;
 }
+
+[data-coreui-theme='dark'] .admin-meetings-page,
+body.c-dark-theme .admin-meetings-page {
+  --am-bg: #0f1724;
+  --am-surface: #162235;
+  --am-border: #2f3e55;
+  --am-text: #e8eef7;
+  --am-muted: #b3c2dd;
+  --am-accent-ring: rgba(118, 164, 255, 0.22);
+  color: var(--am-text);
+}
+
+[data-coreui-theme='dark'] .summary-row--filters .summary-card:hover,
+body.c-dark-theme .summary-row--filters .summary-card:hover,
+[data-coreui-theme='dark'] .summary-row--filters .summary-card:focus-visible,
+body.c-dark-theme .summary-row--filters .summary-card:focus-visible,
+[data-coreui-theme='dark'] .summary-card--active,
+body.c-dark-theme .summary-card--active {
+  box-shadow: 0 18px 44px rgba(2, 6, 23, 0.48) !important;
+}
+
+[data-coreui-theme='dark'] .filter-card,
+body.c-dark-theme .filter-card {
+  box-shadow: 0 18px 42px rgba(2, 6, 23, 0.4);
+}
+
+[data-coreui-theme='dark'] .meeting-card__surface,
+body.c-dark-theme .meeting-card__surface {
+  background: linear-gradient(
+    180deg,
+    #1b2940 0%,
+    #1b2940 var(--meeting-card-accent-height),
+    #131f31 var(--meeting-card-accent-height),
+    #0f1928 100%
+  );
+  border-color: rgba(59, 76, 101, 0.95);
+  border-top-color: rgba(var(--status-rgb), 0.35);
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--status-rgb), 0.12),
+    0 16px 34px rgba(2, 6, 23, 0.45);
+}
+
+[data-coreui-theme='dark'] .meeting-card__surface::before,
+body.c-dark-theme .meeting-card__surface::before {
+  background:
+    radial-gradient(circle at 16% 22%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 52%),
+    radial-gradient(circle at 86% 0%, rgba(var(--status-rgb), 0.3), rgba(var(--status-rgb), 0) 60%),
+    linear-gradient(135deg, rgba(var(--status-rgb), 0.3) 0%, rgba(var(--status-rgb), 0.16) 58%, rgba(15, 23, 42, 0) 100%);
+  border-bottom-color: rgba(var(--status-rgb), 0.26);
+}
+
+[data-coreui-theme='dark'] .meeting-card__surface::after,
+body.c-dark-theme .meeting-card__surface::after {
+  opacity: 0.22;
+}
+
+[data-coreui-theme='dark'] .meeting-card__content,
+body.c-dark-theme .meeting-card__content {
+  box-shadow: 0 -1px 0 rgba(148, 163, 184, 0.2);
+}
+
+[data-coreui-theme='dark'] .meeting-card__participant-pill,
+body.c-dark-theme .meeting-card__participant-pill {
+  background: rgba(15, 23, 42, 0.58);
+  border-color: rgba(var(--status-rgb), 0.34);
+  color: #dbe6f8;
+  box-shadow: 0 10px 18px rgba(2, 6, 23, 0.28);
+}
+
+[data-coreui-theme='dark'] .meeting-card__title,
+body.c-dark-theme .meeting-card__title,
+[data-coreui-theme='dark'] .meeting-card__detail-value,
+body.c-dark-theme .meeting-card__detail-value,
+[data-coreui-theme='dark'] .meeting-card__agenda-body,
+body.c-dark-theme .meeting-card__agenda-body {
+  color: #e8eef7;
+}
+
+[data-coreui-theme='dark'] .meeting-card__detail-key,
+body.c-dark-theme .meeting-card__detail-key,
+[data-coreui-theme='dark'] .meeting-card__agenda-label,
+body.c-dark-theme .meeting-card__agenda-label {
+  color: #b3c2dd;
+}
+
+[data-coreui-theme='dark'] .meeting-card__agenda-body,
+body.c-dark-theme .meeting-card__agenda-body {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(58, 75, 103, 0.65);
+}
+
+[data-coreui-theme='dark'] .meeting-card__meta-widget::v-deep.card,
+body.c-dark-theme .meeting-card__meta-widget::v-deep.card {
+  background: rgba(15, 23, 42, 0.56);
+  border-color: rgba(var(--am-gold-rgb), 0.46);
+  box-shadow: 0 8px 16px rgba(2, 6, 23, 0.25);
+}
+
+[data-coreui-theme='dark'] .meeting-card__meta-item:nth-child(1) .meeting-card__meta-widget::v-deep .text-value,
+body.c-dark-theme .meeting-card__meta-item:nth-child(1) .meeting-card__meta-widget::v-deep .text-value,
+[data-coreui-theme='dark'] .meeting-card__meta-item:nth-child(2) .meeting-card__meta-widget::v-deep .text-value,
+body.c-dark-theme .meeting-card__meta-item:nth-child(2) .meeting-card__meta-widget::v-deep .text-value {
+  color: #f2f7ff;
+}
+
+[data-coreui-theme='dark'] .meeting-card__meta-item:nth-child(1) .meeting-card__meta-widget::v-deep .small,
+body.c-dark-theme .meeting-card__meta-item:nth-child(1) .meeting-card__meta-widget::v-deep .small,
+[data-coreui-theme='dark'] .meeting-card__meta-item:nth-child(2) .meeting-card__meta-widget::v-deep .small,
+body.c-dark-theme .meeting-card__meta-item:nth-child(2) .meeting-card__meta-widget::v-deep .small {
+  color: #b9c9e1;
+}
+
+[data-coreui-theme='dark'] .meeting-card__title-tooltip,
+body.c-dark-theme .meeting-card__title-tooltip,
+[data-coreui-theme='dark'] .meeting-card__meta-tooltip,
+body.c-dark-theme .meeting-card__meta-tooltip {
+  background: rgba(18, 28, 42, 0.98);
+  border-color: rgba(58, 75, 103, 0.86);
+  color: #e8eef7;
+  box-shadow: 0 14px 34px rgba(2, 6, 23, 0.4);
+}
+
+[data-coreui-theme='dark'] .meeting-card__title-tooltip::before,
+body.c-dark-theme .meeting-card__title-tooltip::before {
+  background: rgba(18, 28, 42, 0.98);
+  border-left-color: rgba(58, 75, 103, 0.86);
+  border-top-color: rgba(58, 75, 103, 0.86);
+}
+
+[data-coreui-theme='dark'] .meeting-card__selected-overlay,
+body.c-dark-theme .meeting-card__selected-overlay {
+  background: rgba(8, 14, 24, 0.5);
+}
+
+[data-coreui-theme='dark'] .meeting-card__overlay-close,
+body.c-dark-theme .meeting-card__overlay-close {
+  background: rgba(18, 28, 42, 0.86);
+  border-color: rgba(58, 75, 103, 0.86);
+  color: #e8eef7;
+  box-shadow: 0 12px 22px rgba(2, 6, 23, 0.44);
+}
+
+[data-coreui-theme='dark'] .meeting-card__link-btn,
+body.c-dark-theme .meeting-card__link-btn {
+  color: #d8e3f7;
+  background: rgba(var(--am-gold-rgb), 0.16);
+  border-color: rgba(var(--am-gold-rgb), 0.5);
+}
+
+[data-coreui-theme='dark'] .meeting-card__link-btn.is-disabled,
+body.c-dark-theme .meeting-card__link-btn.is-disabled {
+  background: #243447;
+  border-color: #354a62;
+  color: #9fb0c6;
+}
+
+[data-coreui-theme='dark'] .empty-state,
+body.c-dark-theme .empty-state {
+  border-color: #3a4b67;
+  background: #162235;
+  color: #b9c7dd;
+}
+
+[data-coreui-theme='dark'] .empty-state__title,
+body.c-dark-theme .empty-state__title {
+  color: #edf3ff;
+}
+
+[data-coreui-theme='dark'] .minutes-modal .minutes-panel,
+body.c-dark-theme .minutes-modal .minutes-panel,
+[data-coreui-theme='dark'] .minutes-modal .minutes-action,
+body.c-dark-theme .minutes-modal .minutes-action,
+[data-coreui-theme='dark'] .meeting-modal .modal-content,
+body.c-dark-theme .meeting-modal .modal-content,
+[data-coreui-theme='dark'] .minutes-modal .modal-content,
+body.c-dark-theme .minutes-modal .modal-content {
+  background: #162235;
+  border-color: #2f3e55;
+}
+
+[data-coreui-theme='dark'] .minutes-modal .minutes-meta,
+body.c-dark-theme .minutes-modal .minutes-meta {
+  background: rgba(18, 28, 42, 0.9);
+  border-color: rgba(58, 75, 103, 0.75);
+  color: #e8eef7;
+}
+
+[data-coreui-theme='dark'] .minutes-modal .minutes-action__table .table thead th,
+body.c-dark-theme .minutes-modal .minutes-action__table .table thead th,
+[data-coreui-theme='dark'] .minutes-modal .minutes-action__add-row td,
+body.c-dark-theme .minutes-modal .minutes-action__add-row td {
+  background: rgba(18, 28, 42, 0.88);
+  color: #d8e3f7;
+}
+
+[data-coreui-theme='dark'] .input-icon__wrap,
+body.c-dark-theme .input-icon__wrap,
+[data-coreui-theme='dark'] .time-dropdown,
+body.c-dark-theme .time-dropdown {
+  background: #121c2a;
+  border-color: #3a4b67;
+}
+
+[data-coreui-theme='dark'] .time-dropdown__item,
+body.c-dark-theme .time-dropdown__item {
+  color: #e8eef7;
+}
+
+[data-coreui-theme='dark'] .time-dropdown__item:hover,
+body.c-dark-theme .time-dropdown__item:hover {
+  background: rgba(118, 164, 255, 0.16);
+}
 </style>
 
 <style>
@@ -3916,5 +4128,90 @@ export default {
 .meeting-modal .input-icon__ic,
 .minutes-modal .input-icon__ic {
   opacity: 0.88;
+}
+
+[data-coreui-theme='dark'] .meeting-modal .modal-content,
+body.c-dark-theme .meeting-modal .modal-content,
+[data-coreui-theme='dark'] .minutes-modal .modal-content,
+body.c-dark-theme .minutes-modal .modal-content {
+  background: #162235 !important;
+  border-color: #2f3e55 !important;
+}
+
+[data-coreui-theme='dark'] .meeting-modal .modal-body,
+body.c-dark-theme .meeting-modal .modal-body,
+[data-coreui-theme='dark'] .minutes-modal .modal-body,
+body.c-dark-theme .minutes-modal .modal-body,
+[data-coreui-theme='dark'] .meeting-modal .modal-footer,
+body.c-dark-theme .meeting-modal .modal-footer,
+[data-coreui-theme='dark'] .minutes-modal .modal-footer,
+body.c-dark-theme .minutes-modal .modal-footer {
+  background: #1a2739 !important;
+  color: #e7eeff !important;
+  border-color: #2f3e55 !important;
+}
+
+[data-coreui-theme='dark'] .meeting-modal .form-label,
+body.c-dark-theme .meeting-modal .form-label,
+[data-coreui-theme='dark'] .minutes-modal .form-label,
+body.c-dark-theme .minutes-modal .form-label,
+[data-coreui-theme='dark'] .meeting-modal .form-text,
+body.c-dark-theme .meeting-modal .form-text,
+[data-coreui-theme='dark'] .minutes-modal .form-text,
+body.c-dark-theme .minutes-modal .form-text,
+[data-coreui-theme='dark'] .minutes-modal .minutes-panel__title,
+body.c-dark-theme .minutes-modal .minutes-panel__title,
+[data-coreui-theme='dark'] .minutes-modal .minutes-action__title,
+body.c-dark-theme .minutes-modal .minutes-action__title {
+  color: #dce7fb !important;
+}
+
+[data-coreui-theme='dark'] .meeting-modal .form-control,
+body.c-dark-theme .meeting-modal .form-control,
+[data-coreui-theme='dark'] .minutes-modal .form-control,
+body.c-dark-theme .minutes-modal .form-control,
+[data-coreui-theme='dark'] .meeting-modal input.form-control,
+body.c-dark-theme .meeting-modal input.form-control,
+[data-coreui-theme='dark'] .minutes-modal input.form-control,
+body.c-dark-theme .minutes-modal input.form-control,
+[data-coreui-theme='dark'] .meeting-modal textarea.form-control,
+body.c-dark-theme .meeting-modal textarea.form-control,
+[data-coreui-theme='dark'] .minutes-modal textarea.form-control,
+body.c-dark-theme .minutes-modal textarea.form-control,
+[data-coreui-theme='dark'] .meeting-modal select.form-control,
+body.c-dark-theme .meeting-modal select.form-control,
+[data-coreui-theme='dark'] .minutes-modal select.form-control,
+body.c-dark-theme .minutes-modal select.form-control,
+[data-coreui-theme='dark'] .meeting-modal .input-icon__wrap,
+body.c-dark-theme .meeting-modal .input-icon__wrap,
+[data-coreui-theme='dark'] .minutes-modal .input-icon__wrap,
+body.c-dark-theme .minutes-modal .input-icon__wrap,
+[data-coreui-theme='dark'] .meeting-modal .multiselect__tags,
+body.c-dark-theme .meeting-modal .multiselect__tags,
+[data-coreui-theme='dark'] .minutes-modal .multiselect__tags,
+body.c-dark-theme .minutes-modal .multiselect__tags,
+[data-coreui-theme='dark'] .meeting-modal .multiselect__content-wrapper,
+body.c-dark-theme .meeting-modal .multiselect__content-wrapper,
+[data-coreui-theme='dark'] .minutes-modal .multiselect__content-wrapper,
+body.c-dark-theme .minutes-modal .multiselect__content-wrapper {
+  background: #121c2a !important;
+  border-color: #3a4b67 !important;
+  color: #e7eeff !important;
+}
+
+[data-coreui-theme='dark'] .meeting-modal .multiselect__option,
+body.c-dark-theme .meeting-modal .multiselect__option,
+[data-coreui-theme='dark'] .minutes-modal .multiselect__option,
+body.c-dark-theme .minutes-modal .multiselect__option,
+[data-coreui-theme='dark'] .meeting-modal .multiselect__single,
+body.c-dark-theme .meeting-modal .multiselect__single,
+[data-coreui-theme='dark'] .minutes-modal .multiselect__single,
+body.c-dark-theme .minutes-modal .multiselect__single,
+[data-coreui-theme='dark'] .meeting-modal .multiselect__input,
+body.c-dark-theme .meeting-modal .multiselect__input,
+[data-coreui-theme='dark'] .minutes-modal .multiselect__input,
+body.c-dark-theme .minutes-modal .multiselect__input {
+  background: transparent !important;
+  color: #e7eeff !important;
 }
 </style>
