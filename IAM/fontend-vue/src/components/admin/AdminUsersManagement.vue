@@ -322,7 +322,7 @@ export default {
       users: [],
       loading: false,
       apiNotReady: false,
-      quickFilter: '',
+      quickFilter: 'all',
       summary: {
         totalUsers: 0,
         totalCommittees: 0,
@@ -452,7 +452,13 @@ export default {
     syncQuickFilterFromDropdowns () {
       const role = String(this.filters.role || '').trim()
       const status = String(this.filters.isActive || '').trim()
+      const keyword = String(this.filters.keyword || '').trim()
+      const department = String(this.filters.department || '').trim()
 
+      if (!keyword && !department && !role && !status) {
+        this.quickFilter = 'all'
+        return
+      }
       if (role === 'committee' && !status) {
         this.quickFilter = 'committee'
         return
@@ -465,17 +471,15 @@ export default {
         this.quickFilter = 'active'
         return
       }
-      if (!role && !status) {
-        this.quickFilter = ''
-        return
-      }
 
       this.quickFilter = ''
     },
     onQuickFilterCardClick (key) {
       if (key === 'all') {
         const isTogglingOff = this.quickFilter === 'all'
+        this.filters.keyword = ''
         this.filters.role = ''
+        this.filters.department = ''
         this.filters.isActive = ''
         this.quickFilter = isTogglingOff ? '' : 'all'
       } else {
@@ -483,9 +487,11 @@ export default {
 
         if (key === 'committee' || key === 'admin') {
           this.filters.role = isSameActive ? '' : key
+          this.filters.isActive = ''
           this.quickFilter = isSameActive ? '' : key
         } else if (key === 'active') {
           this.filters.isActive = isSameActive ? '' : 'true'
+          this.filters.role = ''
           this.quickFilter = isSameActive ? '' : 'active'
         }
       }
@@ -564,7 +570,7 @@ export default {
       this.filters.role = ''
       this.filters.department = ''
       this.filters.isActive = ''
-      this.quickFilter = ''
+      this.quickFilter = 'all'
       this.page = 1
       this.fetchUsers()
     },
@@ -815,37 +821,49 @@ export default {
 
 .summary-widget {
   cursor: pointer;
-  border: 2px solid transparent;
-  background-color: #ffffff;
+  border: 1px solid rgba(223, 230, 238, 0.9);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 250, 252, 0.98));
+  box-shadow: 0 14px 30px rgba(44, 52, 71, 0.06);
   transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
-  border-radius: 12px;
+  border-radius: 1.35rem;
   padding: 16px 18px;
   min-height: 86px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .summary-widget small {
-  font-size: 0.9rem;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  font-weight: 800;
 }
 
 .summary-widget strong.h5 {
-  font-size: 1.75rem;
-  font-weight: 900;
+  font-size: 1.72rem;
+  font-weight: 800;
   line-height: 1.1;
+  letter-spacing: -0.03em;
 }
 
 .summary-widget:hover {
   transform: translateY(-1px);
-  border-color: rgba(181, 133, 34, 0.42);
-  background-color: #fffaf2;
-  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.1);
+  border-color: rgba(197, 155, 58, 0.55);
+  background: linear-gradient(180deg, rgba(255, 250, 242, 1), rgba(249, 250, 252, 0.98));
+  box-shadow: 0 18px 36px rgba(44, 52, 71, 0.1);
+}
+
+.summary-widget:focus-visible {
+  outline: none;
+  box-shadow: 0 18px 36px rgba(44, 52, 71, 0.12), 0 0 0 0.2rem rgba(140, 21, 21, 0.12);
 }
 
 .summary-widget.is-active {
-  border-color: #8c1515;
-  background-color: rgba(254, 194, 96, 0.18);
-  box-shadow: 0 0 0 2px rgba(140, 21, 21, 0.16);
+  border-color: rgba(140, 21, 21, 0.75);
+  background: linear-gradient(180deg, rgba(254, 194, 96, 0.16), rgba(249, 250, 252, 0.98));
+  box-shadow: 0 18px 36px rgba(44, 52, 71, 0.12), 0 0 0 0.2rem rgba(140, 21, 21, 0.12);
 }
 </style>

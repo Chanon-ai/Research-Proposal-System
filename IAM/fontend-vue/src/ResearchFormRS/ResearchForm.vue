@@ -368,7 +368,7 @@
             <CButton color="success" size="sm" @click="openAdminCommitteeModal">
               {{ adminHasAssignedCommittee ? 'เปลี่ยนคณะกรรมการ' : 'มอบหมายคณะกรรมการ' }}
             </CButton>
-            <CButton color="info" size="sm" @click="openAdminMeetingManage">จัดการประชุม</CButton>
+            <CButton size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage">จัดการประชุม</CButton>
           </div>
         </div>
       </div>
@@ -558,64 +558,135 @@
         centered
         size="lg"
         scrollable
-        title="จัดการการประชุม"
+        class="meeting-modal"
       >
+        <template #header-wrapper>
+          <div class="modal-header">
+            <h5 class="modal-title">สร้างการประชุมใหม่</h5>
+            <div class="meeting-modal__header-actions">
+              <button type="button" class="close" aria-label="Close" @click="closeAdminMeetingPopup">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          </div>
+        </template>
         <template #body-wrapper>
-          <div class="meeting-form" style="padding: 20px 24px 8px; max-height: calc(100vh - 220px); overflow-y: auto;">
-            <div class="mb-3">
-              <div class="text-muted">โครงการ</div>
-              <div class="font-weight-bold">
-                {{ (loadedProposal && (loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || loadedProposal.projectTitle)) || '-' }}
-              </div>
+          <div class="meeting-form">
+            <div class="field full-field">
+              <label class="form-label mt-3">โครงการที่เกี่ยวข้อง <span class="required">*</span></label>
+              <CInput
+                class="full"
+                :value="(loadedProposal && (loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || loadedProposal.projectTitle)) || '-'"
+                disabled
+              />
+              <small class="text-muted d-block mt-1">ระบบเลือกโครงการจากหน้าตรวจแบบฟอร์มให้อัตโนมัติ</small>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label">ชื่อการประชุม <span class="text-danger">*</span></label>
-              <CInput v-model="adminMeetingForm.title" />
+            <div class="field full-field">
+              <label class="form-label">ผู้เข้าร่วมเพิ่มเติม (ไม่บังคับ)</label>
+              <multiselect
+                v-model="adminSelectedParticipantOptions"
+                :options="adminParticipantOptions"
+                :searchable="true"
+                :multiple="true"
+                :close-on-select="false"
+                :clear-on-select="false"
+                :preserve-search="true"
+                :allow-empty="true"
+                :loading="adminParticipantOptionsLoading"
+                label="searchText"
+                track-by="_id"
+                placeholder="พิมพ์เพื่อค้นหาผู้ใช้..."
+                :custom-label="formatAdminParticipantLabel"
+              >
+                <template slot="option" slot-scope="{ option }">
+                  <div>
+                    <div class="font-weight-bold">{{ option.fullName || '-' }}</div>
+                    <small class="text-muted">{{ option.email || '' }}</small>
+                  </div>
+                </template>
+              </multiselect>
+              <small v-if="adminParticipantOptionsError" class="text-warning d-block mt-1">โหลดรายชื่อผู้ใช้ไม่สำเร็จ: {{
+                adminParticipantOptionsError }}</small>
             </div>
 
-            <div class="row">
-              <div class="col-md-4 mb-3">
-                <label class="form-label">วันที่ประชุม <span class="text-danger">*</span></label>
-                <CInput type="date" v-model="adminMeetingForm.meetingDate" />
+            <div class="field full-field">
+              <label class="form-label">ชื่อการประชุม <span class="required">*</span></label>
+              <CInput class="full" v-model="adminMeetingForm.title" placeholder="กรอกชื่อการประชุม" />
+            </div>
+
+            <div class="row small-row">
+              <div class="field small-field">
+                <label class="form-label">วันที่ประชุม <span class="required">*</span></label>
+                <CInput class="full" type="date" v-model="adminMeetingForm.meetingDate" />
               </div>
-              <div class="col-md-4 mb-3">
-                <label class="form-label">เวลาเริ่ม <span class="text-danger">*</span></label>
-                <CInput type="time" v-model="adminMeetingForm.startTime" />
+              <div class="field small-field">
+                <label class="form-label">เวลาเริ่ม <span class="required">*</span></label>
+                <CInput class="full" type="time" v-model="adminMeetingForm.startTime" />
               </div>
-              <div class="col-md-4 mb-3">
+              <div class="field small-field">
                 <label class="form-label">เวลาสิ้นสุด</label>
-                <CInput type="time" v-model="adminMeetingForm.endTime" />
+                <CInput class="full" type="time" v-model="adminMeetingForm.endTime" />
               </div>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label">สถานที่</label>
-              <CInput v-model="adminMeetingForm.location" />
+            <div class="field full-field">
+              <label class="form-label">ประเภทการประชุม</label>
+              <div class="meeting-type-toggle" role="radiogroup" aria-label="ประเภทการประชุม">
+                <input
+                  id="admin-meeting-type-online"
+                  class="meeting-type-toggle__input"
+                  type="radio"
+                  value="online"
+                  v-model="adminMeetingForm.meetingType"
+                >
+                <label class="meeting-type-toggle__label" for="admin-meeting-type-online">ออนไลน์</label>
+                <input
+                  id="admin-meeting-type-onsite"
+                  class="meeting-type-toggle__input"
+                  type="radio"
+                  value="onsite"
+                  v-model="adminMeetingForm.meetingType"
+                >
+                <label class="meeting-type-toggle__label" for="admin-meeting-type-onsite">ออนไซต์</label>
+              </div>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label">ลิงก์ประชุมออนไลน์</label>
-              <CInput v-model="adminMeetingForm.videoLink" />
+            <div class="field full-field">
+              <label class="form-label">สถานที่ <span v-if="adminMeetingForm.meetingType === 'onsite'" class="required">*</span></label>
+              <CInput
+                class="full"
+                v-model="adminMeetingForm.location"
+                :disabled="adminMeetingForm.meetingType === 'online'"
+                :placeholder="adminMeetingForm.meetingType === 'online' ? 'ออนไลน์: ไม่ต้องกรอกสถานที่' : 'เช่น C1 101'"
+              />
             </div>
 
-            <div class="mb-3">
+            <div class="field full-field">
+              <label class="form-label">ลิงก์วิดีโอประชุม <span v-if="adminMeetingForm.meetingType === 'online'" class="required">*</span></label>
+              <CInput class="full" type="url" v-model="adminMeetingForm.videoLink" placeholder="เช่น https://meet.google.com/..." />
+            </div>
+
+            <div class="field full-field">
               <label class="form-label">วาระการประชุม</label>
-              <textarea v-model="adminMeetingForm.agenda" class="form-control" rows="4" />
+              <textarea v-model="adminMeetingForm.agenda" class="form-control full" rows="4" placeholder="ใส่หัวข้อย่อยหรือประเด็นหลักที่ต้องหารือ (ถ้ามี)" />
             </div>
           </div>
         </template>
 
         <template #footer-wrapper>
-          <div class="d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
-            <CButton color="secondary" class="mr-2" @click="closeAdminMeetingPopup">ปิด</CButton>
-            <CButton
-              color="primary"
-              :disabled="adminMeetingSubmitting || !adminMeetingForm.title || !adminMeetingForm.meetingDate || !adminMeetingForm.startTime"
-              @click="submitAdminMeeting"
-            >
-              {{ adminMeetingSubmitting ? 'กำลังบันทึก...' : 'บันทึก' }}
-            </CButton>
+          <div class="modal-footer">
+            <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
+              <CButton color="secondary" class="btn-cancel floating-action mr-2" @click="closeAdminMeetingPopup">ยกเลิก</CButton>
+              <CButton
+                color="primary"
+                class="btn-save floating-action"
+                :disabled="adminMeetingSubmitting || !adminMeetingForm.title || !adminMeetingForm.meetingDate || !adminMeetingForm.startTime || (adminMeetingForm.meetingType === 'online' && !adminMeetingForm.videoLink) || (adminMeetingForm.meetingType === 'onsite' && !adminMeetingForm.location)"
+                @click="submitAdminMeeting"
+              >
+                {{ adminMeetingSubmitting ? 'กำลังบันทึก...' : 'บันทึก' }}
+              </CButton>
+            </div>
           </div>
         </template>
       </CModal>
@@ -4607,6 +4678,121 @@ export default {
 .btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.mfu-hero-action-btn {
+  min-width: 130px;
+  border-radius: 6px !important;
+  padding: 0.55rem 1.05rem !important;
+  background:  rgba(139, 18, 18, 0.98) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18) !important;
+}
+
+.mfu-hero-action-btn:hover {
+  transform: none !important;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18) !important;
+  filter: brightness(1.03);
+}
+
+.mfu-hero-action-btn:focus,
+.mfu-hero-action-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(197, 155, 58, 0.25), 0 12px 24px rgba(15, 23, 42, 0.18) !important;
+}
+
+.mfu-hero-action-btn:disabled,
+.mfu-hero-action-btn.disabled {
+  opacity: 0.65 !important;
+  cursor: not-allowed;
+}
+
+/* Meeting modal: align look with AdminMeetings create modal */
+.meeting-modal ::v-deep .modal-header {
+  background: linear-gradient(135deg, #8b1212 0%, #c59b3a 115%);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+.meeting-modal ::v-deep .modal-content {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.meeting-modal ::v-deep .modal-title {
+  color: #ffffff !important;
+  font-weight: 900;
+}
+
+.meeting-modal ::v-deep .close {
+  color: #ffffff !important;
+  opacity: 0.92 !important;
+  text-shadow: none !important;
+}
+
+.meeting-modal ::v-deep .close:hover {
+  opacity: 1 !important;
+}
+
+.meeting-modal .meeting-form {
+  padding: 20px 24px 8px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
+.meeting-modal .meeting-form .field {
+  margin-bottom: 14px;
+}
+
+.meeting-modal .meeting-form .small-row {
+  margin-left: -8px;
+  margin-right: -8px;
+}
+
+.meeting-modal .meeting-form .small-row .field {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.meeting-modal .form-label {
+  font-weight: 800;
+  color: #111827;
+}
+
+.meeting-modal .required {
+  color: #ef4444;
+  font-weight: 900;
+}
+
+.meeting-modal .full {
+  width: 100%;
+}
+
+.meeting-modal ::v-deep .modal-footer {
+  background: #ffffff;
+  border-top: 1px solid rgba(140, 21, 21, 0.12);
+}
+
+.meeting-modal .modal-actions-wrapper {
+  padding: 12px 24px 18px;
+}
+
+.meeting-modal .btn-save {
+  background: linear-gradient(135deg, #8b1212 0%, #c59b3a 115%) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+}
+
+.meeting-modal .btn-cancel {
+  background: rgba(197, 155, 58, 0.18) !important;
+  border: 1px solid rgba(197, 155, 58, 0.78) !important;
+  color: #8b1212 !important;
+  border-radius: 10px !important;
+  font-weight: 900 !important;
 }
 
 .btn-primary {

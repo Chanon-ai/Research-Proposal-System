@@ -414,16 +414,13 @@ export default {
 }
 
 :deep(.notification-menu) {
-  width: 380px !important;
-  min-width: 340px !important;
-  max-width: min(420px, calc(100vw - 20px)) !important;
-  max-height: min(460px, calc(100vh - 110px)) !important;
+  width: min(520px, calc(100vw - 16px)) !important;
+  min-width: 280px !important;
+  max-width: calc(100vw - 16px) !important;
+  max-height: min(520px, calc(100vh - 96px)) !important;
   overflow: hidden;
   border-radius: 0.7rem;
   padding-bottom: 0;
-  left: auto !important;
-  right: -6px !important;
-  transform: translate3d(0, 0, 0) !important;
   --notif-dropdown-bg: #ffffff;
   --notif-header-bg: linear-gradient(90deg, #8c1515, rgba(107, 15, 15, 0.98));
   --notif-header-text: #ffffff;
