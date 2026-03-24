@@ -3,7 +3,6 @@
 const crypto = require('crypto');
 const path = require('path');
 const mongoose = require('mongoose');
-const { GridFSBucket, ObjectId } = require('mongodb');
 
 const Proposal = require('../models/Proposal');
 
@@ -12,12 +11,15 @@ const BUCKET_NAME = 'proposal_form_files';
 function getBucket() {
   const db = mongoose.connection && mongoose.connection.db;
   if (!db) throw new Error('MongoDB not connected');
-  return new GridFSBucket(db, { bucketName: BUCKET_NAME });
+  if (!mongoose.mongo || !mongoose.mongo.GridFSBucket) {
+    throw new Error('GridFSBucket is unavailable from mongoose driver');
+  }
+  return new mongoose.mongo.GridFSBucket(db, { bucketName: BUCKET_NAME });
 }
 
 function asObjectId(id) {
   try {
-    return new ObjectId(String(id));
+    return new mongoose.Types.ObjectId(String(id));
   } catch (e) {
     return null;
   }
@@ -70,6 +72,56 @@ function toSnapshotEntry(fileDoc) {
     type: md.type || '',
     note: md.note || ''
   };
+}
+
+function normalizeFileId(value) {
+  if (!value) return '';
+  if (typeof value === 'string' || typeof value === 'number') return String(value).trim();
+  if (value && typeof value.toHexString === 'function') return String(value.toHexString()).trim();
+  if (value && typeof value === 'object') {
+    if (value.$oid) return String(value.$oid).trim();
+    if (value._id) return normalizeFileId(value._id);
+    if (value.id) return normalizeFileId(value.id);
+    if (value.fileId) return normalizeFileId(value.fileId);
+  }
+  try {
+    return String(value).trim();
+  } catch (_) {
+    return '';
+  }
+}
+
+function collectSnapshotFileIds(snapshot = {}) {
+  const ids = new Set();
+
+  const add = (value) => {
+    const id = normalizeFileId(value);
+    if (id) ids.add(id);
+  };
+
+  const files = Array.isArray(snapshot && snapshot.files) ? snapshot.files : [];
+  files.forEach((entry) => add(entry && (entry.fileId || entry.id || entry._id)));
+
+  const rs = snapshot && snapshot.researchStandard && snapshot.researchStandard.attachments
+    ? snapshot.researchStandard.attachments
+    : {};
+  Object.keys(rs || {}).forEach((key) => {
+    const entry = rs[key];
+    add(entry && (entry.fileId || entry.id || entry._id));
+  });
+
+  const budgetCategories = Array.isArray(snapshot && snapshot.budget && snapshot.budget.categories)
+    ? snapshot.budget.categories
+    : [];
+  budgetCategories.forEach((category) => {
+    const items = Array.isArray(category && category.items) ? category.items : [];
+    items.forEach((item) => {
+      const attachment = item && item.attachment ? item.attachment : null;
+      add(attachment && (attachment.fileId || attachment.id || attachment._id));
+    });
+  });
+
+  return ids;
 }
 
 async function uploadFormFile({ proposalId, file, type, note, user }) {
@@ -131,7 +183,8 @@ async function listFormFiles({ proposalId, user }) {
 async function getFormFileDoc({ proposalId, fileId, user }) {
   const proposal = await requireProposalAccess(proposalId, user);
   const filesCol = mongoose.connection.db.collection(`${BUCKET_NAME}.files`);
-  const fid = asObjectId(fileId);
+  const normalizedFileId = normalizeFileId(fileId);
+  const fid = asObjectId(normalizedFileId);
   if (!fid) throw new Error('Invalid file id');
   const row = await filesCol.findOne({ _id: fid });
   if (!row) throw new Error('File not found');
@@ -140,10 +193,10 @@ async function getFormFileDoc({ proposalId, fileId, user }) {
   const metaPid = row.metadata && row.metadata.proposalId ? row.metadata.proposalId : null;
   if (!metaPid) {
     // Backward compatibility: early uploads might miss metadata.proposalId.
-    // Allow only if the proposal snapshot references this fileId.
+    // Allow if the proposal snapshot references this file id in any known attachment location.
     const snap = proposal && proposal.formSnapshotJson ? proposal.formSnapshotJson : {};
-    const snapFiles = Array.isArray(snap.files) ? snap.files : [];
-    const inSnapshot = snapFiles.some((x) => String(x && x.fileId) === String(fileId));
+    const knownIds = collectSnapshotFileIds(snap);
+    const inSnapshot = knownIds.has(normalizedFileId);
     if (!inSnapshot) throw new Error('Forbidden');
   } else if (String(metaPid) !== String(pid)) {
     throw new Error('Forbidden');

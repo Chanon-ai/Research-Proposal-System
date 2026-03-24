@@ -254,7 +254,10 @@ exports.downloadFormFile = async (req, res, next) => {
       user
     });
 
-    const bucket = new (require('mongodb').GridFSBucket)(mongoose.connection.db, {
+    if (!mongoose.mongo || !mongoose.mongo.GridFSBucket) {
+      throw new Error('GridFSBucket is unavailable from mongoose driver');
+    }
+    const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
       bucketName: formFileService.BUCKET_NAME
     });
 

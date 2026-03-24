@@ -2511,21 +2511,37 @@ export default {
       return '-'
     },
     hasWorkPlanDraftContent (value) {
-      const rows = Array.isArray(value) ? value : []
-      if (!rows.length) return false
-      return rows.some((row) => {
+      const hasText = (cell) => String(cell || '').trim().length > 0
+      const ignoredKeys = new Set(['id', '_id', 'duration', 'activities', 'selectedMonths', 'activityName', 'responsible'])
+      const hasRowContent = (row) => {
         if (row === null || row === undefined) return false
-        if (typeof row !== 'object') return String(row).trim().length > 0
-        return Object.values(row).some((cell) => {
-          if (Array.isArray(cell)) {
-            return cell.some(entry => String(entry || '').trim().length > 0)
-          }
-          if (cell && typeof cell === 'object') {
-            return Object.values(cell).some(entry => String(entry || '').trim().length > 0)
-          }
-          return String(cell || '').trim().length > 0
+        if (typeof row !== 'object') return hasText(row)
+
+        const hasKnownSection12Fields = hasText(row.activityName) ||
+          hasText(row.responsible) ||
+          (Array.isArray(row.selectedMonths) && row.selectedMonths.some(month => hasText(month) || Number(month) > 0))
+        if (hasKnownSection12Fields) return true
+
+        return Object.keys(row).some((key) => {
+          if (ignoredKeys.has(key)) return false
+          const cell = row[key]
+          if (Array.isArray(cell)) return cell.some(entry => hasRowContent(entry))
+          if (cell && typeof cell === 'object') return hasRowContent(cell)
+          return hasText(cell)
         })
-      })
+      }
+
+      if (Array.isArray(value)) {
+        return value.some(row => hasRowContent(row))
+      }
+
+      if (value && typeof value === 'object') {
+        const activityRows = Array.isArray(value.activities) ? value.activities : []
+        if (activityRows.some(row => hasRowContent(row))) return true
+        return hasRowContent(value)
+      }
+
+      return false
     },
     validateFeedbackSectionBeforeSubmit (section, options = {}) {
       const focusOnError = options.focusOnError !== false
@@ -2793,6 +2809,100 @@ export default {
       }
       return Swal.fire(options)
     },
+    normalizeFileId (value) {
+      if (!value) return ''
+      if (typeof value === 'string' || typeof value === 'number') return String(value).trim()
+      if (typeof value === 'object') {
+        if (typeof value.toHexString === 'function') return String(value.toHexString()).trim()
+        if (value.$oid) return String(value.$oid).trim()
+        if (value._id) return this.normalizeFileId(value._id)
+        if (value.id) return this.normalizeFileId(value.id)
+        if (value.fileId) return this.normalizeFileId(value.fileId)
+      }
+      try {
+        return String(value).trim()
+      } catch (_) {
+        return ''
+      }
+    },
+    sanitizeSnapshotFileForPayload (file, options = {}) {
+      if (!file || typeof file !== 'object') return null
+      const includeBudgetFields = Boolean(options && options.includeBudgetFields)
+      const fileId = this.normalizeFileId(file.fileId || file.id || file._id || '')
+      const name = file.name || file.originalName || file.fileName || ''
+      const originalName = file.originalName || name || ''
+      const numericSize = Number(file.size || file.fileSize || 0)
+      const uploadedAt = file.uploadedAt || file.uploadDate || null
+      const base = {
+        fileId: fileId ? String(fileId) : '',
+        name,
+        originalName,
+        mimeType: file.mimeType || file.contentType || '',
+        size: Number.isFinite(numericSize) && numericSize > 0 ? numericSize : 0,
+        uploadedAt,
+        datetime: file.datetime || '',
+        type: file.type || file.docType || '',
+        note: file.note || ''
+      }
+      if (!includeBudgetFields) return base
+      return {
+        ...base,
+        fileName: file.fileName || base.name,
+        docType: file.docType || base.type || '',
+        uploading: Boolean(file.uploading && !base.fileId)
+      }
+    },
+    sanitizeResearchStandardForPayload (value) {
+      const standard = value && typeof value === 'object'
+        ? (this.cloneSerializable(value) || value)
+        : {}
+      const attachments = standard && standard.attachments && typeof standard.attachments === 'object'
+        ? standard.attachments
+        : {}
+
+      const nextAttachments = {}
+      Object.keys(attachments).forEach((key) => {
+        const entry = attachments[key]
+        if (!entry) {
+          nextAttachments[key] = null
+          return
+        }
+        const sanitized = this.sanitizeSnapshotFileForPayload(entry)
+        nextAttachments[key] = sanitized || null
+      })
+
+      return {
+        ...standard,
+        attachments: nextAttachments
+      }
+    },
+    sanitizeBudgetForPayload (value) {
+      const budget = value && typeof value === 'object'
+        ? (this.cloneSerializable(value) || value)
+        : {}
+      const categories = Array.isArray(budget.categories) ? budget.categories : []
+      const nextCategories = categories.map((category) => {
+        const items = Array.isArray(category && category.items) ? category.items : []
+        const nextItems = items.map((item) => {
+          if (!item || typeof item !== 'object') return item
+          const attachment = item.attachment
+          if (!attachment || typeof attachment !== 'object') return item
+          const sanitized = this.sanitizeSnapshotFileForPayload(attachment, { includeBudgetFields: true })
+          return {
+            ...item,
+            attachment: sanitized
+          }
+        })
+        return {
+          ...(category || {}),
+          items: nextItems
+        }
+      })
+      return {
+        ...budget,
+        categories: nextCategories
+      }
+    },
 
     normalizeApiPayload() {
       const teamData = this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.getFormData === 'function'
@@ -2805,12 +2915,14 @@ export default {
       const existingSnapshot = this.loadedProposal && this.loadedProposal.formSnapshotJson
         ? this.loadedProposal.formSnapshotJson
         : {}
-      const normalizedBudget = form && form.budget && typeof form.budget === 'object' && Object.keys(form.budget).length
+      const rawBudget = form && form.budget && typeof form.budget === 'object' && Object.keys(form.budget).length
         ? form.budget
         : (existingSnapshot.budget || {})
-      const normalizedResearchStandard = form && form.researchStandard && typeof form.researchStandard === 'object' && Object.keys(form.researchStandard).length
+      const rawResearchStandard = form && form.researchStandard && typeof form.researchStandard === 'object' && Object.keys(form.researchStandard).length
         ? form.researchStandard
         : (existingSnapshot.researchStandard || {})
+      const normalizedBudget = this.sanitizeBudgetForPayload(rawBudget)
+      const normalizedResearchStandard = this.sanitizeResearchStandardForPayload(rawResearchStandard)
 
       const rawKeywords = String(form.keywords || '')
         .replace(/<[^>]+>/g, '')
@@ -2836,7 +2948,10 @@ export default {
           : null)
 
       const persistedFiles = Array.isArray(this.files)
-        ? this.files.filter(f => f && !f._pending)
+        ? this.files
+          .filter(f => f && !f._pending)
+          .map(f => this.sanitizeSnapshotFileForPayload(f))
+          .filter(f => f && (f.fileId || f.name))
         : []
 
       const existingRawRevisionDiffSummary = this.loadedProposal &&
@@ -3262,7 +3377,8 @@ export default {
     },
 
     async openFile(item) {
-      if (!item || !this.viewProposalId || !item.fileId) return
+      const fileId = this.normalizeFileId(item && (item.fileId || item.id || item._id))
+      if (!item || !this.viewProposalId || !fileId) return
 
       // Open a blank tab immediately to avoid popup blockers (async opens are often blocked).
       const popup = window.open('', '_blank')
@@ -3274,7 +3390,7 @@ export default {
         }
       } catch (_) { void _ }
       try {
-        const res = await Service.proposal.downloadFormFile(this.viewProposalId, item.fileId)
+        const res = await Service.proposal.downloadFormFile(this.viewProposalId, fileId)
         const blob = res && res.data ? res.data : null
         const headers = res && res.headers ? res.headers : {}
         const contentType = headers['content-type'] || headers['Content-Type'] || (blob && blob.type) || ''

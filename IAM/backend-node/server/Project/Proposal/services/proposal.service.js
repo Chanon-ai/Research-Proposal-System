@@ -86,6 +86,54 @@ function normalizeDraftCoreFields(target, fallback = {}) {
   return doc;
 }
 
+function sanitizeSnapshotFileEntry(file = {}) {
+  if (!file || typeof file !== 'object') return null;
+  const fileId = normalizeFileId(file.fileId || file.id || file._id || '');
+  const name = file.name || file.originalName || file.fileName || '';
+  const originalName = file.originalName || name || '';
+  const mimeType = file.mimeType || file.contentType || '';
+  const size = Number(file.size || file.fileSize || 0);
+  return {
+    fileId: fileId ? String(fileId) : '',
+    name,
+    originalName,
+    mimeType,
+    size: Number.isFinite(size) && size > 0 ? size : 0,
+    uploadedAt: file.uploadedAt || file.uploadDate || null,
+    datetime: file.datetime || '',
+    type: file.type || file.docType || '',
+    note: file.note || ''
+  };
+}
+
+function normalizeFileId(value) {
+  if (!value) return '';
+  if (typeof value === 'string' || typeof value === 'number') return String(value).trim();
+  if (value && typeof value.toHexString === 'function') return String(value.toHexString()).trim();
+  if (value && typeof value === 'object') {
+    if (value.$oid) return String(value.$oid).trim();
+    if (value._id) return normalizeFileId(value._id);
+    if (value.id) return normalizeFileId(value.id);
+    if (value.fileId) return normalizeFileId(value.fileId);
+  }
+  try {
+    return String(value).trim();
+  } catch (_) {
+    return '';
+  }
+}
+
+function sanitizeSnapshotFiles(snapshot = {}) {
+  if (!snapshot || typeof snapshot !== 'object') return snapshot;
+  if (!Array.isArray(snapshot.files)) return snapshot;
+  return {
+    ...snapshot,
+    files: snapshot.files
+      .map((entry) => sanitizeSnapshotFileEntry(entry))
+      .filter((entry) => entry && (entry.fileId || entry.name))
+  };
+}
+
 function applyDraftPayload(target, payload = {}, fallback = {}) {
   const doc = target || {};
   const incoming = payload || {};
@@ -104,6 +152,7 @@ function applyDraftPayload(target, payload = {}, fallback = {}) {
       ...((base && base.formSnapshotJson) || {}),
       ...((incoming && incoming.formSnapshotJson) || {})
     };
+    doc.formSnapshotJson = sanitizeSnapshotFiles(doc.formSnapshotJson);
     if (typeof doc.markModified === 'function') {
       doc.markModified('formSnapshotJson');
     }
