@@ -357,7 +357,7 @@ exports.submit = async (req, res, next) => {
     const proposal = await service.submitProposal(req.params.id, user, {
       requestOrigin: resolveRequestOrigin(req)
     });
-    return jsonResponse(res, { success: true, message: 'Proposal submitted', data: proposal });
+    return jsonResponse(res, { success: true, message: 'Proposal sent for collaboration confirmation', data: proposal });
   } catch (err) {
     next(err);
   }

@@ -2,6 +2,7 @@
 
 module.exports = {
   DRAFT: 'draft',
+  PENDING_CONFIRM: 'pending_confirm',
   SUBMITTED: 'submitted',
   FACULTY_REVIEW_PENDING: 'faculty_review_pending',
   FACULTY_APPROVED: 'faculty_approved',

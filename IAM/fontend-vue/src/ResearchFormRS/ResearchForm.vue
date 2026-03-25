@@ -313,7 +313,7 @@
             <div v-if="showSubmitButton" class="px-3 py-2 rounded text-success fw-bold d-flex align-items-center"
               style="background-color: #d1e7dd; border: 1px solid #badbcc;">
               <i class="cil-check-circle me-2"></i>
-              ยื่นโครงการวิจัยแล้ว
+              {{ currentStatus === 'pending_confirm' ? 'ส่งขอความยินยอมแล้ว' : 'ยื่นโครงการวิจัยแล้ว' }}
             </div>
 
             <button
@@ -767,6 +767,7 @@ import Service, { instance as axios } from '@/service/api'
 const ACTIVE_DRAFT_STORAGE_KEY = 'research_form_active_draft_id'
 const FEEDBACK_SECTION_PROGRESS_STORAGE_PREFIX = 'research_form_feedback_section_progress'
 const FEEDBACK_SECTION_BASELINE_STORAGE_PREFIX = 'research_form_feedback_section_baseline'
+const SUBMIT_SUCCESS_PENDING_STORAGE_PREFIX = 'research_form_submit_success_pending'
 const BASE_MEETING_START_TIME = '06:00'
 
 const ADMIN_ALLOWED_TRANSITIONS = {
@@ -785,6 +786,7 @@ const ADMIN_ALLOWED_TRANSITIONS = {
 
 const ADMIN_STATUS_LABELS = {
   draft: 'แบบร่าง',
+  pending_confirm: 'รอยืนยันผู้ร่วมโครงการ',
   submitted: 'ยื่นแล้ว',
   faculty_review_pending: 'รอประธานพิจารณา',
   faculty_approved: 'ประธานอนุมัติ',
@@ -803,6 +805,7 @@ const ADMIN_STATUS_LABELS = {
 
 const ADMIN_STATUS_COLORS = {
   draft: 'secondary',
+  pending_confirm: 'warning',
   submitted: 'info',
   faculty_review_pending: 'warning',
   faculty_approved: 'primary',
@@ -1527,6 +1530,48 @@ export default {
           window.sessionStorage.removeItem(ACTIVE_DRAFT_STORAGE_KEY)
         }
       } catch (_) { void _ }
+    },
+    submitSuccessPendingStorageKey (proposalId = this.viewProposalId) {
+      const normalizedProposalId = String(proposalId || '').trim()
+      if (!normalizedProposalId) return ''
+      return `${SUBMIT_SUCCESS_PENDING_STORAGE_PREFIX}:${normalizedProposalId}`
+    },
+    setSubmitSuccessPendingFlag (proposalId, enabled = true) {
+      if (typeof window === 'undefined' || !window.localStorage) return
+      const storageKey = this.submitSuccessPendingStorageKey(proposalId)
+      if (!storageKey) return
+      try {
+        if (enabled) {
+          window.localStorage.setItem(storageKey, '1')
+        } else {
+          window.localStorage.removeItem(storageKey)
+        }
+      } catch (_) { void _ }
+    },
+    consumeSubmitSuccessPendingFlag (proposalId) {
+      if (typeof window === 'undefined' || !window.localStorage) return false
+      const storageKey = this.submitSuccessPendingStorageKey(proposalId)
+      if (!storageKey) return false
+      try {
+        const raw = window.localStorage.getItem(storageKey)
+        if (raw === '1') {
+          window.localStorage.removeItem(storageKey)
+          return true
+        }
+      } catch (_) { void _ }
+      return false
+    },
+    async maybeShowSubmittedSuccessAlert (proposalId, currentStatus) {
+      if (this.isAdminView) return
+      if (String(currentStatus || '').trim().toLowerCase() !== 'submitted') return
+      if (!this.consumeSubmitSuccessPendingFlag(proposalId)) return
+
+      await this.showAlert({
+        title: 'สำเร็จ!',
+        text: 'ยื่นโครงการเรียบร้อยแล้ว',
+        icon: 'success',
+        confirmButtonText: 'ตกลง'
+      })
     },
     feedbackSectionProgressStorageKey (proposalId = this.viewProposalId) {
       const normalizedProposalId = String(proposalId || '').trim()
@@ -2421,6 +2466,7 @@ export default {
       }
     },
     decisionStatusLabel (status) {
+      if (status === 'pending_confirm') return 'รอยืนยันผู้ร่วมโครงการ'
       if (status === 'revision_requested') return 'ขอแก้ไขเพิ่มเติม'
       if (status === 'approved') return 'อนุมัติ'
       if (status === 'rejected') return 'ไม่อนุมัติ'
@@ -4126,8 +4172,10 @@ export default {
           this.setStoredDraftId('')
         }
 
+        await this.maybeShowSubmittedSuccessAlert(proposal._id || proposalId, proposal.currentStatus)
+
         const nonEditableStatuses = [
-          'submitted', 'faculty_review_pending', 'faculty_approved',
+          'pending_confirm', 'submitted', 'faculty_review_pending', 'faculty_approved',
           'office_received', 'document_checking', 'assigned_to_committee',
           'under_review', 'meeting_completed', 'resubmitted', 'second_round_review',
           'approved', 'rejected', 'announced'
@@ -4321,15 +4369,16 @@ export default {
       }
 
       this.showSubmitButton = true;
-      this.currentStatus = 'submitted';
+      this.currentStatus = 'pending_confirm';
       this.isReadOnly = true;
       try {
         const payload = this.normalizeApiPayload()
+        let submitRes = null
         // Avoid creating a duplicate project: if draft already exists, update + submit the same record.
         if (this.viewProposalId) {
           await Service.proposal.updateDraft(this.viewProposalId, payload)
           await this.flushPendingFormFiles()
-          await Service.proposal.submit(this.viewProposalId)
+          submitRes = await Service.proposal.submit(this.viewProposalId)
         } else {
           const createRes = await Service.proposal.create(payload)
           const created = createRes && createRes.data && createRes.data.data ? createRes.data.data : null
@@ -4339,14 +4388,27 @@ export default {
             this.viewProposalId = proposalId
             this.syncRouteProposalId(proposalId)
             await this.flushPendingFormFiles()
-            await Service.proposal.submit(proposalId)
+            submitRes = await Service.proposal.submit(proposalId)
           }
+        }
+
+        const submitted = submitRes && submitRes.data && submitRes.data.data ? submitRes.data.data : null
+        const nextStatus = submitted && submitted.currentStatus
+          ? String(submitted.currentStatus)
+          : 'pending_confirm'
+
+        this.currentStatus = nextStatus
+        this.isReadOnly = nextStatus !== 'draft'
+        this.showSubmitButton = nextStatus === 'pending_confirm' || nextStatus === 'submitted'
+        const submittedProposalId = (submitted && (submitted._id || submitted.id)) || this.viewProposalId
+        if (submittedProposalId && ['pending_confirm', 'submitted'].includes(String(nextStatus || '').toLowerCase())) {
+          this.setSubmitSuccessPendingFlag(submittedProposalId, true)
         }
 
         this.setStoredDraftId('')
         await this.showAlert({
-          title: 'สำเร็จ!',
-          text: 'ยื่นโครงการเรียบร้อยแล้ว',
+          title: 'ส่งคำขอเรียบร้อย',
+          text: 'รอการยืนยันจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
           icon: 'success',
           confirmButtonText: 'ตกลง'
         })

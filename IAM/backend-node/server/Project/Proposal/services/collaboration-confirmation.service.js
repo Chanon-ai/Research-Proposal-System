@@ -2,8 +2,11 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
 const Proposal = require('../models/Proposal');
+const ProposalStatusLog = require('../models/ProposalStatusLog');
 const Notification = require('../models/Notification');
 const CollaborationConfirmation = require('../models/CollaborationConfirmation');
+const User = require('../../Auth/models/User');
+const STATUS = require('../constants/proposal-status');
 const systemSettingService = require('../../settings/service/system-setting');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -290,9 +293,9 @@ async function issueCollaborationConfirmations({ proposalId, invitedByUserId = n
     : {};
   const participants = extractParticipants(snapshot);
 
+  // Start a fresh confirmation cycle for this proposal.
   await CollaborationConfirmation.deleteMany({
-    proposalId: proposal._id,
-    status: 'pending'
+    proposalId: proposal._id
   });
 
   const proposalPreview = buildProposalPreview(proposal);
@@ -553,14 +556,18 @@ async function applySignatureToProposalDocument({
   await proposal.save();
 }
 
-async function notifyProposalOwnerOnDecision({ proposal, confirmation, status }) {
+async function notifyProposalOwnerOnDecision({ proposal, confirmation, status, reopenedForRevision = false }) {
   const ownerId = proposal && proposal.applicantUserId ? proposal.applicantUserId : null;
   if (!ownerId) return;
 
   const actorName = asString(confirmation.participantName, confirmation.participantEmail || 'Participant');
   const actionLabel = status === 'accepted' ? 'accepted' : 'rejected';
-  const title = `Collaboration confirmation ${actionLabel}`;
-  const message = `${actorName} has ${actionLabel} participation for proposal ${asString(proposal.proposalCode, '-')}.`;
+  const title = reopenedForRevision
+    ? 'Collaboration rejected, proposal reopened for edits'
+    : `Collaboration confirmation ${actionLabel}`;
+  const message = reopenedForRevision
+    ? `${actorName} has rejected participation for proposal ${asString(proposal.proposalCode, '-')}. Proposal status is now draft so the project leader can edit team members and submit again.`
+    : `${actorName} has ${actionLabel} participation for proposal ${asString(proposal.proposalCode, '-')}.`;
 
   await Notification.create({
     userId: ownerId,
@@ -573,11 +580,139 @@ async function notifyProposalOwnerOnDecision({ proposal, confirmation, status })
       confirmationId: String(confirmation._id),
       participantType: confirmation.participantType,
       participantName: actorName,
-      status
+      status,
+      reopenedForRevision: Boolean(reopenedForRevision)
     },
     isRead: false,
     sentAt: new Date()
   });
+}
+
+async function notifyAdminsOnSubmittedProposal(proposal) {
+  if (!proposal) return;
+  const admins = await User.find({ role: 'admin', isActive: true }).select('_id');
+  if (!admins.length) return;
+
+  await Notification.insertMany(
+    admins.map(admin => ({
+      userId: admin._id,
+      eventKey: 'status_changed',
+      channel: 'in_app',
+      title: 'มีข้อเสนอโครงการใหม่',
+      message: `โครงการ "${proposal.projectTitleTh}" ได้รับการยื่นเข้าระบบแล้ว รหัส: ${proposal.proposalCode}`,
+      proposalId: proposal._id,
+      isRead: false,
+      sentAt: new Date(),
+      payload: {}
+    }))
+  );
+}
+
+async function promotePendingConfirmToSubmittedWhenAllAccepted({ proposalId, changedBy = null } = {}) {
+  if (!proposalId) return { promoted: false, proposal: null };
+
+  const [total, nonAccepted] = await Promise.all([
+    CollaborationConfirmation.countDocuments({ proposalId }),
+    CollaborationConfirmation.countDocuments({ proposalId, status: { $ne: 'accepted' } })
+  ]);
+
+  if (total <= 0 || nonAccepted > 0) {
+    const proposal = await Proposal.findById(proposalId);
+    return { promoted: false, proposal };
+  }
+
+  const proposal = await Proposal.findById(proposalId);
+  if (!proposal) return { promoted: false, proposal: null };
+  if (String(proposal.currentStatus || '').toLowerCase() !== STATUS.PENDING_CONFIRM) {
+    return { promoted: false, proposal };
+  }
+
+  const fromStatus = proposal.currentStatus;
+  const now = new Date();
+  const actor = changedBy || proposal.updatedBy || proposal.createdBy || proposal.applicantUserId || null;
+  const snapshot = proposal.formSnapshotJson && typeof proposal.formSnapshotJson === 'object'
+    ? { ...proposal.formSnapshotJson }
+    : {};
+  snapshot.collaborationNeedsResubmission = false;
+  snapshot.collaborationConfirmedAt = now;
+
+  proposal.currentStatus = STATUS.SUBMITTED;
+  proposal.submittedAt = proposal.submittedAt || now;
+  proposal.updatedBy = actor || proposal.updatedBy || null;
+  proposal.formSnapshotJson = snapshot;
+  proposal.markModified('formSnapshotJson');
+  await proposal.save();
+
+  if (actor) {
+    await ProposalStatusLog.create({
+      proposalId: proposal._id,
+      fromStatus,
+      toStatus: STATUS.SUBMITTED,
+      actionKey: 'collaboration_confirmed_submit',
+      remark: 'All collaborators/advisors accepted participation',
+      roundNo: proposal.currentRound || 1,
+      changedBy: actor
+    });
+  }
+
+  await notifyAdminsOnSubmittedProposal(proposal);
+  return { promoted: true, proposal };
+}
+
+async function reopenProposalForTeamRevisionOnRejection({ proposal, confirmation }) {
+  if (!proposal || typeof proposal !== 'object') return { reopened: false, proposal };
+  if (!confirmation || typeof confirmation !== 'object') return { reopened: false, proposal };
+
+  const fromStatus = asString(proposal.currentStatus).toLowerCase();
+  if (![STATUS.PENDING_CONFIRM, STATUS.SUBMITTED].includes(fromStatus)) {
+    return { reopened: false, proposal };
+  }
+
+  const ownerId = proposal.applicantUserId || null;
+  const changedBy = ownerId || confirmation.invitedByUserId || proposal.updatedBy || proposal.createdBy || null;
+  const respondedAt = confirmation.respondedAt || new Date();
+  const rejectionMeta = {
+    confirmationId: confirmation._id ? String(confirmation._id) : '',
+    participantType: asString(confirmation.participantType),
+    participantIndex: Number(confirmation.participantIndex || 0),
+    participantName: asString(confirmation.participantName),
+    participantEmail: asString(confirmation.participantEmail),
+    respondedAt
+  };
+
+  const snapshot = proposal.formSnapshotJson && typeof proposal.formSnapshotJson === 'object'
+    ? { ...proposal.formSnapshotJson }
+    : {};
+  const rejectionHistory = Array.isArray(snapshot.collaborationRejectionHistory)
+    ? [...snapshot.collaborationRejectionHistory]
+    : [];
+  rejectionHistory.push(rejectionMeta);
+
+  proposal.currentStatus = STATUS.DRAFT;
+  proposal.requiresRevision = true;
+  proposal.updatedBy = changedBy || proposal.updatedBy || null;
+  proposal.formSnapshotJson = {
+    ...snapshot,
+    collaborationNeedsResubmission: true,
+    collaborationLatestRejection: rejectionMeta,
+    collaborationRejectionHistory: rejectionHistory.slice(-20)
+  };
+  proposal.markModified('formSnapshotJson');
+  await proposal.save();
+
+  if (changedBy) {
+    await ProposalStatusLog.create({
+      proposalId: proposal._id,
+      fromStatus,
+      toStatus: STATUS.DRAFT,
+      actionKey: 'collaboration_rejected_reopen',
+      remark: `Collaboration rejected by ${rejectionMeta.participantName || rejectionMeta.participantEmail || '-'}`,
+      roundNo: proposal.currentRound || 1,
+      changedBy
+    });
+  }
+
+  return { reopened: true, proposal };
 }
 
 async function respondCollaborationConfirmation({
@@ -618,19 +753,43 @@ async function respondCollaborationConfirmation({
 
   await syncProposalConfirmationSummary(confirmation.proposalId);
 
-  const proposal = await Proposal.findById(confirmation.proposalId);
+  let proposal = await Proposal.findById(confirmation.proposalId);
+  let promotedToSubmitted = false;
+  if (nextStatus === 'accepted') {
+    const promoteResult = await promotePendingConfirmToSubmittedWhenAllAccepted({
+      proposalId: confirmation.proposalId,
+      changedBy: confirmation.sourceUserId || confirmation.invitedByUserId || null
+    });
+    promotedToSubmitted = Boolean(promoteResult && promoteResult.promoted);
+    proposal = promoteResult && promoteResult.proposal ? promoteResult.proposal : proposal;
+  }
+
+  let reopenedForRevision = false;
+  if (proposal && nextStatus === 'rejected') {
+    const reopenResult = await reopenProposalForTeamRevisionOnRejection({
+      proposal,
+      confirmation
+    });
+    reopenedForRevision = Boolean(reopenResult && reopenResult.reopened);
+    proposal = reopenResult && reopenResult.proposal ? reopenResult.proposal : proposal;
+  }
+
   if (proposal) {
     await notifyProposalOwnerOnDecision({
       proposal,
       confirmation,
-      status: nextStatus
+      status: nextStatus,
+      reopenedForRevision
     });
   }
 
   return {
     confirmationId: String(confirmation._id),
     status: nextStatus,
-    respondedAt: confirmation.respondedAt
+    respondedAt: confirmation.respondedAt,
+    proposalStatus: proposal && proposal.currentStatus ? String(proposal.currentStatus) : '',
+    reopenedForRevision,
+    promotedToSubmitted
   };
 }
 

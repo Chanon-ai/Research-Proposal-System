@@ -24,6 +24,7 @@ export default {
       STATUS_LABEL: {
         researcher: {
           draft: "ร่างเอกสาร",
+          pending_confirm: "Pending confirmation",
           submitted: "ส่งเอกสารแล้ว",
           admin_review: "เจ้าหน้าที่กำลังตรวจสอบ",
           committee_review: "อยู่ระหว่างพิจารณา",
@@ -41,6 +42,7 @@ export default {
 
         admin: {
           draft: "Draft",
+          pending_confirm: "Pending Confirmation",
           submitted: "Submitted",
           admin_review: "Admin reviewing",
           committee_review: "Committee reviewing",
@@ -52,6 +54,7 @@ export default {
 
       STATUS_COLOR: {
         draft: "secondary",
+        pending_confirm: "warning",
         submitted: "primary",
         admin_review: "info",
         committee_review: "warning",

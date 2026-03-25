@@ -15,7 +15,7 @@ const collaborationConfirmationService = require('./collaboration-confirmation.s
 
 // allowed status transitions map
 const ALLOWED_TRANSITIONS = {
-  [STATUS.DRAFT]: [STATUS.SUBMITTED],
+  [STATUS.DRAFT]: [STATUS.PENDING_CONFIRM],
   [STATUS.SUBMITTED]: [STATUS.FACULTY_REVIEW_PENDING],
   [STATUS.FACULTY_REVIEW_PENDING]: [STATUS.FACULTY_APPROVED, STATUS.REVISION_REQUESTED],
   [STATUS.FACULTY_APPROVED]: [STATUS.OFFICE_RECEIVED],
@@ -371,45 +371,33 @@ async function submitProposal(id, user, options = {}) {
     throw new Error('Only drafts can be submitted');
   }
   const fromStatus = proposal.currentStatus;
-  proposal.currentStatus = STATUS.SUBMITTED;
-  proposal.submittedAt = new Date();
+  proposal.currentStatus = STATUS.PENDING_CONFIRM;
+  proposal.updatedBy = user && user._id ? user._id : proposal.updatedBy;
+  const snapshot = proposal.formSnapshotJson && typeof proposal.formSnapshotJson === 'object'
+    ? { ...proposal.formSnapshotJson }
+    : {};
+  snapshot.collaborationNeedsResubmission = false;
+  proposal.formSnapshotJson = snapshot;
+  proposal.markModified('formSnapshotJson');
   await proposal.save();
-
-  // notify all active admins when a researcher submits a proposal
-  const admins = await User.find({ role: 'admin', isActive: true }).select('_id');
-  if (admins.length > 0) {
-    await Notification.insertMany(
-      admins.map(admin => ({
-        userId: admin._id,
-        eventKey: 'status_changed',
-        channel: 'in_app',
-        title: 'มีข้อเสนอโครงการใหม่',
-        message: `โครงการ "${proposal.projectTitleTh}" ได้รับการยื่นเข้าระบบแล้ว รหัส: ${proposal.proposalCode}`,
-        proposalId: proposal._id,
-        isRead: false,
-        sentAt: new Date(),
-        payload: {}
-      }))
-    );
-  }
 
   await createStatusLog({
     proposalId: proposal._id,
     fromStatus,
-    toStatus: STATUS.SUBMITTED,
+    toStatus: STATUS.PENDING_CONFIRM,
     actionKey: 'submit',
     remark: null,
     roundNo: null,
     changedBy: user._id
   });
-  // notify faculty chair TODO: implement proper user selection
+
   await createNotification({
     userId: user._id,
     proposalId: proposal._id,
     channel: 'in_app',
-    eventKey: 'proposal.submitted',
-    title: 'New proposal submitted',
-    message: `Proposal ${proposal.proposalCode || proposal._id} was submitted`,
+    eventKey: 'proposal.pending_confirm',
+    title: 'รอการยืนยันจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
+    message: `โครงการ ${proposal.proposalCode || proposal._id} รอการยืนยันจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ`,
     payload: {}
   });
 
@@ -423,9 +411,8 @@ async function submitProposal(id, user, options = {}) {
     console.error('[Proposal.submit] Collaboration confirmation dispatch failed:', err && err.message ? err.message : err);
   }
 
-  return proposal;
+  return await Proposal.findById(proposal._id);
 }
-
 async function changeProposalStatus(id, toStatus, remark, user) {
   const proposal = await Proposal.findById(id);
   if (!proposal) throw new Error('Proposal not found');
@@ -433,6 +420,11 @@ async function changeProposalStatus(id, toStatus, remark, user) {
   const workflowPolicy = await systemSettingService.getWorkflowApprovalPolicy();
   const currentRound = normalizeRoundNo(proposal.currentRound, 1);
   const fromStatus = proposal.currentStatus;
+
+  if (fromStatus === STATUS.PENDING_CONFIRM) {
+    throw new Error('Cannot change status while proposal is waiting for collaboration confirmations');
+  }
+
   let allowed = ALLOWED_TRANSITIONS[fromStatus] || [];
   const submittedReviewCount = await ProposalReview.countDocuments({
     proposalId: proposal._id,
@@ -496,6 +488,9 @@ async function changeProposalStatus(id, toStatus, remark, user) {
   const now = new Date();
   // Terminal states (approved, rejected, announced) should generally not move backward unless explicitly allowed by business rules
   switch (toStatus) {
+    case STATUS.SUBMITTED:
+      updates.submittedAt = proposal.submittedAt || now;
+      break;
     case STATUS.FACULTY_APPROVED:
       updates.facultyApprovedAt = now;
       break;
@@ -1074,3 +1069,5 @@ module.exports = {
   createStatusLog,
   createNotification
 };
+
+

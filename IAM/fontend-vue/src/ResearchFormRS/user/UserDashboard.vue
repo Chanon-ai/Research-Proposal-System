@@ -313,6 +313,7 @@ export default {
       filterGroups: {
         draft: ['draft'],
         submitted: [
+          'pending_confirm',
           'submitted',
           'faculty_review_pending',
           'faculty_approved',
@@ -329,7 +330,8 @@ export default {
         rejected: ['rejected'],
       },
       workflowSteps: [
-        { key: 'draft', label: 'แบบร่าง', step: 1 },
+        { key: 'draft', label: 'Draft', step: 1 },
+        { key: 'pending_confirm', label: 'Pending confirmation', step: 2 },
         { key: 'submitted', label: 'ยื่นโครงการแล้ว', step: 2 },
         { key: 'faculty_review_pending', label: 'รอประธานพิจารณา', step: 3 },
         { key: 'faculty_approved', label: 'ประธานอนุมัติ', step: 4 },
@@ -389,6 +391,7 @@ export default {
       return {
         draft: all.filter(p => p.currentStatus === 'draft').length,
         submitted: all.filter(p => [
+          'pending_confirm',
           'submitted',
           'faculty_review_pending',
           'faculty_approved',
@@ -417,6 +420,7 @@ export default {
     filterLabel() {
       const labels = {
         draft: this.$t('status.draft'),
+        pending_confirm: 'Pending confirmation',
         submitted: this.$t('status.inProgress'),
         revision: this.$t('status.revision'),
         approved: this.$t('status.approved'),
@@ -556,6 +560,7 @@ export default {
       if (status === 'revision_requested') return 'NEED_REVISION';
       if (status === 'approved') return 'APPROVED';
       if (status === 'rejected') return 'REJECTED';
+      if (status === 'pending_confirm') return 'SUBMITTED';
       if (status === 'submitted') return 'SUBMITTED';
       if (status === 'announced') return 'APPROVED';
       return 'IN_REVIEW';
@@ -586,8 +591,9 @@ export default {
     getStatusColor(status) {
       const stage = this.inferStage({ currentStatus: status });
       return {
-        DRAFT: 'secondary',
-        SUBMITTED: 'info',
+        draft: '',
+        pending_confirm: 'Step 2/10 - Waiting for collaborator confirmations',
+        submitted: 'info',
         NEED_REVISION: 'warning',
         IN_REVIEW: 'primary',
         APPROVED: 'success',
@@ -617,8 +623,9 @@ export default {
     isAnimatedStatus(status) {
       const key = String(status || '').toLowerCase();
       return [
+        'pending_confirm',
         'submitted',
-        'faculty_review_pending',
+          'faculty_review_pending',
         'under_review',
         'document_checking',
         'assigned_to_committee'
@@ -628,7 +635,8 @@ export default {
     getProgressLabel(status) {
       const key = String(status || '').toLowerCase();
       const labels = {
-        draft: 'ขั้นที่ 1/10 — กำลังร่าง',
+        draft: 'Step 1/10 - Draft',
+        pending_confirm: 'Step 2/10 - Waiting for collaborator confirmations',
         submitted: 'ขั้นที่ 2/10 — ยื่นโครงการแล้ว',
         faculty_review_pending: 'ขั้นที่ 3/10 — รอประธานพิจารณา',
         faculty_approved: 'ขั้นที่ 4/10 — ประธานอนุมัติ',
@@ -659,8 +667,9 @@ export default {
     getSegmentWidth(segmentStatus, currentStatus) {
       const order = [
         'draft',
+        'pending_confirm',
         'submitted',
-        'faculty_review_pending',
+          'faculty_review_pending',
         'office_received',
         'document_checking',
         'assigned_to_committee',
@@ -1438,3 +1447,4 @@ body.c-dark-theme .clear-filter-btn:hover {
 }
 
 </style>
+

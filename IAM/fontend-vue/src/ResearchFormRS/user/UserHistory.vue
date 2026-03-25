@@ -162,7 +162,8 @@ export default {
       if (status === 'approved') return 'อนุมัติ'
       if (status === 'rejected') return 'ไม่อนุมัติ'
       if (status === 'revision_requested') return 'รอแก้ไข'
-      if (status === 'draft') return 'รอดำเนินการ'
+      if (status === 'draft') return this.$t ? this.$t('status.draft') : 'Draft'
+      if (status === 'pending_confirm') return 'Pending confirmation'
       if (status === 'submitted') return 'รอดำเนินการ'
       return 'กำลังพิจารณา'
     },
@@ -171,13 +172,13 @@ export default {
       if (status === 'approved') return 's-approved'
       if (status === 'rejected') return 's-rejected'
       if (status === 'revision_requested') return 's-fix'
-      if (status === 'draft' || status === 'submitted') return 's-waiting'
+      if (status === 'draft' || status === 'pending_confirm' || status === 'submitted') return 's-waiting'
       return 's-reviewing'
     },
 
     isReadOnlyStatus (status) {
       return [
-        'submitted', 'faculty_review_pending', 'faculty_approved',
+        'pending_confirm', 'submitted', 'faculty_review_pending', 'faculty_approved',
         'office_received', 'document_checking', 'assigned_to_committee',
         'under_review', 'meeting_completed', 'approved', 'rejected', 'announced'
       ].includes(String(status || '').toLowerCase())
@@ -349,3 +350,4 @@ export default {
 }
 
 </style>
+
