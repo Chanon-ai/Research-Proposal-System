@@ -38,12 +38,83 @@
   },
   "status": {
     "draft": "แบบร่าง",
-    "inProgress": "กำลังดำเนินการ",
-    "revision": "ขอแก้ไข",
-    "approved": "อนุมัติแล้ว",
+    "submitted": "ยื่นแล้ว",
+    "faculty_review_pending": "รอประธานพิจารณา",
+    "faculty_approved": "ประธานอนุมัติ",
+    "office_received": "ส่วนบริหารรับแล้ว",
+    "document_checking": "ตรวจสอบเอกสาร",
+    "assigned_to_committee": "มอบหมายกรรมการแล้ว",
+    "under_review": "กรรมการได้ให้ความเห็นแล้ว",
+    "meeting_completed": "ประชุมเสร็จแล้ว",
+    "revision_requested": "ขอแก้ไข",
+    "resubmitted": "ส่งแก้ไขแล้ว",
+    "second_round_review": "พิจารณารอบ 2",
+    "approved": "อนุมัติ",
     "rejected": "ปฏิเสธ",
+    "announced": "ประกาศผลแล้ว",
     "allProjects": "โครงการทั้งหมด",
     "filteredBy": "กรองตาม: {label}",
     "itemsCount": "{count} รายการ"
+  }
+
+  ,"admin": {
+    "dashboard": {
+      "title": "แดชบอร์ดผู้ดูแลระบบ",
+      "subtitle": "ภาพรวมข้อเสนอโครงการทั้งระบบ",
+      "loadingSummary": "กำลังโหลดสรุปสถานะ...",
+      "loadingTable": "กำลังโหลดรายการโครงการ...",
+      "listTitle": "รายการข้อเสนอโครงการ"
+    },
+    "table": {
+      "proposalCode": "Proposal Code",
+      "projectTitleTh": "ชื่อโครงการ (TH)",
+      "fundingType": "ประเภททุน",
+      "currentStatus": "สถานะ",
+      "currentRound": "รอบ",
+      "updatedAt": "อัปเดต",
+      "actions": "การดำเนินการ",
+      "noItems": "ไม่พบข้อมูลโครงการ",
+      "noResults": "ไม่พบข้อมูลโครงการ",
+      "perPage": "แสดงต่อหน้า",
+      "itemsSuffix": "รายการ",
+      "roundLabel": "รอบ {n}"
+    },
+    "actions": {
+      "reset": "รีเซ็ต",
+      "viewDetail": "ดูรายละเอียด",
+      "cancel": "ยกเลิก",
+      "saving": "กำลังบันทึก...",
+      "confirm": "ยืนยัน"
+    },
+    "changeStatus": {
+      "title": "เปลี่ยนสถานะโครงการ",
+      "proposalCode": "รหัสโครงการ:",
+      "projectTitle": "ชื่อโครงการ:",
+      "currentStatus": "สถานะปัจจุบัน:",
+      "remarkLabel": "หมายเหตุ / เหตุผล",
+      "selectTo": "เปลี่ยนสถานะเป็น",
+      "remarkPlaceholder": "ระบุหมายเหตุเพิ่มเติม (ไม่บังคับ)"
+    },
+    "assignCommittee": {
+      "title": "มอบหมายกรรมการ",
+      "proposalCode": "รหัสโครงการ:",
+      "projectTitle": "ชื่อโครงการ:",
+      "selectedCount": "คณะกรรมการที่เลือก ({n})",
+      "minRequired": "ต้องมีกรรมการอย่างน้อย {n} คนตามนโยบายระบบ",
+      "noneSelected": "ยังไม่ได้เลือกคณะกรรมการ",
+      "filter": {
+        "recommended": "แนะนำ",
+        "all": "ทั้งหมด",
+        "department": "กรองตามหน่วยงาน"
+      },
+      "filterByDepartment": "กรองตามหน่วยงาน",
+      "searchLabel": "ค้นหากรรมการ (ชื่อ, อีเมล, สังกัด)",
+      "searchPlaceholder": "พิมพ์เพื่อค้นหา...",
+      "loadingUsers": "กำลังโหลดรายชื่อคณะกรรมการ...",
+      "loadError": "ไม่สามารถโหลดรายชื่อคณะกรรมการได้",
+      "noUsers": "ไม่พบรายชื่อกรรมการ",
+      "recommendedBadge": "แนะนำจากหน่วยงานโครงการ",
+      "note": "ตรวจสอบจำนวนขั้นต่ำตามนโยบายระบบก่อนยืนยัน"
+    }
   }
 }

@@ -1,13 +1,13 @@
 <template>
   <div class="admin-dashboard-page">
     <div class="mb-3">
-      <h2 class="mb-1">Admin Proposal Dashboard</h2>
-      <p class="text-muted mb-0">ภาพรวมข้อเสนอโครงการทั้งระบบ</p>
+      <h2 class="mb-1">{{ $t('admin.dashboard.title') }}</h2>
+      <p class="text-muted mb-0">{{ $t('admin.dashboard.subtitle') }}</p>
     </div>
 
     <div v-if="loadingSummary" class="text-center py-3">
       <CSpinner color="primary" size="sm" />
-      <small class="text-muted ml-2">กำลังโหลดสรุปสถานะ...</small>
+      <small class="text-muted ml-2">{{ $t('admin.dashboard.loadingSummary') }}</small>
     </div>
 
     <div v-else>
@@ -20,7 +20,7 @@
           >
             <div class="summary-card-bg" aria-hidden="true"></div>
             <div class="summary-card-content">
-              <small class="summary-label">{{ card.label }}</small>
+              <small class="summary-label">{{ $t(card.labelKey) }}</small>
               <div class="summary-number">{{ summary[card.status] || 0 }}</div>
             </div>
           </div>
@@ -36,7 +36,7 @@
           >
             <div class="summary-card-bg" aria-hidden="true"></div>
             <div class="summary-card-content">
-              <small class="summary-label">{{ card.label }}</small>
+              <small class="summary-label">{{ $t(card.labelKey) }}</small>
               <div class="summary-number">{{ summary[card.status] || 0 }}</div>
             </div>
           </div>
@@ -52,7 +52,7 @@
           >
             <div class="summary-card-bg" aria-hidden="true"></div>
             <div class="summary-card-content">
-              <small class="summary-label">{{ card.label }}</small>
+              <small class="summary-label">{{ $t(card.labelKey) }}</small>
               <div class="summary-number">{{ summary[card.status] || 0 }}</div>
             </div>
           </div>
@@ -65,7 +65,7 @@
         <CCardHeader class="mfu-dashboard-card-header">
           <div class="mfu-dashboard-card-header__row">
             <div class="mfu-dashboard-card-title">
-              รายการข้อเสนอโครงการ
+              {{ $t('admin.dashboard.listTitle') }}
               <CBadge class="ml-2 mfu-count-badge">{{ total }}</CBadge>
             </div>
             <div class="mfu-header-tools" aria-label="ตัวกรองตาราง">
@@ -86,14 +86,14 @@
                 variant="outline"
                 class="mfu-reset-btn mfu-reset-btn--compact"
                 @click="onReset"
-              >รีเซ็ต</CButton>
+              >{{ $t('admin.actions.reset') }}</CButton>
             </div>
           </div>
         </CCardHeader>
         <CCardBody class="mfu-card-body-tight">
           <div v-if="loadingTable" class="text-center py-5">
             <CSpinner color="primary" />
-            <div class="mt-2 text-muted">กำลังโหลดรายการโครงการ...</div>
+            <div class="mt-2 text-muted">{{ $t('admin.dashboard.loadingTable') }}</div>
           </div>
 
           <div v-else>
@@ -104,7 +104,7 @@
                 hover
                 striped
                 :items-per-page="limit"
-                :no-items-view="{ noItems: 'ไม่พบข้อมูลโครงการ', noResults: 'ไม่พบข้อมูลโครงการ' }"
+                :no-items-view="{ noItems: $t('admin.table.noItems'), noResults: $t('admin.table.noResults') }"
               >
                 <template #index="{ item }">
                   <td>{{ item.index }}</td>
@@ -130,7 +130,7 @@
                 </template>
 
                 <template #currentRound="{ item }">
-                  <td>{{ item.currentRound ? `รอบ ${item.currentRound}` : '-' }}</td>
+                  <td>{{ item.currentRound ? $t('admin.table.roundLabel', { n: item.currentRound }) : '-' }}</td>
                 </template>
 
                 <template #updatedAt="{ item }">
@@ -140,7 +140,7 @@
                 <template #actions="{ item }">
                   <td class="text-nowrap">
                     <div class="admin-actions">
-                      <CButton color="primary" variant="outline" size="sm" class="admin-action-btn" @click="viewDetail(item)">ดูรายละเอียด</CButton>
+                      <CButton color="primary" variant="outline" size="sm" class="admin-action-btn" @click="viewDetail(item)">{{ $t('admin.actions.viewDetail') }}</CButton>
                     </div>
                   </td>
                 </template>
@@ -148,12 +148,12 @@
             </div>
 
             <div class="mfu-table-footer">
-              <div class="mfu-table-footer__left">
-                <span class="mfu-table-footer__label">แสดงต่อหน้า</span>
-                <select v-model.number="limit" class="form-control form-control-sm mfu-per-page-select" aria-label="แสดงต่อหน้า" @change="onLimitChange">
+                <div class="mfu-table-footer__left">
+                <span class="mfu-table-footer__label">{{ $t('admin.table.perPage') }}</span>
+                <select v-model.number="limit" class="form-control form-control-sm mfu-per-page-select" :aria-label="$t('admin.table.perPage')" @change="onLimitChange">
                   <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
                 </select>
-                <span class="mfu-table-footer__suffix">รายการ</span>
+                <span class="mfu-table-footer__suffix">{{ $t('admin.table.itemsSuffix') }}</span>
               </div>
               <div class="mfu-table-footer__right">
                 <CPagination
@@ -178,16 +178,16 @@
       centered
       size="lg"
       scrollable
-      title="เปลี่ยนสถานะโครงการ"
+      :title="$t('admin.changeStatus.title')"
     >
       <template #body-wrapper>
         <div v-if="selectedProposal" class="status-modal-body" style="padding: 20px 24px 8px; max-height: calc(100vh - 220px); overflow-y: auto;">
           <div class="status-modal-proposal">
-            <div class="status-modal-meta"><strong>รหัสโครงการ:</strong> {{ selectedProposal.proposalCode || '-' }}</div>
-            <div class="status-modal-meta"><strong>ชื่อโครงการ:</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
+            <div class="status-modal-meta"><strong>{{ $t('admin.changeStatus.proposalCode') }}</strong> {{ selectedProposal.proposalCode || '-' }}</div>
+            <div class="status-modal-meta"><strong>{{ $t('admin.changeStatus.projectTitle') }}</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
           </div>
           <div class="status-modal-current">
-            <strong>สถานะปัจจุบัน:</strong>
+            <strong>{{ $t('admin.changeStatus.currentStatus') }}</strong>
             <CBadge :color="getStatusBadgeColor(selectedProposal.currentStatus)" class="ml-1">
               {{ getStatusLabel(selectedProposal.currentStatus) }}
             </CBadge>
@@ -195,27 +195,27 @@
 
           <CSelect
             class="status-modal-select"
-            label="เปลี่ยนสถานะเป็น"
+            :label="$t('admin.changeStatus.selectTo')"
             :value="newStatus"
             :options="nextStatusOptions"
             @change="onNewStatusChange"
           />
 
-          <label class="status-modal-remark-label">หมายเหตุ / เหตุผล</label>
+          <label class="status-modal-remark-label">{{ $t('admin.changeStatus.remarkLabel') }}</label>
           <textarea
             v-model="statusRemark"
             class="form-control"
             rows="3"
-            placeholder="ระบุหมายเหตุเพิ่มเติม (ไม่บังคับ)"
+            :placeholder="$t('admin.changeStatus.remarkPlaceholder')"
           />
         </div>
       </template>
 
       <template #footer-wrapper>
-        <div class="status-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
-          <CButton color="secondary" class="mr-2" @click="closeStatusModal">ยกเลิก</CButton>
+          <div class="status-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
+          <CButton color="secondary" class="mr-2" @click="closeStatusModal">{{ $t('admin.actions.cancel') }}</CButton>
           <CButton color="primary" :disabled="!newStatus || submittingStatus" @click="confirmChangeStatus">
-            {{ submittingStatus ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+            {{ submittingStatus ? $t('admin.actions.saving') : $t('admin.actions.confirm') }}
           </CButton>
         </div>
       </template>
@@ -227,20 +227,20 @@
       centered
       size="lg"
       scrollable
-      title="มอบหมายกรรมการ"
+      :title="$t('admin.assignCommittee.title')"
     >
       <template #body-wrapper>
-        <div v-if="selectedProposal" class="committee-modal-body" style="padding: 20px 24px 8px; max-height: calc(100vh - 220px); overflow-y: auto;">
+          <div v-if="selectedProposal" class="committee-modal-body" style="padding: 20px 24px 8px; max-height: calc(100vh - 220px); overflow-y: auto;">
           <div class="committee-modal-proposal">
-            <div class="committee-modal-meta"><strong>รหัสโครงการ:</strong> {{ selectedProposal.proposalCode || '-' }}</div>
-            <div class="committee-modal-meta"><strong>ชื่อโครงการ:</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
+            <div class="committee-modal-meta"><strong>{{ $t('admin.assignCommittee.proposalCode') }}</strong> {{ selectedProposal.proposalCode || '-' }}</div>
+            <div class="committee-modal-meta"><strong>{{ $t('admin.assignCommittee.projectTitle') }}</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
           </div>
 
           <div class="committee-selection-panel">
-            <div class="mb-2"><strong>คณะกรรมการที่เลือก ({{ selectedCommitteeIds.length }} คน)</strong></div>
-            <small class="text-muted d-block mb-2">ต้องมีกรรมการอย่างน้อย {{ requiredCommitteeCount }} คนตามนโยบายระบบ</small>
+            <div class="mb-2"><strong>{{ $t('admin.assignCommittee.selectedCount', { n: selectedCommitteeIds.length }) }}</strong></div>
+            <small class="text-muted d-block mb-2">{{ $t('admin.assignCommittee.minRequired', { n: requiredCommitteeCount }) }}</small>
             <div class="committee-selection-summary">
-            <span v-if="selectedCommitteeProfiles.length === 0" class="text-muted">ยังไม่ได้เลือกคณะกรรมการ</span>
+            <span v-if="selectedCommitteeProfiles.length === 0" class="text-muted">{{ $t('admin.assignCommittee.noneSelected') }}</span>
             <span
               v-for="u in selectedCommitteeProfiles"
               :key="`sel-${u._id}`"
@@ -262,7 +262,7 @@
 
           <div class="committee-filter-toolbar mb-3">
             <div class="mb-2"><strong>ตัวกรองกรรมการ</strong></div>
-            <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
+              <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
               <CButton
                 size="sm"
                 :color="committeeFilterMode === 'recommended' ? 'info' : 'secondary'"
@@ -270,7 +270,7 @@
                 :disabled="!hasRecommendedCommitteeUsers"
                 @click="setCommitteeFilterMode('recommended')"
               >
-                Recommended for this proposal
+                {{ $t('admin.assignCommittee.filter.recommended') }}
               </CButton>
               <CButton
                 size="sm"
@@ -278,7 +278,7 @@
                 :variant="committeeFilterMode === 'all' ? undefined : 'outline'"
                 @click="setCommitteeFilterMode('all')"
               >
-                All committees
+                {{ $t('admin.assignCommittee.filter.all') }}
               </CButton>
               <CButton
                 size="sm"
@@ -286,12 +286,12 @@
                 :variant="committeeFilterMode === 'department' ? undefined : 'outline'"
                 @click="setCommitteeFilterMode('department')"
               >
-                Filter by department
+                {{ $t('admin.assignCommittee.filter.department') }}
               </CButton>
             </div>
             <div class="mt-2">
               <CSelect
-                label="Filter by department"
+                :label="$t('admin.assignCommittee.filterByDepartment')"
                 :value="selectedCommitteeDepartment"
                 :options="committeeDepartmentOptions"
                 @change="onCommitteeDepartmentChange"
@@ -301,20 +301,20 @@
 
           <CInput
             class="committee-search-field"
-            label="ค้นหากรรมการ (ชื่อ, อีเมล, สังกัด)"
+            :label="$t('admin.assignCommittee.searchLabel')"
             v-model="committeeSearch"
-            placeholder="พิมพ์เพื่อค้นหา..."
+            :placeholder="$t('admin.assignCommittee.searchPlaceholder')"
           />
 
           <div v-if="committeeUsersLoading" class="text-center py-2">
             <CSpinner size="sm" color="primary" />
-            <small class="text-muted ml-2">กำลังโหลดรายชื่อคณะกรรมการ...</small>
+            <small class="text-muted ml-2">{{ $t('admin.assignCommittee.loadingUsers') }}</small>
           </div>
           <CAlert v-else-if="committeeUsersError" color="warning" show>
-            ไม่สามารถโหลดรายชื่อคณะกรรมการได้: {{ committeeUsersError }}
+            {{ $t('admin.assignCommittee.loadError') }}: {{ committeeUsersError }}
           </CAlert>
           <div v-else class="committee-user-list">
-            <div v-if="filteredCommitteeUsers.length === 0" class="text-muted py-2">ไม่พบรายชื่อกรรมการ</div>
+            <div v-if="filteredCommitteeUsers.length === 0" class="text-muted py-2">{{ $t('admin.assignCommittee.noUsers') }}</div>
             <label
               v-for="u in filteredCommitteeUsers"
               :key="u._id"
@@ -331,19 +331,19 @@
                 <div class="font-weight-bold">{{ u.fullName || '-' }}</div>
                 <div class="small text-muted">{{ u.email || '-' }}</div>
                 <div class="small text-muted">{{ u.department || '-' }}</div>
-                <div v-if="u.isRecommended" class="small text-info font-weight-bold">แนะนำจากหน่วยงานโครงการ</div>
+                <div v-if="u.isRecommended" class="small text-info font-weight-bold">{{ $t('admin.assignCommittee.recommendedBadge') }}</div>
               </div>
             </label>
           </div>
-          <small class="committee-modal-note text-muted">ตรวจสอบจำนวนขั้นต่ำตามนโยบายระบบก่อนยืนยัน</small>
+          <small class="committee-modal-note text-muted">{{ $t('admin.assignCommittee.note') }}</small>
         </div>
       </template>
 
       <template #footer-wrapper>
         <div class="committee-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
-          <CButton color="secondary" class="mr-2" @click="closeCommitteeModal">ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-2" @click="closeCommitteeModal">{{ $t('admin.actions.cancel') }}</CButton>
           <CButton color="success" :disabled="submittingCommittee || selectedCommitteeIds.length < requiredCommitteeCount" @click="confirmAssignCommittee">
-            {{ submittingCommittee ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+            {{ submittingCommittee ? $t('admin.actions.saving') : $t('admin.actions.confirm') }}
           </CButton>
         </div>
       </template>
@@ -476,19 +476,22 @@ export default {
         allowRevisionAfterMeeting: true
       },
 
-      tableFields: [
-        { key: 'index', label: '#' },
-        { key: 'proposalCode', label: 'Proposal Code' },
-        { key: 'projectTitleTh', label: 'ชื่อโครงการ (TH)' },
-        { key: 'fundingType', label: 'ประเภททุน' },
-        { key: 'currentStatus', label: 'สถานะ' },
-        { key: 'currentRound', label: 'รอบ' },
-        { key: 'updatedAt', label: 'อัปเดต' },
-        { key: 'actions', label: 'การดำเนินการ', _classes: 'text-center text-nowrap' }
-      ]
+      // tableFields moved to computed to allow $t() usage
     }
   },
   computed: {
+    tableFields () {
+      return [
+        { key: 'index', label: '#' },
+        { key: 'proposalCode', label: this.$t('admin.table.proposalCode') },
+        { key: 'projectTitleTh', label: this.$t('admin.table.projectTitleTh') },
+        { key: 'fundingType', label: this.$t('admin.table.fundingType') },
+        { key: 'currentStatus', label: this.$t('admin.table.currentStatus') },
+        { key: 'currentRound', label: this.$t('admin.table.currentRound') },
+        { key: 'updatedAt', label: this.$t('admin.table.updatedAt') },
+        { key: 'actions', label: this.$t('admin.table.actions'), _classes: 'text-center text-nowrap' }
+      ]
+    },
     summaryRow1 () {
       return ['draft', 'submitted', 'faculty_review_pending', 'document_checking'].map(this.toSummaryCard)
     },
@@ -665,9 +668,15 @@ export default {
       }
     },
     toSummaryCard (status) {
-      return { status, ...SUMMARY_CARDS[status] }
+      const toneClass = (SUMMARY_CARDS[status] && SUMMARY_CARDS[status].toneClass) || ''
+      return { status, toneClass, labelKey: `status.${status}` }
     },
     getStatusLabel (status) {
+      try {
+        const key = `status.${status}`
+        const translated = this.$t(key)
+        if (translated && translated !== key) return translated
+      } catch (e) {}
       return STATUS_LABELS[status] || status || '-'
     },
     getStatusBadgeColor (status) {

@@ -38,12 +38,83 @@
   },
   "status": {
     "draft": "Draft",
-    "inProgress": "In Progress",
-    "revision": "Revision Requested",
+    "submitted": "Submitted",
+    "faculty_review_pending": "Waiting for Chair Review",
+    "faculty_approved": "Chair Approved",
+    "office_received": "Office Received",
+    "document_checking": "Document Checking",
+    "assigned_to_committee": "Assigned to Committee",
+    "under_review": "Under Review",
+    "meeting_completed": "Meeting Completed",
+    "revision_requested": "Revision Requested",
+    "resubmitted": "Resubmitted",
+    "second_round_review": "Second Round Review",
     "approved": "Approved",
     "rejected": "Rejected",
+    "announced": "Announced",
     "allProjects": "All Projects",
     "filteredBy": "Filtered by: {label}",
     "itemsCount": "{count} items"
+  }
+
+  ,"admin": {
+    "dashboard": {
+      "title": "Admin Proposal Dashboard",
+      "subtitle": "Overview of all proposals",
+      "loadingSummary": "Loading summary...",
+      "loadingTable": "Loading proposals...",
+      "listTitle": "Proposal list"
+    },
+    "table": {
+      "proposalCode": "Proposal Code",
+      "projectTitleTh": "Project Title (TH)",
+      "fundingType": "Funding Type",
+      "currentStatus": "Status",
+      "currentRound": "Round",
+      "updatedAt": "Updated",
+      "actions": "Actions",
+      "noItems": "No proposals found",
+      "noResults": "No proposals found",
+      "perPage": "Per page",
+      "itemsSuffix": "items",
+      "roundLabel": "Round {n}"
+    },
+    "actions": {
+      "reset": "Reset",
+      "viewDetail": "View details",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "confirm": "Confirm"
+    },
+    "changeStatus": {
+      "title": "Change proposal status",
+      "proposalCode": "Proposal code:",
+      "projectTitle": "Project title:",
+      "currentStatus": "Current status:",
+      "remarkLabel": "Remark / Reason",
+      "selectTo": "Change to",
+      "remarkPlaceholder": "Optional additional remark"
+    },
+    "assignCommittee": {
+      "title": "Assign committee",
+      "proposalCode": "Proposal code:",
+      "projectTitle": "Project title:",
+      "selectedCount": "Selected committees ({n})",
+      "minRequired": "At least {n} committee members are required",
+      "noneSelected": "No committee selected",
+      "filter": {
+        "recommended": "Recommended",
+        "all": "All committees",
+        "department": "Filter by department"
+      },
+      "filterByDepartment": "Filter by department",
+      "searchLabel": "Search committee (name, email, department)",
+      "searchPlaceholder": "Type to search...",
+      "loadingUsers": "Loading committee users...",
+      "loadError": "Unable to load committee users",
+      "noUsers": "No committee users found",
+      "recommendedBadge": "Recommended for this proposal",
+      "note": "Check the minimum required number before confirming"
+    }
   }
 }
