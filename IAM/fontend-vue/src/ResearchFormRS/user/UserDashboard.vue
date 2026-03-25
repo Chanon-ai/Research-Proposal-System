@@ -196,7 +196,7 @@
                   <CProgress
                     :value="getProgressPercent(item.currentStatus)"
                     :color="getProgressColor(item.currentStatus)"
-                    :animated="['submitted', 'faculty_review_pending', 'under_review', 'document_checking', 'assigned_to_committee'].includes(item.currentStatus)"
+                    :animated="isAnimatedStatus(item.currentStatus)"
                     :striped="item.currentStatus === 'revision_requested'"
                     show-percentage
                     :precision="0"
@@ -260,6 +260,96 @@
 import Service from '@/service/api'
 import { CChartLine, CChartBar } from '@coreui/vue-chartjs'
 
+const PROPOSAL_STATUSES = Object.freeze([
+  'draft',
+  'pending_confirm',
+  'submitted',
+  'faculty_review_pending',
+  'faculty_approved',
+  'office_received',
+  'document_checking',
+  'assigned_to_committee',
+  'under_review',
+  'meeting_completed',
+  'revision_requested',
+  'resubmitted',
+  'second_round_review',
+  'approved',
+  'rejected',
+  'announced'
+])
+
+const IN_PROGRESS_STATUSES = Object.freeze([
+  'pending_confirm',
+  'submitted',
+  'faculty_review_pending',
+  'faculty_approved',
+  'office_received',
+  'document_checking',
+  'assigned_to_committee',
+  'under_review',
+  'meeting_completed',
+  'resubmitted',
+  'second_round_review'
+])
+
+const STATUS_LABEL_MAP = Object.freeze({
+  draft: 'แบบร่าง',
+  pending_confirm: 'รอยืนยันผู้ร่วมโครงการ',
+  submitted: 'ยื่นโครงการแล้ว',
+  faculty_review_pending: 'รอประธานพิจารณา',
+  faculty_approved: 'ประธานอนุมัติ',
+  office_received: 'ส่วนบริหารรับแล้ว',
+  document_checking: 'ตรวจสอบเอกสาร',
+  assigned_to_committee: 'มอบหมายกรรมการแล้ว',
+  under_review: 'กำลังพิจารณา',
+  meeting_completed: 'ประชุมเสร็จแล้ว',
+  revision_requested: 'ขอแก้ไข',
+  resubmitted: 'ส่งแก้ไขแล้ว',
+  second_round_review: 'พิจารณารอบ 2',
+  approved: 'อนุมัติ',
+  rejected: 'ปฏิเสธ',
+  announced: 'ประกาศผลแล้ว'
+})
+
+const STATUS_STEP_MAP = Object.freeze({
+  draft: 1,
+  pending_confirm: 2,
+  submitted: 2,
+  faculty_review_pending: 3,
+  faculty_approved: 4,
+  office_received: 5,
+  document_checking: 6,
+  assigned_to_committee: 7,
+  under_review: 8,
+  meeting_completed: 9,
+  revision_requested: 5,
+  resubmitted: 6,
+  second_round_review: 8,
+  approved: 10,
+  rejected: 10,
+  announced: 10
+})
+
+const STATUS_PROGRESS_LABEL_MAP = Object.freeze({
+  draft: 'Step 1/10 - Draft',
+  pending_confirm: 'Step 2/10 - Waiting for collaborator confirmations',
+  submitted: 'ขั้นที่ 2/10 - ยื่นโครงการแล้ว',
+  faculty_review_pending: 'ขั้นที่ 3/10 - รอประธานพิจารณา',
+  faculty_approved: 'ขั้นที่ 4/10 - ประธานอนุมัติ',
+  office_received: 'ขั้นที่ 5/10 - ส่วนบริหารรับแล้ว',
+  document_checking: 'ขั้นที่ 5/10 - ตรวจสอบเอกสาร',
+  assigned_to_committee: 'ขั้นที่ 6/10 - มอบหมายกรรมการแล้ว',
+  under_review: 'ขั้นที่ 7/10 - กำลังพิจารณา',
+  meeting_completed: 'ขั้นที่ 8/10 - ประชุมเสร็จแล้ว',
+  revision_requested: 'ขอแก้ไข - กรุณาแก้ไขเอกสาร',
+  resubmitted: 'ส่งแก้ไขแล้ว - รอพิจารณารอบ 2',
+  second_round_review: 'ขั้นที่ 7/10 - พิจารณารอบ 2',
+  approved: 'ขั้นที่ 10/10 - อนุมัติแล้ว',
+  rejected: 'ขั้นที่ 10/10 - ไม่ผ่านการพิจารณา',
+  announced: 'ขั้นที่ 10/10 - ประกาศผลแล้ว'
+})
+
 export default {
   name: "UserDashboard",
   components: {
@@ -312,41 +402,16 @@ export default {
       activeFilter: null,
       filterGroups: {
         draft: ['draft'],
-        submitted: [
-          'pending_confirm',
-          'submitted',
-          'faculty_review_pending',
-          'faculty_approved',
-          'office_received',
-          'document_checking',
-          'assigned_to_committee',
-          'under_review',
-          'meeting_completed',
-          'second_round_review',
-          'resubmitted',
-        ],
+        submitted: [...IN_PROGRESS_STATUSES],
         revision: ['revision_requested'],
         approved: ['approved', 'announced'],
         rejected: ['rejected'],
       },
-      workflowSteps: [
-        { key: 'draft', label: 'Draft', step: 1 },
-        { key: 'pending_confirm', label: 'Pending confirmation', step: 2 },
-        { key: 'submitted', label: 'ยื่นโครงการแล้ว', step: 2 },
-        { key: 'faculty_review_pending', label: 'รอประธานพิจารณา', step: 3 },
-        { key: 'faculty_approved', label: 'ประธานอนุมัติ', step: 4 },
-        { key: 'office_received', label: 'ส่วนบริหารรับแล้ว', step: 5 },
-        { key: 'document_checking', label: 'ตรวจสอบเอกสาร', step: 6 },
-        { key: 'assigned_to_committee', label: 'มอบหมายกรรมการ', step: 7 },
-        { key: 'under_review', label: 'กำลังพิจารณา', step: 8 },
-        { key: 'meeting_completed', label: 'ประชุมเสร็จแล้ว', step: 9 },
-        { key: 'revision_requested', label: 'ขอแก้ไข', step: 5 },
-        { key: 'resubmitted', label: 'ส่งแก้ไขแล้ว', step: 6 },
-        { key: 'second_round_review', label: 'พิจารณารอบ 2', step: 8 },
-        { key: 'approved', label: 'อนุมัติ', step: 10 },
-        { key: 'rejected', label: 'ปฏิเสธ', step: 10 },
-        { key: 'announced', label: 'ประกาศผลแล้ว', step: 10 },
-      ],
+      workflowSteps: PROPOSAL_STATUSES.map((key) => ({
+        key,
+        label: STATUS_LABEL_MAP[key] || key,
+        step: STATUS_STEP_MAP[key] || 0
+      })),
       chartData: {
         draft: [65, 59, 84, 84, 51, 55, 40],
         submitted: [35, 49, 60, 71, 80, 90, 75],
@@ -390,19 +455,7 @@ export default {
       const all = this.proposals;
       return {
         draft: all.filter(p => p.currentStatus === 'draft').length,
-        submitted: all.filter(p => [
-          'pending_confirm',
-          'submitted',
-          'faculty_review_pending',
-          'faculty_approved',
-          'office_received',
-          'document_checking',
-          'assigned_to_committee',
-          'under_review',
-          'meeting_completed',
-          'resubmitted',
-          'second_round_review'
-        ].includes(p.currentStatus)).length,
+        submitted: all.filter(p => IN_PROGRESS_STATUSES.includes(String(p.currentStatus || '').toLowerCase())).length,
         revision: all.filter(p => p.currentStatus === 'revision_requested').length,
         approved: all.filter(p => ['approved', 'announced'].includes(p.currentStatus)).length,
         rejected: all.filter(p => p.currentStatus === 'rejected').length,
@@ -420,7 +473,7 @@ export default {
     filterLabel() {
       const labels = {
         draft: this.$t('status.draft'),
-        pending_confirm: 'Pending confirmation',
+        pending_confirm: STATUS_LABEL_MAP.pending_confirm,
         submitted: this.$t('status.inProgress'),
         revision: this.$t('status.revision'),
         approved: this.$t('status.approved'),
@@ -550,7 +603,7 @@ export default {
         submittedAt: item.submittedAt,
         updatedAt: item.updatedAt,
         createdAt: item.createdAt,
-        currentStatus: item.currentStatus,
+        currentStatus: String(item && item.currentStatus ? item.currentStatus : '').toLowerCase() || 'draft',
       };
     },
 
@@ -558,55 +611,34 @@ export default {
       const status = String(item && item.currentStatus ? item.currentStatus : '').toLowerCase();
       if (status === 'draft') return 'DRAFT';
       if (status === 'revision_requested') return 'NEED_REVISION';
-      if (status === 'approved') return 'APPROVED';
+      if (status === 'approved' || status === 'announced') return 'APPROVED';
       if (status === 'rejected') return 'REJECTED';
-      if (status === 'pending_confirm') return 'SUBMITTED';
-      if (status === 'submitted') return 'SUBMITTED';
-      if (status === 'announced') return 'APPROVED';
+      if (IN_PROGRESS_STATUSES.includes(status)) return 'SUBMITTED';
       return 'IN_REVIEW';
     },
 
     getStatusLabel(status) {
       const key = String(status || '').toLowerCase();
-      const labels = {
-        draft: this.$t('status.draft'),
-        submitted: this.$t('status.inProgress'),
-        faculty_review_pending: 'รอประธานพิจารณา',
-        faculty_approved: 'ประธานอนุมัติ',
-        office_received: 'ส่วนบริหารรับแล้ว',
-        document_checking: 'ตรวจสอบเอกสาร',
-        assigned_to_committee: 'มอบหมายกรรมการ',
-        under_review: 'กำลังพิจารณา',
-        meeting_completed: 'ประชุมเสร็จแล้ว',
-        revision_requested: 'ขอแก้ไข',
-        resubmitted: 'ส่งแก้ไขแล้ว',
-        second_round_review: 'พิจารณารอบ 2',
-        approved: this.$t('status.approved'),
-        rejected: this.$t('status.rejected'),
-        announced: 'ประกาศผลแล้ว',
-      };
-      return labels[key] || this.$t('status.inProgress');
+      return STATUS_LABEL_MAP[key] || key || this.$t('status.inProgress');
     },
 
     getStatusColor(status) {
       const stage = this.inferStage({ currentStatus: status });
       return {
-        draft: '',
-        pending_confirm: 'Step 2/10 - Waiting for collaborator confirmations',
-        submitted: 'info',
+        DRAFT: 'secondary',
+        SUBMITTED: 'info',
         NEED_REVISION: 'warning',
         IN_REVIEW: 'primary',
         APPROVED: 'success',
-        REJECTED: 'danger',
+        REJECTED: 'danger'
       }[stage] || 'dark';
     },
 
     getProgressPercent(status) {
       const key = String(status || '').toLowerCase();
-      const stepInfo = this.workflowSteps.find(step => step.key === key);
-      if (!stepInfo) return 0;
+      const currentStep = Number(STATUS_STEP_MAP[key] || 0);
+      if (!currentStep) return 0;
       const totalSteps = 10;
-      const currentStep = Number(stepInfo.step) || 0;
       const percent = (currentStep / totalSteps) * 100;
       return Math.max(0, Math.min(100, Math.round(percent)));
     },
@@ -622,37 +654,12 @@ export default {
 
     isAnimatedStatus(status) {
       const key = String(status || '').toLowerCase();
-      return [
-        'pending_confirm',
-        'submitted',
-          'faculty_review_pending',
-        'under_review',
-        'document_checking',
-        'assigned_to_committee'
-      ].includes(key);
+      return IN_PROGRESS_STATUSES.includes(key) && key !== 'revision_requested';
     },
 
     getProgressLabel(status) {
       const key = String(status || '').toLowerCase();
-      const labels = {
-        draft: 'Step 1/10 - Draft',
-        pending_confirm: 'Step 2/10 - Waiting for collaborator confirmations',
-        submitted: 'ขั้นที่ 2/10 — ยื่นโครงการแล้ว',
-        faculty_review_pending: 'ขั้นที่ 3/10 — รอประธานพิจารณา',
-        faculty_approved: 'ขั้นที่ 4/10 — ประธานอนุมัติ',
-        office_received: 'ขั้นที่ 5/10 — ส่วนบริหารรับแล้ว',
-        document_checking: 'ขั้นที่ 5/10 — ตรวจสอบเอกสาร',
-        assigned_to_committee: 'ขั้นที่ 6/10 — มอบหมายกรรมการแล้ว',
-        under_review: 'ขั้นที่ 7/10 — กำลังพิจารณา',
-        meeting_completed: 'ขั้นที่ 8/10 — ประชุมเสร็จแล้ว',
-        revision_requested: 'ขอแก้ไข — กรุณาแก้ไขเอกสาร',
-        resubmitted: 'ส่งแก้ไขแล้ว — รอพิจารณารอบ 2',
-        second_round_review: 'ขั้นที่ 7/10 — พิจารณารอบ 2',
-        approved: 'ขั้นที่ 10/10 — อนุมัติแล้ว ✓',
-        rejected: 'ขั้นที่ 10/10 — ไม่ผ่านการพิจารณา',
-        announced: 'ขั้นที่ 10/10 — ประกาศผลแล้ว ✓',
-      };
-      return labels[key] || 'กำลังดำเนินการ';
+      return STATUS_PROGRESS_LABEL_MAP[key] || 'In progress';
     },
 
     getProgressText(status) {
@@ -665,23 +672,11 @@ export default {
     },
 
     getSegmentWidth(segmentStatus, currentStatus) {
-      const order = [
-        'draft',
-        'pending_confirm',
-        'submitted',
-          'faculty_review_pending',
-        'office_received',
-        'document_checking',
-        'assigned_to_committee',
-        'under_review',
-        'meeting_completed',
-        'approved'
-      ];
+      const order = PROPOSAL_STATUSES;
       const currentIdx = order.indexOf(String(currentStatus || '').toLowerCase());
       const segmentIdx = order.indexOf(String(segmentStatus || '').toLowerCase());
       if (segmentIdx < 0 || currentIdx < 0) return 0;
-      if (segmentIdx < currentIdx) return 11;
-      if (segmentIdx === currentIdx) return 11;
+      if (segmentIdx <= currentIdx) return 11;
       return 0;
     },
 
@@ -1447,4 +1442,3 @@ body.c-dark-theme .clear-filter-btn:hover {
 }
 
 </style>
-
