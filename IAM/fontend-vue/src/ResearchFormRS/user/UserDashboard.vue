@@ -189,19 +189,19 @@
 
             <template #currentStatus="{ item }">
               <td class="current-status-cell">
-                <CBadge :color="getProgressColor(item.currentStatus)" class="mb-2" style="font-size:11px">
+                <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.currentStatus)">
                   {{ getStatusLabel(item.currentStatus) }}
                 </CBadge>
                 <div class="status-progress-wrap">
                   <CProgress
                     :value="getProgressPercent(item.currentStatus)"
-                    :color="getProgressColor(item.currentStatus)"
                     :animated="isAnimatedStatus(item.currentStatus)"
                     :striped="item.currentStatus === 'revision_requested'"
                     show-percentage
                     :precision="0"
                     height="16px"
                     class="status-progress-bar mb-1"
+                    :style="getStatusProgressStyle(item.currentStatus)"
                   />
                 </div>
                 <div class="status-progress-label">
@@ -348,6 +348,25 @@ const STATUS_PROGRESS_LABEL_MAP = Object.freeze({
   approved: 'ขั้นที่ 10/10 - อนุมัติแล้ว',
   rejected: 'ขั้นที่ 10/10 - ไม่ผ่านการพิจารณา',
   announced: 'ขั้นที่ 10/10 - ประกาศผลแล้ว'
+})
+
+const STATUS_COLORS = Object.freeze({
+  draft: '#9CA3AF',
+  pending_confirm: '#60A5FA',
+  submitted: '#3B82F6',
+  faculty_review_pending: '#3B82F6',
+  faculty_approved: '#34D399',
+  office_received: '#38BDF8',
+  document_checking: '#FACC15',
+  assigned_to_committee: '#A78BFA',
+  under_review: '#6366F1',
+  meeting_completed: '#10B981',
+  revision_requested: '#FB923C',
+  resubmitted: '#22D3EE',
+  second_round_review: '#8B5CF6',
+  approved: '#059669',
+  rejected: '#EF4444',
+  announced: '#14B8A6'
 })
 
 export default {
@@ -622,16 +641,38 @@ export default {
       return STATUS_LABEL_MAP[key] || key || this.$t('status.inProgress');
     },
 
-    getStatusColor(status) {
-      const stage = this.inferStage({ currentStatus: status });
+    getStatusHexColor(status) {
+      const key = String(status || '').toLowerCase();
+      return STATUS_COLORS[key] || STATUS_COLORS.submitted;
+    },
+
+    getReadableTextColor(hexColor) {
+      const raw = String(hexColor || '').replace('#', '').trim();
+      if (raw.length !== 6) return '#ffffff';
+      const r = parseInt(raw.slice(0, 2), 16);
+      const g = parseInt(raw.slice(2, 4), 16);
+      const b = parseInt(raw.slice(4, 6), 16);
+      if ([r, g, b].some((v) => Number.isNaN(v))) return '#ffffff';
+      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+      return yiq >= 160 ? '#111827' : '#ffffff';
+    },
+
+    getStatusBadgeStyle(status) {
+      const color = this.getStatusHexColor(status);
       return {
-        DRAFT: 'secondary',
-        SUBMITTED: 'info',
-        NEED_REVISION: 'warning',
-        IN_REVIEW: 'primary',
-        APPROVED: 'success',
-        REJECTED: 'danger'
-      }[stage] || 'dark';
+        fontSize: '11px',
+        backgroundColor: color,
+        borderColor: color,
+        color: this.getReadableTextColor(color)
+      };
+    },
+
+    getStatusProgressStyle(status) {
+      const color = this.getStatusHexColor(status);
+      return {
+        '--status-progress-color': color,
+        '--status-progress-text-color': this.getReadableTextColor(color)
+      };
     },
 
     getProgressPercent(status) {
@@ -641,15 +682,6 @@ export default {
       const totalSteps = 10;
       const percent = (currentStep / totalSteps) * 100;
       return Math.max(0, Math.min(100, Math.round(percent)));
-    },
-
-    getProgressColor(status) {
-      const key = String(status || '').toLowerCase();
-      if (key === 'approved' || key === 'announced') return 'success';
-      if (key === 'rejected') return 'danger';
-      if (key === 'revision_requested') return 'warning';
-      if (key === 'draft') return 'secondary';
-      return 'primary';
     },
 
     isAnimatedStatus(status) {
@@ -844,6 +876,8 @@ export default {
 }
 
 .status-progress-bar {
+  --status-progress-color: #3b82f6;
+  --status-progress-text-color: #ffffff;
   font-size: 10px;
   line-height: 16px;
 }
@@ -853,6 +887,8 @@ export default {
 }
 
 .status-progress-bar ::v-deep(.progress-bar) {
+  background-color: var(--status-progress-color) !important;
+  color: var(--status-progress-text-color) !important;
   white-space: nowrap;
   text-align: center;
   font-weight: 600;
@@ -862,6 +898,11 @@ export default {
 .status-progress-bar >>> .progress,
 .status-progress-bar::v-deep .progress {
   background: rgba(181, 133, 34, 0.12);
+}
+
+.status-badge {
+  border: 1px solid transparent;
+  font-weight: 600;
 }
 
 .user-dashboard-table-card {
