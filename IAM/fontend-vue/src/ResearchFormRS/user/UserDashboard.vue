@@ -160,6 +160,8 @@
             :fields="tableFields"
             :items-per-page="perPage"
             :active-page="activePage"
+            clickable-rows
+            @row-clicked="handleRowClicked"
             sorter
             hover
             striped
@@ -210,20 +212,6 @@
               </td>
             </template>
 
-            <template #show_details="{ item }">
-              <td class="action-body-cell">
-                <div class="action-cell">
-                  <CButton
-                    size="sm"
-                    color="primary"
-                    variant="outline"
-                    @click="$router.push('/research-form/' + item._id)"
-                  >
-                    {{ $t('common.show') }}
-                  </CButton>
-                </div>
-              </td>
-            </template>
           </CDataTable>
           <div v-if="displayItems.length === 0" class="text-muted text-center py-4">
             ไม่พบข้อมูลที่ค้นหา
@@ -409,14 +397,6 @@ export default {
           _style: 'width:150px; text-align:center;',
           _classes: 'submitted-date-column'
         },
-        {
-          key: 'show_details',
-          label: 'Action',
-          _style: 'width:110px; text-align:center;',
-          _classes: 'action-column',
-          filter: false,
-          sorter: false
-        }
       ],
       activeFilter: null,
       filterGroups: {
@@ -717,6 +697,11 @@ export default {
       return new Date(date).toLocaleDateString("th-TH", {
         year: "numeric", month: "short", day: "numeric",
       });
+    },
+
+    handleRowClicked(item) {
+      if (!item || !item._id) return;
+      this.goToDetail(item._id);
     },
 
     goToDetail(id) {
@@ -1152,6 +1137,12 @@ export default {
 .table-surface >>> .table tbody td:last-child,
 .table-surface::v-deep .table tbody td:last-child {
   border-right: 0;
+}
+
+.table-surface /deep/ .table tbody tr,
+.table-surface >>> .table tbody tr,
+.table-surface::v-deep .table tbody tr {
+  cursor: pointer;
 }
 
 .table-surface /deep/ .table tbody td.project-info-column,
