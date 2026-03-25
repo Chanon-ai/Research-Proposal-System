@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const Proposal = require('../models/Proposal');
+const STATUS_LABELS = require('../constants/proposal-status-labels');
 const systemSettingService = require('../../settings/service/system-setting');
 
 const EXPORT_PUBLIC_DIR = path.resolve(__dirname, '../../../../public/exports');
@@ -55,7 +56,7 @@ function makeCsv(proposals = []) {
     proposal.projectTitleTh || '',
     proposal.fiscalYear || '',
     proposal.fundingType || '',
-    proposal.currentStatus || '',
+    STATUS_LABELS[proposal.currentStatus] || proposal.currentStatus || '',
     proposal.submittedAt ? new Date(proposal.submittedAt).toISOString() : '',
     proposal.approvedAt ? new Date(proposal.approvedAt).toISOString() : ''
   ].map(csvEscape).join(',')));
@@ -116,21 +117,25 @@ function generateSimplePdf(lines = []) {
 }
 
 function buildPdfLines({ proposals = [], summary = {}, filters = {} }) {
+  const statusFilterKey = filters.status ? String(filters.status).trim() : '';
+  const statusFilterLabel = statusFilterKey ? (STATUS_LABELS[statusFilterKey] || statusFilterKey) : 'all';
   const lines = [
     'MFU Research Report',
     `Generated at: ${new Date().toISOString()}`,
     `Fiscal year filter: ${filters.fiscalYear || 'all'}`,
-    `Status filter: ${filters.status || 'all'}`,
+    `Status filter: ${statusFilterLabel}`,
     `Total proposals: ${proposals.length}`
   ];
 
   Object.keys(summary).sort().forEach((key) => {
-    lines.push(`Status ${key}: ${summary[key]}`);
+    const label = STATUS_LABELS[key] || key;
+    lines.push(`Status ${label}: ${summary[key]}`);
   });
 
   lines.push('Recent proposals:');
   (proposals || []).slice(0, 20).forEach((proposal) => {
-    lines.push(`${proposal.proposalCode || '-'} | ${proposal.currentStatus || '-'} | FY ${proposal.fiscalYear || '-'}`);
+    const statusLabel = STATUS_LABELS[proposal.currentStatus] || proposal.currentStatus || '-';
+    lines.push(`${proposal.proposalCode || '-'} | ${statusLabel} | FY ${proposal.fiscalYear || '-'}`);
   });
 
   return lines;

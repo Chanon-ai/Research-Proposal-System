@@ -225,6 +225,7 @@ const ALLOWED_TRANSITIONS = {
 
 const STATUS_LABELS = {
   draft: 'แบบร่าง',
+  pending_confirm: 'รอการยืนยัน',
   submitted: 'ยื่นแล้ว',
   faculty_review_pending: 'รอประธานพิจารณา',
   faculty_approved: 'ประธานอนุมัติ',
@@ -243,6 +244,7 @@ const STATUS_LABELS = {
 
 const STATUS_COLORS = {
   draft: 'secondary',
+  pending_confirm: 'secondary',
   submitted: 'info',
   faculty_review_pending: 'warning',
   faculty_approved: 'primary',
@@ -261,6 +263,7 @@ const STATUS_COLORS = {
 
 const STATUS_KEYS = [
   'draft',
+  'pending_confirm',
   'submitted',
   'faculty_review_pending',
   'faculty_approved',

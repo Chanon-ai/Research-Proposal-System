@@ -71,6 +71,25 @@
 <script>
 import Service from '@/service/api'
 
+const STATUS_LABELS = {
+  draft: 'ร่าง',
+  pending_confirm: 'รอการยืนยัน',
+  submitted: 'ยื่นแล้ว',
+  faculty_review_pending: 'รอคณะพิจารณา (คณะ)',
+  faculty_approved: 'ผ่านการพิจารณา (คณะ)',
+  office_received: 'สำนักงานรับเรื่องแล้ว',
+  document_checking: 'ตรวจเอกสาร',
+  assigned_to_committee: 'มอบหมายกรรมการแล้ว',
+  under_review: 'อยู่ระหว่างการพิจารณา',
+  meeting_completed: 'ประชุมเสร็จสิ้น',
+  revision_requested: 'ขอแก้ไขเพิ่มเติม',
+  resubmitted: 'ส่งใหม่',
+  second_round_review: 'รอบพิจารณาครั้งที่ 2',
+  approved: 'อนุมัติ',
+  rejected: 'ไม่อนุมัติ',
+  announced: 'ประกาศผลแล้ว'
+}
+
 export default {
   name: 'TheHeaderDropdownNotif',
   data () {
@@ -127,6 +146,35 @@ export default {
   },
 
   methods: {
+    replaceStatusKeysInText (text) {
+      let out = String(text || '')
+      Object.keys(STATUS_LABELS).forEach((key) => {
+        if (!key) return
+        const label = STATUS_LABELS[key]
+        out = out.split(key).join(label)
+        out = out.split(key.replace(/_/g, ' ')).join(label)
+      })
+      return out
+    },
+
+    formatNotifMessage (message, payload) {
+      const rawMessage = String(message || '')
+      const safePayload = (payload && typeof payload === 'object') ? payload : {}
+      const toStatus = safePayload.toStatus ? String(safePayload.toStatus).trim().toLowerCase() : ''
+
+      if (toStatus) {
+        const replaced = this.replaceStatusKeysInText(rawMessage)
+        if (replaced && replaced !== rawMessage) return replaced
+
+        const label = STATUS_LABELS[toStatus] || toStatus
+        const projectRef = safePayload.proposalCode || safePayload.proposalId || '-'
+        const remark = safePayload.remark ? String(safePayload.remark) : ''
+        return `โครงการ ${projectRef} เปลี่ยนสถานะเป็น ${label}${remark ? ` (${remark})` : ''}`
+      }
+
+      return this.replaceStatusKeysInText(rawMessage) || '-'
+    },
+
     handleClickOutside (event) {
       if (!this.isNotificationOpen) return
       if (!this.$el || this.$el.contains(event.target)) return
@@ -159,7 +207,7 @@ export default {
       return {
         id: n && n._id ? String(n._id) : String(Math.random()),
         title: n && n.title ? n.title : 'การแจ้งเตือน',
-        message: n && n.message ? n.message : '-',
+        message: this.formatNotifMessage(n && n.message ? n.message : '-', payload),
         senderName: payload.senderName || (eventKey ? 'ระบบแจ้งเตือน' : 'ระบบ'),
         avatar: payload.avatar || null,
         timestamp: createdAt || null,

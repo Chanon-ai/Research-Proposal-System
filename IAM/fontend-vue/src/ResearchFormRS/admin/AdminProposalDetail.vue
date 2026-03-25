@@ -340,6 +340,7 @@ const RESEARCH_STANDARD_ATTACHMENT_KEYS = [
 
 const STATUS_LABELS = {
   draft: 'แบบร่าง',
+  pending_confirm: 'รอการยืนยัน',
   submitted: 'ยื่นแล้ว',
   faculty_review_pending: 'รอประธานพิจารณา',
   faculty_approved: 'ประธานอนุมัติ',
@@ -372,6 +373,7 @@ const ALLOWED_TRANSITIONS = {
 
 const STATUS_COLORS = {
   draft: 'secondary',
+  pending_confirm: 'secondary',
   submitted: 'info',
   faculty_review_pending: 'warning',
   faculty_approved: 'primary',

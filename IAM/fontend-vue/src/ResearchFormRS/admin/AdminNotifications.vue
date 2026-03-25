@@ -229,6 +229,8 @@ const NOTIFICATION_TYPES = {
   revision_requested: 'ขอแก้ไขเอกสาร',
   approved: 'โครงการได้รับการอนุมัติ',
   rejected: 'โครงการถูกปฏิเสธ',
+  meeting_completed: 'ประชุมเสร็จสิ้น',
+  collaboration_confirmation: 'ยืนยันความร่วมมือ',
   meeting_scheduled: 'กำหนดการประชุม',
   document_required: 'ขอเอกสารเพิ่มเติม',
   committee_assigned: 'ได้รับมอบหมายพิจารณาโครงการ',
@@ -240,10 +242,31 @@ const TYPE_BADGE_COLOR = {
   revision_requested: 'warning',
   approved: 'success',
   rejected: 'danger',
+  meeting_completed: 'primary',
+  collaboration_confirmation: 'info',
   meeting_scheduled: 'primary',
   document_required: 'warning',
   committee_assigned: 'info',
   announcement: 'secondary'
+}
+
+const STATUS_LABELS = {
+  draft: 'ร่าง',
+  pending_confirm: 'รอการยืนยัน',
+  submitted: 'ยื่นแล้ว',
+  faculty_review_pending: 'รอคณะพิจารณา (คณะ)',
+  faculty_approved: 'ผ่านการพิจารณา (คณะ)',
+  office_received: 'สำนักงานรับเรื่องแล้ว',
+  document_checking: 'ตรวจเอกสาร',
+  assigned_to_committee: 'มอบหมายกรรมการแล้ว',
+  under_review: 'อยู่ระหว่างการพิจารณา',
+  meeting_completed: 'ประชุมเสร็จสิ้น',
+  revision_requested: 'ขอแก้ไขเพิ่มเติม',
+  resubmitted: 'ส่งใหม่',
+  second_round_review: 'รอบพิจารณาครั้งที่ 2',
+  approved: 'อนุมัติ',
+  rejected: 'ไม่อนุมัติ',
+  announced: 'ประกาศผลแล้ว'
 }
 
 const RECIPIENT_TYPES = {
@@ -338,14 +361,35 @@ export default {
   mounted () { this.fetchNotifications() },
   methods: {
     getSelectValue (val) { return val && val.target ? val.target.value : val },
+    humanizeKey (value) {
+      const raw = String(value || '').trim()
+      if (!raw) return '-'
+      const last = raw.includes('.') ? raw.split('.').pop() : raw
+      const key = String(last || '').trim().toLowerCase()
+      return STATUS_LABELS[key] || String(last || '').replace(/_/g, ' ')
+    },
     formatDate (dateStr) {
       if (!dateStr) return '-'
       const d = new Date(dateStr)
       if (Number.isNaN(d.getTime())) return '-'
       return d.toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     },
-    getTypeLabel (type) { return NOTIFICATION_TYPES[type] || type || '-' },
-    getTypeBadgeColor (type) { return TYPE_BADGE_COLOR[type] || 'secondary' },
+    getTypeLabel (type) {
+      const raw = String(type || '').trim()
+      const key = raw.toLowerCase()
+      const tailKey = key.includes('.') ? key.split('.').pop() : key
+      return NOTIFICATION_TYPES[raw] || NOTIFICATION_TYPES[key] || STATUS_LABELS[key] || STATUS_LABELS[tailKey] || this.humanizeKey(raw)
+    },
+    getTypeBadgeColor (type) {
+      const raw = String(type || '').trim()
+      const key = raw.toLowerCase()
+      const tailKey = key.includes('.') ? key.split('.').pop() : key
+      if (TYPE_BADGE_COLOR[raw]) return TYPE_BADGE_COLOR[raw]
+      if (TYPE_BADGE_COLOR[key]) return TYPE_BADGE_COLOR[key]
+      if (STATUS_LABELS[key]) return 'info'
+      if (STATUS_LABELS[tailKey]) return 'info'
+      return 'secondary'
+    },
     hasTemplateForType (type) { return Boolean(EMAIL_TEMPLATES[type]) },
     async fetchNotifications () {
       this.loading = true
