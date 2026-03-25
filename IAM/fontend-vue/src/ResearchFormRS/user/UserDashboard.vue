@@ -401,7 +401,7 @@ export default {
         {
           key: 'currentStatus',
           label: 'สถานะ',
-          _style: 'width:290px; text-align:center;'
+          _style: 'width:360px; text-align:center;'
         },
         {
           key: 'updatedAt',
@@ -857,14 +857,14 @@ export default {
 
 .status-progress-wrap {
   width: 100%;
-  max-width: 270px;
+  max-width: 340px;
   margin: 0;
 }
 
 .current-status-cell {
   text-align: center;
   vertical-align: middle;
-  min-width: 290px;
+  min-width: 360px;
   padding-left: 0.75rem;
   padding-right: 0.75rem;
 }
