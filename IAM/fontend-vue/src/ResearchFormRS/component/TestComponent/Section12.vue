@@ -49,7 +49,7 @@
                 ผู้รับผิดชอบ
               </th>
               
-              <th class="sticky-action action-col" v-if="!isReadOnly && activities.length > 1"></th>
+              <th class="sticky-action action-col" v-if="!isReadOnly && activities.length > 1">#</th>
             </tr>
           </thead>
           <tbody>
@@ -94,6 +94,7 @@
                 <CButton 
                   color="danger" 
                   size="sm" 
+                  variant="outline"
                   class="my-1"
                   @click="removeActivity(index)" 
                   title="ลบกิจกรรม"

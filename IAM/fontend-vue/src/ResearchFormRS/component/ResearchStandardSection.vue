@@ -191,8 +191,8 @@ const AttachmentCard = {
     <div v-if="file" class="attachment-card">
       <div class="attachment-card__name">{{ file.name || file.originalName || 'เอกสารแนบ' }}</div>
       <div class="attachment-card__actions">
-        <CButton color="info" size="sm" variant="outline" class="mr-2" @click="$emit('open')"><CIcon name="cil-chevron-right" class="mr-1" /> เปิดดู</CButton>
-        <CButton v-if="!isReadOnly" color="danger" size="sm" variant="outline" @click="$emit('remove')"><CIcon name="cil-chevron-right" class="mr-1" /> ลบ</CButton>
+        <CButton color="info" size="sm" variant="outline" class="mr-2" @click="$emit('open')"><CIcon name="cil-folder-open" class="mr-1" /> เปิดดู</CButton>
+        <CButton v-if="!isReadOnly" color="danger" size="sm" variant="outline" @click="$emit('remove')"><CIcon name="cil-trash" class="mr-1" /> ลบ</CButton>
       </div>
     </div>
   `
