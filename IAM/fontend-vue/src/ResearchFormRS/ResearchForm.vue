@@ -6134,7 +6134,7 @@ export default {
 }
 
 .research-form ::v-deep .card-header {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0.00));
+  background: transparent !important;
   border-bottom: 1px solid var(--rf-border);
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
@@ -6147,9 +6147,9 @@ export default {
   letter-spacing: 0.2px;
 }
 
-/* Blue bar only for main headings */
+/* Main headings */
 .research-form ::v-deep .section-title {
-  background: linear-gradient(180deg, rgba(197, 155, 58, 0.10), rgba(15, 23, 42, 0.02));
+  background: transparent !important;
   border-left-color: var(--rf-accent) !important;
   color: var(--rf-text);
   border-radius: 10px;
@@ -6159,7 +6159,7 @@ export default {
 .research-form ::v-deep .sub-section-title {
   font-weight: 800;
   color: var(--rf-text);
-  background: rgba(15, 23, 42, 0.035);
+  background: transparent !important;
   border: 1px solid var(--rf-border);
   border-radius: 12px;
   padding: 10px 12px;
@@ -6486,7 +6486,7 @@ export default {
 .research-form--dark ::v-deep .card-header,
 .research-form--dark ::v-deep .section-title,
 .research-form--dark ::v-deep .sub-section-title {
-  background: linear-gradient(180deg, rgba(148, 163, 184, 0.14), rgba(15, 23, 42, 0.06));
+  background: transparent !important;
   border-color: #2f3f52 !important;
 }
 
