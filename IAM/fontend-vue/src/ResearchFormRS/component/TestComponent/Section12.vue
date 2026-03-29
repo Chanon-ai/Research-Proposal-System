@@ -392,9 +392,9 @@ export default {
 }
 
 .month-cell.bg-success {
-  background-color: rgba(197, 155, 58, 0.34) !important;
+  background-color: #2563EB !important;
   box-shadow:
-    inset 0 0 0 1px rgba(139, 18, 18, 0.22),
+    inset 0 0 0 1px rgba(37, 99, 235, 0.35),
     inset 0 -10px 18px rgba(2, 6, 23, 0.06);
 }
 
@@ -469,7 +469,7 @@ thead .sticky-action {
   background-color: #ebedef;
 }
 .month-cell.bg-success {
-  background-color: rgba(197, 155, 58, 0.34) !important;
+  background-color: #2563EB !important;
 }
 
 .custom-textarea {
@@ -487,7 +487,7 @@ thead .sticky-action {
   background-color: transparent; /* เอา hover effect ออก */
 }
 .month-cell.bg-success.read-only-cell:hover {
-  background-color: rgba(197, 155, 58, 0.34) !important; /* keep selected state */
+  background-color: #2563EB !important; /* keep selected state */
 }
 
 .workplan-table--dark .table-wrapper {
