@@ -212,6 +212,34 @@
               </td>
             </template>
 
+            <template #action="{ item }">
+              <td class="action-body-cell" @click.stop>
+                <div class="action-cell">
+                  <CButton
+                    size="sm"
+                    color="primary"
+                    class="mr-2 action-btn action-btn-view"
+                    @click.stop="viewDocument(item)"
+                  >
+                    <CIcon name="cil-file" class="mr-1" />
+                    ดูเอกสาร
+                  </CButton>
+                  <CButton
+                    v-if="canDeleteDocument(item)"
+                    size="sm"
+                    color="danger"
+                    variant="outline"
+                    class="action-btn"
+                    :disabled="isDeleting(item)"
+                    @click.stop="deleteDocument(item)"
+                  >
+                    <CIcon name="cil-trash" class="mr-1" />
+                    {{ isDeleting(item) ? 'กำลังลบ...' : 'ลบเอกสาร' }}
+                  </CButton>
+                </div>
+              </td>
+            </template>
+
           </CDataTable>
           <div v-if="displayItems.length === 0" class="text-muted text-center py-4">
             ไม่พบข้อมูลที่ค้นหา
@@ -373,6 +401,7 @@ export default {
       perPage: 5,
       perPageOptions: [5, 10, 20, 50],
       activePage: 1,
+      deletingProposalIds: {},
       tableFields: [
         {
           key: 'proposalCode',
@@ -396,6 +425,14 @@ export default {
           label: 'วันที่ยื่น',
           _style: 'width:150px; text-align:center;',
           _classes: 'submitted-date-column'
+        },
+        {
+          key: 'action',
+          label: 'Action',
+          _style: 'width:220px; text-align:center;',
+          _classes: 'action-column',
+          sorter: false,
+          filter: false
         },
       ],
       activeFilter: null,
@@ -702,6 +739,54 @@ export default {
     handleRowClicked(item) {
       if (!item || !item._id) return;
       this.goToDetail(item._id);
+    },
+
+    viewDocument(item) {
+      if (!item || !item._id) return;
+      this.goToDetail(item._id);
+    },
+
+    canDeleteDocument(item) {
+      const status = String(item && item.currentStatus ? item.currentStatus : '').toLowerCase();
+      return status === 'draft';
+    },
+
+    isDeleting(item) {
+      const id = item && item._id ? String(item._id) : '';
+      return Boolean(id && this.deletingProposalIds[id]);
+    },
+
+    async deleteDocument(item) {
+      const id = item && item._id ? String(item._id) : '';
+      if (!id) return;
+
+      if (!this.canDeleteDocument(item)) {
+        window.alert('สามารถลบได้เฉพาะเอกสารที่อยู่สถานะแบบร่างเท่านั้น');
+        return;
+      }
+
+      const code = item && item.proposalCode ? String(item.proposalCode) : '-';
+      const confirmed = window.confirm(`ยืนยันการลบเอกสาร ${code} ?\nเมื่อลบแล้วจะไม่สามารถกู้คืนข้อมูลได้`);
+      if (!confirmed) return;
+
+      this.deletingProposalIds = {
+        ...this.deletingProposalIds,
+        [id]: true
+      };
+
+      try {
+        await Service.proposal.deleteDraft(id);
+        this.allProjects = this.allProjects.filter((row) => String(row && row._id ? row._id : '') !== id);
+      } catch (err) {
+        const apiMessage = err && err.response && err.response.data && err.response.data.message
+          ? String(err.response.data.message)
+          : '';
+        window.alert(apiMessage || 'ไม่สามารถลบเอกสารได้ กรุณาลองใหม่อีกครั้ง');
+      } finally {
+        const nextMap = { ...this.deletingProposalIds };
+        delete nextMap[id];
+        this.deletingProposalIds = nextMap;
+      }
     },
 
     goToDetail(id) {
@@ -1219,6 +1304,19 @@ export default {
 
 .action-cell .btn {
   white-space: nowrap;
+}
+
+.action-btn-view {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.action-btn-view:hover,
+.action-btn-view:focus {
+  background-color: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  color: #ffffff !important;
 }
 
 .table-surface /deep/ .table tbody tr:hover,
