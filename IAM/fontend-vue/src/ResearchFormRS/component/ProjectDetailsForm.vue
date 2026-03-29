@@ -350,6 +350,7 @@
             @upload-attachment="$emit('budget-attachment-upload', $event)"
             @open-attachment="$emit('budget-attachment-open', $event)"
             @attachment-meta-change="$emit('budget-attachment-meta-change', $event)"
+            @remove-attachment="$emit('budget-attachment-remove', $event)"
           />
         </div>
 

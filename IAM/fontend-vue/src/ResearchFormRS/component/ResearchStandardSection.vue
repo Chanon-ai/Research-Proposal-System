@@ -292,39 +292,73 @@ export default {
       }
       this.$emit('input', next)
     },
+    emitAttachmentRemovals (keys = []) {
+      if (!Array.isArray(keys) || keys.length === 0) return
+      keys.forEach((key) => {
+        const file = this.attachmentFor(key)
+        if (!file) return
+        this.$emit('remove-attachment', { slotKey: key, file })
+      })
+    },
     updateValue (key, val) {
       const newData = this.withAttachments({ ...this.value, [key]: val })
+      const removalKeys = []
 
       if (key === 'isPlant' && !val) {
+        if (newData.attachments.plantApproved) removalKeys.push('plantApproved')
+        if (newData.attachments.plantPending) removalKeys.push('plantPending')
         newData.plantSubType = ''
         newData.attachments.plantApproved = null
         newData.attachments.plantPending = null
       }
       if (key === 'isHuman' && !val) {
+        if (newData.attachments.humanApproved) removalKeys.push('humanApproved')
+        if (newData.attachments.humanPending) removalKeys.push('humanPending')
         newData.humanSubType = ''
         newData.attachments.humanApproved = null
         newData.attachments.humanPending = null
       }
       if (key === 'isAnimal' && !val) {
+        if (newData.attachments.animalApproved) removalKeys.push('animalApproved')
+        if (newData.attachments.animalPending) removalKeys.push('animalPending')
         newData.animalSubType = ''
         newData.attachments.animalApproved = null
         newData.attachments.animalPending = null
       }
 
       if (key === 'plantSubType') {
-        if (val === 'approved') newData.attachments.plantPending = null
-        if (val === 'pending') newData.attachments.plantApproved = null
+        if (val === 'approved') {
+          if (newData.attachments.plantPending) removalKeys.push('plantPending')
+          newData.attachments.plantPending = null
+        }
+        if (val === 'pending') {
+          if (newData.attachments.plantApproved) removalKeys.push('plantApproved')
+          newData.attachments.plantApproved = null
+        }
       }
       if (key === 'humanSubType') {
-        if (val === 'approved') newData.attachments.humanPending = null
-        if (val === 'pending') newData.attachments.humanApproved = null
+        if (val === 'approved') {
+          if (newData.attachments.humanPending) removalKeys.push('humanPending')
+          newData.attachments.humanPending = null
+        }
+        if (val === 'pending') {
+          if (newData.attachments.humanApproved) removalKeys.push('humanApproved')
+          newData.attachments.humanApproved = null
+        }
       }
       if (key === 'animalSubType') {
-        if (val === 'approved') newData.attachments.animalPending = null
-        if (val === 'pending') newData.attachments.animalApproved = null
+        if (val === 'approved') {
+          if (newData.attachments.animalPending) removalKeys.push('animalPending')
+          newData.attachments.animalPending = null
+        }
+        if (val === 'pending') {
+          if (newData.attachments.animalApproved) removalKeys.push('animalApproved')
+          newData.attachments.animalApproved = null
+        }
       }
 
       newData.mainType = this.deriveMainType(newData)
+      this.emitAttachmentRemovals(removalKeys)
       this.$emit('input', newData)
     },
     triggerAttach (key) {

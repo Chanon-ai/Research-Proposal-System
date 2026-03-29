@@ -195,7 +195,7 @@
 
               <td class="align-middle bg-white" v-if="!isReadOnly">
                 <CButton v-if="category.items.length > 0" color="danger" size="sm" class="w-100" @click="removeItem(catIndex, itemIndex)">
-                  <CIcon name="cil-trash" class="mr-1" /> ลบรายการ
+                  <CIcon name="cil-trash" class="mr-1" /> ลบ
                 </CButton>
               </td>
 
@@ -930,7 +930,23 @@ export default {
       this.calculateItemTotal(newItem);
     },
     removeItem(catIndex, itemIndex) {
-      this.categories[catIndex].items.splice(itemIndex, 1);
+      const category = this.categories[catIndex];
+      const item = category && Array.isArray(category.items) ? category.items[itemIndex] : null;
+      const attachment = item && item.attachment
+        ? { ...item.attachment }
+        : null;
+
+      if (category && Array.isArray(category.items)) {
+        category.items.splice(itemIndex, 1);
+      }
+
+      if (attachment) {
+        this.$emit('remove-attachment', {
+          catIndex,
+          itemId: item && item.id,
+          attachment
+        });
+      }
     },
     addMultiplier(item) {
       item.multipliers.push({ label: 'ตัวคูณใหม่', value: 1, isAdmin: false });

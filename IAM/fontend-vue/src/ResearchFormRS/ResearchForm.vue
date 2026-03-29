@@ -40,6 +40,7 @@
         @budget-attachment-upload="handleBudgetAttachmentUpload"
         @budget-attachment-open="handleBudgetAttachmentOpen"
         @budget-attachment-meta-change="handleBudgetAttachmentMetaChange"
+        @budget-attachment-remove="handleBudgetAttachmentRemove"
         @research-standard-upload="handleResearchStandardUpload"
         @research-standard-open="handleResearchStandardOpen"
         @research-standard-remove="handleResearchStandardRemove"
@@ -3836,6 +3837,32 @@ export default {
       const resolvedFile = this.resolveBudgetAttachmentFile(file, itemId)
       if (!resolvedFile) return
       await this.openFile(resolvedFile)
+    },
+    async handleBudgetAttachmentRemove ({ attachment }) {
+      if (this.mainFormReadOnly || !attachment) return
+
+      const normalizedFileId = this.normalizeFileId(
+        attachment.fileId || attachment.id || attachment._id
+      )
+      if (!normalizedFileId) return
+
+      if (this.viewProposalId) {
+        try {
+          await Service.proposal.deleteFormFile(this.viewProposalId, normalizedFileId)
+        } catch (_) {
+          // Keep UI in sync even when server cleanup fails.
+        }
+      }
+
+      this.removeFormFileRow(normalizedFileId)
+      this.markAsEdited()
+      if (this.viewProposalId) {
+        try {
+          await this.persistDraft({ silent: true })
+        } catch (_) {
+          // Skip blocking UI when silent draft save fails.
+        }
+      }
     },
     handleBudgetAttachmentMetaChange ({ itemId, attachment }) {
       if (!itemId || !attachment) return
