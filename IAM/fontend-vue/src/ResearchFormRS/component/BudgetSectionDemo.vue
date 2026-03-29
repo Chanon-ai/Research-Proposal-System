@@ -194,7 +194,7 @@
               </td>
 
               <td class="align-middle bg-white" v-if="!isReadOnly">
-                <CButton v-if="category.items.length > 0" color="danger" size="sm" class="w-100" @click="removeItem(catIndex, itemIndex)">
+                <CButton v-if="category.items.length > 0" color="danger" size="sm" variant="outline" @click="removeItem(catIndex, itemIndex)">
                   <CIcon name="cil-trash" class="mr-1" /> ลบ
                 </CButton>
               </td>
@@ -1618,3 +1618,4 @@ export default {
   background-color: #f8f9fa;
 }
 </style>
+
