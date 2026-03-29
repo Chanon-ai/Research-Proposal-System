@@ -4,17 +4,17 @@
     <CRow class="mb-4">
       <CCol sm="6" lg="3">
         <div
-          class="widget-click-area widget-draft"
-          @click="setFilter('draft')"
+          class="widget-click-area widget-all"
+          @click="clearFilter"
           :class="{
-            'is-active': activeFilter === 'draft',
-            'is-dimmed': activeFilter && activeFilter !== 'draft'
+            'is-active': !activeFilter,
+            'is-dimmed': Boolean(activeFilter)
           }"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-primary" :header="String(stats.draft || 0)" :text="$t('status.draft')">
+          <CWidgetDropdown class="user-widget-card" color="gradient-primary" :header="String(stats.all || 0)" text="ทั้งหมด">
             <template #footer>
               <div class="widget-footer-chart">
-                <CChartLine :datasets="[{ data: chartData.draft, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+                <CChartLine :datasets="[{ data: chartData.all, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
               </div>
             </template>
           </CWidgetDropdown>
@@ -23,36 +23,17 @@
 
       <CCol sm="6" lg="3">
         <div
-          class="widget-click-area widget-submitted"
-          @click="setFilter('submitted')"
+          class="widget-click-area widget-in-progress"
+          @click="setFilter('in_progress')"
           :class="{
-            'is-active': activeFilter === 'submitted',
-            'is-dimmed': activeFilter && activeFilter !== 'submitted'
+            'is-active': activeFilter === 'in_progress',
+            'is-dimmed': activeFilter && activeFilter !== 'in_progress'
           }"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-info" :header="String(stats.submitted || 0)" :text="$t('status.inProgress')">
+          <CWidgetDropdown class="user-widget-card" color="gradient-info" :header="String(stats.inProgress || 0)" text="กำลังดำเนินการ">
             <template #footer>
               <div class="widget-footer-chart">
-                <CChartLine :datasets="[{ data: chartData.submitted, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
-              </div>
-            </template>
-          </CWidgetDropdown>
-        </div>
-      </CCol>
-
-      <CCol sm="6" lg="3">
-        <div
-          class="widget-click-area widget-revision"
-          @click="setFilter('revision')"
-          :class="{
-            'is-active': activeFilter === 'revision',
-            'is-dimmed': activeFilter && activeFilter !== 'revision'
-          }"
-        >
-          <CWidgetDropdown class="user-widget-card" color="gradient-warning" :header="String(stats.revision || 0)" :text="$t('status.revision')">
-            <template #footer>
-              <div class="widget-footer-chart">
-                <CChartLine :datasets="[{ data: chartData.revision, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+                <CChartLine :datasets="[{ data: chartData.inProgress, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
               </div>
             </template>
           </CWidgetDropdown>
@@ -68,10 +49,29 @@
             'is-dimmed': activeFilter && activeFilter !== 'approved'
           }"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-success" :header="String(stats.approved || 0)" :text="$t('status.approved')">
+          <CWidgetDropdown class="user-widget-card" color="gradient-success" :header="String(stats.approved || 0)" text="อนุมัติ">
             <template #footer>
               <div class="widget-footer-chart">
                 <CChartBar :datasets="[{ data: chartData.approved, backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'transparent' }]" :options="chartOptions"/>
+              </div>
+            </template>
+          </CWidgetDropdown>
+        </div>
+      </CCol>
+
+      <CCol sm="6" lg="3">
+        <div
+          class="widget-click-area widget-rejected"
+          @click="setFilter('rejected')"
+          :class="{
+            'is-active': activeFilter === 'rejected',
+            'is-dimmed': activeFilter && activeFilter !== 'rejected'
+          }"
+        >
+          <CWidgetDropdown class="user-widget-card" color="gradient-danger" :header="String(stats.rejected || 0)" text="ไม่อนุมัติ">
+            <template #footer>
+              <div class="widget-footer-chart">
+                <CChartLine :datasets="[{ data: chartData.rejected, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.6)' }]" :options="chartOptions"/>
               </div>
             </template>
           </CWidgetDropdown>
@@ -160,8 +160,6 @@
             :fields="tableFields"
             :items-per-page="perPage"
             :active-page="activePage"
-            clickable-rows
-            @row-clicked="handleRowClicked"
             sorter
             hover
             striped
@@ -181,33 +179,16 @@
               </td>
             </template>
 
-            <template #updatedAt="{ item }">
-              <td class="submitted-date-cell">
-                {{ item.updatedAt
-                  ? new Date(item.updatedAt).toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' })
-                  : '-' }}
-              </td>
-            </template>
-
             <template #currentStatus="{ item }">
               <td class="current-status-cell">
                 <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.currentStatus)">
                   {{ getStatusLabel(item.currentStatus) }}
                 </CBadge>
-                <div class="status-progress-wrap">
-                  <CProgress
-                    :value="getProgressPercent(item.currentStatus)"
-                    :animated="isAnimatedStatus(item.currentStatus)"
-                    :striped="item.currentStatus === 'revision_requested'"
-                    show-percentage
-                    :precision="0"
-                    height="16px"
-                    class="status-progress-bar mb-1"
-                    :style="getStatusProgressStyle(item.currentStatus)"
-                  />
-                </div>
                 <div class="status-progress-label">
-                  {{ getProgressLabel(item.currentStatus) }}
+                  {{ getProgressLabel(item) }}
+                </div>
+                <div class="status-last-action-time">
+                  {{ getLastActionElapsedLabel(item) }}
                 </div>
               </td>
             </template>
@@ -275,6 +256,7 @@
 <script>
 import Service from '@/service/api'
 import { CChartLine, CChartBar } from '@coreui/vue-chartjs'
+import Swal from 'sweetalert2'
 
 const PROPOSAL_STATUSES = Object.freeze([
   'draft',
@@ -305,6 +287,20 @@ const IN_PROGRESS_STATUSES = Object.freeze([
   'assigned_to_committee',
   'under_review',
   'meeting_completed',
+  'resubmitted',
+  'second_round_review'
+])
+
+const FILTER_IN_PROGRESS_STATUSES = Object.freeze([
+  'submitted',
+  'faculty_review_pending',
+  'faculty_approved',
+  'office_received',
+  'document_checking',
+  'assigned_to_committee',
+  'under_review',
+  'meeting_completed',
+  'revision_requested',
   'resubmitted',
   'second_round_review'
 ])
@@ -345,25 +341,6 @@ const STATUS_STEP_MAP = Object.freeze({
   approved: 10,
   rejected: 10,
   announced: 10
-})
-
-const STATUS_PROGRESS_LABEL_MAP = Object.freeze({
-  draft: 'Step 1/10 - Draft',
-  pending_confirm: 'Step 2/10 - Waiting for collaborator confirmations',
-  submitted: 'ขั้นที่ 2/10 - ยื่นโครงการแล้ว',
-  faculty_review_pending: 'ขั้นที่ 3/10 - รอประธานพิจารณา',
-  faculty_approved: 'ขั้นที่ 4/10 - ประธานอนุมัติ',
-  office_received: 'ขั้นที่ 5/10 - ส่วนบริหารรับแล้ว',
-  document_checking: 'ขั้นที่ 5/10 - ตรวจสอบเอกสาร',
-  assigned_to_committee: 'ขั้นที่ 6/10 - มอบหมายกรรมการแล้ว',
-  under_review: 'ขั้นที่ 7/10 - กำลังพิจารณา',
-  meeting_completed: 'ขั้นที่ 8/10 - ประชุมเสร็จแล้ว',
-  revision_requested: 'ขอแก้ไข - กรุณาแก้ไขเอกสาร',
-  resubmitted: 'ส่งแก้ไขแล้ว - รอพิจารณารอบ 2',
-  second_round_review: 'ขั้นที่ 7/10 - พิจารณารอบ 2',
-  approved: 'ขั้นที่ 10/10 - อนุมัติแล้ว',
-  rejected: 'ขั้นที่ 10/10 - ไม่ผ่านการพิจารณา',
-  announced: 'ขั้นที่ 10/10 - ประกาศผลแล้ว'
 })
 
 const STATUS_COLORS = Object.freeze({
@@ -421,12 +398,6 @@ export default {
           _style: 'width:360px; text-align:center;'
         },
         {
-          key: 'updatedAt',
-          label: 'วันที่ยื่น',
-          _style: 'width:150px; text-align:center;',
-          _classes: 'submitted-date-column'
-        },
-        {
           key: 'action',
           label: 'Action',
           _style: 'width:220px; text-align:center;',
@@ -437,9 +408,7 @@ export default {
       ],
       activeFilter: null,
       filterGroups: {
-        draft: ['draft'],
-        submitted: [...IN_PROGRESS_STATUSES],
-        revision: ['revision_requested'],
+        in_progress: [...FILTER_IN_PROGRESS_STATUSES],
         approved: ['approved', 'announced'],
         rejected: ['rejected'],
       },
@@ -449,10 +418,10 @@ export default {
         step: STATUS_STEP_MAP[key] || 0
       })),
       chartData: {
-        draft: [65, 59, 84, 84, 51, 55, 40],
-        submitted: [35, 49, 60, 71, 80, 90, 75],
-        revision: [20, 30, 15, 25, 10, 35, 20],
+        all: [72, 68, 83, 77, 86, 91, 88],
+        inProgress: [35, 49, 60, 71, 80, 90, 75],
         approved: [10, 20, 30, 25, 35, 45, 40],
+        rejected: [6, 4, 5, 3, 4, 2, 1],
       },
       chartOptions: {
         responsive: true,
@@ -490,11 +459,10 @@ export default {
     stats() {
       const all = this.proposals;
       return {
-        draft: all.filter(p => p.currentStatus === 'draft').length,
-        submitted: all.filter(p => IN_PROGRESS_STATUSES.includes(String(p.currentStatus || '').toLowerCase())).length,
-        revision: all.filter(p => p.currentStatus === 'revision_requested').length,
-        approved: all.filter(p => ['approved', 'announced'].includes(p.currentStatus)).length,
-        rejected: all.filter(p => p.currentStatus === 'rejected').length,
+        all: all.length,
+        inProgress: all.filter(p => FILTER_IN_PROGRESS_STATUSES.includes(String(p.currentStatus || '').toLowerCase())).length,
+        approved: all.filter(p => ['approved', 'announced'].includes(String(p.currentStatus || '').toLowerCase())).length,
+        rejected: all.filter(p => String(p.currentStatus || '').toLowerCase() === 'rejected').length,
       };
     },
 
@@ -508,16 +476,13 @@ export default {
 
     filterLabel() {
       const labels = {
-        draft: this.$t('status.draft'),
-        pending_confirm: STATUS_LABEL_MAP.pending_confirm,
-        submitted: this.$t('status.inProgress'),
-        revision: this.$t('status.revision'),
-        approved: this.$t('status.approved'),
-        rejected: this.$t('status.rejected'),
+        in_progress: 'กำลังดำเนินการ',
+        approved: 'อนุมัติ',
+        rejected: 'ไม่อนุมัติ',
       };
       return this.activeFilter
-        ? this.$t('status.filteredBy', { label: labels[this.activeFilter] })
-        : this.$t('status.allProjects');
+        ? `โครงการที่กรอง: ${labels[this.activeFilter] || '-'}`
+        : 'โครงการทั้งหมด';
     },
 
     displayItems() {
@@ -705,12 +670,31 @@ export default {
       const key = String(status || '').toLowerCase();
       return IN_PROGRESS_STATUSES.includes(key) && key !== 'revision_requested';
     },
-
-    getProgressLabel(status) {
-      const key = String(status || '').toLowerCase();
-      return STATUS_PROGRESS_LABEL_MAP[key] || 'In progress';
+    getProgressLabel(itemOrStatus) {
+      const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null;
+      const key = String(item ? item.currentStatus : itemOrStatus || '').toLowerCase();
+      const researcherName = item && item.projectLeaderName ? String(item.projectLeaderName).trim() : '';
+      const ownerName = researcherName || 'ชื่อนักวิจัย';
+      const statusOwnerMap = {
+        draft: `${ownerName} : กำลังกรอกข้อมูล`,
+        pending_confirm: 'คณะวิจัย : รอการยินยอมจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
+        submitted: 'ส่วนบริหารโครงการ : กำลังพิจารณา',
+        faculty_review_pending: 'ประธานคณะ : กำลังพิจารณา',
+        faculty_approved: 'ส่วนบริหารโครงการ : รอรับเรื่อง',
+        office_received: 'ส่วนบริหารโครงการ : รับเรื่องแล้ว กำลังดำเนินการ',
+        document_checking: 'ส่วนบริหารโครงการ : กำลังตรวจสอบเอกสาร',
+        assigned_to_committee: 'ส่วนบริหารโครงการ : กำลังมอบหมายคณะผู้ทรงคุณวุฒิ',
+        under_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณา',
+        meeting_completed: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
+        revision_requested: `${ownerName} : รอแก้ไขเอกสารตามข้อเสนอแนะ`,
+        resubmitted: 'ส่วนบริหารโครงการ : ได้รับเอกสารแก้ไข กำลังส่งพิจารณาต่อ',
+        second_round_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ 2',
+        approved: 'ส่วนบริหารโครงการ : อนุมัติโครงการแล้ว',
+        rejected: 'ส่วนบริหารโครงการ : ไม่อนุมัติโครงการ',
+        announced: 'ส่วนบริหารโครงการ : ประกาศผลแล้ว'
+      };
+      return statusOwnerMap[key] || 'ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ';
     },
-
     getProgressText(status) {
       const key = String(status || '').toLowerCase();
       const pct = this.getProgressPercent(key);
@@ -729,16 +713,51 @@ export default {
       return 0;
     },
 
-    formatDate(date) {
-      if (!date) return "-";
-      return new Date(date).toLocaleDateString("th-TH", {
-        year: "numeric", month: "short", day: "numeric",
-      });
+    toValidDate(value) {
+      if (!value) return null;
+      const candidate = new Date(value);
+      if (Number.isNaN(candidate.getTime())) return null;
+      return candidate;
     },
 
-    handleRowClicked(item) {
-      if (!item || !item._id) return;
-      this.goToDetail(item._id);
+    getLatestActionDate(item) {
+      if (!item || typeof item !== 'object') return null;
+      const candidates = [
+        item.updatedAt,
+        item.submittedAt,
+        item.createdAt
+      ];
+      for (let index = 0; index < candidates.length; index += 1) {
+        const parsed = this.toValidDate(candidates[index]);
+        if (parsed) return parsed;
+      }
+      return null;
+    },
+
+    formatElapsedSince(dateValue) {
+      const date = this.toValidDate(dateValue);
+      if (!date) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: \u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e40\u0e27\u0e25\u0e32';
+
+      const diffMs = Date.now() - date.getTime();
+      if (diffMs < 60000) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: \u0e40\u0e21\u0e37\u0e48\u0e2d\u0e2a\u0e31\u0e01\u0e04\u0e23\u0e39\u0e48';
+
+      const minuteMs = 60 * 1000;
+      const hourMs = 60 * minuteMs;
+      const dayMs = 24 * hourMs;
+      const weekMs = 7 * dayMs;
+      const monthMs = 30 * dayMs;
+      const yearMs = 365 * dayMs;
+
+      if (diffMs < hourMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / minuteMs) + ' \u0e19\u0e32\u0e17\u0e35\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
+      if (diffMs < dayMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / hourMs) + ' \u0e0a\u0e31\u0e48\u0e27\u0e42\u0e21\u0e07\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
+      if (diffMs < weekMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / dayMs) + ' \u0e27\u0e31\u0e19\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
+      if (diffMs < monthMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / weekMs) + ' \u0e2a\u0e31\u0e1b\u0e14\u0e32\u0e2b\u0e4c\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
+      if (diffMs < yearMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / monthMs) + ' \u0e40\u0e14\u0e37\u0e2d\u0e19\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
+      return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / yearMs) + ' \u0e1b\u0e35\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
+    },
+
+    getLastActionElapsedLabel(item) {
+      return this.formatElapsedSince(this.getLatestActionDate(item));
     },
 
     viewDocument(item) {
@@ -761,13 +780,28 @@ export default {
       if (!id) return;
 
       if (!this.canDeleteDocument(item)) {
-        window.alert('สามารถลบได้เฉพาะเอกสารที่อยู่สถานะแบบร่างเท่านั้น');
+        await Swal.fire({
+          icon: 'warning',
+          title: 'ไม่สามารถลบเอกสารได้',
+          text: 'สามารถลบได้เฉพาะเอกสารที่อยู่สถานะแบบร่างเท่านั้น',
+          confirmButtonText: 'ตกลง'
+        });
         return;
       }
 
       const code = item && item.proposalCode ? String(item.proposalCode) : '-';
-      const confirmed = window.confirm(`ยืนยันการลบเอกสาร ${code} ?\nเมื่อลบแล้วจะไม่สามารถกู้คืนข้อมูลได้`);
-      if (!confirmed) return;
+      const confirmation = await Swal.fire({
+        icon: 'warning',
+        title: `ยืนยันการลบเอกสาร ${code} ?`,
+        text: 'เมื่อลบแล้วจะไม่สามารถกู้คืนข้อมูลได้',
+        showCancelButton: true,
+        confirmButtonText: 'ลบเอกสาร',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        reverseButtons: true
+      });
+      if (!confirmation || !confirmation.isConfirmed) return;
 
       this.deletingProposalIds = {
         ...this.deletingProposalIds,
@@ -781,7 +815,12 @@ export default {
         const apiMessage = err && err.response && err.response.data && err.response.data.message
           ? String(err.response.data.message)
           : '';
-        window.alert(apiMessage || 'ไม่สามารถลบเอกสารได้ กรุณาลองใหม่อีกครั้ง');
+        await Swal.fire({
+          icon: 'error',
+          title: 'ลบเอกสารไม่สำเร็จ',
+          text: apiMessage || 'ไม่สามารถลบเอกสารได้ กรุณาลองใหม่อีกครั้ง',
+          confirmButtonText: 'ตกลง'
+        });
       } finally {
         const nextMap = { ...this.deletingProposalIds };
         delete nextMap[id];
@@ -863,20 +902,20 @@ export default {
   overflow: hidden;
 }
 
-.widget-draft .user-widget-card::before {
+.widget-all .user-widget-card::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='26' y='18' width='68' height='84' rx='10' fill='white' fill-opacity='0.9'/%3E%3Crect x='38' y='38' width='44' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='52' width='40' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='66' width='33' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Cpath d='M84 18v20h20' fill='white' fill-opacity='0.72'/%3E%3C/svg%3E");
 }
 
-.widget-submitted .user-widget-card::before {
+.widget-in-progress .user-widget-card::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='36' cy='36' r='11' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='84' cy='60' r='11' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='44' cy='88' r='11' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M44 36h28M75 41l8-5-8-5M75 84l8 5-8 5M54 83l23-16' stroke='%23000000' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
-}
-
-.widget-revision .user-widget-card::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='20' width='72' height='80' rx='12' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M42 74l10 10 24-24' stroke='%23000000' stroke-width='6' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3Cpath d='M72 34l12 12M61 45l23-23 12 12-23 23H61z' fill='%23000000' fill-opacity='0.2'/%3E%3C/svg%3E");
 }
 
 .widget-approved .user-widget-card::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
+}
+
+.widget-rejected .user-widget-card::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='36' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 46l28 28M74 46L46 74' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-opacity='0.24'/%3E%3Ccircle cx='60' cy='60' r='46' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
 }
 
 .widget-footer-chart {
@@ -942,6 +981,14 @@ export default {
 .status-progress-label {
   font-size: 11px;
   color: #888;
+  text-align: center;
+}
+
+.status-last-action-time {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
   text-align: center;
 }
 
@@ -1437,7 +1484,9 @@ body.c-dark-theme .proposal-code-cell,
 [data-coreui-theme='dark'] .project-owner,
 body.c-dark-theme .project-owner,
 [data-coreui-theme='dark'] .status-progress-label,
-body.c-dark-theme .status-progress-label {
+body.c-dark-theme .status-progress-label,
+[data-coreui-theme='dark'] .status-last-action-time,
+body.c-dark-theme .status-last-action-time {
   color: #9ca3af;
 }
 
@@ -1572,3 +1621,5 @@ body.c-dark-theme .clear-filter-btn:hover {
 }
 
 </style>
+
+
