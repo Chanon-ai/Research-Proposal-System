@@ -7,7 +7,7 @@
         <p class="notif-hero__subtitle mb-0">จัดการและติดตามการแจ้งเตือนทั้งระบบ</p>
       </div>
       <div class="notif-hero__action">
-        <CButton color="primary" size="lg" class="notif-hero__btn" @click="markAllRead">ทำเครื่องหมายอ่านทั้งหมด</CButton>
+        <CButton color="primary" size="lg" class="notif-hero__btn" @click="markAllRead"><CIcon name="cil-chevron-right" class="mr-1" /> ทำเครื่องหมายอ่านทั้งหมด</CButton>
       </div>
     </section>
 
@@ -68,9 +68,9 @@
           </div>
           <div class="header-tools">
             <div class="notif-tabs">
-              <CButton :color="activeTab === 'all' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('all')">ทั้งหมด</CButton>
-              <CButton :color="activeTab === 'unread' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('unread')">ยังไม่อ่าน</CButton>
-              <CButton :color="activeTab === 'read' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('read')">อ่านแล้ว</CButton>
+              <CButton :color="activeTab === 'all' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('all')"><CIcon name="cil-chevron-right" class="mr-1" /> ทั้งหมด</CButton>
+              <CButton :color="activeTab === 'unread' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('unread')"><CIcon name="cil-chevron-right" class="mr-1" /> ยังไม่อ่าน</CButton>
+              <CButton :color="activeTab === 'read' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('read')"><CIcon name="cil-chevron-right" class="mr-1" /> อ่านแล้ว</CButton>
             </div>
             <CSelect class="notif-type-select" :value="filterType" :options="typeFilterOptions" @change="onTypeFilterChange" />
           </div>
@@ -99,9 +99,9 @@
             </small>
             <div>
               <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="notif.isRead" @click="markAsRead(notif)">
-                ทำเครื่องหมายอ่าน
+                <CIcon name="cil-chevron-right" class="mr-1" /> ทำเครื่องหมายอ่าน
               </CButton>
-              <CButton size="sm" color="danger" @click="deleteNotification(notif)">ลบ</CButton>
+              <CButton size="sm" color="danger" @click="deleteNotification(notif)"><CIcon name="cil-chevron-right" class="mr-1" /> ลบ</CButton>
             </div>
           </div>
         </div>
@@ -109,8 +109,8 @@
         <div class="notif-footer">
           <small class="text-muted">หน้าที่ {{ page }} / {{ totalPages }}</small>
           <div>
-            <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="page <= 1 || loading" @click="onPageChange(page - 1)">ก่อนหน้า</CButton>
-            <CButton size="sm" color="secondary" variant="outline" :disabled="page >= totalPages || loading" @click="onPageChange(page + 1)">ถัดไป</CButton>
+            <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="page <= 1 || loading" @click="onPageChange(page - 1)"><CIcon name="cil-chevron-right" class="mr-1" /> ก่อนหน้า</CButton>
+            <CButton size="sm" color="secondary" variant="outline" :disabled="page >= totalPages || loading" @click="onPageChange(page + 1)"><CIcon name="cil-chevron-right" class="mr-1" /> ถัดไป</CButton>
           </div>
         </div>
       </CCardBody>
@@ -182,7 +182,7 @@
           </div>
 
           <div class="mb-3" v-if="hasTemplateForType(sendForm.type)">
-            <CButton size="sm" color="secondary" variant="outline" @click="applyTemplate">ใช้ Template</CButton>
+            <CButton size="sm" color="secondary" variant="outline" @click="applyTemplate"><CIcon name="cil-chevron-right" class="mr-1" /> ใช้ Template</CButton>
           </div>
 
           <div class="preview-box">
@@ -200,9 +200,9 @@
       <!-- ✅ footer: padding รอบด้าน, ปุ่มสีน้ำเงิน -->
       <template #footer-wrapper>
         <div class="send-modal-footer d-flex justify-content-end w-100">
-          <CButton color="secondary" variant="outline" class="modal-btn" @click="closeSendModal">ยกเลิก</CButton>
+          <CButton color="secondary" variant="outline" class="modal-btn" @click="closeSendModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
           <CButton color="primary" class="modal-btn btn-save" :disabled="sendLoading" @click="sendNotification">
-            {{ sendLoading ? 'กำลังส่ง...' : 'ส่งการแจ้งเตือน' }}
+            <CIcon name="cil-chevron-right" class="mr-1" /> {{ sendLoading ? 'กำลังส่ง...' : 'ส่งการแจ้งเตือน' }}
           </CButton>
         </div>
       </template>

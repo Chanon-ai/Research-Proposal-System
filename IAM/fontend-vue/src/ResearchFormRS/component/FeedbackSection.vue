@@ -49,7 +49,7 @@
                         variant="outline"
                         @click="toggleFeedbackSectionCard(section.sectionKey)"
                       >
-                        {{ isFeedbackSectionCollapsed(section.sectionKey) ? 'กางดู' : 'ยุบการ์ด' }}
+                        <CIcon name="cil-chevron-left" class="mr-1" /> {{ isFeedbackSectionCollapsed(section.sectionKey) ? 'กางดู' : 'ยุบการ์ด' }}
                       </CButton>
                     </div>
                   </div>
@@ -633,7 +633,7 @@
                         :disabled="isSubmittingFeedbackSection(section.sectionKey)"
                         @click="submitFeedbackSection(section)"
                       >
-                        {{ isSubmittingFeedbackSection(section.sectionKey) ? 'กำลังส่งแก้ไข...' : 'ส่งแก้ไข' }}
+                        <CIcon name="cil-chevron-left" class="mr-1" /> {{ isSubmittingFeedbackSection(section.sectionKey) ? 'กำลังส่งแก้ไข...' : 'ส่งแก้ไข' }}
                       </CButton>
                       <CButton
                         v-else
@@ -641,7 +641,7 @@
                         variant="outline"
                         @click="reopenFeedbackSection(section.sectionKey)"
                       >
-                        แก้ไขต่อ
+                        <CIcon name="cil-chevron-right" class="mr-1" /> แก้ไขต่อ
                       </CButton>
                     </div>
                   </div>

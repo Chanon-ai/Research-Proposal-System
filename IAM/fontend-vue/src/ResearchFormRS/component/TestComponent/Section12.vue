@@ -8,7 +8,7 @@
           class="flex-fill rounded-0"
           @click="setDuration(6)"
         >
-          6 เดือน
+          <CIcon name="cil-chevron-right" class="mr-1" /> 6 เดือน
         </CButton>
         <CButton
           :color="selectedDuration === 12 ? 'primary' : 'secondary'"
@@ -16,7 +16,7 @@
           class="flex-fill rounded-0"
           @click="setDuration(12)"
         >
-          1 ปี (12 เดือน)
+          <CIcon name="cil-chevron-right" class="mr-1" /> 1 ปี (12 เดือน)
         </CButton>
         <CButton
           :color="selectedDuration === 24 ? 'primary' : 'secondary'"
@@ -24,7 +24,7 @@
           class="flex-fill rounded-0"
           @click="setDuration(24)"
         >
-          2 ปี (24 เดือน)
+          <CIcon name="cil-chevron-right" class="mr-1" /> 2 ปี (24 เดือน)
         </CButton>
       </CButtonGroup>
 
@@ -98,7 +98,7 @@
                   @click="removeActivity(index)" 
                   title="ลบกิจกรรม"
                 >
-                  ลบ
+                  <CIcon name="cil-chevron-right" class="mr-1" /> ลบ
                 </CButton>
               </td>
             </tr>
@@ -108,7 +108,7 @@
 
       <div class="d-flex justify-content-end mt-3" v-if="!isReadOnly">
         <CButton color="primary" variant="outline" @click="addActivity">
-          + เพิ่มกิจกรรมใหม่
+          <CIcon name="cil-plus" class="mr-1" />  เพิ่มกิจกรรมใหม่
         </CButton>
       </div>
     </CCardBody>

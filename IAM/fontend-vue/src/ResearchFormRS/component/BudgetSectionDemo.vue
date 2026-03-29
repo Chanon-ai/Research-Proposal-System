@@ -7,10 +7,10 @@
           <i v-if="category.isOther" class="fa fa-money-bill-wave mr-2"></i> {{ getCategoryTitle(category) }}
         </h5>
         <div v-if="!isReadOnly"> <CButton color="light" size="sm" class="mr-2 text-primary font-weight-bold" @click="addItem(catIndex)">
-            + เพิ่มรายการเอง
+            <CIcon name="cil-plus" class="mr-1" />  เพิ่มรายการเอง
           </CButton>
           <label class="btn btn-light btn-sm mb-0 text-primary font-weight-bold cursor-pointer">
-            <i class="fa fa-paperclip"></i> แนบเอกสาร
+            <CIcon name="cil-library-add" class="mr-1" /> แนบเอกสาร
             <input type="file" style="display: none;" @change="attachDocToCategory($event, catIndex)" multiple>
           </label>
         </div>
@@ -21,7 +21,7 @@
           <thead class="bg-primary text-white" :style="tableHeadStyle">
             <tr>
               <th width="25%" class="align-middle">รายการ</th>
-              <th width="35%" class="align-middle">รายละเอียดตัวคูณ (เกณฑ์ มฟล. 2569)</th>
+              <th width="35%" class="align-middle">รายละเอียดตัวคูณ</th>
               <th width="10%" class="align-middle">งบรวม (บาท)</th>
               <th width="8%" class="align-middle">งวด 1</th>
               <th width="8%" class="align-middle">งวด 2</th>
@@ -80,6 +80,7 @@
                         <option value="CV">CV</option>
                         <option value="ServiceRates">อัตราค่าบริการต่าง ๆ / Service Rates</option>
                       </select>
+                      
                       <CButton
                         v-if="item.attachment.docType"
                         color="info"
@@ -88,17 +89,9 @@
                         class="text-nowrap"
                         @click.stop="openAttachmentExample(item.attachment.docType)"
                       >
-                        <i class="fa fa-file-alt mr-1"></i> ตัวอย่างเอกสาร
+                        <CIcon name="cil-clipboard" class="mr-1" /> <i class="fa fa-file-alt mr-1"></i> ตัวอย่างเอกสาร
                       </CButton>
-                      <CButton
-                        color="primary"
-                        size="sm"
-                        class="text-nowrap"
-                        :disabled="Boolean(item && item.attachment && item.attachment.uploading)"
-                        @click.stop="openAttachment(item)"
-                      >
-                        <i class="fa fa-folder-open mr-1"></i> เปิดดู
-                      </CButton>
+                      
                     </div>
                   </div>
                 </div>
@@ -202,7 +195,7 @@
 
               <td class="align-middle bg-white" v-if="!isReadOnly">
                 <CButton v-if="category.items.length > 0" color="danger" size="sm" class="w-100" @click="removeItem(catIndex, itemIndex)">
-                  <i class="fa fa-trash"></i> ลบรายการ
+                  <CIcon name="cil-trash" class="mr-1" /> ลบรายการ
                 </CButton>
               </td>
 

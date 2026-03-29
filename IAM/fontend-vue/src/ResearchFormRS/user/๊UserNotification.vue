@@ -21,14 +21,14 @@
                   :key="tab.key"
                   :class="['filter-tab', { active: activeFilter === tab.key }]"
                   @click="activeFilter = tab.key"
-                >{{ tab.label }}</button>
+                ><CIcon name="cil-chevron-right" class="mr-1" /> {{ tab.label }}</button>
               </div>
             </div>
 
             <div class="header-right">
               <div class="notif-toolbar" v-if="unreadCount > 0">
                 <span class="unread-count">{{ unreadCount }} รายการยังไม่ได้อ่าน</span>
-                <button class="btn-mark-all" @click="markAllRead">อ่านทั้งหมด</button>
+                <button class="btn-mark-all" @click="markAllRead"><CIcon name="cil-chevron-right" class="mr-1" /> อ่านทั้งหมด</button>
               </div>
             </div>
           </div>
@@ -98,7 +98,7 @@
                     :key="action.label"
                     class="notif-action-btn"
                     @click.stop="action.handler && action.handler()"
-                  >{{ action.label }} ›</button>
+                  ><CIcon name="cil-chevron-right" class="mr-1" /> {{ action.label }} ›</button>
                 </div>
               </div>
 

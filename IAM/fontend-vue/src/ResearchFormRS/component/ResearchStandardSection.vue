@@ -1,6 +1,6 @@
 <template>
   <div class="section mb-4 research-standard-section" :class="{ 'is-dark': isDarkTheme }">
-    <h6 class="section-title">18. มาตรฐานการวิจัย <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+    <h6 class="section-title">18. มาตรฐานการวิจัย</h6>
     <div class="funding-options">
       <input
         ref="fileInput"
@@ -11,55 +11,46 @@
       >
 
       <div class="form-check mb-3">
-        <input v-model="mainType" type="radio" class="form-check-input" id="std1" value="none" :disabled="isReadOnly">
-        <label class="form-check-label" for="std1" :class="{ 'text-muted': isReadOnly && mainType !== 'none' }">
-          <strong>ไม่มีการทำวิจัยในมนุษย์ / ไม่มีการใช้สัตว์ทดลอง / การวิจัยที่เกี่ยวข้องกับงานด้านเทคโนโลยีชีวภาพสมัยใหม่</strong>
+        <input v-model="isHuman" type="checkbox" class="form-check-input" id="chk-human" :disabled="isReadOnly">
+        <label class="form-check-label" for="chk-human" :class="{ 'text-muted': isReadOnly && !isHuman }">
+          <strong>มีการทำวิจัยในมนุษย์</strong>
         </label>
 
-        <div v-if="mainType === 'none'" class="sub-options mt-2">
+        <div v-if="isHuman" class="sub-options mt-2">
           <div class="form-check mb-3">
-            <input v-model="isPlant" type="checkbox" class="form-check-input" id="chk-plant" :disabled="isReadOnly">
-            <label class="form-check-label" for="chk-plant" :class="{ 'text-muted': isReadOnly && !isPlant }">
-              <strong>มีการเก็บ จัดหา หรือรวบรวมพันธุ์พืชพื้นเมืองทั่วไปและพันธุ์พืชป่าหรือส่วนใดของพันธุ์พืช เห็ด รา เพื่อการศึกษา ทดลอง หรือวิจัย ตามมาตรา 53 แห่งพระราชบัญญัติคุ้มครองพันธุ์พืช พ.ศ. 2542</strong>
-            </label>
-
-            <div v-if="isPlant" class="sub-options mt-2">
-              <div class="form-check mb-3">
-                <input v-model="plantSubType" type="radio" class="form-check-input" id="plant-appr" value="approved" :disabled="isReadOnly">
-                <label class="form-check-label" for="plant-appr" :class="{ 'text-muted': isReadOnly && plantSubType !== 'approved' }">มีหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ ตามมาตรา 53 แห่งพระราชบัญญัติคุ้มครองพันธุ์พืช พ.ศ. 2542 (แนบสำเนา 1 ชุด)</label>
-                <div v-if="plantSubType === 'approved'" class="mt-2">
-                  <div v-if="!isReadOnly" class="d-inline-block mr-2">
-                    <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('plantApproved')">แนบเอกสาร</CButton>
-                  </div>
-                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('section53Notification')">ตัวอย่างเอกสาร</CButton>
-                  <div class="mt-2">
-                    <AttachmentCard
-                      :file="attachmentFor('plantApproved')"
-                      :is-read-only="isReadOnly"
-                      @open="openAttachment('plantApproved')"
-                      @remove="removeAttachment('plantApproved')"
-                    />
-                  </div>
-                </div>
+            <input v-model="humanSubType" type="radio" class="form-check-input" id="human-appr" value="approved" :disabled="isReadOnly">
+            <label class="form-check-label" for="human-appr" :class="{ 'text-muted': isReadOnly && humanSubType !== 'approved' }">มีหนังสือรับรองจริยธรรมการวิจัยในมนุษย์ (แนบสำเนา 1 ชุด)</label>
+            <div v-if="humanSubType === 'approved'" class="mt-2">
+              <div v-if="!isReadOnly" class="d-inline-block mr-2">
+                <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('humanApproved')"><CIcon name="cil-library-add" class="mr-1" /> แนบเอกสาร</CButton>
               </div>
+              <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('humanEthicsCertificate')"><CIcon name="cil-clipboard" class="mr-1" /> ตัวอย่างเอกสาร</CButton>
+              <div class="mt-2">
+                <AttachmentCard
+                  :file="attachmentFor('humanApproved')"
+                  :is-read-only="isReadOnly"
+                  @open="openAttachment('humanApproved')"
+                  @remove="removeAttachment('humanApproved')"
+                />
+              </div>
+            </div>
+          </div>
 
-              <div class="form-check mb-2">
-                <input v-model="plantSubType" type="radio" class="form-check-input" id="plant-pend" value="pending" :disabled="isReadOnly">
-                <label class="form-check-label" for="plant-pend" :class="{ 'text-muted': isReadOnly && plantSubType !== 'pending' }">ไม่มีหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ อยู่ระหว่างการดำเนินการ</label>
-                <div v-if="plantSubType === 'pending'" class="mt-2">
-                  <div v-if="!isReadOnly" class="d-inline-block mr-2">
-                    <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('plantPending')">แนบเอกสารหลักฐาน</CButton>
-                  </div>
-                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('section53Notification')">ตัวอย่างเอกสาร</CButton>
-                  <div class="mt-2">
-                    <AttachmentCard
-                      :file="attachmentFor('plantPending')"
-                      :is-read-only="isReadOnly"
-                      @open="openAttachment('plantPending')"
-                      @remove="removeAttachment('plantPending')"
-                    />
-                  </div>
-                </div>
+          <div class="form-check mb-2">
+            <input v-model="humanSubType" type="radio" class="form-check-input" id="human-pend" value="pending" :disabled="isReadOnly">
+            <label class="form-check-label" for="human-pend" :class="{ 'text-muted': isReadOnly && humanSubType !== 'pending' }">ไม่มีหนังสือรับรองจริยธรรมการวิจัยในมนุษย์ อยู่ระหว่างเสนอคณะกรรมการจริยธรรมการวิจัยในมนุษย์พิจารณา</label>
+            <div v-if="humanSubType === 'pending'" class="mt-2">
+              <div v-if="!isReadOnly" class="d-inline-block mr-2">
+                <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('humanPending')"><CIcon name="cil-library-add" class="mr-1" /> แนบเอกสารหลักฐาน</CButton>
+              </div>
+              <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('humanEthicsCertificate')"><CIcon name="cil-clipboard" class="mr-1" /> ตัวอย่างเอกสาร</CButton>
+              <div class="mt-2">
+                <AttachmentCard
+                  :file="attachmentFor('humanPending')"
+                  :is-read-only="isReadOnly"
+                  @open="openAttachment('humanPending')"
+                  @remove="removeAttachment('humanPending')"
+                />
               </div>
             </div>
           </div>
@@ -67,102 +58,93 @@
       </div>
 
       <div class="form-check mb-3">
-        <input v-model="mainType" type="radio" class="form-check-input" id="std2" value="human_animal" :disabled="isReadOnly">
-        <label class="form-check-label" for="std2" :class="{ 'text-muted': isReadOnly && mainType !== 'human_animal' }">
-          <strong>มีการทำวิจัยในมนุษย์ / มีการใช้สัตว์ทดลอง</strong>
+        <input v-model="isAnimal" type="checkbox" class="form-check-input" id="chk-animal" :disabled="isReadOnly">
+        <label class="form-check-label" for="chk-animal" :class="{ 'text-muted': isReadOnly && !isAnimal }">
+          <strong>มีการใช้สัตว์ทดลอง</strong>
         </label>
 
-        <div v-if="mainType === 'human_animal'" class="sub-options mt-2">
-          <div v-if="!isHuman && !isAnimal && !isReadOnly" class="text-danger mb-3 helper-text">
-            * กรุณาเลือกอย่างน้อย 1 อย่าง (มนุษย์ หรือ สัตว์ทดลอง)
-          </div>
-
+        <div v-if="isAnimal" class="sub-options mt-2">
           <div class="form-check mb-3">
-            <input v-model="isHuman" type="checkbox" class="form-check-input" id="chk-human" :disabled="isReadOnly">
-            <label class="form-check-label" for="chk-human" :class="{ 'text-muted': isReadOnly && !isHuman }"><strong>มีการทำวิจัยในมนุษย์</strong></label>
-
-            <div v-if="isHuman" class="sub-options mt-2">
-              <div class="form-check mb-3">
-                <input v-model="humanSubType" type="radio" class="form-check-input" id="human-appr" value="approved" :disabled="isReadOnly">
-                <label class="form-check-label" for="human-appr" :class="{ 'text-muted': isReadOnly && humanSubType !== 'approved' }">มีหนังสือรับรองจริยธรรมการวิจัยในมนุษย์ (แนบสำเนา 1 ชุด)</label>
-                <div v-if="humanSubType === 'approved'" class="mt-2">
-                  <div v-if="!isReadOnly" class="d-inline-block mr-2">
-                    <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('humanApproved')">แนบเอกสาร</CButton>
-                  </div>
-                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('humanEthicsCertificate')">ตัวอย่างเอกสาร</CButton>
-                  <div class="mt-2">
-                    <AttachmentCard
-                      :file="attachmentFor('humanApproved')"
-                      :is-read-only="isReadOnly"
-                      @open="openAttachment('humanApproved')"
-                      @remove="removeAttachment('humanApproved')"
-                    />
-                  </div>
-                </div>
+            <input v-model="animalSubType" type="radio" class="form-check-input" id="animal-appr" value="approved" :disabled="isReadOnly">
+            <label class="form-check-label" for="animal-appr" :class="{ 'text-muted': isReadOnly && animalSubType !== 'approved' }">มีหนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์ (แนบสำเนา 1 ชุด)</label>
+            <div v-if="animalSubType === 'approved'" class="mt-2">
+              <div v-if="!isReadOnly" class="d-inline-block mr-2">
+                <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('animalApproved')"><CIcon name="cil-library-add" class="mr-1" /> แนบเอกสาร</CButton>
               </div>
-
-              <div class="form-check mb-2">
-                <input v-model="humanSubType" type="radio" class="form-check-input" id="human-pend" value="pending" :disabled="isReadOnly">
-                <label class="form-check-label" for="human-pend" :class="{ 'text-muted': isReadOnly && humanSubType !== 'pending' }">ไม่มีหนังสือรับรองจริยธรรมการวิจัยในมนุษย์ อยู่ระหว่างเสนอคณะกรรมการจริยธรรมการวิจัยในมนุษย์พิจารณา</label>
-                <div v-if="humanSubType === 'pending'" class="mt-2">
-                  <div v-if="!isReadOnly" class="d-inline-block mr-2">
-                    <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('humanPending')">แนบเอกสารหลักฐาน</CButton>
-                  </div>
-                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('humanEthicsCertificate')">ตัวอย่างเอกสาร</CButton>
-                  <div class="mt-2">
-                    <AttachmentCard
-                      :file="attachmentFor('humanPending')"
-                      :is-read-only="isReadOnly"
-                      @open="openAttachment('humanPending')"
-                      @remove="removeAttachment('humanPending')"
-                    />
-                  </div>
-                </div>
+              <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('animalEthicsCertificate')"><CIcon name="cil-clipboard" class="mr-1" /> ตัวอย่างเอกสาร</CButton>
+              <div class="mt-2">
+                <AttachmentCard
+                  :file="attachmentFor('animalApproved')"
+                  :is-read-only="isReadOnly"
+                  @open="openAttachment('animalApproved')"
+                  @remove="removeAttachment('animalApproved')"
+                />
               </div>
             </div>
           </div>
 
-          <div class="form-check mb-3">
-            <input v-model="isAnimal" type="checkbox" class="form-check-input" id="chk-animal" :disabled="isReadOnly">
-            <label class="form-check-label" for="chk-animal" :class="{ 'text-muted': isReadOnly && !isAnimal }"><strong>มีการใช้สัตว์ทดลอง</strong></label>
-
-            <div v-if="isAnimal" class="sub-options mt-2">
-              <div class="form-check mb-3">
-                <input v-model="animalSubType" type="radio" class="form-check-input" id="animal-appr" value="approved" :disabled="isReadOnly">
-                <label class="form-check-label" for="animal-appr" :class="{ 'text-muted': isReadOnly && animalSubType !== 'approved' }">มีหนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์ (แนบสำเนา 1 ชุด)</label>
-                <div v-if="animalSubType === 'approved'" class="mt-2">
-                  <div v-if="!isReadOnly" class="d-inline-block mr-2">
-                    <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('animalApproved')">แนบเอกสาร</CButton>
-                  </div>
-                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('animalEthicsCertificate')">ตัวอย่างเอกสาร</CButton>
-                  <div class="mt-2">
-                    <AttachmentCard
-                      :file="attachmentFor('animalApproved')"
-                      :is-read-only="isReadOnly"
-                      @open="openAttachment('animalApproved')"
-                      @remove="removeAttachment('animalApproved')"
-                    />
-                  </div>
-                </div>
+          <div class="form-check mb-2">
+            <input v-model="animalSubType" type="radio" class="form-check-input" id="animal-pend" value="pending" :disabled="isReadOnly">
+            <label class="form-check-label" for="animal-pend" :class="{ 'text-muted': isReadOnly && animalSubType !== 'pending' }">ไม่มีหนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์ อยู่ระหว่างเสนอคณะกรรมการจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์</label>
+            <div v-if="animalSubType === 'pending'" class="mt-2">
+              <div v-if="!isReadOnly" class="d-inline-block mr-2">
+                <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('animalPending')"><CIcon name="cil-library-add" class="mr-1" /> แนบเอกสารหลักฐาน</CButton>
               </div>
+              <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('animalEthicsCertificate')"><CIcon name="cil-clipboard" class="mr-1" /> ตัวอย่างเอกสาร</CButton>
+              <div class="mt-2">
+                <AttachmentCard
+                  :file="attachmentFor('animalPending')"
+                  :is-read-only="isReadOnly"
+                  @open="openAttachment('animalPending')"
+                  @remove="removeAttachment('animalPending')"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <div class="form-check mb-2">
-                <input v-model="animalSubType" type="radio" class="form-check-input" id="animal-pend" value="pending" :disabled="isReadOnly">
-                <label class="form-check-label" for="animal-pend" :class="{ 'text-muted': isReadOnly && animalSubType !== 'pending' }">ไม่มีหนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์ อยู่ระหว่างเสนอคณะกรรมการจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์</label>
-                <div v-if="animalSubType === 'pending'" class="mt-2">
-                  <div v-if="!isReadOnly" class="d-inline-block mr-2">
-                    <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('animalPending')">แนบเอกสารหลักฐาน</CButton>
-                  </div>
-                  <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('animalEthicsCertificate')">ตัวอย่างเอกสาร</CButton>
-                  <div class="mt-2">
-                    <AttachmentCard
-                      :file="attachmentFor('animalPending')"
-                      :is-read-only="isReadOnly"
-                      @open="openAttachment('animalPending')"
-                      @remove="removeAttachment('animalPending')"
-                    />
-                  </div>
-                </div>
+      <div class="form-check mb-3">
+        <input v-model="isPlant" type="checkbox" class="form-check-input" id="chk-plant" :disabled="isReadOnly">
+        <label class="form-check-label" for="chk-plant" :class="{ 'text-muted': isReadOnly && !isPlant }">
+          <strong>มีการเก็บ จัดหา หรือรวบรวมพันธุ์พืชพื้นเมืองทั่วไปและพันธุ์พืชป่าหรือส่วนหนึ่งส่วนใดของพันธุ์พืช เห็ด รา เพื่อการศึกษา ทดลอง หรือวิจัย ตามมาตรา 53 แห่งพระราชบัญญัติคุ้มครองพันธุ์พืช พ.ศ. 2542</strong>
+        </label>
+
+        <div v-if="isPlant" class="sub-options mt-2">
+          <div class="form-check mb-3">
+            <input v-model="plantSubType" type="radio" class="form-check-input" id="plant-appr" value="approved" :disabled="isReadOnly">
+            <label class="form-check-label" for="plant-appr" :class="{ 'text-muted': isReadOnly && plantSubType !== 'approved' }">มีหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ ตามมาตรา 53 แห่งพระราชบัญญัติคุ้มครองพันธุ์พืช พ.ศ. 2542 (แนบสำเนา 1 ชุด)</label>
+            <div v-if="plantSubType === 'approved'" class="mt-2">
+              <div v-if="!isReadOnly" class="d-inline-block mr-2">
+                <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('plantApproved')"><CIcon name="cil-library-add" class="mr-1" /> แนบเอกสาร</CButton>
+              </div>
+              <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('section53Notification')"><CIcon name="cil-clipboard" class="mr-1" /> ตัวอย่างเอกสาร</CButton>
+              <div class="mt-2">
+                <AttachmentCard
+                  :file="attachmentFor('plantApproved')"
+                  :is-read-only="isReadOnly"
+                  @open="openAttachment('plantApproved')"
+                  @remove="removeAttachment('plantApproved')"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-check mb-2">
+            <input v-model="plantSubType" type="radio" class="form-check-input" id="plant-pend" value="pending" :disabled="isReadOnly">
+            <label class="form-check-label" for="plant-pend" :class="{ 'text-muted': isReadOnly && plantSubType !== 'pending' }">ไม่มีหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ อยู่ระหว่างการดำเนินการ</label>
+            <div v-if="plantSubType === 'pending'" class="mt-2">
+              <div v-if="!isReadOnly" class="d-inline-block mr-2">
+                <CButton color="primary" size="sm" class="mr-2" @click="triggerAttach('plantPending')"><CIcon name="cil-library-add" class="mr-1" /> แนบเอกสารหลักฐาน</CButton>
+              </div>
+              <CButton color="info" variant="outline" size="sm" @click="openExampleDoc('section53Notification')"><CIcon name="cil-clipboard" class="mr-1" /> ตัวอย่างเอกสาร</CButton>
+              <div class="mt-2">
+                <AttachmentCard
+                  :file="attachmentFor('plantPending')"
+                  :is-read-only="isReadOnly"
+                  @open="openAttachment('plantPending')"
+                  @remove="removeAttachment('plantPending')"
+                />
               </div>
             </div>
           </div>
@@ -209,8 +191,8 @@ const AttachmentCard = {
     <div v-if="file" class="attachment-card">
       <div class="attachment-card__name">{{ file.name || file.originalName || 'เอกสารแนบ' }}</div>
       <div class="attachment-card__actions">
-        <CButton color="info" size="sm" variant="outline" class="mr-2" @click="$emit('open')">เปิดดู</CButton>
-        <CButton v-if="!isReadOnly" color="danger" size="sm" variant="outline" @click="$emit('remove')">ลบ</CButton>
+        <CButton color="info" size="sm" variant="outline" class="mr-2" @click="$emit('open')"><CIcon name="cil-chevron-right" class="mr-1" /> เปิดดู</CButton>
+        <CButton v-if="!isReadOnly" color="danger" size="sm" variant="outline" @click="$emit('remove')"><CIcon name="cil-chevron-right" class="mr-1" /> ลบ</CButton>
       </div>
     </div>
   `
@@ -253,10 +235,6 @@ export default {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
     },
 
-    mainType: {
-      get () { return this.value.mainType },
-      set (val) { this.updateValue('mainType', val) }
-    },
     isPlant: {
       get () { return this.value.isPlant },
       set (val) { this.updateValue('isPlant', val) }
@@ -289,6 +267,11 @@ export default {
     }
   },
   methods: {
+    deriveMainType (data) {
+      if (data && (data.isHuman || data.isAnimal)) return 'human_animal'
+      if (data && data.isPlant) return 'none'
+      return ''
+    },
     attachmentFor (key) {
       return this.attachments[key] || null
     },
@@ -311,24 +294,6 @@ export default {
     },
     updateValue (key, val) {
       const newData = this.withAttachments({ ...this.value, [key]: val })
-
-      if (key === 'mainType') {
-        if (val === 'none') {
-          newData.isHuman = false
-          newData.humanSubType = ''
-          newData.isAnimal = false
-          newData.animalSubType = ''
-          newData.attachments.humanApproved = null
-          newData.attachments.humanPending = null
-          newData.attachments.animalApproved = null
-          newData.attachments.animalPending = null
-        } else if (val === 'human_animal') {
-          newData.isPlant = false
-          newData.plantSubType = ''
-          newData.attachments.plantApproved = null
-          newData.attachments.plantPending = null
-        }
-      }
 
       if (key === 'isPlant' && !val) {
         newData.plantSubType = ''
@@ -359,6 +324,7 @@ export default {
         if (val === 'pending') newData.attachments.animalApproved = null
       }
 
+      newData.mainType = this.deriveMainType(newData)
       this.$emit('input', newData)
     },
     triggerAttach (key) {

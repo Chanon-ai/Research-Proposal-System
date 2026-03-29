@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="committee-dashboard-page">
     <div class="summary-strip mb-4">
       <div
@@ -98,7 +98,7 @@
                   <template #action="{item}">
                     <td>
                       <CButton size="sm" color="primary" variant="outline" @click="view(item)">
-                        ดูรายละเอียด
+                        <CIcon name="cil-folder-open" class="mr-1" /> ดูรายละเอียด
                       </CButton>
                     </td>
                   </template>
@@ -144,7 +144,7 @@
               <div class="block-sub">แสดงรายการการประชุมที่กำหนดไว้ในระยะใกล้</div>
             </div>
           </div>
-          <CButton class="block-action" size="sm" color="primary" variant="outline" @click="goToMeetings">ดูทั้งหมด</CButton>
+          <CButton class="block-action" size="sm" color="primary" variant="outline" @click="goToMeetings"><CIcon name="cil-folder-open" class="mr-1" /> ดูทั้งหมด</CButton>
         </div>
         <div v-if="nextMeetings.length === 0" class="block-empty">ไม่พบรายการการประชุมที่ใกล้ถึงกำหนด</div>
         <div v-else class="block-list">
@@ -173,7 +173,7 @@
               <div class="block-sub">แสดงเหตุการณ์สำคัญล่าสุดเพื่อการติดตาม</div>
             </div>
           </div>
-          <CButton class="block-action" size="sm" color="primary" variant="outline" @click="goToNotifications">ดูทั้งหมด</CButton>
+          <CButton class="block-action" size="sm" color="primary" variant="outline" @click="goToNotifications"><CIcon name="cil-folder-open" class="mr-1" /> ดูทั้งหมด</CButton>
         </div>
         <div v-if="latestNotifs.length === 0" class="block-empty">ไม่พบรายการแจ้งเตือนล่าสุด</div>
         <div v-else class="block-list">

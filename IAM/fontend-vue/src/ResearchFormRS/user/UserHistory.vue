@@ -10,7 +10,7 @@
 
           <div class="history-controls">
             <div class="pills">
-              <button v-for="p in filters" :key="p.key" class="pill" :class="{ active: activeFilter===p.key }" @click="activeFilter = p.key">{{ p.label }}</button>
+              <button v-for="p in filters" :key="p.key" class="pill" :class="{ active: activeFilter===p.key }" @click="activeFilter = p.key"><CIcon name="cil-chevron-right" class="mr-1" /> {{ p.label }}</button>
             </div>
             <!-- right action removed as requested -->
           </div>

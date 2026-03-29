@@ -28,7 +28,7 @@
             />
           </CCol>
           <CCol md="2" class="text-md-right">
-            <CButton color="secondary" variant="outline" block @click="resetFilters">รีเซ็ต</CButton>
+            <CButton color="secondary" variant="outline" block @click="resetFilters"><CIcon name="cil-chevron-right" class="mr-1" /> รีเซ็ต</CButton>
           </CCol>
         </CRow>
       </CCardBody>
@@ -88,7 +88,7 @@
 
               <template #actions="{ item }">
                 <td class="text-nowrap">
-                  <CButton color="primary" size="sm" class="mr-1 admin-proposal-action-btn" @click="onView(item)">View</CButton>
+                  <CButton color="primary" size="sm" class="mr-1 admin-proposal-action-btn" @click="onView(item)"><CIcon name="cil-folder-open" class="mr-1" /> View</CButton>
                 </td>
               </template>
             </CDataTable>
@@ -105,7 +105,7 @@
                 :disabled="page <= 1 || loading"
                 @click="changePage(page - 1)"
               >
-                ก่อนหน้า
+                <CIcon name="cil-chevron-right" class="mr-1" /> ก่อนหน้า
               </CButton>
               <CButton
                 size="sm"
@@ -114,7 +114,7 @@
                 :disabled="page >= totalPages || loading"
                 @click="changePage(page + 1)"
               >
-                ถัดไป
+                <CIcon name="cil-chevron-right" class="mr-1" /> ถัดไป
               </CButton>
             </div>
           </div>
@@ -158,13 +158,13 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100">
-          <CButton color="secondary" class="mr-2" @click="closeStatusModal">ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-2" @click="closeStatusModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
           <CButton
             color="primary"
             :disabled="!statusForm.toStatus || submittingStatus"
             @click="confirmChangeStatus"
           >
-            {{ submittingStatus ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+            <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingStatus ? 'กำลังบันทึก...' : 'ยืนยัน' }}
           </CButton>
         </div>
       </template>
@@ -191,13 +191,13 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100">
-          <CButton color="secondary" class="mr-2" @click="closeCommitteeModal">ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-2" @click="closeCommitteeModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
           <CButton
             color="success"
             :disabled="submittingCommittee"
             @click="confirmAssignCommittee"
           >
-            {{ submittingCommittee ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+            <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingCommittee ? 'กำลังบันทึก...' : 'ยืนยัน' }}
           </CButton>
         </div>
       </template>

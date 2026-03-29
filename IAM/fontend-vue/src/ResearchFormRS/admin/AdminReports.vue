@@ -9,8 +9,8 @@
             <p class="reports-hero__subtitle">สรุปข้อมูลและสถิติโครงการวิจัยทั้งระบบ</p>
           </div>
           <div class="reports-hero__right">
-            <CButton class="reports-hero__btn" variant="outline" color="light" @click="openExportModal('pdf')">Export PDF</CButton>
-            <CButton class="reports-hero__btn" variant="outline" color="light" @click="openExportModal('excel')">Export Excel</CButton>
+            <CButton class="reports-hero__btn" variant="outline" color="light" @click="openExportModal('pdf')"><CIcon name="cil-cloud-download" class="mr-1" /> Export PDF</CButton>
+            <CButton class="reports-hero__btn" variant="outline" color="light" @click="openExportModal('excel')"><CIcon name="cil-cloud-download" class="mr-1" /> Export Excel</CButton>
           </div>
         </div>
       </CCardBody>
@@ -22,7 +22,7 @@
           <div class="dashboard-card-title">ตัวกรองรายงาน</div>
           <div class="header-tools">
             <CButton class="collapse-toggle reports-refresh-btn" color="secondary" variant="outline" size="sm" @click="fetchData">
-              โหลดข้อมูล
+              <CIcon name="cil-chevron-right" class="mr-1" /> โหลดข้อมูล
             </CButton>
           </div>
         </div>
@@ -44,7 +44,7 @@
             />
           </CCol>
           <CCol md="4" lg="3">
-            <CButton class="reports-refresh-btn w-100" color="primary" variant="outline" @click="fetchData">โหลดข้อมูล</CButton>
+            <CButton class="reports-refresh-btn w-100" color="primary" variant="outline" @click="fetchData"><CIcon name="cil-chevron-right" class="mr-1" /> โหลดข้อมูล</CButton>
           </CCol>
         </CRow>
       </CCardBody>
@@ -293,9 +293,9 @@
       <template #footer-wrapper>
         <footer class="modal-footer export-modal-footer">
           <div class="d-flex justify-content-end w-100" style="gap: 10px;">
-            <CButton color="secondary" @click="closeExportModal">ยกเลิก</CButton>
+            <CButton color="secondary" @click="closeExportModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
             <CButton color="primary" :disabled="exportLoading" @click="doExport">
-              {{ exportLoading ? 'กำลัง Export...' : 'Export' }}
+              <CIcon name="cil-cloud-download" class="mr-1" /> {{ exportLoading ? 'กำลัง Export...' : 'Export' }}
             </CButton>
           </div>
         </footer>

@@ -86,7 +86,7 @@
                 variant="outline"
                 class="mfu-reset-btn mfu-reset-btn--compact"
                 @click="onReset"
-              >{{ $t('admin.actions.reset') }}</CButton>
+              ><CIcon name="cil-reload" class="mr-1" /> {{ $t('admin.actions.reset') }}</CButton>
             </div>
           </div>
         </CCardHeader>
@@ -140,7 +140,7 @@
                 <template #actions="{ item }">
                   <td class="text-nowrap">
                     <div class="admin-actions">
-                      <CButton color="primary" variant="outline" size="sm" class="admin-action-btn" @click="viewDetail(item)">{{ $t('admin.actions.viewDetail') }}</CButton>
+                      <CButton color="primary" variant="outline" size="sm" class="admin-action-btn" @click="viewDetail(item)"><CIcon name="cil-folder-open" class="mr-1" /> {{ $t('admin.actions.viewDetail') }}</CButton>
                     </div>
                   </td>
                 </template>
@@ -213,9 +213,9 @@
 
       <template #footer-wrapper>
           <div class="status-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
-          <CButton color="secondary" class="mr-2" @click="closeStatusModal">{{ $t('admin.actions.cancel') }}</CButton>
+          <CButton color="secondary" class="mr-2" @click="closeStatusModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('admin.actions.cancel') }}</CButton>
           <CButton color="primary" :disabled="!newStatus || submittingStatus" @click="confirmChangeStatus">
-            {{ submittingStatus ? $t('admin.actions.saving') : $t('admin.actions.confirm') }}
+            <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingStatus ? $t('admin.actions.saving') : $t('admin.actions.confirm') }}
           </CButton>
         </div>
       </template>
@@ -254,7 +254,7 @@
                 style="line-height: 1; text-decoration: none;"
                 @click="removeSelectedCommittee(u._id)"
               >
-                ×
+                <CIcon name="cil-chevron-right" class="mr-1" /> ×
               </button>
             </span>
           </div>
@@ -270,7 +270,7 @@
                 :disabled="!hasRecommendedCommitteeUsers"
                 @click="setCommitteeFilterMode('recommended')"
               >
-                {{ $t('admin.assignCommittee.filter.recommended') }}
+                <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('admin.assignCommittee.filter.recommended') }}
               </CButton>
               <CButton
                 size="sm"
@@ -278,7 +278,7 @@
                 :variant="committeeFilterMode === 'all' ? undefined : 'outline'"
                 @click="setCommitteeFilterMode('all')"
               >
-                {{ $t('admin.assignCommittee.filter.all') }}
+                <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('admin.assignCommittee.filter.all') }}
               </CButton>
               <CButton
                 size="sm"
@@ -286,7 +286,7 @@
                 :variant="committeeFilterMode === 'department' ? undefined : 'outline'"
                 @click="setCommitteeFilterMode('department')"
               >
-                {{ $t('admin.assignCommittee.filter.department') }}
+                <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('admin.assignCommittee.filter.department') }}
               </CButton>
             </div>
             <div class="mt-2">
@@ -341,9 +341,9 @@
 
       <template #footer-wrapper>
         <div class="committee-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
-          <CButton color="secondary" class="mr-2" @click="closeCommitteeModal">{{ $t('admin.actions.cancel') }}</CButton>
+          <CButton color="secondary" class="mr-2" @click="closeCommitteeModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('admin.actions.cancel') }}</CButton>
           <CButton color="success" :disabled="submittingCommittee || selectedCommitteeIds.length < requiredCommitteeCount" @click="confirmAssignCommittee">
-            {{ submittingCommittee ? $t('admin.actions.saving') : $t('admin.actions.confirm') }}
+            <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingCommittee ? $t('admin.actions.saving') : $t('admin.actions.confirm') }}
           </CButton>
         </div>
       </template>
@@ -679,7 +679,9 @@ export default {
         const key = `status.${status}`
         const translated = this.$t(key)
         if (translated && translated !== key) return translated
-      } catch (e) {}
+      } catch (e) {
+        // Fallback to static label map when i18n lookup fails.
+      }
       return STATUS_LABELS[status] || status || '-'
     },
     getStatusBadgeColor (status) {

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="admin-meetings-page">
     <section class="meetings-hero">
       <div class="meetings-hero__content">
@@ -9,7 +9,7 @@
         </p>
       </div>
       <div v-if="canCreate" class="meetings-hero__action">
-        <CButton color="primary" size="lg" class="hero-action-btn" @click="openCreateModal">+ สร้างการประชุมใหม่
+        <CButton color="primary" size="lg" class="hero-action-btn" @click="openCreateModal"><CIcon name="cil-plus" class="mr-1" /> + สร้างการประชุมใหม่
         </CButton>
       </div>
     </section>
@@ -71,7 +71,7 @@
               <template v-if="canEditDelete">
                 <CButton size="sm" :color="selectionMode ? 'secondary' : 'primary'" class="filter-card__select-toggle"
                   @click="toggleSelectionMode">
-                  {{ selectionMode ? 'ยกเลิกเลือก' : 'เลือก' }}
+                  <CIcon name="cil-x" class="mr-1" /> {{ selectionMode ? 'ยกเลิกเลือก' : 'เลือก' }}
                 </CButton>
                 <small class="text-muted filter-card__search-hint">
                   {{ selectionMode
@@ -254,7 +254,7 @@
                     (isReadOnly(meeting) && readOnlyCtaTone === 'soft') ? 'meeting-card__cta--soft' : ''
                   ]"
                   @click.stop="openMinutesModal(meeting)">
-                  {{ isReadOnly(meeting) ? 'ดูรายละเอียด' : (meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม') }}
+                  <CIcon name="cil-save" class="mr-1" /> {{ isReadOnly(meeting) ? 'ดูรายละเอียด' : (meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม') }}
                 </CButton>
               </div>
             </div>
@@ -267,11 +267,11 @@
         <div>
           <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="page <= 1 || loading"
             @click="onPageChange(page - 1)">
-            ก่อนหน้า
+            <CIcon name="cil-chevron-left" class="mr-1" /> ก่อนหน้า
           </CButton>
           <CButton size="sm" color="secondary" variant="outline" :disabled="page >= totalPages || loading"
             @click="onPageChange(page + 1)">
-            ถัดไป
+            <CIcon name="cil-chevron-right" class="mr-1" /> ถัดไป
           </CButton>
         </div>
       </div>
@@ -294,7 +294,7 @@
               ยกเลิกการประชุม
             </CButton>
             <button type="button" class="close" aria-label="Close" @click="closeMeetingModal">
-              <span aria-hidden="true">&times;</span>
+              <CIcon name="cil-x" />
             </button>
           </div>
         </div>
@@ -430,9 +430,9 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton color="secondary" class="mr-3 floating-action btn-cancel" @click="closeMeetingModal">ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-3 floating-action btn-cancel" @click="closeMeetingModal"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
           <CButton color="primary" class="floating-action btn-save" :disabled="savingMeeting" @click="saveMeeting">
-            {{ savingMeeting ? 'กำลังบันทึก...' : 'บันทึก' }}
+            <CIcon name="cil-save" class="mr-1" /> {{ savingMeeting ? 'กำลังบันทึก...' : 'บันทึก' }}
           </CButton>
         </div>
       </template>
@@ -449,7 +449,7 @@
         :key="(timeDropdown.openFor || '') + '-' + (opt.value || 'empty')" type="button" class="time-dropdown__item"
         :class="{ 'is-selected': isTimeSelected(timeDropdown.openFor, opt.value) }"
         @click="selectTimeOption(timeDropdown.openFor, opt.value)">
-        {{ opt.label }}
+        <CIcon name="cil-clock" class="mr-1" /> {{ opt.label }}
       </button>
     </div>
 
@@ -534,10 +534,10 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton color="secondary" class="mr-2 floating-action btn-cancel" @click="closeMinutesModal">ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-2 floating-action btn-cancel" @click="closeMinutesModal"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
           <CButton v-if="!isReadOnly(minutesMeeting)" color="primary" class="floating-action btn-save"
             :disabled="savingMinutes" @click="saveMinutes">
-            {{ savingMinutes ? 'กำลังบันทึก...' : 'บันทึกผลประชุม' }}
+            <CIcon name="cil-save" class="mr-1" /> {{ savingMinutes ? 'กำลังบันทึก...' : 'บันทึกผลประชุม' }}
           </CButton>
         </div>
       </template>

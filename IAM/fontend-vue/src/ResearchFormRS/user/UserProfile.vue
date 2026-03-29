@@ -17,7 +17,7 @@
                 class="tab-btn"
                 :class="{ active: activeTab === tab.key }"
                 @click="activeTab = tab.key"
-              >{{ tab.label }}</button>
+              ><CIcon name="cil-chevron-right" class="mr-1" /> {{ tab.label }}</button>
 
               <div class="tab-slider" :style="sliderStyle"></div>
             </div>

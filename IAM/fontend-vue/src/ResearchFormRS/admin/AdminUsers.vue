@@ -3,7 +3,7 @@
     <AdminUsersManagement />
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap" style="gap: 8px;">
       <h2 class="mb-0">จัดการผู้ใช้ (Admin)</h2>
-      <CButton color="primary" @click="openAddModal">+ เพิ่มผู้ใช้ใหม่</CButton>
+      <CButton color="primary" @click="openAddModal"><CIcon name="cil-plus" class="mr-1" /> + เพิ่มผู้ใช้ใหม่</CButton>
     </div>
 
     <CRow class="mb-3">
@@ -50,7 +50,7 @@
             />
           </CCol>
           <CCol md="2">
-            <CButton color="secondary" variant="outline" block @click="resetFilters">รีเซ็ต</CButton>
+            <CButton color="secondary" variant="outline" block @click="resetFilters"><CIcon name="cil-chevron-right" class="mr-1" /> รีเซ็ต</CButton>
           </CCol>
         </CRow>
       </CCardBody>
@@ -110,16 +110,16 @@
 
             <template #actions="{ item }">
               <td class="text-nowrap">
-                <CButton size="sm" color="primary" class="mr-1" @click="openEditModal(item)">แก้ไข</CButton>
+                <CButton size="sm" color="primary" class="mr-1" @click="openEditModal(item)"><CIcon name="cil-chevron-right" class="mr-1" /> แก้ไข</CButton>
                 <CButton
                   size="sm"
                   class="mr-1"
                   :color="item.isActive ? 'danger' : 'success'"
                   @click="toggleActive(item)"
                 >
-                  {{ item.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน' }}
+                  <CIcon name="cil-chevron-right" class="mr-1" /> {{ item.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน' }}
                 </CButton>
-                <CButton size="sm" color="danger" @click="deleteUser(item)">ลบ</CButton>
+                <CButton size="sm" color="danger" @click="deleteUser(item)"><CIcon name="cil-chevron-right" class="mr-1" /> ลบ</CButton>
               </td>
             </template>
           </CDataTable>
@@ -135,7 +135,7 @@
                 :disabled="page <= 1 || loading"
                 @click="changePage(page - 1)"
               >
-                ก่อนหน้า
+                <CIcon name="cil-chevron-right" class="mr-1" /> ก่อนหน้า
               </CButton>
               <CButton
                 size="sm"
@@ -144,7 +144,7 @@
                 :disabled="page >= totalPages || loading"
                 @click="changePage(page + 1)"
               >
-                ถัดไป
+                <CIcon name="cil-chevron-right" class="mr-1" /> ถัดไป
               </CButton>
             </div>
           </div>
@@ -211,9 +211,9 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="closeAddModal">ยกเลิก</CButton>
+          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="closeAddModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
           <CButton color="primary" class="modal-btn modal-btn--primary" :disabled="submittingAdd" @click="submitAddUser">
-            {{ submittingAdd ? 'กำลังบันทึก...' : 'บันทึก' }}
+            <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingAdd ? 'กำลังบันทึก...' : 'บันทึก' }}
           </CButton>
         </div>
       </template>
@@ -285,9 +285,9 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="closeEditModal">ยกเลิก</CButton>
+          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="closeEditModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
           <CButton color="primary" class="modal-btn modal-btn--primary" :disabled="submittingEdit" @click="submitEditUser">
-            {{ submittingEdit ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
+            <CIcon name="cil-pencil" class="mr-1" /> {{ submittingEdit ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
           </CButton>
         </div>
       </template>

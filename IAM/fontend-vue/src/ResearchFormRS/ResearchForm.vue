@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div
     class="research-form"
     :class="{
@@ -86,7 +86,7 @@
                 class="btn btn-link p-0 align-baseline revision-diff-item__link"
                 @click="goToFeedbackSection({ sectionKey: section.sectionKey })"
               >
-                {{ revisionDiffSectionLabel(section.sectionKey, section.sectionLabel) }}
+                <CIcon name="cil-chevron-right" class="mr-1" /> {{ revisionDiffSectionLabel(section.sectionKey, section.sectionLabel) }}
               </button>
             </div>
             <div class="row">
@@ -162,7 +162,7 @@
                     class="btn btn-link p-0 align-baseline admin-revision-link"
                     @click="goToFeedbackSection({ sectionKey: section.sectionKey })"
                   >
-                    {{ (section.meta && section.meta.sectionLabel) || section.sectionKey }}
+                    <CIcon name="cil-chevron-right" class="mr-1" /> {{ (section.meta && section.meta.sectionLabel) || section.sectionKey }}
                   </button>
                 </li>
               </ul>
@@ -191,14 +191,14 @@
                     :disabled="reopeningRejected"
                     @click="reopenRejectedForRevision"
                   >
-                    {{ reopeningRejected ? 'กำลังเปิดให้แก้ไข...' : 'เปิดให้แก้ไขอีกครั้ง' }}
+                    <CIcon name="cil-pencil" class="mr-1" /> {{ reopeningRejected ? 'กำลังเปิดให้แก้ไข...' : 'เปิดให้แก้ไขอีกครั้ง' }}
                   </CButton>
                   <CButton
                     color="primary"
                     :disabled="savingAdminDecision || !adminFinalDecision"
                     @click="saveAdminFinalDecision"
                   >
-                    {{ savingAdminDecision ? 'กำลังบันทึก...' : 'บันทึกผลการตัดสินใจ' }}
+                    <CIcon name="cil-save" class="mr-1" /> {{ savingAdminDecision ? 'กำลังบันทึก...' : 'บันทึกผลการตัดสินใจ' }}
                   </CButton>
                 </div>
               </div>
@@ -265,7 +265,7 @@
               :disabled="savingRevision"
               @click="saveRevisionChanges"
             >
-              {{ savingRevision ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
+              <CIcon name="cil-pencil" class="mr-1" /> {{ savingRevision ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
             </CButton>
             <CButton
               class="revision-action-btn revision-action-btn--submit"
@@ -273,7 +273,7 @@
               :disabled="submittingRevision || !canResubmitRevision"
               @click="resubmitRevision"
             >
-              {{ submittingRevision ? 'กำลังส่ง...' : 'ส่งแก้ไขอีกครั้ง' }}
+              <CIcon name="cil-pencil" class="mr-1" /> {{ submittingRevision ? 'กำลังส่ง...' : 'ส่งแก้ไขอีกครั้ง' }}
             </CButton>
           </div>
         </div>
@@ -365,11 +365,11 @@
           </div>
 
           <div class="d-flex justify-content-end flex-wrap" style="gap: 10px;">
-            <CButton color="warning" size="sm" @click="openAdminStatusModal">เปลี่ยนสถานะ</CButton>
+            <CButton color="warning" size="sm" @click="openAdminStatusModal"><CIcon name="cil-chevron-right" class="mr-1" /> เปลี่ยนสถานะ</CButton>
             <CButton color="success" size="sm" @click="openAdminCommitteeModal">
-              {{ adminHasAssignedCommittee ? 'เปลี่ยนคณะกรรมการ' : 'มอบหมายคณะกรรมการ' }}
+              <CIcon name="cil-chevron-right" class="mr-1" /> {{ adminHasAssignedCommittee ? 'เปลี่ยนคณะกรรมการ' : 'มอบหมายคณะกรรมการ' }}
             </CButton>
-            <CButton size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage">จัดการประชุม</CButton>
+            <CButton size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage"><CIcon name="cil-chevron-right" class="mr-1" /> จัดการประชุม</CButton>
           </div>
         </div>
       </div>
@@ -415,9 +415,9 @@
 
         <template #footer-wrapper>
           <div class="status-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
-            <CButton color="secondary" class="mr-2" @click="closeAdminStatusModal">ยกเลิก</CButton>
+            <CButton color="secondary" class="mr-2" @click="closeAdminStatusModal"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
             <CButton color="primary" :disabled="!adminNewStatus || adminSubmittingStatus" @click="confirmAdminChangeStatus">
-              {{ adminSubmittingStatus ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+              <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingStatus ? 'กำลังบันทึก...' : 'ยืนยัน' }}
             </CButton>
           </div>
         </template>
@@ -456,7 +456,7 @@
                     style="text-decoration: none;"
                     @click="removeAdminSelectedCommittee(u._id)"
                   >
-                    ✕
+                    <CIcon name="cil-chevron-right" class="mr-1" /> ✕
                   </button>
                 </span>
               </div>
@@ -477,7 +477,7 @@
                     :disabled="!adminHasRecommendedCommitteeUsers"
                     @click="setAdminCommitteeFilterMode('recommended')"
                   >
-                    แนะนำ
+                    <CIcon name="cil-chevron-right" class="mr-1" /> แนะนำ
                   </CButton>
                   <CButton
                     size="sm"
@@ -485,7 +485,7 @@
                     variant="outline"
                     @click="setAdminCommitteeFilterMode('all')"
                   >
-                    ทั้งหมด
+                    <CIcon name="cil-chevron-right" class="mr-1" /> ทั้งหมด
                   </CButton>
                   <CButton
                     size="sm"
@@ -493,7 +493,7 @@
                     variant="outline"
                     @click="setAdminCommitteeFilterMode('department')"
                   >
-                    หน่วยงาน
+                    <CIcon name="cil-chevron-right" class="mr-1" /> หน่วยงาน
                   </CButton>
                 </div>
               </div>
@@ -545,9 +545,9 @@
 
         <template #footer-wrapper>
           <div class="committee-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
-            <CButton color="secondary" class="mr-2" @click="closeAdminCommitteeModal">ยกเลิก</CButton>
+            <CButton color="secondary" class="mr-2" @click="closeAdminCommitteeModal"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
             <CButton color="success" :disabled="adminSubmittingCommittee || adminSelectedCommitteeIds.length < adminRequiredCommitteeCount" @click="confirmAdminAssignCommittee">
-              {{ adminSubmittingCommittee ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+              <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingCommittee ? 'กำลังบันทึก...' : 'ยืนยัน' }}
             </CButton>
           </div>
         </template>
@@ -566,7 +566,7 @@
             <h5 class="modal-title">สร้างการประชุมใหม่</h5>
             <div class="meeting-modal__header-actions">
               <button type="button" class="close" aria-label="Close" @click="closeAdminMeetingPopup">
-                <span aria-hidden="true">&times;</span>
+                <CIcon name="cil-x" />
               </button>
             </div>
           </div>
@@ -711,14 +711,14 @@
         <template #footer-wrapper>
           <div class="modal-footer">
             <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-              <CButton color="secondary" class="btn-cancel floating-action mr-2" @click="closeAdminMeetingPopup">ยกเลิก</CButton>
+              <CButton color="secondary" class="btn-cancel floating-action mr-2" @click="closeAdminMeetingPopup"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
               <CButton
                 color="primary"
                 class="btn-save floating-action"
                 :disabled="adminMeetingSubmitting || !adminMeetingForm.title || !adminMeetingForm.meetingDate || !adminMeetingForm.startTime || (adminMeetingForm.meetingType === 'online' && !adminMeetingForm.videoLink) || (adminMeetingForm.meetingType === 'onsite' && !adminMeetingForm.location)"
                 @click="submitAdminMeeting"
               >
-                {{ adminMeetingSubmitting ? 'กำลังบันทึก...' : 'บันทึก' }}
+                <CIcon name="cil-save" class="mr-1" /> {{ adminMeetingSubmitting ? 'กำลังบันทึก...' : 'บันทึก' }}
               </CButton>
             </div>
           </div>
@@ -736,7 +736,7 @@
           :key="(timeDropdown.openFor || '') + '-' + (opt.value || 'empty')" type="button" class="time-dropdown__item"
           :class="{ 'is-selected': isTimeSelected(timeDropdown.openFor, opt.value) }"
           @click="selectTimeOption(timeDropdown.openFor, opt.value)">
-          {{ opt.label }}
+          <CIcon name="cil-clock" class="mr-1" /> {{ opt.label }}
         </button>
       </div>
 

@@ -35,7 +35,7 @@
         <CCard v-else>
           <CCardBody>
             <CAlert color="warning" show>ไม่พบข้อเสนอโครงการ</CAlert>
-            <CButton color="secondary" @click="goBack">ย้อนกลับ</CButton>
+            <CButton color="secondary" @click="goBack"><CIcon name="cil-chevron-right" class="mr-1" /> ย้อนกลับ</CButton>
           </CCardBody>
         </CCard>
       </CCol>
@@ -182,10 +182,10 @@
                 <div class="evaluation-actions">
                   <div class="form-actions">
                     <CButton color="secondary" variant="outline" :disabled="isEvaluationLocked" @click="saveDraft">
-                      บันทึกฉบับร่าง
+                      <CIcon name="cil-chevron-right" class="mr-1" /> บันทึกฉบับร่าง
                     </CButton>
                     <CButton color="primary" class="ml-2" :disabled="!canSubmit || isSubmitting" @click="submitEvaluation">
-                      ส่งผลการประเมิน
+                      <CIcon name="cil-chevron-right" class="mr-1" /> ส่งผลการประเมิน
                     </CButton>
                   </div>
                 </div>

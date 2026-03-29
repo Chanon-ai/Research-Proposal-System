@@ -19,7 +19,7 @@
             class="btn btn-outline-dark font-weight-bold"
             @click="$refs.fileInput.click()"
           >
-            <CIcon name="cil-paperclip" class="me-1"/>
+            <CIcon name="cil-library-add" class="me-1"/>
              อัปโหลดไฟล์
           </button>
 
@@ -96,15 +96,6 @@
                 </td>
 
                 <td v-if="!isReadOnly" class="d-flex justify-content-center" style="gap: 12px;">
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-info me-2"
-                    @click="$emit('replace', index)"
-                  >
-                    <CIcon name="cil-settings" class="me-1"/>
-                    แก้ไขไฟล์
-                  </button>
-
                   <button
                     type="button"
                     class="btn btn-sm btn-outline-danger"

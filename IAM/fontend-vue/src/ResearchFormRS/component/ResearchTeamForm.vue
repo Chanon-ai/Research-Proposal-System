@@ -184,14 +184,14 @@
             </template>
             <template #footer-wrapper>
               <div class="d-flex justify-content-end w-100 co-researcher-modal-actions">
-                <button type="button" class="btn btn-outline-danger co-researcher-action-btn" @click="closeCoResearcherPicker">ยกเลิก</button>
+                <button type="button" class="btn btn-outline-danger co-researcher-action-btn" @click="closeCoResearcherPicker"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</button>
                 <button
                   type="button"
                   class="btn btn-primary co-researcher-action-btn"
                   :disabled="coResearcherOptionsLoading || selectedCoResearcherOptions.length === 0"
                   @click="confirmAddCoResearchers"
                 >
-                  เพิ่มผู้ร่วม
+                  <CIcon name="cil-chevron-right" class="mr-1" /> เพิ่มผู้ร่วม
                 </button>
               </div>
             </template>

@@ -49,10 +49,10 @@
             />
           </CCol>
           <CCol md="2" class="mb-2 mb-md-0">
-            <CButton color="secondary" variant="outline" block @click="onReset">Reset</CButton>
+            <CButton color="secondary" variant="outline" block @click="onReset"><CIcon name="cil-reload" class="mr-1" /> Reset</CButton>
           </CCol>
           <CCol md="2">
-            <CButton color="primary" block @click="openUploadModal">+ อัปโหลดเอกสาร</CButton>
+            <CButton color="primary" block @click="openUploadModal"><CIcon name="cil-plus" class="mr-1" /> + อัปโหลดเอกสาร</CButton>
           </CCol>
         </CRow>
       </CCardBody>
@@ -133,11 +133,11 @@
                   :disabled="!item.filePath"
                   @click="downloadFile(item)"
                 >
-                  ดาวน์โหลด
+                  <CIcon name="cil-chevron-right" class="mr-1" /> ดาวน์โหลด
                 </CButton>
-                <CButton size="sm" color="info" class="mr-1" @click="openVersionModal(item)">ประวัติ</CButton>
-                <CButton size="sm" color="warning" class="mr-1" @click="openEditModal(item)">แก้ไข</CButton>
-                <CButton size="sm" color="danger" @click="deleteDocument(item)">ลบ</CButton>
+                <CButton size="sm" color="info" class="mr-1" @click="openVersionModal(item)"><CIcon name="cil-chevron-right" class="mr-1" /> ประวัติ</CButton>
+                <CButton size="sm" color="warning" class="mr-1" @click="openEditModal(item)"><CIcon name="cil-chevron-right" class="mr-1" /> แก้ไข</CButton>
+                <CButton size="sm" color="danger" @click="deleteDocument(item)"><CIcon name="cil-chevron-right" class="mr-1" /> ลบ</CButton>
               </td>
             </template>
           </CDataTable>
@@ -153,7 +153,7 @@
                 :disabled="page <= 1 || loading"
                 @click="onPageChange(page - 1)"
               >
-                ก่อนหน้า
+                <CIcon name="cil-chevron-right" class="mr-1" /> ก่อนหน้า
               </CButton>
               <CButton
                 size="sm"
@@ -162,7 +162,7 @@
                 :disabled="page >= totalPages || loading"
                 @click="onPageChange(page + 1)"
               >
-                ถัดไป
+                <CIcon name="cil-chevron-right" class="mr-1" /> ถัดไป
               </CButton>
             </div>
           </div>
@@ -253,14 +253,14 @@
             class="mr-2 floating-action"
             @click="closeUploadModal"
             :style="{ transform: 'translateY(-26px)', boxShadow: '0 18px 40px rgba(15,23,42,0.2)', position: 'relative', zIndex: 11000 }"
-          >ยกเลิก</CButton>
+          ><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
           <CButton
             color="primary floating-action"
             :disabled="uploadLoading"
             @click="uploadDocument"
             :style="{ transform: 'translateY(-26px)', boxShadow: '0 18px 40px rgba(15,23,42,0.2)', position: 'relative', zIndex: 11000 }"
           >
-            {{ uploadLoading ? 'กำลังอัปโหลด...' : 'อัปโหลด' }}
+            <CIcon name="cil-paperclip" class="mr-1" /> {{ uploadLoading ? 'กำลังอัปโหลด...' : 'อัปโหลด' }}
           </CButton>
         </div>
       </template>
@@ -299,14 +299,14 @@
             class="mr-2 floating-action"
             @click="closeEditModal"
             :style="{ transform: 'translateY(-26px)', boxShadow: '0 18px 40px rgba(15,23,42,0.2)', position: 'relative', zIndex: 11000 }"
-          >ยกเลิก</CButton>
+          ><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
           <CButton
             color="primary floating-action"
             :disabled="editLoading"
             @click="saveEdit"
             :style="{ transform: 'translateY(-26px)', boxShadow: '0 18px 40px rgba(15,23,42,0.2)', position: 'relative', zIndex: 11000 }"
           >
-            {{ editLoading ? 'กำลังบันทึก...' : 'บันทึก' }}
+            <CIcon name="cil-pencil" class="mr-1" /> {{ editLoading ? 'กำลังบันทึก...' : 'บันทึก' }}
           </CButton>
         </div>
       </template>
@@ -353,7 +353,7 @@
                   :disabled="!item.filePath"
                   @click="downloadFile(item)"
                 >
-                  ดาวน์โหลด
+                  <CIcon name="cil-chevron-right" class="mr-1" /> ดาวน์โหลด
                 </CButton>
               </td>
             </template>
@@ -367,7 +367,7 @@
             color="secondary"
             @click="closeVersionModal"
             :style="{ transform: 'translateY(-26px)', boxShadow: '0 18px 40px rgba(15,23,42,0.2)', position: 'relative', zIndex: 11000 }"
-          >ปิด</CButton>
+          ><CIcon name="cil-chevron-right" class="mr-1" /> ปิด</CButton>
         </div>
       </template>
     </CModal>

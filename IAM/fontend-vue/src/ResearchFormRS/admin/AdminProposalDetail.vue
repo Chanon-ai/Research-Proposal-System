@@ -2,7 +2,7 @@
   <div class="admin-proposal-detail-page">
     <div class="d-flex justify-content-between align-items-center flex-wrap mb-3" style="gap: 10px;">
       <div class="d-flex align-items-center" style="gap: 10px;">
-        <CButton color="secondary" variant="outline" @click="$router.back()">← กลับ</CButton>
+        <CButton color="secondary" variant="outline" @click="$router.back()"><CIcon name="cil-chevron-right" class="mr-1" /> ← กลับ</CButton>
         <h3 class="mb-0">รายละเอียดโครงการ</h3>
       </div>
 
@@ -11,7 +11,7 @@
         color="warning"
         @click="openStatusModal"
       >
-        เปลี่ยนสถานะ
+        <CIcon name="cil-chevron-right" class="mr-1" /> เปลี่ยนสถานะ
       </CButton>
     </div>
 
@@ -23,7 +23,7 @@
       <CCardBody class="text-center py-4">
         <div class="text-danger mb-3">ไม่สามารถโหลดข้อมูลได้</div>
         <div class="text-muted mb-3">{{ error }}</div>
-        <CButton color="primary" @click="fetchProposal">ลองใหม่</CButton>
+        <CButton color="primary" @click="fetchProposal"><CIcon name="cil-chevron-right" class="mr-1" /> ลองใหม่</CButton>
       </CCardBody>
     </CCard>
 
@@ -218,7 +218,7 @@
                       :disabled="!file.fileId"
                       @click="downloadProposalFile(file)"
                     >
-                      ดาวน์โหลด
+                      <CIcon name="cil-chevron-right" class="mr-1" /> ดาวน์โหลด
                     </CButton>
                   </td>
                 </tr>
@@ -314,9 +314,9 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100">
-          <CButton color="secondary" class="mr-2" @click="closeStatusModal">ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-2" @click="closeStatusModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
           <CButton color="primary" :disabled="!newStatus || changingStatus" @click="confirmChangeStatus">
-            {{ changingStatus ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+            <CIcon name="cil-chevron-right" class="mr-1" /> {{ changingStatus ? 'กำลังบันทึก...' : 'ยืนยัน' }}
           </CButton>
         </div>
       </template>

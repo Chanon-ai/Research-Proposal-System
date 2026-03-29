@@ -100,7 +100,7 @@
         size="sm"
         @click="clearFilter"
       >
-        × ล้างตัวกรอง
+        <CIcon name="cil-chevron-right" class="mr-1" /> × ล้างตัวกรอง
       </CButton>
     </div>
 
@@ -127,7 +127,7 @@
               class="clear-filter-btn"
               @click="clearFilter"
             >
-              ล้างตัวกรอง
+              <CIcon name="cil-chevron-right" class="mr-1" /> ล้างตัวกรอง
             </CButton>
             <CButton
               class="collapse-toggle"
@@ -151,7 +151,7 @@
 
         <div v-else-if="fetchError" class="state-box">
           <div class="state-text">เกิดข้อผิดพลาดในการโหลดข้อมูล: {{ fetchError }}</div>
-          <div style="margin-top:10px;"><button class="btn-quick btn-success" @click="retryFetch">ลองอีกครั้ง</button></div>
+          <div style="margin-top:10px;"><button class="btn-quick btn-success" @click="retryFetch"><CIcon name="cil-chevron-right" class="mr-1" /> ลองอีกครั้ง</button></div>
         </div>
 
         <div v-else class="table-surface">
@@ -268,7 +268,7 @@
       </CCollapse>
     </CCard>
 
-    <button class="fab" title="สร้างโครงการใหม่" @click="onAdd">＋</button>
+    <button class="fab" title="สร้างโครงการใหม่" @click="onAdd"><CIcon name="cil-chevron-right" class="mr-1" /> ＋</button>
   </div>
 </template>
 
