@@ -124,11 +124,17 @@
                       <BudgetSectionDemo
                         :model-value="feedbackSectionDraft(section.sectionKey)"
                         :is-read-only="effectiveReadOnly"
+                        :funding-type="feedbackStrategicFundingType('strategic_alignment')"
+                        :reset-token="feedbackStrategicFundingType('strategic_alignment')"
                         @update:modelValue="setFeedbackSectionDraft(section.sectionKey, $event)"
                       />
                     </template>
                     <template v-else-if="section.sectionKey === 'budget'">
-                      <BudgetSectionDemo :model-value="feedbackSectionSnapshot(section.sectionKey)" :is-read-only="true" />
+                      <BudgetSectionDemo
+                        :model-value="feedbackSectionSnapshot(section.sectionKey)"
+                        :is-read-only="true"
+                        :funding-type="feedbackStrategicFundingType('strategic_alignment')"
+                      />
                     </template>
                     <template v-else-if="section.sectionKey === 'integration' && !isFeedbackSectionSubmitted(section.sectionKey)">
                       <TextEditor

@@ -32,6 +32,7 @@
       <ProjectDetailsForm
         ref="projectDetailsForm"
         :is-read-only="mainFormReadOnly"
+        :proposal-id="viewProposalId"
         :disable-project-title-section="shouldDisableProjectTitleSection"
         :revision-highlight-sections="adminRevisionProjectSectionKeys"
         @form-changed="syncProjectDetailsData"
@@ -3659,6 +3660,62 @@ export default {
 
       this.setBudgetValue(nextBudget)
     },
+    detachBudgetAttachmentByFileId (fileId) {
+      const normalizedFileId = this.normalizeFileId(fileId)
+      if (!normalizedFileId) return false
+
+      const current = this.currentBudgetValue()
+      if (!current || !Array.isArray(current.categories)) return false
+
+      let changed = false
+      const nextBudget = {
+        ...current,
+        categories: current.categories.map((category) => {
+          const items = Array.isArray(category && category.items) ? category.items : []
+          const nextItems = items.filter((item) => {
+            if (!item || !item.attachment) return true
+            const attachmentId = this.normalizeFileId(
+              item.attachment.fileId || item.attachment.id || item.attachment._id
+            )
+            const shouldRemove = attachmentId && String(attachmentId) === String(normalizedFileId)
+            if (shouldRemove) changed = true
+            return !shouldRemove
+          })
+          return {
+            ...(category || {}),
+            items: nextItems
+          }
+        })
+      }
+
+      if (!changed) return false
+      this.setBudgetValue(nextBudget)
+      return true
+    },
+    detachResearchStandardAttachmentByFileId (fileId) {
+      const normalizedFileId = this.normalizeFileId(fileId)
+      if (!normalizedFileId) return false
+
+      const current = this.currentResearchStandardValue()
+      if (!current || !current.attachments || typeof current.attachments !== 'object') return false
+
+      let changed = false
+      const nextAttachments = { ...(current.attachments || {}) }
+      Object.keys(nextAttachments).forEach((key) => {
+        const entry = nextAttachments[key]
+        const attachmentId = this.normalizeFileId(entry && (entry.fileId || entry.id || entry._id))
+        if (!attachmentId || String(attachmentId) !== String(normalizedFileId)) return
+        nextAttachments[key] = null
+        changed = true
+      })
+
+      if (!changed) return false
+      this.setResearchStandardValue({
+        ...(current || {}),
+        attachments: nextAttachments
+      })
+      return true
+    },
     setResearchStandardValue (nextValue) {
       const projectDetailsForm = this.$refs.projectDetailsForm
       if (!projectDetailsForm || !projectDetailsForm.form) return
@@ -3671,8 +3728,9 @@ export default {
       this.files = [...next, row]
     },
     removeFormFileRow (fileId) {
+      const normalizedFileId = this.normalizeFileId(fileId)
       this.files = Array.isArray(this.files)
-        ? this.files.filter(item => String(item && item.fileId) !== String(fileId))
+        ? this.files.filter(item => String(this.normalizeFileId(item && (item.fileId || item.id || item._id))) !== String(normalizedFileId))
         : []
     },
     async handleBudgetAttachmentUpload ({ categoryName, itemId, file }) {
@@ -3716,9 +3774,68 @@ export default {
         })
       }
     },
-    async handleBudgetAttachmentOpen ({ file }) {
-      if (!file) return
-      await this.openFile(file)
+    resolveBudgetAttachmentFile (file, itemId = '') {
+      const fallback = file && typeof file === 'object' ? { ...file } : null
+      const directFileId = this.normalizeFileId(file && (file.fileId || file.id || file._id))
+      if (fallback && directFileId) {
+        return {
+          ...fallback,
+          fileId: directFileId
+        }
+      }
+
+      let attachmentFromBudget = null
+      if (itemId) {
+        const budget = this.currentBudgetValue()
+        const categories = Array.isArray(budget && budget.categories) ? budget.categories : []
+        for (let catIndex = 0; catIndex < categories.length; catIndex += 1) {
+          const category = categories[catIndex] || {}
+          const items = Array.isArray(category.items) ? category.items : []
+          const matchedItem = items.find(item => item && String(item.id) === String(itemId))
+          if (matchedItem && matchedItem.attachment) {
+            attachmentFromBudget = matchedItem.attachment
+            break
+          }
+        }
+      }
+
+      const fromBudgetId = this.normalizeFileId(
+        attachmentFromBudget && (attachmentFromBudget.fileId || attachmentFromBudget.id || attachmentFromBudget._id)
+      )
+      if (attachmentFromBudget && fromBudgetId) {
+        return {
+          ...attachmentFromBudget,
+          fileId: fromBudgetId
+        }
+      }
+
+      const targetName = String(
+        (file && (file.fileName || file.name || file.originalName)) ||
+        (attachmentFromBudget && (attachmentFromBudget.fileName || attachmentFromBudget.name || attachmentFromBudget.originalName)) ||
+        ''
+      ).trim().toLowerCase()
+      if (!targetName) return fallback
+
+      const pool = Array.isArray(this.files) ? this.files : []
+      const matchedRow = pool.find((entry) => {
+        const candidateName = String(entry && (entry.fileName || entry.name || entry.originalName || '')).trim().toLowerCase()
+        return candidateName && candidateName === targetName
+      })
+      if (!matchedRow) return fallback
+
+      const matchedId = this.normalizeFileId(matchedRow.fileId || matchedRow.id || matchedRow._id)
+      if (!matchedId) return fallback
+
+      return {
+        ...(matchedRow || {}),
+        ...(fallback || {}),
+        fileId: matchedId
+      }
+    },
+    async handleBudgetAttachmentOpen ({ file, itemId }) {
+      const resolvedFile = this.resolveBudgetAttachmentFile(file, itemId)
+      if (!resolvedFile) return
+      await this.openFile(resolvedFile)
     },
     handleBudgetAttachmentMetaChange ({ itemId, attachment }) {
       if (!itemId || !attachment) return
@@ -3858,33 +3975,90 @@ export default {
       await this.uploadFormFiles(batch)
     },
 
-    async removeFile(index) {
+    async removeFile(indexOrPayload) {
       if (this.mainFormReadOnly) return
-      const item = Array.isArray(this.files) ? this.files[index] : null
+
+      let index = -1
+      let item = null
+
+      if (typeof indexOrPayload === 'number') {
+        index = indexOrPayload
+      } else if (indexOrPayload && typeof indexOrPayload === 'object') {
+        if (typeof indexOrPayload.index === 'number') index = indexOrPayload.index
+        if (indexOrPayload.item && typeof indexOrPayload.item === 'object') item = indexOrPayload.item
+      }
+
+      if (!item && Array.isArray(this.files) && index >= 0) {
+        item = this.files[index]
+      }
+
+      if (!item && Array.isArray(this.files) && indexOrPayload && typeof indexOrPayload === 'object') {
+        const payloadFileId = this.normalizeFileId(
+          indexOrPayload.fileId ||
+          (indexOrPayload.item && (indexOrPayload.item.fileId || indexOrPayload.item.id || indexOrPayload.item._id))
+        )
+        if (payloadFileId) {
+          index = this.files.findIndex((entry) => {
+            const entryId = this.normalizeFileId(entry && (entry.fileId || entry.id || entry._id))
+            return entryId && String(entryId) === String(payloadFileId)
+          })
+          if (index >= 0) item = this.files[index]
+        }
+      }
+
       if (!item) return
+      const normalizedFileId = this.normalizeFileId(item.fileId || item.id || item._id)
 
       // Remove placeholders only from UI
       if (item._pending) {
-        this.files.splice(index, 1)
+        if (index >= 0) this.files.splice(index, 1)
         this.markAsEdited()
         return
       }
 
-      if (this.viewProposalId && item.fileId) {
+      if (this.viewProposalId && normalizedFileId) {
         try {
-          await Service.proposal.deleteFormFile(this.viewProposalId, item.fileId)
+          await Service.proposal.deleteFormFile(this.viewProposalId, normalizedFileId)
         } catch (e) {
           // ignore and still remove from UI
         }
       }
 
-      this.files.splice(index, 1)
+      if (normalizedFileId) {
+        this.removeFormFileRow(normalizedFileId)
+        this.detachBudgetAttachmentByFileId(normalizedFileId)
+        this.detachResearchStandardAttachmentByFileId(normalizedFileId)
+      } else {
+        if (index >= 0) this.files.splice(index, 1)
+      }
       this.markAsEdited()
     },
 
     async openFile(item) {
       const fileId = this.normalizeFileId(item && (item.fileId || item.id || item._id))
-      if (!item || !this.viewProposalId || !fileId) return
+      const proposalId = this.viewProposalId ||
+        this.normalizeFileId(this.loadedProposal && (this.loadedProposal._id || this.loadedProposal.id)) ||
+        this.normalizeFileId(this.proposalId)
+
+      if (!item || !fileId) {
+        await this.showAlert({
+          icon: 'warning',
+          title: 'ไม่สามารถเปิดไฟล์ได้',
+          text: 'ไม่พบรหัสไฟล์แนบ กรุณาอัปโหลดเอกสารใหม่อีกครั้ง',
+          confirmButtonText: 'ตกลง'
+        })
+        return
+      }
+
+      if (!proposalId) {
+        await this.showAlert({
+          icon: 'warning',
+          title: 'ไม่สามารถเปิดไฟล์ได้',
+          text: 'ไม่พบรหัสโครงการสำหรับดึงไฟล์แนบ กรุณาบันทึกแบบร่างแล้วลองใหม่',
+          confirmButtonText: 'ตกลง'
+        })
+        return
+      }
 
       // Open a blank tab immediately to avoid popup blockers (async opens are often blocked).
       const popup = window.open('', '_blank')
@@ -3896,7 +4070,7 @@ export default {
         }
       } catch (_) { void _ }
       try {
-        const res = await Service.proposal.downloadFormFile(this.viewProposalId, fileId)
+        const res = await Service.proposal.downloadFormFile(proposalId, fileId)
         const blob = res && res.data ? res.data : null
         const headers = res && res.headers ? res.headers : {}
         const contentType = headers['content-type'] || headers['Content-Type'] || (blob && blob.type) || ''
@@ -4508,6 +4682,20 @@ export default {
       const grandTotal = this.normalizeBudgetNumber(
         (budget && budget.grandTotal) || computedGrandTotal
       )
+      const fundingType = String((form && form.fundingType) || '').trim()
+      const budgetLimitMap = {
+        'new-researcher': 100000,
+        'researcher-development': 200000,
+        'strategic-research': 300000,
+        'industry-extension': 300000
+      }
+      const fundingTypeLabelMap = {
+        'new-researcher': 'ทุนนักวิจัยรุ่นใหม่',
+        'researcher-development': 'ทุนพัฒนานักวิจัย',
+        'strategic-research': 'ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์',
+        'industry-extension': 'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
+      }
+      const budgetLimit = this.normalizeBudgetNumber(budgetLimitMap[fundingType] || 0)
 
       const travelCategory = this.findBudgetCategory(categories, 'หมวดค่าเดินทาง', 2)
       const travelTotal = this.sumBudgetCategoryItems(travelCategory)
@@ -4526,6 +4714,13 @@ export default {
       if (grandTotal > 0 && travelTotal > travelLimit) {
         errors.push(
           `หมวดค่าเดินทางเกิน 25% ของงบทั้งหมด (ขอ ${travelTotal.toLocaleString('th-TH')} บาท จากเพดาน ${travelLimit.toLocaleString('th-TH')} บาท)`
+        )
+      }
+
+      if (budgetLimit > 0 && grandTotal > budgetLimit) {
+        const fundingLabel = fundingTypeLabelMap[fundingType] || fundingType || 'ประเภททุนที่เลือก'
+        errors.push(
+          `งบประมาณรวมเกินเพดานของ${fundingLabel} (เพดาน ${budgetLimit.toLocaleString('th-TH')} บาท, กรอก ${grandTotal.toLocaleString('th-TH')} บาท)`
         )
       }
 

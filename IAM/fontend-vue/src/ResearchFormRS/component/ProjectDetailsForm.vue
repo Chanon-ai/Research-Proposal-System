@@ -343,6 +343,9 @@
             ref="budgetSection"
             v-model="form.budget"
             :is-read-only="isReadOnly"
+            :proposal-id="proposalId"
+            :funding-type="form.fundingType"
+            :reset-token="budgetFundingResetToken"
             @update:modelValue="handleBudgetUpdate"
             @upload-attachment="$emit('budget-attachment-upload', $event)"
             @open-attachment="$emit('budget-attachment-open', $event)"
@@ -385,6 +388,10 @@ export default {
       type: Boolean,
       default: false
     },
+    proposalId: {
+      type: [String, Number],
+      default: ''
+    },
     disableProjectTitleSection: {
       type: Boolean,
       default: false
@@ -407,6 +414,7 @@ export default {
     return {
       isHydrating: false,
       suppressFundingWatcher: false,
+      budgetFundingResetToken: 0,
       highlightedSectionKey: '',
       highlightTimerId: null,
       form: {
@@ -469,6 +477,11 @@ export default {
         // ล้างค่าทุนย่อยและผลลัพธ์ที่เคยเลือกไว้ เพื่อไม่ให้มีข้อมูลผิดประเภทหลงเหลืออยู่
         this.form.fundingSubType = '';
         this.form.selectedOutcome = '';
+        this.form.budget = {
+          categories: [],
+          grandTotal: 0
+        };
+        this.budgetFundingResetToken += 1;
       }
     }
   },

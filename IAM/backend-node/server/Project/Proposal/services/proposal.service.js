@@ -36,6 +36,127 @@ const ALLOWED_TRANSITIONS = {
   [STATUS.REJECTED]: [STATUS.ANNOUNCED, STATUS.REVISION_REQUESTED]
 };
 
+const FUNDING_BUDGET_LIMITS = Object.freeze({
+  'new-researcher': 100000,
+  'researcher-development': 200000,
+  'strategic-research': 300000,
+  'industry-extension': 300000
+});
+
+const FUNDING_LABELS = Object.freeze({
+  'new-researcher': 'ทุนนักวิจัยรุ่นใหม่',
+  'researcher-development': 'ทุนพัฒนานักวิจัย',
+  'strategic-research': 'ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์',
+  'industry-extension': 'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
+});
+
+function parseBudgetNumber(value) {
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const normalized = String(value).replace(/,/g, '').replace(/[^\d.-]/g, '').trim();
+  if (!normalized) return 0;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function computeBudgetFromCategories(categories = []) {
+  if (!Array.isArray(categories)) return 0;
+  return categories.reduce((sum, category) => {
+    const items = Array.isArray(category && category.items) ? category.items : [];
+    const itemTotal = items.reduce((itemSum, item) => itemSum + parseBudgetNumber(item && item.total), 0);
+    return sum + itemTotal;
+  }, 0);
+}
+
+function readSnapshotBudgetTotal(snapshot = {}) {
+  const budget = snapshot && typeof snapshot === 'object' && snapshot.budget && typeof snapshot.budget === 'object'
+    ? snapshot.budget
+    : null;
+  if (!budget) return null;
+  if (Object.prototype.hasOwnProperty.call(budget, 'grandTotal')) {
+    return parseBudgetNumber(budget.grandTotal);
+  }
+  return computeBudgetFromCategories(Array.isArray(budget.categories) ? budget.categories : []);
+}
+
+function resolveFundingType(payload = {}, fallback = {}) {
+  const payloadFundingType = String(payload && payload.fundingType ? payload.fundingType : '').trim();
+  if (payloadFundingType) return payloadFundingType;
+
+  const payloadSnapshot = payload && payload.formSnapshotJson && typeof payload.formSnapshotJson === 'object'
+    ? payload.formSnapshotJson
+    : {};
+  const payloadSnapshotFundingType = String(payloadSnapshot && payloadSnapshot.fundingType ? payloadSnapshot.fundingType : '').trim();
+  if (payloadSnapshotFundingType) return payloadSnapshotFundingType;
+
+  const fallbackFundingType = String(fallback && fallback.fundingType ? fallback.fundingType : '').trim();
+  if (fallbackFundingType) return fallbackFundingType;
+
+  const fallbackSnapshot = fallback && fallback.formSnapshotJson && typeof fallback.formSnapshotJson === 'object'
+    ? fallback.formSnapshotJson
+    : {};
+  return String(fallbackSnapshot && fallbackSnapshot.fundingType ? fallbackSnapshot.fundingType : '').trim();
+}
+
+function resolveBudgetTotal(payload = {}, fallback = {}) {
+  const payloadSnapshot = payload && payload.formSnapshotJson && typeof payload.formSnapshotJson === 'object'
+    ? payload.formSnapshotJson
+    : null;
+  const payloadSnapshotBudgetTotal = payloadSnapshot ? readSnapshotBudgetTotal(payloadSnapshot) : null;
+
+  if (payload && Object.prototype.hasOwnProperty.call(payload, 'budgetTotal')) {
+    const payloadBudgetTotal = parseBudgetNumber(payload.budgetTotal);
+    if (payloadBudgetTotal > 0) return payloadBudgetTotal;
+    if (payloadSnapshotBudgetTotal !== null) return payloadSnapshotBudgetTotal;
+    return payloadBudgetTotal;
+  }
+
+  if (payloadSnapshotBudgetTotal !== null) return payloadSnapshotBudgetTotal;
+
+  const fallbackSnapshot = fallback && fallback.formSnapshotJson && typeof fallback.formSnapshotJson === 'object'
+    ? fallback.formSnapshotJson
+    : null;
+  const fallbackSnapshotBudgetTotal = fallbackSnapshot ? readSnapshotBudgetTotal(fallbackSnapshot) : null;
+
+  if (fallback && Object.prototype.hasOwnProperty.call(fallback, 'budgetTotal')) {
+    const fallbackBudgetTotal = parseBudgetNumber(fallback.budgetTotal);
+    if (fallbackBudgetTotal > 0) return fallbackBudgetTotal;
+    if (fallbackSnapshotBudgetTotal !== null) return fallbackSnapshotBudgetTotal;
+    return fallbackBudgetTotal;
+  }
+
+  if (fallbackSnapshotBudgetTotal !== null) return fallbackSnapshotBudgetTotal;
+
+  return 0;
+}
+
+function formatBudgetForMessage(value) {
+  return parseBudgetNumber(value).toLocaleString('th-TH');
+}
+
+function assertFundingBudgetLimit(payload = {}, fallback = {}) {
+  const fundingType = resolveFundingType(payload, fallback);
+  const budgetLimit = FUNDING_BUDGET_LIMITS[fundingType];
+  if (!Number.isFinite(budgetLimit) || budgetLimit <= 0) return;
+
+  const grandTotal = resolveBudgetTotal(payload, fallback);
+  if (grandTotal <= budgetLimit) return;
+
+  const fundingLabel = FUNDING_LABELS[fundingType] || fundingType;
+  const err = new Error(
+    `งบประมาณรวมเกินเพดานของ${fundingLabel} (เพดาน ${formatBudgetForMessage(budgetLimit)} บาท, กรอก ${formatBudgetForMessage(grandTotal)} บาท)`
+  );
+  err.statusCode = 400;
+  err.code = 'BUDGET_LIMIT_EXCEEDED';
+  err.meta = {
+    fundingType,
+    fundingLabel,
+    budgetLimit,
+    grandTotal
+  };
+  throw err;
+}
+
 // helper to log status change
 async function createStatusLog({ proposalId, fromStatus, toStatus, actionKey, remark, roundNo, changedBy }) {
   const log = new ProposalStatusLog({ proposalId, fromStatus, toStatus, actionKey, remark, roundNo, changedBy });
@@ -224,6 +345,7 @@ async function generateProposalCode() {
 
 async function createProposal(payload, user) {
   const doc = payload || {};
+  assertFundingBudgetLimit(doc, {});
   if (!doc.applicantUserId) doc.applicantUserId = user._id;
   if (!doc.createdBy) doc.createdBy = user._id;
   doc.currentStatus = STATUS.DRAFT;
@@ -305,6 +427,7 @@ async function updateDraftProposal(id, payload, user) {
   }
   const originalProposal = proposal.toObject ? proposal.toObject() : { ...proposal };
   applyDraftPayload(proposal, payload, originalProposal);
+  assertFundingBudgetLimit(proposal, originalProposal);
   proposal.updatedBy = user._id;
   return await proposal.save();
 }
@@ -344,6 +467,7 @@ async function resubmitProposal(id, user) {
   if (user && user.role === 'researcher' && String(proposal.applicantUserId) !== String(user._id)) {
     throw new Error('Forbidden');
   }
+  assertFundingBudgetLimit(proposal, proposal);
 
   const fromStatus = proposal.currentStatus;
   proposal.currentStatus = STATUS.RESUBMITTED;
@@ -370,6 +494,7 @@ async function submitProposal(id, user, options = {}) {
   if (proposal.currentStatus !== STATUS.DRAFT) {
     throw new Error('Only drafts can be submitted');
   }
+  assertFundingBudgetLimit(proposal, proposal);
   const fromStatus = proposal.currentStatus;
   proposal.currentStatus = STATUS.PENDING_CONFIRM;
   proposal.updatedBy = user && user._id ? user._id : proposal.updatedBy;

@@ -108,7 +108,7 @@
                   <button
                     type="button"
                     class="btn btn-sm btn-outline-danger"
-                    @click="$emit('remove', index)"
+                    @click="$emit('remove', { index, item })"
                   >
                     <CIcon name="cil-trash" class="me-1"/>
                     ลบ

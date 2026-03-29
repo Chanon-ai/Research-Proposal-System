@@ -19,6 +19,18 @@ function getUserFromReq(req) {
   return { _id: new mongoose.Types.ObjectId('000000000000000000000001'), role: 'admin' };
 }
 
+function handleKnownProposalError(res, err) {
+  if (!err) return false;
+  if (err.code === 'BUDGET_LIMIT_EXCEEDED') {
+    return res.status(err.statusCode || 400).json({
+      success: false,
+      message: err.message || 'Budget limit exceeded',
+      data: err.meta || null
+    });
+  }
+  return false;
+}
+
 function resolveRequestOrigin(req) {
   const proto = String(req.headers['x-forwarded-proto'] || req.protocol || 'http')
     .split(',')[0]
@@ -303,6 +315,7 @@ exports.create = async (req, res, next) => {
     const proposal = await service.createProposal(req.body, user);
     return jsonResponse(res, { success: true, message: 'Proposal created', data: proposal });
   } catch (err) {
+    if (handleKnownProposalError(res, err)) return;
     next(err);
   }
 };
@@ -334,6 +347,7 @@ exports.updateDraft = async (req, res, next) => {
     const proposal = await service.updateDraftProposal(req.params.id, req.body, user);
     return jsonResponse(res, { success: true, message: 'Draft updated', data: proposal });
   } catch (err) {
+    if (handleKnownProposalError(res, err)) return;
     next(err);
   }
 };
@@ -359,6 +373,7 @@ exports.submit = async (req, res, next) => {
     });
     return jsonResponse(res, { success: true, message: 'Proposal sent for collaboration confirmation', data: proposal });
   } catch (err) {
+    if (handleKnownProposalError(res, err)) return;
     next(err);
   }
 };
@@ -369,6 +384,7 @@ exports.resubmit = async (req, res, next) => {
     const proposal = await service.resubmitProposal(req.params.id, user);
     return jsonResponse(res, { success: true, message: 'Proposal resubmitted', data: proposal });
   } catch (err) {
+    if (handleKnownProposalError(res, err)) return;
     if (err && err.message === 'Forbidden') {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
