@@ -1,12 +1,167 @@
 <template>
-  <div class="budget-section-container" :class="{ 'is-dark': isDarkTheme }">
-      <CCard v-for="(category, catIndex) in categories" :key="catIndex" class="mb-4 shadow-sm border-0">
+  <div ref="budgetSectionRoot" class="budget-section-container" :class="{ 'is-dark': isDarkTheme }">
+    <div
+      v-show="isSummaryStuck"
+      class="budget-summary-compact-slot"
+      :style="{ top: `${summaryStickyTop}px` }"
+      aria-live="polite"
+    >
+      <CCard class="shadow-sm border-0 budget-summary-compact-bar" style="background-color: #f8f9fa;">
+        <CCardBody class="py-2 px-3">
+          <div class="budget-summary-compact-row">
+            <span class="budget-summary-compact-item">
+              ใช้ไป <strong class="text-danger">{{ formatNumber(grandTotal) }}</strong>
+            </span>
+            <span class="budget-summary-compact-item">
+              เหลือ
+              <strong :class="summaryRemainingAmount >= 0 ? 'text-success' : 'text-danger'">
+                {{ formatNumber(Math.abs(summaryRemainingAmount)) }}
+              </strong>
+            </span>
+            <span class="budget-summary-compact-item">
+              งบรวม <strong>{{ formatNumber(summaryTotalBudget) }}</strong>
+            </span>
+            <span
+              class="budget-summary-compact-item budget-summary-compact-status"
+              :class="isBudgetSummaryValid ? 'text-success' : 'text-danger'"
+            >
+              <span class="budget-summary-status-dot" aria-hidden="true"></span>
+              <span>{{ isBudgetSummaryValid ? 'ถูกต้อง' : 'ไม่ถูกต้อง' }}</span>
+            </span>
+            <span
+              v-if="!isBudgetSummaryValid && budgetSummaryFeedbackDetails.length"
+              class="budget-summary-compact-feedback text-danger"
+            >
+              {{ budgetSummaryFeedbackDetails[0] }}
+            </span>
+          </div>
+        </CCardBody>
+      </CCard>
+    </div>
+
+    <CCard
+      ref="budgetSummaryCard"
+      class="mb-2 shadow-sm border-0 budget-summary-card"
+      style="background-color: #f8f9fa;"
+    >
+      <CCardBody class="p-3">
+        <h4 class="mb-3 font-weight-bold text-dark budget-summary-title">งบประมาณโครงการ</h4>
+
+        <div class="budget-summary-stat-grid">
+          <div class="budget-summary-stat-item is-used">
+            <div class="budget-summary-stat-label">[ ใช้ไปแล้ว ]</div>
+            <div class="budget-summary-stat-value text-danger">{{ formatNumber(grandTotal) }}</div>
+            <div class="budget-summary-stat-meta" :class="hasBudgetLimit ? 'text-muted' : 'text-transparent'">
+              ({{ budgetUsedPercent }}%)
+            </div>
+          </div>
+          <div class="budget-summary-stat-item is-remaining">
+            <div class="budget-summary-stat-label">[ คงเหลือ ]</div>
+            <div
+              class="budget-summary-stat-value"
+              :class="summaryRemainingAmount >= 0 ? 'text-success' : 'text-danger'"
+            >
+              {{ formatNumber(Math.abs(summaryRemainingAmount)) }}
+            </div>
+            <div class="budget-summary-stat-meta" :class="hasBudgetLimit ? 'text-muted' : 'text-transparent'">
+              ({{ budgetRemainingPercent }}%)
+            </div>
+          </div>
+          <div class="budget-summary-stat-item is-total">
+            <div class="budget-summary-stat-label">[ งบรวม ]</div>
+            <div class="budget-summary-stat-value text-dark">{{ formatNumber(summaryTotalBudget) }}</div>
+            <div class="budget-summary-stat-meta text-transparent">(0%)</div>
+          </div>
+        </div>
+
+        <div class="budget-summary-separator"></div>
+
+        <div class="budget-summary-period-list">
+          <div class="budget-summary-period-row">
+            <span class="budget-summary-period-label">งวด 1</span>
+            <div class="budget-summary-period-bar">
+              <span
+                class="budget-summary-period-fill"
+                :class="isPeriod1Valid ? 'is-valid' : 'is-invalid'"
+                :style="{ width: `${period1BarWidth}%` }"
+              ></span>
+            </div>
+            <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod1) }}</strong>
+            <span class="budget-summary-period-mark">
+              <CIcon
+                :name="isPeriod1Valid ? 'cil-check-circle' : 'cil-x-circle'"
+                :class="isPeriod1Valid ? 'text-success' : 'text-danger'"
+              />
+            </span>
+          </div>
+          <div class="budget-summary-period-row">
+            <span class="budget-summary-period-label">งวด 2</span>
+            <div class="budget-summary-period-bar">
+              <span
+                class="budget-summary-period-fill"
+                :class="isPeriod2Valid ? 'is-valid' : 'is-invalid'"
+                :style="{ width: `${period2BarWidth}%` }"
+              ></span>
+            </div>
+            <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod2) }}</strong>
+            <span class="budget-summary-period-mark">
+              <CIcon
+                :name="isPeriod2Valid ? 'cil-check-circle' : 'cil-x-circle'"
+                :class="isPeriod2Valid ? 'text-success' : 'text-danger'"
+              />
+            </span>
+          </div>
+          <div class="budget-summary-period-row">
+            <span class="budget-summary-period-label">งวด 3</span>
+            <div class="budget-summary-period-bar">
+              <span
+                class="budget-summary-period-fill"
+                :class="isPeriod3Valid ? 'is-valid' : 'is-invalid'"
+                :style="{ width: `${period3BarWidth}%` }"
+              ></span>
+            </div>
+            <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod3) }}</strong>
+            <span class="budget-summary-period-mark">
+              <CIcon
+                :name="isPeriod3Valid ? 'cil-check-circle' : 'cil-x-circle'"
+                :class="isPeriod3Valid ? 'text-success' : 'text-danger'"
+              />
+            </span>
+          </div>
+        </div>
+
+        <div class="budget-summary-status" :class="isBudgetSummaryValid ? 'text-success' : 'text-danger'">
+          <span class="budget-summary-status-dot" aria-hidden="true"></span>
+          <span>{{ budgetSummaryStatusText }}</span>
+        </div>
+        <ul
+          v-if="!isBudgetSummaryValid && budgetSummaryFeedbackDetails.length"
+          class="budget-summary-feedback-list"
+        >
+          <li v-for="(detail, detailIndex) in budgetSummaryFeedbackDetails" :key="`budget-feedback-${detailIndex}`">
+            {{ detail }}
+          </li>
+        </ul>
+      </CCardBody>
+    </CCard>
+
+    <CCard v-for="(category, catIndex) in categories" :key="catIndex" class="mb-0 shadow-sm border-0 budget-category-card">
         
-      <CCardHeader class="text-white d-flex justify-content-between align-items-center" :style="categoryHeaderStyle">
-        <h5 class="mb-0 font-weight-bold">
-          <i v-if="category.isOther" class="fa fa-money-bill-wave mr-2"></i> {{ getCategoryTitle(category) }}
-        </h5>
-        <div v-if="!isReadOnly"> <CButton color="light" size="sm" class="mr-2 text-primary font-weight-bold" @click="addItem(catIndex)">
+      <CCardHeader class="text-dark d-flex justify-content-between align-items-center" :style="categoryHeaderStyle">
+        <div class="d-flex align-items-center">
+          <button
+            type="button"
+            class="btn btn-light btn-sm budget-expand-toggle mr-2"
+            :title="category.isExpanded ? 'ยุบรายละเอียด' : 'กางรายละเอียด'"
+            @click="toggleCategory(catIndex)"
+          >
+            <span aria-hidden="true">{{ category.isExpanded ? '-' : '+' }}</span>
+          </button>
+          <h5 class="mb-0 font-weight-bold">
+            <i v-if="category.isOther" class="fa fa-money-bill-wave mr-2"></i> {{ getCategoryTitle(category) }}
+          </h5>
+        </div>
+        <div v-if="!isReadOnly && category.isExpanded"> <CButton color="light" size="sm" class="mr-2 text-primary font-weight-bold" @click="addItem(catIndex)">
             <CIcon name="cil-plus" class="mr-1" />  เพิ่มรายการเอง
           </CButton>
           <label class="btn btn-light btn-sm mb-0 text-primary font-weight-bold cursor-pointer">
@@ -16,17 +171,26 @@
         </div>
       </CCardHeader>
 
-      <CCardBody class="p-0 table-responsive">
+      <CCardBody v-show="category.isExpanded" class="p-0 table-responsive">
         <table class="table table-bordered mb-0 text-center align-middle" style="min-width: 1000px;">
+          <colgroup>
+            <col style="width: 25%">
+            <col style="width: 35%">
+            <col style="width: 10%">
+            <col style="width: 8%">
+            <col style="width: 8%">
+            <col style="width: 8%">
+            <col style="width: 6%">
+          </colgroup>
           <thead class="bg-primary text-white" :style="tableHeadStyle">
             <tr>
-              <th width="25%" class="align-middle">รายการ</th>
-              <th width="35%" class="align-middle">รายละเอียดตัวคูณ</th>
-              <th width="10%" class="align-middle">งบรวม (บาท)</th>
-              <th width="8%" class="align-middle">งวด 1</th>
-              <th width="8%" class="align-middle">งวด 2</th>
-              <th width="8%" class="align-middle">งวด 3</th>
-              <th width="6%" class="align-middle">#</th>
+              <th class="align-middle">รายการ</th>
+              <th class="align-middle">รายละเอียดตัวคูณ</th>
+              <th class="align-middle">งบรวม (บาท)</th>
+              <th class="align-middle">งวด 1</th>
+              <th class="align-middle">งวด 2</th>
+              <th class="align-middle">งวด 3</th>
+              <th class="align-middle">#</th>
             </tr>
           </thead>
           <tbody>
@@ -136,63 +300,69 @@
               <td class="align-middle bg-white">
                 <div class="d-flex justify-content-center align-items-center flex-wrap" style="gap: 8px;">
                   <template v-if="category.isOther">
-                    <div v-for="(mult, mIndex) in item.multipliers" :key="mIndex" class="position-relative multiplier-box">
-                      <CButton v-if="!isReadOnly && item.multipliers.length > 1" 
-                               color="danger" 
-                               size="sm"
-                               @click="removeMultiplier(item, mIndex)" 
-                               class="position-absolute remove-mult-btn" 
-                               title="ลบตัวคูณ">
-                        <CIcon name="cil-x" class="m-1"/>
-                      </CButton>
-                      
-                      <input type="text" class="form-control form-control-sm text-center mb-1 text-muted bg-transparent border-1" 
-                             v-model="mult.label" placeholder="ชื่อหน่วย" :readonly="isReadOnly">
-                      <input type="text" inputmode="numeric" class="form-control text-center" 
-                             v-model="mult.value" placeholder="ตัวเลข" 
-                             @keypress="isNumber"
-                             @input="cleanNumber(mult, 'value'); calculateItemTotal(item)"
-                             :readonly="isReadOnly">
-                    </div>
+                    <template v-for="(mult, mIndex) in item.multipliers">
+                      <div :key="`${item.id}-other-mult-${mIndex}`" class="position-relative multiplier-box">
+                        <CButton v-if="!isReadOnly && item.multipliers.length > 1" 
+                                 color="danger" 
+                                 size="sm"
+                                 @click="removeMultiplier(item, mIndex)" 
+                                 class="position-absolute remove-mult-btn" 
+                                 title="ลบตัวคูณ">
+                          <CIcon name="cil-x" class="m-1"/>
+                        </CButton>
+                        
+                        <input type="text" class="form-control form-control-sm text-center mb-1 text-muted bg-transparent border-1" 
+                               v-model="mult.label" placeholder="ชื่อหน่วย" :readonly="isReadOnly">
+                        <input type="text" inputmode="numeric" class="form-control text-center" 
+                               v-model="mult.value" placeholder="ตัวเลข" 
+                               @keypress="isNumber"
+                               @input="cleanNumber(mult, 'value'); calculateItemTotal(item)"
+                               :readonly="isReadOnly">
+                      </div>
+                      <span
+                        v-if="mIndex < item.multipliers.length - 1"
+                        :key="`${item.id}-other-sep-${mIndex}`"
+                        class="multiplier-separator"
+                      >
+                        x
+                      </span>
+                    </template>
                     <CButton v-if="!isReadOnly" color="primary" size="sm" class="mt-4" title="เพิ่มตัวคูณ" @click="addMultiplier(item)" style="height: 38px;">
                       <CIcon name="cil-plus" class="m-1"/>
                     </CButton>
                   </template>
 
                   <template v-else>
-                    <div
-                      v-for="field in getFieldsForRow(item)"
-                      :key="`${item.id}-${field.key}`"
-                      class="position-relative multiplier-box"
-                    >
-                      <div class="floating-outline-wrap">
-                        <input
-                          type="text"
-                          inputmode="numeric"
-                          class="input-floating-outline text-center"
-                          placeholder=" "
-                          v-model="item.inputs[field.key]"
-                          :readonly="isReadOnly"
-                          @keypress="isNumber"
-                          @input="handleCalcInputChange(catIndex, item, field.key)"
-                        >
-                        <label class="label-floating-outline">{{ field.label }}</label>
+                    <template v-for="(field, fieldIndex) in getFieldsForRow(item)">
+                      <div
+                        :key="`${item.id}-${field.key}`"
+                        class="position-relative multiplier-box"
+                      >
+                        <div class="floating-outline-wrap">
+                          <input
+                            type="text"
+                            inputmode="numeric"
+                            class="input-floating-outline text-center"
+                            placeholder=" "
+                            v-model="item.inputs[field.key]"
+                            :readonly="isReadOnly"
+                            @keypress="isNumber"
+                            @input="handleCalcInputChange(catIndex, item, field.key)"
+                          >
+                          <label class="label-floating-outline">{{ field.label }}</label>
+                        </div>
                       </div>
-                    </div>
+                      <span
+                        v-if="fieldIndex < getFieldsForRow(item).length - 1"
+                        :key="`${item.id}-calc-sep-${fieldIndex}`"
+                        class="multiplier-separator"
+                      >
+                        x
+                      </span>
+                    </template>
                   </template>
                 </div>
 
-                <div v-if="!category.isOther" class="formula-preview-box text-left">
-                  <small v-if="item.detectedRuleKey" class="text-success d-block formula-indicator">
-                    ตรวจพบสูตรอัตโนมัติ: {{ getFormulaLabel(item) }}
-                  </small>
-                  <small v-else class="text-muted d-block formula-indicator">
-                    ใช้สูตรเริ่มต้นของหมวด: {{ getFormulaLabel(item) }}
-                  </small>
-                  <small class="text-primary d-block formula-live-preview">
-                    {{ getFormulaPreview(item) }}
-                  </small>
-                </div>
               </td>
 
               <td class="align-middle bg-white">
@@ -203,12 +373,18 @@
                 <div class="floating-outline-wrap">
                   <input type="text" inputmode="numeric" 
                          class="input-floating-outline text-center" 
-                         :class="{'border-danger text-danger error-shadow': item.periodError}"
+                         :class="{
+                           'border-danger text-danger error-shadow': item.periodError,
+                           'period-complete': !item.periodError && isItemPeriodsFullyComplete(item)
+                         }"
                          placeholder=" "
                          v-model="item.periods[0]" 
                          @keypress="isNumber" 
                          @input="handlePeriodInput(item, 0)" :readonly="isReadOnly">
-                  <label class="label-floating-outline" :class="{'text-danger': item.periodError}">
+                  <label class="label-floating-outline" :class="{
+                    'text-danger': item.periodError,
+                    'text-success': !item.periodError && isItemPeriodsFullyComplete(item)
+                  }">
                     <i v-if="item.periodError" class="fa fa-exclamation-circle"></i> 
                     {{ item.periodError ? 'เกินงบ!' : 'งวด 1' }}
                   </label>
@@ -219,12 +395,18 @@
                 <div class="floating-outline-wrap">
                   <input type="text" inputmode="numeric" 
                          class="input-floating-outline text-center" 
-                         :class="{'border-danger text-danger error-shadow': item.periodError}"
+                         :class="{
+                           'border-danger text-danger error-shadow': item.periodError,
+                           'period-complete': !item.periodError && isItemPeriodsFullyComplete(item)
+                         }"
                          placeholder=" "
                          v-model="item.periods[1]" 
                          @keypress="isNumber" 
                          @input="handlePeriodInput(item, 1)" :readonly="isReadOnly">
-                  <label class="label-floating-outline" :class="{'text-danger': item.periodError}">
+                  <label class="label-floating-outline" :class="{
+                    'text-danger': item.periodError,
+                    'text-success': !item.periodError && isItemPeriodsFullyComplete(item)
+                  }">
                     <i v-if="item.periodError" class="fa fa-exclamation-circle"></i> 
                     {{ item.periodError ? 'เกินงบ!' : 'งวด 2' }}
                   </label>
@@ -235,12 +417,18 @@
                 <div class="floating-outline-wrap">
                   <input type="text" inputmode="numeric" 
                          class="input-floating-outline text-center" 
-                         :class="{'border-danger text-danger error-shadow': item.periodError}"
+                         :class="{
+                           'border-danger text-danger error-shadow': item.periodError,
+                           'period-complete': !item.periodError && isItemPeriodsFullyComplete(item)
+                         }"
                          placeholder=" "
                          v-model="item.periods[2]" 
                          @keypress="isNumber" 
                          @input="handlePeriodInput(item, 2)" :readonly="isReadOnly">
-                  <label class="label-floating-outline" :class="{'text-danger': item.periodError}">
+                  <label class="label-floating-outline" :class="{
+                    'text-danger': item.periodError,
+                    'text-success': !item.periodError && isItemPeriodsFullyComplete(item)
+                  }">
                     <i v-if="item.periodError" class="fa fa-exclamation-circle"></i> 
                     {{ item.periodError ? 'เกินงบ!' : 'งวด 3' }}
                   </label>
@@ -277,89 +465,6 @@
         </li>
       </ul>
     </div>
-
-    <CCard class="mb-2 shadow-sm border-0 budget-summary-card" style="background-color: #f8f9fa;">
-      <CCardBody class="p-3">
-        <div class="row text-center align-items-center">
-          
-          <div class="col-md-3 text-right text-dark">
-            <h5 class="mb-0 font-weight-bold budget-installment-summary-title">สรุปยอดรวมการเบิกจ่าย:</h5>
-            <small class="text-muted budget-installment-criteria">เกณฑ์ 50% / 40% / 10%</small>
-          </div>
-          
-          <div class="col-md-3 border-left">
-            <div class="text-muted mb-1 budget-installment-period-label">รวมงวดที่ 1 (50%)</div>
-            <h5 class="mb-0 font-weight-bold" :class="isPeriod1Valid ? 'text-success' : 'text-danger'">
-              {{ formatNumber(totalPeriod1) }} <small>บาท</small>
-            </h5>
-            <div v-if="!isPeriod1Valid && grandTotal > 0" class="text-danger mt-1 budget-installment-status">
-              <i class="fa fa-exclamation-triangle"></i> ยอดที่ถูกต้อง: {{ formatNumber(expectedPeriod1) }}
-            </div>
-            <div v-else-if="grandTotal > 0" class="text-success mt-1 budget-installment-status">
-              <i class="fa fa-check-circle"></i> สัดส่วนถูกต้อง
-            </div>
-          </div>
-
-          <div class="col-md-3 border-left">
-            <div class="text-muted mb-1 budget-installment-period-label">รวมงวดที่ 2 (40%)</div>
-            <h5 class="mb-0 font-weight-bold" :class="isPeriod2Valid ? 'text-success' : 'text-danger'">
-              {{ formatNumber(totalPeriod2) }} <small>บาท</small>
-            </h5>
-            <div v-if="!isPeriod2Valid && grandTotal > 0" class="text-danger mt-1 budget-installment-status">
-              <i class="fa fa-exclamation-triangle"></i> ยอดที่ถูกต้อง: {{ formatNumber(expectedPeriod2) }}
-            </div>
-            <div v-else-if="grandTotal > 0" class="text-success mt-1 budget-installment-status">
-              <i class="fa fa-check-circle"></i> สัดส่วนถูกต้อง
-            </div>
-          </div>
-
-          <div class="col-md-3 border-left">
-            <div class="text-muted mb-1 budget-installment-period-label">รวมงวดที่ 3 (10%)</div>
-            <h5 class="mb-0 font-weight-bold" :class="isPeriod3Valid ? 'text-success' : 'text-danger'">
-              {{ formatNumber(totalPeriod3) }} <small>บาท</small>
-            </h5>
-            <div v-if="!isPeriod3Valid && grandTotal > 0" class="text-danger mt-1 budget-installment-status">
-              <i class="fa fa-exclamation-triangle"></i> ยอดที่ถูกต้อง: {{ formatNumber(expectedPeriod3) }}
-            </div>
-            <div v-else-if="grandTotal > 0" class="text-success mt-1 budget-installment-status">
-              <i class="fa fa-check-circle"></i> สัดส่วนถูกต้อง
-            </div>
-          </div>
-
-        </div>
-      </CCardBody>
-    </CCard>
-    
-    <CCard class="border-primary mt-4 shadow-sm budget-grand-total-card" style="border-width: 2px !important;">
-      <CCardBody class="d-flex justify-content-between align-items-center p-4">
-        <div>
-          <h4 class="mb-1 font-weight-bold text-dark budget-grand-total-title">สรุปงบประมาณรวมทั้งสิ้น (พ.ศ. 2569)</h4>
-          <span class="text-muted budget-grand-total-note">คำนวณอัตโนมัติตามหลักเกณฑ์การตั้งงบประมาณมหาวิทยาลัยแม่ฟ้าหลวง</span>
-          <div
-            v-if="hasBudgetLimit"
-            class="budget-grand-total-details mt-2"
-            :class="isBudgetLimitExceeded ? 'text-danger' : 'text-primary'"
-          >
-            <div><strong>เพดานงบตามประเภททุน:</strong> {{ fundingTypeLabel }}</div>
-            <div><strong>เพดานงบ:</strong> {{ formatNumber(budgetLimit) }} บาท</div>
-            <div><strong>ยอดที่กรอก:</strong> {{ formatNumber(grandTotal) }} บาท</div>
-          </div>
-        </div>
-        <div class="text-right">
-          <h1 class="text-primary mb-0 font-weight-bold" style="color: #8b1212 !important;">
-            จำนวนเงินที่ใช้: {{ formatNumber(grandTotal) }} <span class="h5 text-muted font-weight-normal">บาท</span>
-          </h1>
-          <div
-            v-if="hasBudgetLimit"
-            class="h1 mt-2 mb-0 font-weight-bold"
-            :class="remainingBudget >= 0 ? 'text-success' : 'text-danger'"
-          >
-            {{ remainingBudget >= 0 ? 'วงเงินคงเหลือ' : 'เกินวงเงิน' }}: {{ formatNumber(Math.abs(remainingBudget)) }}
-            <span class="h5 text-muted font-weight-normal">บาท</span>
-          </div>
-        </div>
-      </CCardBody>
-    </CCard>
 
   </div>
 </template>
@@ -919,9 +1024,11 @@ export default {
     return {
       suppressEmit: false,
       emitScheduled: false,
+      isSummaryStuck: false,
+      summaryStickyTop: 72,
       categories: [
         {
-          key: BUDGET_CATEGORY_KEYS.COMPENSATION, name: 'หมวดค่าตอบแทน', isOther: false, items: [],
+          key: BUDGET_CATEGORY_KEYS.COMPENSATION, name: 'หมวดค่าตอบแทน', isOther: false, isExpanded: true, items: [],
           defaultMultipliers: [
             { label: 'จำนวน (คน)', value: 1, isAdmin: false },
             { label: 'จำนวน (ครั้ง/ด.)', value: 1, isAdmin: false },
@@ -929,7 +1036,7 @@ export default {
           ]
         },
         {
-          key: BUDGET_CATEGORY_KEYS.OPERATING, name: 'หมวดค่าใช้สอย', isOther: false, items: [],
+          key: BUDGET_CATEGORY_KEYS.OPERATING, name: 'หมวดค่าใช้สอย', isOther: false, isExpanded: true, items: [],
           defaultMultipliers: [
             { label: 'จำนวน (คน/ชิ้น)', value: 1, isAdmin: false },
             { label: 'จำนวน (วัน/ครั้ง)', value: 1, isAdmin: false },
@@ -937,7 +1044,7 @@ export default {
           ]
         },
         {
-          key: BUDGET_CATEGORY_KEYS.TRAVEL, name: 'หมวดค่าเดินทาง', isOther: false, items: [],
+          key: BUDGET_CATEGORY_KEYS.TRAVEL, name: 'หมวดค่าเดินทาง', isOther: false, isExpanded: true, items: [],
           defaultMultipliers: [
             { label: 'จำนวน (คน)', value: 1, isAdmin: false },
             { label: 'จำนวน (วัน/เที่ยว)', value: 1, isAdmin: false },
@@ -945,7 +1052,7 @@ export default {
           ]
         },
         {
-          key: BUDGET_CATEGORY_KEYS.MATERIAL, name: 'หมวดค่าวัสดุ', isOther: false, items: [],
+          key: BUDGET_CATEGORY_KEYS.MATERIAL, name: 'หมวดค่าวัสดุ', isOther: false, isExpanded: true, items: [],
           defaultMultipliers: [
             { label: 'จำนวน', value: 1, isAdmin: false },
             { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false },
@@ -953,7 +1060,7 @@ export default {
           ]
         },
         {
-          key: BUDGET_CATEGORY_KEYS.UTILITY, name: 'หมวดค่าสาธารณูปโภค', isOther: false, items: [],
+          key: BUDGET_CATEGORY_KEYS.UTILITY, name: 'หมวดค่าสาธารณูปโภค', isOther: false, isExpanded: true, items: [],
           defaultMultipliers: [
             { label: 'จำนวน (เดือน)', value: 1, isAdmin: false },
             { label: 'จำนวน (หน่วย)', value: 1, isAdmin: false },
@@ -961,7 +1068,7 @@ export default {
           ]
         },
         {
-          key: BUDGET_CATEGORY_KEYS.EQUIPMENT, name: 'หมวดครุภัณฑ์', isOther: false, items: [],
+          key: BUDGET_CATEGORY_KEYS.EQUIPMENT, name: 'หมวดครุภัณฑ์', isOther: false, isExpanded: true, items: [],
           defaultMultipliers: [
             { label: 'จำนวน (รายการ)', value: 1, isAdmin: false },
             { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false },
@@ -969,7 +1076,7 @@ export default {
           ]
         },
         {
-          key: BUDGET_CATEGORY_KEYS.OTHER, name: 'หมวดอื่นๆ', isOther: true, items: [],
+          key: BUDGET_CATEGORY_KEYS.OTHER, name: 'หมวดอื่นๆ', isOther: true, isExpanded: true, items: [],
           defaultMultipliers: [
             { label: 'จำนวน', value: 1, isAdmin: false },
             { label: 'หน่วย', value: 1, isAdmin: false },
@@ -984,16 +1091,13 @@ export default {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
     },
     categoryHeaderStyle() {
-      if (this.isDarkTheme) {
-        return 'background: linear-gradient(135deg, #1a2330 0%, #233244 70%, #2e4056 120%) !important;'
-      }
-      return 'background: linear-gradient(135deg, #8b1212 0%, #c59b3a 120%) !important;'
+      return 'background-color: #ffffff !important; color: #111827 !important; border-bottom: 1px solid #e5e7eb !important;'
     },
     tableHeadStyle() {
       if (this.isDarkTheme) {
-        return 'background: linear-gradient(135deg, #17202c 0%, #1f2d3d 65%, #2c3f56 140%) !important; opacity: 0.98;'
+        return 'background-color: #1a2430 !important; opacity: 0.98;'
       }
-      return 'background: linear-gradient(135deg, #7a0f0f 0%, #8b1212 65%, #c59b3a 140%) !important; opacity: 0.98;'
+      return 'background-color: #8b1212 !important; opacity: 0.98;'
     },
     grandTotal() {
       return this.categories.reduce((sum, cat) => {
@@ -1076,6 +1180,92 @@ export default {
     },
     isBudgetLimitExceeded() {
       return this.hasBudgetLimit && this.grandTotal > this.budgetLimit
+    },
+    summaryTotalBudget() {
+      return this.hasBudgetLimit ? this.budgetLimit : this.grandTotal
+    },
+    summaryRemainingAmount() {
+      if (this.hasBudgetLimit) return this.remainingBudget
+      return 0
+    },
+    budgetUsedPercent() {
+      if (!this.hasBudgetLimit || this.budgetLimit <= 0) return 0
+      return Math.max(0, Math.round((this.grandTotal / this.budgetLimit) * 100))
+    },
+    budgetRemainingPercent() {
+      if (!this.hasBudgetLimit || this.budgetLimit <= 0) return 0
+      return Math.max(0, 100 - this.budgetUsedPercent)
+    },
+    period1BarWidth() {
+      if (this.grandTotal <= 0) return 0
+      const periodPercent = (this.totalPeriod1 / this.grandTotal) * 100
+      return Math.max(0, Math.min(100, Math.round((periodPercent / 50) * 100)))
+    },
+    period2BarWidth() {
+      if (this.grandTotal <= 0) return 0
+      const periodPercent = (this.totalPeriod2 / this.grandTotal) * 100
+      return Math.max(0, Math.min(100, Math.round((periodPercent / 50) * 100)))
+    },
+    period3BarWidth() {
+      if (this.grandTotal <= 0) return 0
+      const periodPercent = (this.totalPeriod3 / this.grandTotal) * 100
+      return Math.max(0, Math.min(100, Math.round((periodPercent / 50) * 100)))
+    },
+    isBudgetSummaryValid() {
+      if (this.isBudgetLimitExceeded) return false
+      if (this.isTravelExceeded || this.isEquipmentExceeded) return false
+      if (this.grandTotal > 0 && (!this.isPeriod1Valid || !this.isPeriod2Valid || !this.isPeriod3Valid)) return false
+      return true
+    },
+    budgetSummaryFeedbackDetails() {
+      const details = []
+
+      if (this.isBudgetLimitExceeded) {
+        details.push(
+          `งบรวมเกินเพดาน (${this.formatNumber(this.grandTotal)} / ${this.formatNumber(this.budgetLimit)} บาท)`
+        )
+      }
+
+      if (this.isTravelExceeded) {
+        details.push(
+          `หมวดค่าเดินทางเกินเกณฑ์ 25% (${this.formatNumber(this.travelTotal)} / ${this.formatNumber(this.limit25Percent)} บาท)`
+        )
+      }
+
+      if (this.isEquipmentExceeded) {
+        details.push(
+          `หมวดครุภัณฑ์เกินเกณฑ์ 25% (${this.formatNumber(this.equipmentTotal)} / ${this.formatNumber(this.limit25Percent)} บาท)`
+        )
+      }
+
+      if (this.grandTotal > 0 && !this.isPeriod1Valid) {
+        details.push(
+          `งวด 1 ต้องเป็น ${this.formatNumber(this.expectedPeriod1)} บาท (ปัจจุบัน ${this.formatNumber(this.totalPeriod1)} บาท)`
+        )
+      }
+
+      if (this.grandTotal > 0 && !this.isPeriod2Valid) {
+        details.push(
+          `งวด 2 ต้องเป็น ${this.formatNumber(this.expectedPeriod2)} บาท (ปัจจุบัน ${this.formatNumber(this.totalPeriod2)} บาท)`
+        )
+      }
+
+      if (this.grandTotal > 0 && !this.isPeriod3Valid) {
+        details.push(
+          `งวด 3 ต้องเป็น ${this.formatNumber(this.expectedPeriod3)} บาท (ปัจจุบัน ${this.formatNumber(this.totalPeriod3)} บาท)`
+        )
+      }
+
+      return details
+    },
+    budgetSummaryStatusText() {
+      if (this.isBudgetSummaryValid) return 'งบประมาณถูกต้อง'
+      if (this.isBudgetLimitExceeded) return 'งบประมาณเกินเพดาน'
+      if (this.isTravelExceeded || this.isEquipmentExceeded) return 'สัดส่วนงบประมาณบางหมวดเกินเกณฑ์'
+      if (this.grandTotal > 0 && (!this.isPeriod1Valid || !this.isPeriod2Valid || !this.isPeriod3Valid)) {
+        return 'การกระจายงวดไม่ตรงเกณฑ์ 50/40/10'
+      }
+      return 'งบประมาณไม่ถูกต้อง'
     }
   },
   watch: {
@@ -1096,7 +1286,36 @@ export default {
       }
     }
   },
+  mounted() {
+    if (typeof window === 'undefined') return
+    window.addEventListener('scroll', this.updateSummaryStickyState, { passive: true, capture: true })
+    window.addEventListener('resize', this.updateSummaryStickyState, { passive: true })
+    this.$nextTick(() => {
+      this.updateSummaryStickyState()
+    })
+  },
+  beforeDestroy() {
+    if (typeof window === 'undefined') return
+    window.removeEventListener('scroll', this.updateSummaryStickyState, true)
+    window.removeEventListener('resize', this.updateSummaryStickyState)
+  },
   methods: {
+    updateSummaryStickyState() {
+      const sectionRootRef = this.$refs && this.$refs.budgetSectionRoot
+      const sectionRootEl = sectionRootRef && sectionRootRef.$el ? sectionRootRef.$el : (sectionRootRef || this.$el)
+      const summaryCardRef = this.$refs && this.$refs.budgetSummaryCard
+      const summaryCardEl = summaryCardRef && summaryCardRef.$el ? summaryCardRef.$el : summaryCardRef
+      if (!summaryCardEl || !sectionRootEl || typeof summaryCardEl.getBoundingClientRect !== 'function' || typeof sectionRootEl.getBoundingClientRect !== 'function') return
+      const stickyTop = Number(this.summaryStickyTop || 0)
+      const summaryRect = summaryCardEl.getBoundingClientRect()
+      const sectionRect = sectionRootEl.getBoundingClientRect()
+      const isPastSummaryCard = summaryRect.bottom <= stickyTop + 0.5
+      const isStillInsideSection = sectionRect.bottom > stickyTop + 56
+      const nextState = isPastSummaryCard && isStillInsideSection
+      if (this.isSummaryStuck !== nextState) {
+        this.isSummaryStuck = nextState
+      }
+    },
     getCategoryTitle(category) {
       const name = category && category.name ? String(category.name) : ''
       const categoryKey = this.getCategoryKey(category)
@@ -1105,6 +1324,16 @@ export default {
         return `${name} (ไม่เกิน ร้อยละ 25 ของงบประมาณ/ไม่เกิน ${limitAmount} บาท)`
       }
       return name
+    },
+    toggleCategory(catIndex) {
+      const category = this.categories[catIndex]
+      if (!category) return
+
+      this.suppressEmit = true
+      this.$set(category, 'isExpanded', !category.isExpanded)
+      this.$nextTick(() => {
+        this.suppressEmit = false
+      })
     },
     queueEmitModelValue() {
       if (this.suppressEmit) return
@@ -1284,6 +1513,9 @@ export default {
     getSanitizedCategories() {
       const categories = JSON.parse(JSON.stringify(this.categories || []))
       categories.forEach((category) => {
+        if (category && Object.prototype.hasOwnProperty.call(category, 'isExpanded')) {
+          delete category.isExpanded
+        }
         if (!category || !Array.isArray(category.items)) return
         category.items.forEach((item) => {
           if (!item || typeof item !== 'object') return
@@ -1406,6 +1638,28 @@ export default {
         return `${this.formatNumber(values[0])} = ${this.formatNumber(total)}`
       }
       return `${values.map(value => this.formatNumber(value)).join(' × ')} = ${this.formatNumber(total)}`
+    },
+    getManualMultiplierPreview(row) {
+      if (!row || typeof row !== 'object') return ''
+      if (!Array.isArray(row.multipliers) || row.multipliers.length === 0) return 'ยังไม่มีตัวคูณ'
+
+      const values = row.multipliers.map(multiplier => this.toNumber(multiplier && multiplier.value))
+      const hasValue = values.some(value => value > 0)
+      if (!hasValue) return 'กรอกตัวคูณเพื่อคำนวณ'
+
+      return `${values.map(value => this.formatNumber(value)).join(' × ')} = ${this.formatNumber(row.total)}`
+    },
+    getItemCalculationLabel(category, row) {
+      if (category && category.isOther) {
+        return 'คูณค่าของตัวคูณทั้งหมด'
+      }
+      return this.getFormulaLabel(row)
+    },
+    getItemCalculationPreview(category, row) {
+      if (category && category.isOther) {
+        return this.getManualMultiplierPreview(row)
+      }
+      return this.getFormulaPreview(row)
     },
     normalizeKeywordText(text) {
       return String(text || '')
@@ -1824,6 +2078,23 @@ export default {
       // ลบ Alert ออก และอัปเดตสถานะ periodError แทน
       item.periodError = sumPeriods > item.total;
     },
+    isItemPeriodsFullyComplete(item) {
+      if (!item || !Array.isArray(item.periods)) return false;
+
+      const totalBudget = Math.max(this.toNumber(item.total), 0);
+      if (totalBudget <= 0) return false;
+
+      const allPeriodsFilled = item.periods
+        .slice(0, 3)
+        .every(period => this.toRawNumberString(period) !== '');
+      if (!allPeriodsFilled) return false;
+
+      const sumPeriods = this.toNumber(item.periods[0]) +
+        this.toNumber(item.periods[1]) +
+        this.toNumber(item.periods[2]);
+
+      return this.isCloseEnough(sumPeriods, totalBudget) && !item.periodError;
+    },
     attachDocToCategory(event, catIndex) {
       const files = event.target.files;
       if (!files.length) return;
@@ -1987,8 +2258,268 @@ export default {
   cursor: pointer;
 }
 
+.budget-summary-card {
+  border: 2px solid #8b1212 !important;
+  border-radius: 14px !important;
+}
+
+.budget-summary-compact-slot {
+  position: sticky;
+  z-index: 200;
+  margin-bottom: 8px;
+}
+
+.budget-summary-compact-bar {
+  border: 2px solid #8b1212 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18), 0 3px 10px rgba(139, 18, 18, 0.22);
+}
+
+.budget-summary-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.budget-summary-compact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 1.02rem;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.budget-summary-compact-item strong {
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.budget-summary-compact-status {
+  gap: 7px;
+}
+
+.budget-summary-compact-feedback {
+  font-size: 0.92rem;
+  font-weight: 600;
+  max-width: 520px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.budget-summary-title {
+  font-size: 1.45rem;
+  line-height: 1.3;
+}
+
+.budget-summary-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.budget-summary-stat-item {
+  background-color: #ffffff;
+  border: 1px solid #d7dee7;
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-height: 104px;
+}
+
+.budget-summary-stat-label {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.budget-summary-stat-value {
+  font-size: 2rem;
+  line-height: 1.15;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.budget-summary-stat-meta {
+  font-size: 0.96rem;
+  line-height: 1.2;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.text-transparent {
+  color: transparent !important;
+}
+
+.budget-summary-separator {
+  border-top: 1px solid #d7dee7;
+  margin: 14px 0;
+}
+
+.budget-summary-period-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.budget-summary-period-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 9px;
+}
+
+.budget-summary-period-label {
+  min-width: 54px;
+  font-size: 1.06rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.budget-summary-period-bar {
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.budget-summary-period-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+
+.budget-summary-period-fill.is-valid {
+  background: #16a34a;
+}
+
+.budget-summary-period-fill.is-invalid {
+  background: #dc2626;
+}
+
+.budget-summary-period-amount {
+  min-width: 88px;
+  text-align: right;
+  font-size: 1.18rem;
+  line-height: 1.2;
+}
+
+.budget-summary-period-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.budget-summary-period-mark .c-icon {
+  width: 1.06rem;
+  height: 1.06rem;
+}
+
+.budget-summary-status {
+  margin-top: 10px;
+  font-size: 1.12rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.budget-summary-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex: 0 0 10px;
+}
+
+.budget-summary-feedback-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  color: #b91c1c;
+  font-size: 0.96rem;
+  line-height: 1.5;
+}
+
+.budget-expand-toggle {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-color: rgba(234, 223, 206, 0.95);
+}
+
+.budget-expand-toggle span {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
 .budget-section-container.is-dark {
   color: #e6edf7;
+}
+
+.budget-section-container.is-dark .budget-expand-toggle {
+  background: #243548;
+  color: #f3f7fd;
+  border-color: #3a4f67;
+}
+
+.budget-section-container.is-dark .budget-summary-card {
+  border-color: #33475c !important;
+}
+
+.budget-section-container.is-dark .budget-summary-compact-item {
+  color: #d6e2f0;
+}
+
+.budget-section-container.is-dark .budget-summary-compact-feedback {
+  color: #fecaca !important;
+}
+
+.budget-section-container.is-dark .budget-summary-stat-item {
+  background: #223142;
+  border-color: #3c4e63;
+}
+
+.budget-section-container.is-dark .budget-summary-stat-label {
+  color: #d6e2f0;
+}
+
+.budget-section-container.is-dark .budget-summary-stat-value {
+  color: #edf4fc;
+}
+
+.budget-section-container.is-dark .budget-summary-stat-meta {
+  color: #9fb1c6;
+}
+
+.budget-section-container.is-dark .budget-summary-period-label,
+.budget-section-container.is-dark .budget-summary-period-amount {
+  color: #d6e2f0;
+}
+
+.budget-section-container.is-dark .budget-summary-period-bar {
+  background: #33475c;
+}
+
+.budget-section-container.is-dark .budget-summary-feedback-list {
+  color: #fecaca;
+}
+
+.budget-section-container.is-dark .budget-summary-separator {
+  border-top-color: #33475c;
 }
 
 .budget-section-container.is-dark ::v-deep .card,
@@ -2026,6 +2557,14 @@ export default {
 
 .budget-section-container.is-dark ::v-deep .text-dark {
   color: #e6edf7 !important;
+}
+
+.budget-section-container.is-dark .multiplier-separator {
+  color: #d9e4f2;
+}
+
+.budget-section-container.is-dark .formula-preview-box {
+  border-top-color: #3a4b60;
 }
 
 .budget-section-container.is-dark ::v-deep .form-control,
@@ -2093,6 +2632,19 @@ export default {
 .budget-section-container ::v-deep .card {
   overflow: hidden; /* clip the table header to the card's corners */
   border-radius: 12px;
+}
+
+.budget-section-container ::v-deep .budget-category-card {
+  border-radius: 0 !important;
+}
+
+.budget-section-container ::v-deep .budget-category-card + .budget-category-card {
+  margin-top: 10px !important;
+}
+
+.budget-section-container ::v-deep .budget-category-card > .card-header:first-child {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
 }
 
 .budget-section-container ::v-deep .budget-category-header {
@@ -2178,8 +2730,19 @@ export default {
   width: 118px;
 }
 
+.multiplier-separator {
+  font-size: 18px;
+  font-weight: 700;
+  color: #8b1212;
+  line-height: 1;
+  margin: 0 2px;
+}
+
 .formula-preview-box {
-  display: none;
+  display: block;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #d8c9b8;
 }
 
 .formula-indicator {
@@ -2351,36 +2914,53 @@ export default {
   border-top-color: #d5e0ec;
 }
 
-/* =========================================================
-   Responsive: Summary box (installments) on small screens
-   - Align title/criteria/amounts to the left
-   - Stack each period with a top divider instead of left divider
-   ========================================================= */
 @media (max-width: 768px) {
-  .budget-section-container ::v-deep .row.text-center.align-items-center {
-    text-align: left !important;
+  .budget-summary-compact-row {
+    gap: 10px;
   }
 
-  .budget-section-container ::v-deep .row.text-center.align-items-center .text-right {
-    text-align: left !important;
+  .budget-summary-compact-item {
+    font-size: 0.92rem;
   }
 
-  .budget-section-container ::v-deep .row.text-center.align-items-center > [class*="col-"] {
-    text-align: left !important;
+  .budget-summary-compact-item strong {
+    font-size: 1.02rem;
   }
 
-  .budget-section-container ::v-deep .row.text-center.align-items-center .border-left {
-    border-left: 0 !important;
-    border-top: 1px solid rgba(234, 223, 206, 0.95) !important;
-    padding-top: 10px;
-    margin-top: 10px;
+  .budget-summary-title {
+    font-size: 1.3rem;
   }
 
-  /* First period column is the 2nd child in this row (after the title column). */
-  .budget-section-container ::v-deep .row.text-center.align-items-center > div.border-left:nth-child(2) {
-    border-top: 0 !important;
-    padding-top: 0;
-    margin-top: 0;
+  .budget-summary-stat-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .budget-summary-stat-item {
+    min-height: 0;
+    padding: 9px 10px;
+  }
+
+  .budget-summary-stat-value {
+    font-size: 1.45rem;
+  }
+
+  .budget-summary-period-row {
+    gap: 8px;
+  }
+
+  .budget-summary-period-label {
+    min-width: 44px;
+    font-size: 0.95rem;
+  }
+
+  .budget-summary-period-amount {
+    min-width: 72px;
+    font-size: 1.04rem;
+  }
+
+  .budget-summary-status {
+    font-size: 1rem;
   }
 
   .budget-grand-total-note {
@@ -2422,7 +3002,7 @@ export default {
 
 /* Category header actions: on small screens stack buttons (1 per line) aligned to the right */
 @media (max-width: 576px) {
-  .budget-section-container ::v-deep .card-header.text-white.d-flex.justify-content-between.align-items-center > div {
+  .budget-section-container ::v-deep .card-header.d-flex.justify-content-between.align-items-center > div {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -2430,7 +3010,7 @@ export default {
     gap: 10px;
   }
 
-  .budget-section-container ::v-deep .card-header.text-white.d-flex.justify-content-between.align-items-center > div .mr-2 {
+  .budget-section-container ::v-deep .card-header.d-flex.justify-content-between.align-items-center > div .mr-2 {
     margin-right: 0 !important;
   }
 }
@@ -2495,6 +3075,21 @@ export default {
 }
 .label-floating-outline.text-danger {
   color: #e55353 !important;
+}
+
+.input-floating-outline.period-complete {
+  border-color: #2eb85c !important;
+  background-color: #f0fff4 !important;
+  color: #1f6f43 !important;
+}
+
+.input-floating-outline.period-complete:focus {
+  border-color: #2eb85c !important;
+  box-shadow: 0 0 0 1px #2eb85c !important;
+}
+
+.label-floating-outline.text-success {
+  color: #2eb85c !important;
 }
 
 .input-floating-outline[readonly] {
