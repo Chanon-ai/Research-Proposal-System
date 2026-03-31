@@ -4,9 +4,15 @@
       v-if="visible"
       class="budget-floating-summary"
       :class="{ 'is-collapsed': !isExpanded, 'is-dark': isDark }"
-      :style="{ top: `${top}px` }"
+      :style="overlayStyle"
     >
-      <CCard v-if="isExpanded" class="border-0 shadow-sm budget-floating-summary-card" style="background-color: #f8f9fa;">
+      <transition :name="toggleTransitionName" mode="out-in">
+        <CCard
+          v-if="isExpanded"
+          key="budget-expanded-card"
+          class="border-0 shadow-sm budget-floating-summary-card"
+          style="background-color: #f8f9fa;"
+        >
         <CCardHeader class="budget-floating-summary-header d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center">
             <span class="budget-floating-summary-title">สรุปงบประมาณ</span>
@@ -31,7 +37,7 @@
               title="ย่อสรุปงบ"
               @click="collapseToIcon"
             >
-              <CIcon name="cil-x" />
+              <CIcon :name="isMobileViewport ? 'cil-chevron-bottom' : 'cil-x'" />
             </CButton>
           </div>
         </CCardHeader>
@@ -158,17 +164,42 @@
           </div>
         </CCardBody>
       </CCard>
-
-      <button
+      <div
         v-else
-        type="button"
-        class="budget-floating-summary-icon-only"
-        title="แสดงสรุปงบประมาณ"
-        aria-label="แสดงสรุปงบประมาณ"
-        @click="expandFromIcon"
+        key="budget-collapsed-compact"
+        class="budget-floating-summary-compact"
       >
-        <CIcon name="cil-notes" />
-      </button>
+        <div class="budget-floating-summary-compact-content">
+          <span class="budget-floating-summary-compact-item">
+            ใช้ไป {{ formatNumber(normalizedSummary.grandTotal) }}
+          </span>
+          <span class="budget-floating-summary-compact-sep">|</span>
+          <span class="budget-floating-summary-compact-item">
+            เหลือ {{ formatNumber(Math.abs(normalizedSummary.summaryRemainingAmount)) }}
+          </span>
+          <span class="budget-floating-summary-compact-sep">|</span>
+          <span class="budget-floating-summary-compact-item">
+            งบรวม {{ formatNumber(normalizedSummary.summaryTotalBudget) }}
+          </span>
+          <span class="budget-floating-summary-compact-sep">|</span>
+          <span
+            class="budget-floating-summary-compact-status"
+            :class="normalizedSummary.statusClass"
+          >
+            {{ compactStatusEmoji }} {{ compactStatusText }}
+          </span>
+        </div>
+        <button
+          type="button"
+          class="budget-floating-summary-compact-toggle"
+          title="Expand budget summary"
+          aria-label="Expand budget summary"
+          @click="expandFromIcon"
+        >
+          <span class="budget-floating-summary-compact-caret">^</span>
+        </button>
+      </div>
+      </transition>
     </aside>
   </transition>
 </template>
@@ -197,10 +228,82 @@ export default {
   data() {
     return {
       isExpanded: true,
-      isChecklistExpanded: true
+      isChecklistExpanded: true,
+      isMobileViewport: false,
+      viewportHeight: 0,
+      viewportWidth: 0,
+      footerFixedHeight: 0
+    }
+  },
+  mounted() {
+    this.syncViewportMode()
+    this.$nextTick(() => {
+      this.refreshFooterHeight()
+    })
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('resize', this.syncViewportMode, { passive: true })
+      window.addEventListener('orientationchange', this.syncViewportMode, { passive: true })
+    }
+  },
+  beforeDestroy() {
+    if (typeof window !== 'undefined' && window.removeEventListener) {
+      window.removeEventListener('resize', this.syncViewportMode)
+      window.removeEventListener('orientationchange', this.syncViewportMode)
     }
   },
   computed: {
+    overlayStyle() {
+      const defaultDesktopTop = Number(this.top || 82)
+      const viewportHeight = Number(this.viewportHeight || 0)
+      const viewportWidth = Number(this.viewportWidth || 0)
+      const isSmallMobile = viewportWidth > 0 && viewportWidth <= 575.98
+      const mobileBaseOffset = isSmallMobile ? 70 : 74
+      const measuredFooterOffset = this.footerFixedHeight > 0 ? this.footerFixedHeight + 10 : 0
+      const mobileBottomOffset = Math.max(mobileBaseOffset, measuredFooterOffset)
+
+      if (this.isMobileViewport) {
+        const mobileMaxHeight = viewportHeight > 0
+          ? Math.max(0, viewportHeight - mobileBottomOffset - 10)
+          : 520
+        const mobileBodyMaxHeight = viewportHeight > 0
+          ? Math.max(0, mobileMaxHeight - 108)
+          : 412
+        return {
+          bottom: `calc(${mobileBottomOffset}px + env(safe-area-inset-bottom, 0px))`,
+          '--budget-overlay-max-height': `${mobileMaxHeight}px`,
+          '--budget-overlay-body-max-height': `${mobileBodyMaxHeight}px`
+        }
+      }
+
+      const desktopBottomBaseOffset = 24
+      const desktopExtraBottomMargin = viewportHeight > 0 && viewportHeight <= 620 ? 18 : 10
+      const desktopBottomOffset = Math.max(
+        desktopBottomBaseOffset,
+        measuredFooterOffset > 0 ? measuredFooterOffset + desktopExtraBottomMargin : 0
+      )
+      const desktopMaxHeight = viewportHeight > 0
+        ? Math.max(0, viewportHeight - defaultDesktopTop - desktopBottomOffset)
+        : 640
+      const desktopBodyMaxHeight = viewportHeight > 0
+        ? Math.max(0, desktopMaxHeight - 112)
+        : 528
+      return {
+        top: `${defaultDesktopTop}px`,
+        '--budget-overlay-max-height': `${desktopMaxHeight}px`,
+        '--budget-overlay-body-max-height': `${desktopBodyMaxHeight}px`
+      }
+    },
+    toggleTransitionName() {
+      return this.isMobileViewport ? 'budget-mobile-toggle-slide' : 'budget-panel-fade'
+    },
+    compactStatusText() {
+      if (this.normalizedSummary.pillClass === 'is-empty') return 'ยังไม่มีข้อมูล'
+      return this.normalizedSummary.pillClass === 'is-valid' ? 'ถูกต้อง' : 'ไม่ถูกต้อง'
+    },
+    compactStatusEmoji() {
+      if (this.normalizedSummary.pillClass === 'is-empty') return '\u26AA'
+      return this.normalizedSummary.pillClass === 'is-valid' ? '\uD83D\uDFE2' : '\uD83D\uDD34'
+    },
     normalizedSummary() {
       const src = this.summary && typeof this.summary === 'object' ? this.summary : {}
       const details = Array.isArray(src.budgetSummaryFeedbackDetails) ? src.budgetSummaryFeedbackDetails : []
@@ -238,6 +341,29 @@ export default {
     }
   },
   methods: {
+    syncViewportMode() {
+      if (typeof window === 'undefined') return
+      this.viewportHeight = window.innerHeight || 0
+      this.viewportWidth = window.innerWidth || 0
+      this.isMobileViewport = window.innerWidth <= 991.98
+      this.refreshFooterHeight()
+    },
+    refreshFooterHeight() {
+      if (typeof window === 'undefined' || typeof document === 'undefined') {
+        this.footerFixedHeight = 0
+        return
+      }
+      const footers = Array.from(document.querySelectorAll('.footer-fixed'))
+      let maxHeight = 0
+      footers.forEach((footerEl) => {
+        const style = window.getComputedStyle(footerEl)
+        if (style.display === 'none' || style.visibility === 'hidden') return
+        const rect = footerEl.getBoundingClientRect()
+        if (!rect || rect.height <= 0) return
+        maxHeight = Math.max(maxHeight, Math.ceil(rect.height))
+      })
+      this.footerFixedHeight = maxHeight
+    },
     collapseToIcon() {
       this.isExpanded = false
     },
@@ -259,12 +385,13 @@ export default {
   position: fixed;
   right: 18px;
   width: min(420px, calc(100vw - 30px));
-  z-index: 220;
+  z-index: 1005;
   pointer-events: none;
+  max-height: var(--budget-overlay-max-height, calc(100vh - 24px));
 }
 
 .budget-floating-summary.is-collapsed {
-  width: 54px;
+  width: min(620px, calc(100vw - 30px));
 }
 
 .budget-floating-summary-card {
@@ -272,6 +399,12 @@ export default {
   border-radius: 14px !important;
   box-shadow: 0 14px 28px rgba(15, 23, 42, 0.2), 0 4px 12px rgba(139, 18, 18, 0.18);
   pointer-events: auto;
+  max-height: var(--budget-overlay-max-height, calc(100vh - 24px));
+}
+
+.budget-floating-summary-card .card-body {
+  overflow-y: auto;
+  max-height: var(--budget-overlay-body-max-height, calc(100vh - 120px));
 }
 
 .budget-floating-summary-header {
@@ -312,6 +445,82 @@ export default {
   border: 1px solid #d9e2ec !important;
   color: #334155 !important;
   font-weight: 700;
+}
+
+.budget-floating-summary-compact {
+  width: 100%;
+  border: 2px solid #8b1212;
+  border-radius: 12px;
+  background: #f8f9fa;
+  color: #1f2937;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(139, 18, 18, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  pointer-events: auto;
+}
+
+.budget-floating-summary-compact-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.budget-floating-summary-compact-content::-webkit-scrollbar {
+  height: 4px;
+}
+
+.budget-floating-summary-compact-item {
+  color: #1f2937;
+  flex: 0 0 auto;
+}
+
+.budget-floating-summary-compact-sep {
+  color: #94a3b8;
+  flex: 0 0 auto;
+}
+
+.budget-floating-summary-compact-status {
+  flex: 0 0 auto;
+}
+
+.budget-floating-summary-compact-toggle {
+  border: 1px solid #d9e2ec;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 700;
+  font-size: 0.72rem;
+  line-height: 1;
+  height: 30px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.budget-floating-summary-compact-toggle .c-icon {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.budget-floating-summary-compact-caret {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .budget-floating-summary-icon-only {
@@ -542,6 +751,28 @@ export default {
   flex: 0 0 auto;
 }
 
+.budget-panel-fade-enter-active,
+.budget-panel-fade-leave-active {
+  transition: opacity 0.18s ease, transform 0.2s ease;
+}
+
+.budget-panel-fade-enter,
+.budget-panel-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px) scale(0.99);
+}
+
+.budget-mobile-toggle-slide-enter-active,
+.budget-mobile-toggle-slide-leave-active {
+  transition: opacity 0.22s ease, transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.budget-mobile-toggle-slide-enter,
+.budget-mobile-toggle-slide-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
 .budget-floating-fade-enter-active,
 .budget-floating-fade-leave-active {
   transition: opacity 0.2s ease, transform 0.22s ease;
@@ -551,6 +782,245 @@ export default {
 .budget-floating-fade-leave-to {
   opacity: 0;
   transform: translateY(-10px) scale(0.98);
+}
+
+@media (max-width: 1199.98px) {
+  .budget-floating-summary {
+    right: 12px;
+    width: min(380px, calc(100vw - 24px));
+  }
+}
+
+@media (max-width: 991.98px) {
+  .budget-floating-summary {
+    top: auto !important;
+    right: 10px;
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    left: 10px;
+    width: auto;
+    z-index: 1005;
+  }
+
+  .budget-floating-summary.is-collapsed {
+    left: 10px;
+    right: 10px;
+    width: auto;
+  }
+
+  .budget-floating-summary-card {
+    border-radius: 12px !important;
+  }
+
+  .budget-floating-summary-compact {
+    border-radius: 11px;
+    padding: 9px 11px;
+    font-size: 0.78rem;
+    gap: 7px;
+  }
+
+  .budget-floating-summary-compact-content {
+    gap: 7px;
+  }
+
+  .budget-floating-summary-compact-toggle {
+    height: 28px;
+    padding: 0 9px;
+    font-size: 0.68rem;
+  }
+
+  .budget-summary-stat-grid {
+    gap: 8px;
+  }
+
+  .budget-summary-stat-item {
+    min-height: 0;
+  }
+
+  .budget-summary-stat-value {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .budget-floating-summary {
+    right: 8px;
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    left: 8px;
+    width: auto;
+  }
+
+  .budget-floating-summary.is-collapsed {
+    left: 8px;
+    right: 8px;
+    width: auto;
+  }
+
+  .budget-floating-summary-header {
+    padding: 8px 10px;
+  }
+
+  .budget-floating-summary-title {
+    font-size: 0.8rem;
+  }
+
+  .budget-floating-summary-status-pill {
+    font-size: 0.66rem;
+    padding: 1px 6px;
+  }
+
+  .budget-floating-summary-action {
+    font-size: 0.72rem;
+    line-height: 1.2;
+    padding: 0.2rem 0.4rem !important;
+  }
+
+  .budget-floating-summary-compact {
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    gap: 6px;
+  }
+
+  .budget-floating-summary-compact-content {
+    gap: 6px;
+  }
+
+  .budget-floating-summary-compact-toggle {
+    height: 26px;
+    padding: 0 8px;
+    font-size: 0.64rem;
+    gap: 3px;
+  }
+
+  .budget-floating-summary-compact-toggle .c-icon {
+    width: 0.72rem;
+    height: 0.72rem;
+  }
+
+  .budget-floating-summary-card .budget-summary-stat-item {
+    padding: 6px;
+    border-radius: 8px;
+  }
+
+  .budget-summary-stat-label {
+    font-size: 0.7rem;
+    margin-bottom: 2px;
+  }
+
+  .budget-summary-stat-value {
+    font-size: 1.08rem;
+  }
+
+  .budget-summary-stat-meta {
+    font-size: 0.74rem;
+  }
+
+  .budget-summary-separator {
+    margin: 10px 0;
+  }
+
+  .budget-summary-period-row {
+    gap: 6px;
+  }
+
+  .budget-summary-period-label {
+    min-width: 38px;
+    font-size: 0.82rem;
+  }
+
+  .budget-summary-period-bar {
+    height: 10px;
+  }
+
+  .budget-summary-period-amount {
+    min-width: 64px;
+    font-size: 0.9rem;
+  }
+
+  .budget-summary-status {
+    margin-top: 8px;
+    font-size: 0.84rem;
+    gap: 6px;
+  }
+
+  .budget-summary-feedback-list {
+    margin-top: 6px;
+    padding-left: 16px;
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .budget-summary-checklist {
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+
+  .budget-summary-checklist-title {
+    font-size: 0.78rem;
+  }
+
+  .budget-summary-checklist-list {
+    max-height: 148px;
+  }
+
+  .budget-summary-checklist-item {
+    font-size: 0.76rem;
+    padding: 2px 0;
+  }
+
+  .budget-floating-summary-icon-only {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 991.98px) and (max-height: 760px) {
+  .budget-floating-summary-card .card-body {
+    padding: 0.7rem !important;
+  }
+
+  .budget-summary-stat-grid {
+    gap: 6px;
+  }
+
+  .budget-summary-stat-label {
+    font-size: 0.68rem;
+    margin-bottom: 1px;
+  }
+
+  .budget-summary-stat-value {
+    font-size: 1rem;
+    line-height: 1.1;
+  }
+
+  .budget-summary-stat-meta {
+    font-size: 0.7rem;
+  }
+
+  .budget-summary-period-row {
+    gap: 5px;
+  }
+
+  .budget-summary-period-label {
+    min-width: 34px;
+    font-size: 0.76rem;
+  }
+
+  .budget-summary-period-amount {
+    min-width: 58px;
+    font-size: 0.84rem;
+  }
+
+  .budget-summary-status {
+    margin-top: 6px;
+    font-size: 0.78rem;
+    gap: 5px;
+  }
+
+  .budget-summary-checklist-list {
+    max-height: 100px;
+  }
 }
 
 .budget-floating-summary.is-dark .budget-floating-summary-card {
@@ -570,6 +1040,26 @@ export default {
   background: #223142 !important;
   color: #d6e2f0 !important;
   border-color: #3c4e63 !important;
+}
+
+.budget-floating-summary.is-dark .budget-floating-summary-compact {
+  background: #223142;
+  color: #d6e2f0;
+  border-color: #33475c;
+}
+
+.budget-floating-summary.is-dark .budget-floating-summary-compact-item {
+  color: #d6e2f0;
+}
+
+.budget-floating-summary.is-dark .budget-floating-summary-compact-sep {
+  color: #8ba0b8;
+}
+
+.budget-floating-summary.is-dark .budget-floating-summary-compact-toggle {
+  background: #223142;
+  color: #d6e2f0;
+  border-color: #3c4e63;
 }
 
 .budget-floating-summary.is-dark .budget-floating-summary-status-pill.is-empty {

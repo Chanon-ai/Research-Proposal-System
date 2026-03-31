@@ -1089,7 +1089,7 @@ export default {
       return 'background-color: #8b1212 !important; opacity: 0.98;'
     },
     showMobileBottomSummary() {
-      return this.isMobileViewport && this.isBudgetSectionInView
+      return this.isMobileViewport && this.isBudgetSectionInView && !this.stickyOverlaySummary.visible
     },
     budgetContentStyle() {
       const style = {}
@@ -1288,7 +1288,7 @@ export default {
     },
     stickyOverlaySummary() {
       return {
-        visible: !this.isMobileViewport,
+        visible: true,
         grandTotal: this.grandTotal,
         summaryRemainingAmount: this.summaryRemainingAmount,
         summaryTotalBudget: this.summaryTotalBudget,
