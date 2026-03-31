@@ -1,151 +1,187 @@
 <template>
   <div ref="budgetSectionRoot" class="budget-section-container" :class="{ 'is-dark': isDarkTheme }">
-    <div
-      v-show="isSummaryStuck"
-      class="budget-summary-compact-slot"
-      :style="{ top: `${summaryStickyTop}px` }"
-      aria-live="polite"
-    >
-      <CCard class="shadow-sm border-0 budget-summary-compact-bar" style="background-color: #f8f9fa;">
-        <CCardBody class="py-2 px-3">
-          <div class="budget-summary-compact-row">
-            <span class="budget-summary-compact-item">
-              ใช้ไป <strong class="text-danger">{{ formatNumber(grandTotal) }}</strong>
-            </span>
-            <span class="budget-summary-compact-item">
-              เหลือ
-              <strong :class="summaryRemainingAmount >= 0 ? 'text-success' : 'text-danger'">
-                {{ formatNumber(Math.abs(summaryRemainingAmount)) }}
-              </strong>
-            </span>
-            <span class="budget-summary-compact-item">
-              งบรวม <strong>{{ formatNumber(summaryTotalBudget) }}</strong>
-            </span>
-            <span
-              class="budget-summary-compact-item budget-summary-compact-status"
-              :class="isBudgetSummaryValid ? 'text-success' : 'text-danger'"
-            >
+    <transition name="budget-floating-fade">
+      <aside
+        v-if="showDesktopFloatingSummary"
+        class="budget-floating-summary"
+        :class="{ 'is-collapsed': !isStickyOverlayExpanded }"
+        :style="{ top: `${summaryFloatingTop}px` }"
+      >
+        <CCard v-if="isStickyOverlayExpanded" class="border-0 shadow-sm budget-floating-summary-card" style="background-color: #f8f9fa;">
+          <CCardHeader class="budget-floating-summary-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <span class="budget-floating-summary-title">สรุปงบประมาณ</span>
+              <span
+                class="budget-floating-summary-status-pill ml-2"
+                :class="isBudgetSummaryValid ? 'is-valid' : 'is-invalid'"
+              >
+                {{ isBudgetSummaryValid ? 'ถูกต้อง' : 'ต้องแก้ไข' }}
+              </span>
+            </div>
+            <div class="d-flex align-items-center" style="gap: 6px;">
+              <CButton
+                v-if="!isBudgetSummaryValid"
+                size="sm"
+                color="light"
+                class="budget-floating-summary-action"
+                @click="jumpToFirstBudgetIssue"
+              >
+                ไปจุดผิด
+              </CButton>
+              <CButton
+                size="sm"
+                color="light"
+                class="budget-floating-summary-action"
+                title="ย่อสรุปงบ"
+                @click="collapseStickyOverlayToIcon"
+              >
+                <CIcon name="cil-x" />
+              </CButton>
+            </div>
+          </CCardHeader>
+
+          <CCardBody v-show="isStickyOverlayExpanded" class="p-3">
+            <div class="budget-summary-stat-grid">
+              <div class="budget-summary-stat-item is-used">
+                <div class="budget-summary-stat-label">[ ใช้ไปแล้ว ]</div>
+                <div class="budget-summary-stat-value text-danger">{{ formatNumber(grandTotal) }}</div>
+                <div class="budget-summary-stat-meta" :class="hasBudgetLimit ? 'text-muted' : 'text-transparent'">
+                  ({{ budgetUsedPercent }}%)
+                </div>
+              </div>
+              <div class="budget-summary-stat-item is-remaining">
+                <div class="budget-summary-stat-label">[ คงเหลือ ]</div>
+                <div
+                  class="budget-summary-stat-value"
+                  :class="summaryRemainingAmount >= 0 ? 'text-success' : 'text-danger'"
+                >
+                  {{ formatNumber(Math.abs(summaryRemainingAmount)) }}
+                </div>
+                <div class="budget-summary-stat-meta" :class="hasBudgetLimit ? 'text-muted' : 'text-transparent'">
+                  ({{ budgetRemainingPercent }}%)
+                </div>
+              </div>
+              <div class="budget-summary-stat-item is-total">
+                <div class="budget-summary-stat-label">[ งบรวม ]</div>
+                <div class="budget-summary-stat-value text-dark">{{ formatNumber(summaryTotalBudget) }}</div>
+                <div class="budget-summary-stat-meta text-transparent">(0%)</div>
+              </div>
+            </div>
+
+            <div class="budget-summary-separator"></div>
+
+            <div class="budget-summary-period-list">
+              <div class="budget-summary-period-row">
+                <span class="budget-summary-period-label">งวด 1</span>
+                <div class="budget-summary-period-bar">
+                  <span
+                    class="budget-summary-period-fill"
+                    :class="isPeriod1Valid ? 'is-valid' : 'is-invalid'"
+                    :style="{ width: `${period1BarWidth}%` }"
+                  ></span>
+                </div>
+                <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod1) }}</strong>
+                <span class="budget-summary-period-mark">
+                  <CIcon
+                    :name="isPeriod1Valid ? 'cil-check-circle' : 'cil-x-circle'"
+                    :class="isPeriod1Valid ? 'text-success' : 'text-danger'"
+                  />
+                </span>
+              </div>
+              <div class="budget-summary-period-row">
+                <span class="budget-summary-period-label">งวด 2</span>
+                <div class="budget-summary-period-bar">
+                  <span
+                    class="budget-summary-period-fill"
+                    :class="isPeriod2Valid ? 'is-valid' : 'is-invalid'"
+                    :style="{ width: `${period2BarWidth}%` }"
+                  ></span>
+                </div>
+                <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod2) }}</strong>
+                <span class="budget-summary-period-mark">
+                  <CIcon
+                    :name="isPeriod2Valid ? 'cil-check-circle' : 'cil-x-circle'"
+                    :class="isPeriod2Valid ? 'text-success' : 'text-danger'"
+                  />
+                </span>
+              </div>
+              <div class="budget-summary-period-row">
+                <span class="budget-summary-period-label">งวด 3</span>
+                <div class="budget-summary-period-bar">
+                  <span
+                    class="budget-summary-period-fill"
+                    :class="isPeriod3Valid ? 'is-valid' : 'is-invalid'"
+                    :style="{ width: `${period3BarWidth}%` }"
+                  ></span>
+                </div>
+                <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod3) }}</strong>
+                <span class="budget-summary-period-mark">
+                  <CIcon
+                    :name="isPeriod3Valid ? 'cil-check-circle' : 'cil-x-circle'"
+                    :class="isPeriod3Valid ? 'text-success' : 'text-danger'"
+                  />
+                </span>
+              </div>
+            </div>
+
+            <div class="budget-summary-status" :class="isBudgetSummaryValid ? 'text-success' : 'text-danger'">
               <span class="budget-summary-status-dot" aria-hidden="true"></span>
-              <span>{{ isBudgetSummaryValid ? 'ถูกต้อง' : 'ไม่ถูกต้อง' }}</span>
-            </span>
-            <span
+              <span>{{ budgetSummaryStatusText }}</span>
+            </div>
+            <ul
               v-if="!isBudgetSummaryValid && budgetSummaryFeedbackDetails.length"
-              class="budget-summary-compact-feedback text-danger"
+              class="budget-summary-feedback-list"
             >
-              {{ budgetSummaryFeedbackDetails[0] }}
-            </span>
-          </div>
-        </CCardBody>
-      </CCard>
-    </div>
+              <li v-for="(detail, detailIndex) in budgetSummaryFeedbackDetails" :key="`budget-feedback-${detailIndex}`">
+                {{ detail }}
+              </li>
+            </ul>
+          </CCardBody>
 
-    <CCard
-      ref="budgetSummaryCard"
-      class="mb-2 shadow-sm border-0 budget-summary-card"
-      style="background-color: #f8f9fa;"
-    >
-      <CCardBody class="p-3">
-        <h4 class="mb-3 font-weight-bold text-dark budget-summary-title">งบประมาณโครงการ</h4>
-
-        <div class="budget-summary-stat-grid">
-          <div class="budget-summary-stat-item is-used">
-            <div class="budget-summary-stat-label">[ ใช้ไปแล้ว ]</div>
-            <div class="budget-summary-stat-value text-danger">{{ formatNumber(grandTotal) }}</div>
-            <div class="budget-summary-stat-meta" :class="hasBudgetLimit ? 'text-muted' : 'text-transparent'">
-              ({{ budgetUsedPercent }}%)
-            </div>
-          </div>
-          <div class="budget-summary-stat-item is-remaining">
-            <div class="budget-summary-stat-label">[ คงเหลือ ]</div>
-            <div
-              class="budget-summary-stat-value"
-              :class="summaryRemainingAmount >= 0 ? 'text-success' : 'text-danger'"
-            >
-              {{ formatNumber(Math.abs(summaryRemainingAmount)) }}
-            </div>
-            <div class="budget-summary-stat-meta" :class="hasBudgetLimit ? 'text-muted' : 'text-transparent'">
-              ({{ budgetRemainingPercent }}%)
-            </div>
-          </div>
-          <div class="budget-summary-stat-item is-total">
-            <div class="budget-summary-stat-label">[ งบรวม ]</div>
-            <div class="budget-summary-stat-value text-dark">{{ formatNumber(summaryTotalBudget) }}</div>
-            <div class="budget-summary-stat-meta text-transparent">(0%)</div>
-          </div>
-        </div>
-
-        <div class="budget-summary-separator"></div>
-
-        <div class="budget-summary-period-list">
-          <div class="budget-summary-period-row">
-            <span class="budget-summary-period-label">งวด 1</span>
-            <div class="budget-summary-period-bar">
-              <span
-                class="budget-summary-period-fill"
-                :class="isPeriod1Valid ? 'is-valid' : 'is-invalid'"
-                :style="{ width: `${period1BarWidth}%` }"
-              ></span>
-            </div>
-            <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod1) }}</strong>
-            <span class="budget-summary-period-mark">
-              <CIcon
-                :name="isPeriod1Valid ? 'cil-check-circle' : 'cil-x-circle'"
-                :class="isPeriod1Valid ? 'text-success' : 'text-danger'"
-              />
-            </span>
-          </div>
-          <div class="budget-summary-period-row">
-            <span class="budget-summary-period-label">งวด 2</span>
-            <div class="budget-summary-period-bar">
-              <span
-                class="budget-summary-period-fill"
-                :class="isPeriod2Valid ? 'is-valid' : 'is-invalid'"
-                :style="{ width: `${period2BarWidth}%` }"
-              ></span>
-            </div>
-            <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod2) }}</strong>
-            <span class="budget-summary-period-mark">
-              <CIcon
-                :name="isPeriod2Valid ? 'cil-check-circle' : 'cil-x-circle'"
-                :class="isPeriod2Valid ? 'text-success' : 'text-danger'"
-              />
-            </span>
-          </div>
-          <div class="budget-summary-period-row">
-            <span class="budget-summary-period-label">งวด 3</span>
-            <div class="budget-summary-period-bar">
-              <span
-                class="budget-summary-period-fill"
-                :class="isPeriod3Valid ? 'is-valid' : 'is-invalid'"
-                :style="{ width: `${period3BarWidth}%` }"
-              ></span>
-            </div>
-            <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod3) }}</strong>
-            <span class="budget-summary-period-mark">
-              <CIcon
-                :name="isPeriod3Valid ? 'cil-check-circle' : 'cil-x-circle'"
-                :class="isPeriod3Valid ? 'text-success' : 'text-danger'"
-              />
-            </span>
-          </div>
-        </div>
-
-        <div class="budget-summary-status" :class="isBudgetSummaryValid ? 'text-success' : 'text-danger'">
-          <span class="budget-summary-status-dot" aria-hidden="true"></span>
-          <span>{{ budgetSummaryStatusText }}</span>
-        </div>
-        <ul
-          v-if="!isBudgetSummaryValid && budgetSummaryFeedbackDetails.length"
-          class="budget-summary-feedback-list"
+        </CCard>
+        <button
+          v-else
+          type="button"
+          class="budget-floating-summary-icon-only"
+          title="แสดงสรุปงบประมาณ"
+          aria-label="แสดงสรุปงบประมาณ"
+          @click="expandStickyOverlayFromIcon"
         >
-          <li v-for="(detail, detailIndex) in budgetSummaryFeedbackDetails" :key="`budget-feedback-${detailIndex}`">
-            {{ detail }}
-          </li>
-        </ul>
-      </CCardBody>
-    </CCard>
+          <CIcon name="cil-notes" />
+        </button>
+      </aside>
+    </transition>
 
-    <CCard v-for="(category, catIndex) in categories" :key="catIndex" class="mb-0 shadow-sm border-0 budget-category-card">
+    <transition name="budget-mobile-fade">
+      <div v-if="showMobileBottomSummary" class="budget-mobile-summary-bar">
+        <CCard class="border-0 shadow-sm budget-mobile-summary-card" style="background-color: #f8f9fa;">
+          <CCardBody class="py-2 px-3">
+            <div class="budget-mobile-summary-row">
+              <span class="budget-mobile-summary-item">
+                ใช้ไป <strong class="text-danger">{{ formatNumber(grandTotal) }}</strong>
+              </span>
+              <span class="budget-mobile-summary-item">
+                เหลือ
+                <strong :class="summaryRemainingAmount >= 0 ? 'text-success' : 'text-danger'">
+                  {{ formatNumber(Math.abs(summaryRemainingAmount)) }}
+                </strong>
+              </span>
+              <span
+                class="budget-mobile-summary-item budget-mobile-summary-status"
+                :class="isBudgetSummaryValid ? 'text-success' : 'text-danger'"
+              >
+                <span class="budget-summary-status-dot" aria-hidden="true"></span>
+                <span>{{ isBudgetSummaryValid ? 'ถูกต้อง' : 'ไม่ถูกต้อง' }}</span>
+              </span>
+            </div>
+          </CCardBody>
+        </CCard>
+      </div>
+    </transition>
+
+    <div class="budget-section-content" :style="budgetContentStyle">
+
+      <CCard v-for="(category, catIndex) in categories" :key="catIndex" class="mb-0 shadow-sm border-0 budget-category-card">
         
       <CCardHeader class="text-dark d-flex justify-content-between align-items-center" :style="categoryHeaderStyle">
         <div class="d-flex align-items-center">
@@ -447,23 +483,126 @@
       </CCardBody>
     </CCard>
 
-    <div v-if="isTravelExceeded || isEquipmentExceeded" class="alert alert-danger shadow-sm mb-4 border-0" style="border-left: 5px solid #e55353 !important; border-radius: 8px;">
-      <h6 class="alert-heading font-weight-bold mb-2 budget-warning-heading">
-        <i class="fa fa-exclamation-triangle mr-1"></i> ข้อควรระวัง: สัดส่วนงบประมาณเกินเกณฑ์ที่มหาวิทยาลัยกำหนด
-      </h6>
-      <hr class="mt-2 mb-2" style="border-color: rgba(229, 83, 83, 0.2);">
-      <ul class="mb-0 text-dark pl-3 budget-warning-details">
-        <li v-if="isTravelExceeded" class="mb-1">
-          <strong>หมวดค่าเดินทาง:</strong> เสนอขอ {{ formatNumber(travelTotal) }} บาท 
-          <span class="text-danger">(คิดเป็น {{ ((travelTotal / grandTotal) * 100).toFixed(2) }}% ของงบรวม)</span> 
-          *เกณฑ์กำหนดไม่เกิน 25% หรือ {{ formatNumber(limit25Percent) }} บาท
-        </li>
-        <li v-if="isEquipmentExceeded">
-          <strong>หมวดครุภัณฑ์:</strong> เสนอขอ {{ formatNumber(equipmentTotal) }} บาท 
-          <span class="text-danger">(คิดเป็น {{ ((equipmentTotal / grandTotal) * 100).toFixed(2) }}% ของงบรวม)</span> 
-          *เกณฑ์กำหนดไม่เกิน 25% หรือ {{ formatNumber(limit25Percent) }} บาท
-        </li>
-      </ul>
+      <div v-if="isTravelExceeded || isEquipmentExceeded" class="alert alert-danger shadow-sm mb-4 border-0" style="border-left: 5px solid #e55353 !important; border-radius: 8px;">
+        <h6 class="alert-heading font-weight-bold mb-2 budget-warning-heading">
+          <i class="fa fa-exclamation-triangle mr-1"></i> ข้อควรระวัง: สัดส่วนงบประมาณเกินเกณฑ์ที่มหาวิทยาลัยกำหนด
+        </h6>
+        <hr class="mt-2 mb-2" style="border-color: rgba(229, 83, 83, 0.2);">
+        <ul class="mb-0 text-dark pl-3 budget-warning-details">
+          <li v-if="isTravelExceeded" class="mb-1">
+            <strong>หมวดค่าเดินทาง:</strong> เสนอขอ {{ formatNumber(travelTotal) }} บาท 
+            <span class="text-danger">(คิดเป็น {{ ((travelTotal / grandTotal) * 100).toFixed(2) }}% ของงบรวม)</span> 
+            *เกณฑ์กำหนดไม่เกิน 25% หรือ {{ formatNumber(limit25Percent) }} บาท
+          </li>
+          <li v-if="isEquipmentExceeded">
+            <strong>หมวดครุภัณฑ์:</strong> เสนอขอ {{ formatNumber(equipmentTotal) }} บาท 
+            <span class="text-danger">(คิดเป็น {{ ((equipmentTotal / grandTotal) * 100).toFixed(2) }}% ของงบรวม)</span> 
+            *เกณฑ์กำหนดไม่เกิน 25% หรือ {{ formatNumber(limit25Percent) }} บาท
+          </li>
+        </ul>
+      </div>
+
+      <CCard class="mt-3 mb-0 shadow-sm border-0 budget-summary-card" style="background-color: #f8f9fa;">
+        <CCardBody class="p-3">
+          <h4 class="mb-3 font-weight-bold text-dark budget-summary-title">งบประมาณโครงการ</h4>
+
+          <div class="budget-summary-stat-grid">
+            <div class="budget-summary-stat-item is-used">
+              <div class="budget-summary-stat-label">[ ใช้ไปแล้ว ]</div>
+              <div class="budget-summary-stat-value text-danger">{{ formatNumber(grandTotal) }}</div>
+              <div class="budget-summary-stat-meta" :class="hasBudgetLimit ? 'text-muted' : 'text-transparent'">
+                ({{ budgetUsedPercent }}%)
+              </div>
+            </div>
+            <div class="budget-summary-stat-item is-remaining">
+              <div class="budget-summary-stat-label">[ คงเหลือ ]</div>
+              <div
+                class="budget-summary-stat-value"
+                :class="summaryRemainingAmount >= 0 ? 'text-success' : 'text-danger'"
+              >
+                {{ formatNumber(Math.abs(summaryRemainingAmount)) }}
+              </div>
+              <div class="budget-summary-stat-meta" :class="hasBudgetLimit ? 'text-muted' : 'text-transparent'">
+                ({{ budgetRemainingPercent }}%)
+              </div>
+            </div>
+            <div class="budget-summary-stat-item is-total">
+              <div class="budget-summary-stat-label">[ งบรวม ]</div>
+              <div class="budget-summary-stat-value text-dark">{{ formatNumber(summaryTotalBudget) }}</div>
+              <div class="budget-summary-stat-meta text-transparent">(0%)</div>
+            </div>
+          </div>
+
+          <div class="budget-summary-separator"></div>
+
+          <div class="budget-summary-period-list">
+            <div class="budget-summary-period-row">
+              <span class="budget-summary-period-label">งวด 1</span>
+              <div class="budget-summary-period-bar">
+                <span
+                  class="budget-summary-period-fill"
+                  :class="isPeriod1Valid ? 'is-valid' : 'is-invalid'"
+                  :style="{ width: `${period1BarWidth}%` }"
+                ></span>
+              </div>
+              <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod1) }}</strong>
+              <span class="budget-summary-period-mark">
+                <CIcon
+                  :name="isPeriod1Valid ? 'cil-check-circle' : 'cil-x-circle'"
+                  :class="isPeriod1Valid ? 'text-success' : 'text-danger'"
+                />
+              </span>
+            </div>
+            <div class="budget-summary-period-row">
+              <span class="budget-summary-period-label">งวด 2</span>
+              <div class="budget-summary-period-bar">
+                <span
+                  class="budget-summary-period-fill"
+                  :class="isPeriod2Valid ? 'is-valid' : 'is-invalid'"
+                  :style="{ width: `${period2BarWidth}%` }"
+                ></span>
+              </div>
+              <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod2) }}</strong>
+              <span class="budget-summary-period-mark">
+                <CIcon
+                  :name="isPeriod2Valid ? 'cil-check-circle' : 'cil-x-circle'"
+                  :class="isPeriod2Valid ? 'text-success' : 'text-danger'"
+                />
+              </span>
+            </div>
+            <div class="budget-summary-period-row">
+              <span class="budget-summary-period-label">งวด 3</span>
+              <div class="budget-summary-period-bar">
+                <span
+                  class="budget-summary-period-fill"
+                  :class="isPeriod3Valid ? 'is-valid' : 'is-invalid'"
+                  :style="{ width: `${period3BarWidth}%` }"
+                ></span>
+              </div>
+              <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod3) }}</strong>
+              <span class="budget-summary-period-mark">
+                <CIcon
+                  :name="isPeriod3Valid ? 'cil-check-circle' : 'cil-x-circle'"
+                  :class="isPeriod3Valid ? 'text-success' : 'text-danger'"
+                />
+              </span>
+            </div>
+          </div>
+
+          <div class="budget-summary-status" :class="isBudgetSummaryValid ? 'text-success' : 'text-danger'">
+            <span class="budget-summary-status-dot" aria-hidden="true"></span>
+            <span>{{ budgetSummaryStatusText }}</span>
+          </div>
+          <ul
+            v-if="!isBudgetSummaryValid && budgetSummaryFeedbackDetails.length"
+            class="budget-summary-feedback-list"
+          >
+            <li v-for="(detail, detailIndex) in budgetSummaryFeedbackDetails" :key="`budget-full-feedback-${detailIndex}`">
+              {{ detail }}
+            </li>
+          </ul>
+        </CCardBody>
+      </CCard>
     </div>
 
   </div>
@@ -1024,8 +1163,14 @@ export default {
     return {
       suppressEmit: false,
       emitScheduled: false,
-      isSummaryStuck: false,
-      summaryStickyTop: 72,
+      isStickyOverlayExpanded: true,
+      isBudgetSectionInView: false,
+      isMobileViewport: false,
+      summaryFloatingTop: 82,
+      summaryDesktopExpandedWidth: 360,
+      summaryDesktopCollapsedWidth: 276,
+      summaryDesktopGap: 18,
+      summaryMobileBarHeight: 64,
       categories: [
         {
           key: BUDGET_CATEGORY_KEYS.COMPENSATION, name: 'หมวดค่าตอบแทน', isOther: false, isExpanded: true, items: [],
@@ -1098,6 +1243,19 @@ export default {
         return 'background-color: #1a2430 !important; opacity: 0.98;'
       }
       return 'background-color: #8b1212 !important; opacity: 0.98;'
+    },
+    showDesktopFloatingSummary() {
+      return !this.isMobileViewport
+    },
+    showMobileBottomSummary() {
+      return this.isMobileViewport && this.isBudgetSectionInView
+    },
+    budgetContentStyle() {
+      const style = {}
+      if (this.showMobileBottomSummary) {
+        style.paddingBottom = `${this.summaryMobileBarHeight + 18}px`
+      }
+      return style
     },
     grandTotal() {
       return this.categories.reduce((sum, cat) => {
@@ -1288,32 +1446,94 @@ export default {
   },
   mounted() {
     if (typeof window === 'undefined') return
-    window.addEventListener('scroll', this.updateSummaryStickyState, { passive: true, capture: true })
-    window.addEventListener('resize', this.updateSummaryStickyState, { passive: true })
+    this.syncBudgetViewportMode()
+    this.updateBudgetSummaryDisplayState()
+    window.addEventListener('scroll', this.updateBudgetSummaryDisplayState, { passive: true, capture: true })
+    window.addEventListener('resize', this.handleBudgetViewportResize, { passive: true })
     this.$nextTick(() => {
-      this.updateSummaryStickyState()
+      this.syncBudgetViewportMode()
+      this.updateBudgetSummaryDisplayState()
     })
   },
   beforeDestroy() {
     if (typeof window === 'undefined') return
-    window.removeEventListener('scroll', this.updateSummaryStickyState, true)
-    window.removeEventListener('resize', this.updateSummaryStickyState)
+    window.removeEventListener('scroll', this.updateBudgetSummaryDisplayState, true)
+    window.removeEventListener('resize', this.handleBudgetViewportResize)
   },
   methods: {
-    updateSummaryStickyState() {
+    handleBudgetViewportResize() {
+      this.syncBudgetViewportMode()
+      this.updateBudgetSummaryDisplayState()
+    },
+    syncBudgetViewportMode() {
+      if (typeof window === 'undefined') return
+      this.isMobileViewport = window.innerWidth < 992
+    },
+    updateBudgetSummaryDisplayState() {
       const sectionRootRef = this.$refs && this.$refs.budgetSectionRoot
       const sectionRootEl = sectionRootRef && sectionRootRef.$el ? sectionRootRef.$el : (sectionRootRef || this.$el)
-      const summaryCardRef = this.$refs && this.$refs.budgetSummaryCard
-      const summaryCardEl = summaryCardRef && summaryCardRef.$el ? summaryCardRef.$el : summaryCardRef
-      if (!summaryCardEl || !sectionRootEl || typeof summaryCardEl.getBoundingClientRect !== 'function' || typeof sectionRootEl.getBoundingClientRect !== 'function') return
-      const stickyTop = Number(this.summaryStickyTop || 0)
-      const summaryRect = summaryCardEl.getBoundingClientRect()
+      if (!sectionRootEl || typeof sectionRootEl.getBoundingClientRect !== 'function') return
       const sectionRect = sectionRootEl.getBoundingClientRect()
-      const isPastSummaryCard = summaryRect.bottom <= stickyTop + 0.5
-      const isStillInsideSection = sectionRect.bottom > stickyTop + 56
-      const nextState = isPastSummaryCard && isStillInsideSection
-      if (this.isSummaryStuck !== nextState) {
-        this.isSummaryStuck = nextState
+      const viewportHeight = Math.max(window.innerHeight || 0, 1)
+      const upperBound = Number(this.summaryFloatingTop || 0) + 36
+      const lowerBound = viewportHeight - 64
+      const nextState = sectionRect.bottom > upperBound && sectionRect.top < lowerBound
+      if (this.isBudgetSectionInView !== nextState) {
+        this.isBudgetSectionInView = nextState
+      }
+    },
+    collapseStickyOverlayToIcon() {
+      this.isStickyOverlayExpanded = false
+    },
+    expandStickyOverlayFromIcon() {
+      this.isStickyOverlayExpanded = true
+    },
+    jumpToFirstBudgetIssue() {
+      const sectionRootRef = this.$refs && this.$refs.budgetSectionRoot
+      const sectionRootEl = sectionRootRef && sectionRootRef.$el ? sectionRootRef.$el : (sectionRootRef || this.$el)
+      if (!sectionRootEl || typeof sectionRootEl.querySelector !== 'function') return
+      const contentEl = sectionRootEl.querySelector('.budget-section-content') || sectionRootEl
+      const findVisibleTarget = (selector) => {
+        const nodes = Array.from(contentEl.querySelectorAll(selector))
+        return nodes.find(node => {
+          if (!node) return false
+          if (typeof node.getClientRects !== 'function') return false
+          return node.getClientRects().length > 0
+        }) || null
+      }
+
+      let target = findVisibleTarget('.budget-item-name-invalid, .error-shadow, .input-floating-outline.border-danger')
+
+      if (!target) {
+        const collapsedIssueCategoryIndex = (this.categories || []).findIndex(category => {
+          if (!category || category.isExpanded) return false
+          const items = Array.isArray(category.items) ? category.items : []
+          return items.some(item => Boolean(item && (item.forbiddenItemMessage || item.periodError)))
+        })
+        if (collapsedIssueCategoryIndex !== -1) {
+          this.$set(this.categories[collapsedIssueCategoryIndex], 'isExpanded', true)
+          this.$nextTick(() => {
+            this.jumpToFirstBudgetIssue()
+          })
+          return
+        }
+      }
+
+      if (!target) {
+        target = findVisibleTarget('.budget-summary-card .budget-summary-feedback-list li')
+      }
+      if (!target) {
+        target = findVisibleTarget('.alert.alert-danger')
+      }
+      if (!target) {
+        target = findVisibleTarget('.budget-summary-card')
+      }
+
+      if (target && typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        if (typeof target.focus === 'function' && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) {
+          target.focus({ preventScroll: true })
+        }
       }
     },
     getCategoryTitle(category) {
@@ -2258,21 +2478,200 @@ export default {
   cursor: pointer;
 }
 
-.budget-summary-card {
+.budget-floating-summary {
+  position: fixed;
+  right: 18px;
+  width: min(420px, calc(100vw - 30px));
+  z-index: 220;
+  pointer-events: none;
+}
+
+.budget-floating-summary.is-collapsed {
+  width: 54px;
+}
+
+.budget-floating-summary-card {
   border: 2px solid #8b1212 !important;
   border-radius: 14px !important;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.2), 0 4px 12px rgba(139, 18, 18, 0.18);
+  pointer-events: auto;
 }
 
-.budget-summary-compact-slot {
-  position: sticky;
-  z-index: 200;
-  margin-bottom: 8px;
+.budget-floating-summary-card .budget-summary-stat-value {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
 }
 
-.budget-summary-compact-bar {
+.budget-floating-summary-header {
+  border-bottom: 1px solid #e4e8ef;
+  background: #f8fafc;
+  padding: 10px 12px;
+}
+
+.budget-floating-summary-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.budget-floating-summary-status-pill {
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.budget-floating-summary-status-pill.is-valid {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.budget-floating-summary-status-pill.is-invalid {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.budget-floating-summary-action {
+  border: 1px solid #d9e2ec !important;
+  color: #334155 !important;
+  font-weight: 700;
+}
+
+.budget-floating-summary-icon-only {
+  width: 54px;
+  height: 54px;
+  border: 2px solid #8b1212;
+  border-radius: 14px;
+  background: #f8f9fa;
+  color: #8b1212;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.2), 0 4px 12px rgba(139, 18, 18, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.2s ease;
+}
+
+.budget-floating-summary-icon-only:hover {
+  transform: translateY(-1px);
+}
+
+.budget-floating-summary-icon-only .c-icon {
+  width: 1.12rem;
+  height: 1.12rem;
+}
+
+.budget-floating-summary-card .budget-floating-summary-title {
+  font-size: 0.88rem;
+}
+
+.budget-floating-summary-card .budget-floating-summary-status-pill {
+  font-size: 0.72rem;
+  padding: 2px 7px;
+}
+
+.budget-floating-summary-card .budget-summary-stat-item {
+  padding: 8px 10px;
+  min-height: 92px;
+}
+
+.budget-floating-summary-card .budget-summary-stat-label {
+  font-size: 0.84rem;
+  margin-bottom: 4px;
+}
+
+.budget-floating-summary-card .budget-summary-stat-value {
+  font-size: 1.62rem;
+}
+
+.budget-floating-summary-card .budget-summary-stat-meta {
+  font-size: 0.86rem;
+}
+
+.budget-floating-summary-card .budget-summary-period-label {
+  min-width: 48px;
+  font-size: 0.95rem;
+}
+
+.budget-floating-summary-card .budget-summary-period-amount {
+  min-width: 78px;
+  font-size: 1.04rem;
+}
+
+.budget-floating-summary-card .budget-summary-status {
+  font-size: 0.98rem;
+}
+
+.budget-floating-summary-card .budget-summary-feedback-list {
+  font-size: 0.88rem;
+}
+
+.budget-section-content {
+  transition: padding-right 0.24s ease, padding-bottom 0.24s ease;
+}
+
+.budget-floating-fade-enter-active,
+.budget-floating-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.22s ease;
+}
+
+.budget-floating-fade-enter,
+.budget-floating-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.98);
+}
+
+.budget-mobile-summary-bar {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  z-index: 230;
+}
+
+.budget-mobile-summary-card {
   border: 2px solid #8b1212 !important;
   border-radius: 12px !important;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18), 0 3px 10px rgba(139, 18, 18, 0.22);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.24);
+}
+
+.budget-mobile-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.budget-mobile-summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1f2937;
+  white-space: nowrap;
+}
+
+.budget-mobile-summary-item strong {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.budget-mobile-summary-status {
+  font-weight: 800;
+}
+
+.budget-mobile-fade-enter-active,
+.budget-mobile-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.22s ease;
+}
+
+.budget-mobile-fade-enter,
+.budget-mobile-fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 .budget-summary-compact-row {
@@ -2476,16 +2875,39 @@ export default {
   border-color: #3a4f67;
 }
 
-.budget-section-container.is-dark .budget-summary-card {
-  border-color: #33475c !important;
-}
-
 .budget-section-container.is-dark .budget-summary-compact-item {
   color: #d6e2f0;
 }
 
 .budget-section-container.is-dark .budget-summary-compact-feedback {
   color: #fecaca !important;
+}
+
+.budget-section-container.is-dark .budget-floating-summary-card,
+.budget-section-container.is-dark .budget-mobile-summary-card {
+  border-color: #33475c !important;
+}
+
+.budget-section-container.is-dark .budget-floating-summary-header {
+  background: #243548;
+  border-bottom-color: #33475c;
+}
+
+.budget-section-container.is-dark .budget-floating-summary-title,
+.budget-section-container.is-dark .budget-mobile-summary-item {
+  color: #d6e2f0;
+}
+
+.budget-section-container.is-dark .budget-floating-summary-action {
+  background: #223142 !important;
+  color: #d6e2f0 !important;
+  border-color: #3c4e63 !important;
+}
+
+.budget-section-container.is-dark .budget-floating-summary-icon-only {
+  background: #223142;
+  color: #d6e2f0;
+  border-color: #33475c;
 }
 
 .budget-section-container.is-dark .budget-summary-stat-item {
