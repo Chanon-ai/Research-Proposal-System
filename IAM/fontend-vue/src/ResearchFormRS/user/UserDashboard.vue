@@ -175,6 +175,7 @@
                 <div class="project-meta">
                   <div class="project-title">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
                   <div class="project-owner">{{ item.projectLeaderName || '-' }}</div>
+                  <div class="project-budget-line">งบโครงการที่เสนอ: {{ formatBudgetAmount(item.budgetUsedAmount) }}</div>
                 </div>
               </td>
             </template>
@@ -494,6 +495,7 @@ export default {
           item.projectTitleEn,
           item.proposalCode,
           item.projectLeaderName,
+          this.formatBudgetAmount(item.budgetUsedAmount),
           this.getStatusLabel(item.currentStatus),
           this.getProgressLabel(item.currentStatus),
         ].filter(Boolean).join(' ').toLowerCase();
@@ -591,6 +593,54 @@ export default {
       return '';
     },
 
+    parseBudgetNumber(value) {
+      if (value === null || value === undefined || value === '') return 0;
+      if (typeof value === 'number') return Number.isFinite(value) ? Math.max(0, value) : 0;
+      const normalized = String(value).replace(/,/g, '').replace(/[^\d.-]/g, '').trim();
+      if (!normalized) return 0;
+      const parsed = Number(normalized);
+      if (!Number.isFinite(parsed)) return 0;
+      return Math.max(0, parsed);
+    },
+
+    resolveSnapshotBudgetTotal(snapshot) {
+      const budget = snapshot && typeof snapshot === 'object' && snapshot.budget && typeof snapshot.budget === 'object'
+        ? snapshot.budget
+        : null;
+      if (!budget) return null;
+
+      if (Object.prototype.hasOwnProperty.call(budget, 'grandTotal')) {
+        return this.parseBudgetNumber(budget.grandTotal);
+      }
+
+      const categories = Array.isArray(budget.categories) ? budget.categories : [];
+      const computed = categories.reduce((sum, category) => {
+        const items = Array.isArray(category && category.items) ? category.items : [];
+        const itemTotal = items.reduce((itemSum, row) => itemSum + this.parseBudgetNumber(row && row.total), 0);
+        return sum + itemTotal;
+      }, 0);
+      return this.parseBudgetNumber(computed);
+    },
+
+    resolveBudgetUsedAmount(item) {
+      const source = item && typeof item === 'object' ? item : {};
+      const directKeys = ['budgetUsed', 'usedBudget', 'spentBudget', 'budgetSpent', 'actualCost', 'expenseTotal', 'budgetTotal'];
+      for (let index = 0; index < directKeys.length; index += 1) {
+        const key = directKeys[index];
+        if (!Object.prototype.hasOwnProperty.call(source, key)) continue;
+        return this.parseBudgetNumber(source[key]);
+      }
+
+      const snapshotTotal = this.resolveSnapshotBudgetTotal(source.formSnapshotJson || {});
+      if (snapshotTotal !== null) return this.parseBudgetNumber(snapshotTotal);
+      return 0;
+    },
+
+    formatBudgetAmount(value) {
+      const amount = this.parseBudgetNumber(value);
+      return amount.toLocaleString('th-TH', { maximumFractionDigits: 2 });
+    },
+
     mapItem(item) {
       const applicant = item && item.applicantUserId && typeof item.applicantUserId === 'object'
         ? item.applicantUserId
@@ -601,6 +651,7 @@ export default {
         projectTitleTh: item.projectTitleTh || '',
         projectTitleEn: item.projectTitleEn || '',
         projectLeaderName: item.projectLeaderName || (applicant && applicant.fullName ? applicant.fullName : '-'),
+        budgetUsedAmount: this.resolveBudgetUsedAmount(item),
         submittedAt: item.submittedAt,
         updatedAt: item.updatedAt,
         createdAt: item.createdAt,
@@ -1333,6 +1384,12 @@ export default {
   color: #aaa;
 }
 
+.project-budget-line {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
 .submitted-date-cell {
   text-align: center;
   vertical-align: middle;
@@ -1483,6 +1540,8 @@ body.c-dark-theme .project-code,
 body.c-dark-theme .proposal-code-cell,
 [data-coreui-theme='dark'] .project-owner,
 body.c-dark-theme .project-owner,
+[data-coreui-theme='dark'] .project-budget-line,
+body.c-dark-theme .project-budget-line,
 [data-coreui-theme='dark'] .status-progress-label,
 body.c-dark-theme .status-progress-label,
 [data-coreui-theme='dark'] .status-last-action-time,
