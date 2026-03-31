@@ -347,6 +347,7 @@
             :funding-type="form.fundingType"
             :reset-token="budgetFundingResetToken"
             @update:modelValue="handleBudgetUpdate"
+            @sticky-overlay-update="$emit('budget-sticky-summary-update', $event)"
             @upload-attachment="$emit('budget-attachment-upload', $event)"
             @open-attachment="$emit('budget-attachment-open', $event)"
             @attachment-meta-change="$emit('budget-attachment-meta-change', $event)"

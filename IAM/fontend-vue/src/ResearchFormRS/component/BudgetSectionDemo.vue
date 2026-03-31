@@ -1,157 +1,5 @@
 <template>
   <div ref="budgetSectionRoot" class="budget-section-container" :class="{ 'is-dark': isDarkTheme }">
-    <transition name="budget-floating-fade">
-      <aside
-        v-if="showDesktopFloatingSummary"
-        class="budget-floating-summary"
-        :class="{ 'is-collapsed': !isStickyOverlayExpanded }"
-        :style="{ top: `${summaryFloatingTop}px` }"
-      >
-        <CCard v-if="isStickyOverlayExpanded" class="border-0 shadow-sm budget-floating-summary-card" style="background-color: #f8f9fa;">
-          <CCardHeader class="budget-floating-summary-header d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-              <span class="budget-floating-summary-title">สรุปงบประมาณ</span>
-              <span
-                class="budget-floating-summary-status-pill ml-2"
-                :class="isBudgetSummaryValid ? 'is-valid' : 'is-invalid'"
-              >
-                {{ isBudgetSummaryValid ? 'ถูกต้อง' : 'ต้องแก้ไข' }}
-              </span>
-            </div>
-            <div class="d-flex align-items-center" style="gap: 6px;">
-              <CButton
-                v-if="!isBudgetSummaryValid"
-                size="sm"
-                color="light"
-                class="budget-floating-summary-action"
-                @click="jumpToFirstBudgetIssue"
-              >
-                ไปจุดผิด
-              </CButton>
-              <CButton
-                size="sm"
-                color="light"
-                class="budget-floating-summary-action"
-                title="ย่อสรุปงบ"
-                @click="collapseStickyOverlayToIcon"
-              >
-                <CIcon name="cil-x" />
-              </CButton>
-            </div>
-          </CCardHeader>
-
-          <CCardBody v-show="isStickyOverlayExpanded" class="p-3">
-            <div class="budget-summary-stat-grid">
-              <div class="budget-summary-stat-item is-used">
-                <div class="budget-summary-stat-label">[ ใช้ไปแล้ว ]</div>
-                <div class="budget-summary-stat-value text-danger">{{ formatNumber(grandTotal) }}</div>
-                <div class="budget-summary-stat-meta" :class="hasBudgetLimit ? 'text-muted' : 'text-transparent'">
-                  ({{ budgetUsedPercent }}%)
-                </div>
-              </div>
-              <div class="budget-summary-stat-item is-remaining">
-                <div class="budget-summary-stat-label">[ คงเหลือ ]</div>
-                <div
-                  class="budget-summary-stat-value"
-                  :class="summaryRemainingAmount >= 0 ? 'text-success' : 'text-danger'"
-                >
-                  {{ formatNumber(Math.abs(summaryRemainingAmount)) }}
-                </div>
-                <div class="budget-summary-stat-meta" :class="hasBudgetLimit ? 'text-muted' : 'text-transparent'">
-                  ({{ budgetRemainingPercent }}%)
-                </div>
-              </div>
-              <div class="budget-summary-stat-item is-total">
-                <div class="budget-summary-stat-label">[ งบรวม ]</div>
-                <div class="budget-summary-stat-value text-dark">{{ formatNumber(summaryTotalBudget) }}</div>
-                <div class="budget-summary-stat-meta text-transparent">(0%)</div>
-              </div>
-            </div>
-
-            <div class="budget-summary-separator"></div>
-
-            <div class="budget-summary-period-list">
-              <div class="budget-summary-period-row">
-                <span class="budget-summary-period-label">งวด 1</span>
-                <div class="budget-summary-period-bar">
-                  <span
-                    class="budget-summary-period-fill"
-                    :class="isPeriod1Valid ? 'is-valid' : 'is-invalid'"
-                    :style="{ width: `${period1BarWidth}%` }"
-                  ></span>
-                </div>
-                <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod1) }}</strong>
-                <span class="budget-summary-period-mark">
-                  <CIcon
-                    :name="isPeriod1Valid ? 'cil-check-circle' : 'cil-x-circle'"
-                    :class="isPeriod1Valid ? 'text-success' : 'text-danger'"
-                  />
-                </span>
-              </div>
-              <div class="budget-summary-period-row">
-                <span class="budget-summary-period-label">งวด 2</span>
-                <div class="budget-summary-period-bar">
-                  <span
-                    class="budget-summary-period-fill"
-                    :class="isPeriod2Valid ? 'is-valid' : 'is-invalid'"
-                    :style="{ width: `${period2BarWidth}%` }"
-                  ></span>
-                </div>
-                <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod2) }}</strong>
-                <span class="budget-summary-period-mark">
-                  <CIcon
-                    :name="isPeriod2Valid ? 'cil-check-circle' : 'cil-x-circle'"
-                    :class="isPeriod2Valid ? 'text-success' : 'text-danger'"
-                  />
-                </span>
-              </div>
-              <div class="budget-summary-period-row">
-                <span class="budget-summary-period-label">งวด 3</span>
-                <div class="budget-summary-period-bar">
-                  <span
-                    class="budget-summary-period-fill"
-                    :class="isPeriod3Valid ? 'is-valid' : 'is-invalid'"
-                    :style="{ width: `${period3BarWidth}%` }"
-                  ></span>
-                </div>
-                <strong class="budget-summary-period-amount">{{ formatNumber(totalPeriod3) }}</strong>
-                <span class="budget-summary-period-mark">
-                  <CIcon
-                    :name="isPeriod3Valid ? 'cil-check-circle' : 'cil-x-circle'"
-                    :class="isPeriod3Valid ? 'text-success' : 'text-danger'"
-                  />
-                </span>
-              </div>
-            </div>
-
-            <div class="budget-summary-status" :class="isBudgetSummaryValid ? 'text-success' : 'text-danger'">
-              <span class="budget-summary-status-dot" aria-hidden="true"></span>
-              <span>{{ budgetSummaryStatusText }}</span>
-            </div>
-            <ul
-              v-if="!isBudgetSummaryValid && budgetSummaryFeedbackDetails.length"
-              class="budget-summary-feedback-list"
-            >
-              <li v-for="(detail, detailIndex) in budgetSummaryFeedbackDetails" :key="`budget-feedback-${detailIndex}`">
-                {{ detail }}
-              </li>
-            </ul>
-          </CCardBody>
-
-        </CCard>
-        <button
-          v-else
-          type="button"
-          class="budget-floating-summary-icon-only"
-          title="แสดงสรุปงบประมาณ"
-          aria-label="แสดงสรุปงบประมาณ"
-          @click="expandStickyOverlayFromIcon"
-        >
-          <CIcon name="cil-notes" />
-        </button>
-      </aside>
-    </transition>
-
     <transition name="budget-mobile-fade">
       <div v-if="showMobileBottomSummary" class="budget-mobile-summary-bar">
         <CCard class="border-0 shadow-sm budget-mobile-summary-card" style="background-color: #f8f9fa;">
@@ -589,7 +437,7 @@
             </div>
           </div>
 
-          <div class="budget-summary-status" :class="isBudgetSummaryValid ? 'text-success' : 'text-danger'">
+          <div class="budget-summary-status" :class="budgetSummaryStatusClass">
             <span class="budget-summary-status-dot" aria-hidden="true"></span>
             <span>{{ budgetSummaryStatusText }}</span>
           </div>
@@ -1163,13 +1011,9 @@ export default {
     return {
       suppressEmit: false,
       emitScheduled: false,
-      isStickyOverlayExpanded: true,
       isBudgetSectionInView: false,
       isMobileViewport: false,
       summaryFloatingTop: 82,
-      summaryDesktopExpandedWidth: 360,
-      summaryDesktopCollapsedWidth: 276,
-      summaryDesktopGap: 18,
       summaryMobileBarHeight: 64,
       categories: [
         {
@@ -1243,9 +1087,6 @@ export default {
         return 'background-color: #1a2430 !important; opacity: 0.98;'
       }
       return 'background-color: #8b1212 !important; opacity: 0.98;'
-    },
-    showDesktopFloatingSummary() {
-      return !this.isMobileViewport
     },
     showMobileBottomSummary() {
       return this.isMobileViewport && this.isBudgetSectionInView
@@ -1354,6 +1195,25 @@ export default {
       if (!this.hasBudgetLimit || this.budgetLimit <= 0) return 0
       return Math.max(0, 100 - this.budgetUsedPercent)
     },
+    isBudgetSummaryEmpty() {
+      return this.grandTotal <= 0
+    },
+    budgetSummaryState() {
+      if (this.isBudgetSummaryEmpty) return 'empty'
+      return this.isBudgetSummaryValid ? 'valid' : 'invalid'
+    },
+    budgetSummaryPillLabel() {
+      if (this.budgetSummaryState === 'empty') return 'ยังไม่มีข้อมูล'
+      return this.budgetSummaryState === 'valid' ? 'ถูกต้อง' : 'ต้องแก้ไข'
+    },
+    budgetSummaryStatePillClass() {
+      if (this.budgetSummaryState === 'empty') return 'is-empty'
+      return this.budgetSummaryState === 'valid' ? 'is-valid' : 'is-invalid'
+    },
+    budgetSummaryStatusClass() {
+      if (this.budgetSummaryState === 'empty') return 'text-muted'
+      return this.budgetSummaryState === 'valid' ? 'text-success' : 'text-danger'
+    },
     period1BarWidth() {
       if (this.grandTotal <= 0) return 0
       const periodPercent = (this.totalPeriod1 / this.grandTotal) * 100
@@ -1417,6 +1277,7 @@ export default {
       return details
     },
     budgetSummaryStatusText() {
+      if (this.isBudgetSummaryEmpty) return 'ยังไม่มีข้อมูล'
       if (this.isBudgetSummaryValid) return 'งบประมาณถูกต้อง'
       if (this.isBudgetLimitExceeded) return 'งบประมาณเกินเพดาน'
       if (this.isTravelExceeded || this.isEquipmentExceeded) return 'สัดส่วนงบประมาณบางหมวดเกินเกณฑ์'
@@ -1424,6 +1285,32 @@ export default {
         return 'การกระจายงวดไม่ตรงเกณฑ์ 50/40/10'
       }
       return 'งบประมาณไม่ถูกต้อง'
+    },
+    stickyOverlaySummary() {
+      return {
+        visible: !this.isMobileViewport,
+        grandTotal: this.grandTotal,
+        summaryRemainingAmount: this.summaryRemainingAmount,
+        summaryTotalBudget: this.summaryTotalBudget,
+        hasBudgetLimit: this.hasBudgetLimit,
+        budgetUsedPercent: this.budgetUsedPercent,
+        budgetRemainingPercent: this.budgetRemainingPercent,
+        period1BarWidth: this.period1BarWidth,
+        period2BarWidth: this.period2BarWidth,
+        period3BarWidth: this.period3BarWidth,
+        totalPeriod1: this.totalPeriod1,
+        totalPeriod2: this.totalPeriod2,
+        totalPeriod3: this.totalPeriod3,
+        isPeriod1Valid: this.isPeriod1Valid,
+        isPeriod2Valid: this.isPeriod2Valid,
+        isPeriod3Valid: this.isPeriod3Valid,
+        budgetSummaryPillLabel: this.budgetSummaryPillLabel,
+        budgetSummaryStatePillClass: this.budgetSummaryStatePillClass,
+        budgetSummaryStatusClass: this.budgetSummaryStatusClass,
+        budgetSummaryStatusText: this.budgetSummaryStatusText,
+        budgetSummaryFeedbackDetails: this.budgetSummaryFeedbackDetails,
+        canJumpToError: !this.isBudgetSummaryValid && !this.isBudgetSummaryEmpty
+      }
     }
   },
   watch: {
@@ -1441,6 +1328,13 @@ export default {
       deep: true,
       handler() {
         this.queueEmitModelValue()
+      }
+    },
+    stickyOverlaySummary: {
+      immediate: true,
+      deep: true,
+      handler(summary) {
+        this.$emit('sticky-overlay-update', summary)
       }
     }
   },
@@ -1481,12 +1375,6 @@ export default {
       if (this.isBudgetSectionInView !== nextState) {
         this.isBudgetSectionInView = nextState
       }
-    },
-    collapseStickyOverlayToIcon() {
-      this.isStickyOverlayExpanded = false
-    },
-    expandStickyOverlayFromIcon() {
-      this.isStickyOverlayExpanded = true
     },
     jumpToFirstBudgetIssue() {
       const sectionRootRef = this.$refs && this.$refs.budgetSectionRoot
@@ -2532,6 +2420,11 @@ export default {
   background: #fee2e2;
 }
 
+.budget-floating-summary-status-pill.is-empty {
+  color: #475569;
+  background: #e2e8f0;
+}
+
 .budget-floating-summary-action {
   border: 1px solid #d9e2ec !important;
   color: #334155 !important;
@@ -2902,6 +2795,11 @@ export default {
   background: #223142 !important;
   color: #d6e2f0 !important;
   border-color: #3c4e63 !important;
+}
+
+.budget-section-container.is-dark .budget-floating-summary-status-pill.is-empty {
+  color: #d6e2f0;
+  background: #33475c;
 }
 
 .budget-section-container.is-dark .budget-floating-summary-icon-only {

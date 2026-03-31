@@ -37,6 +37,7 @@
         :revision-highlight-sections="adminRevisionProjectSectionKeys"
         @form-changed="syncProjectDetailsData"
         @budget-changed="handleBudgetAutoSave"
+        @budget-sticky-summary-update="handleBudgetStickySummaryUpdate"
         @budget-attachment-upload="handleBudgetAttachmentUpload"
         @budget-attachment-open="handleBudgetAttachmentOpen"
         @budget-attachment-meta-change="handleBudgetAttachmentMetaChange"
@@ -44,6 +45,13 @@
         @research-standard-upload="handleResearchStandardUpload"
         @research-standard-open="handleResearchStandardOpen"
         @research-standard-remove="handleResearchStandardRemove"
+      />
+
+      <BudgetStickyOverlay
+        :visible="Boolean(budgetStickySummary && budgetStickySummary.visible)"
+        :summary="budgetStickySummary || {}"
+        :is-dark="isDarkTheme"
+        @jump-to-error="jumpToBudgetStickyIssue"
       />
 
       <!-- File Management Component -->
@@ -759,6 +767,7 @@ import FileManagement from '@/ResearchFormRS/component/FileManagement.vue'
 import SignatureCard from '@/ResearchFormRS/component/SignatureCard.vue'
 import StatusBadge from '@/ResearchFormRS/component/StatusBadge.vue'
 import FeedbackSection from '@/ResearchFormRS/component/FeedbackSection.vue'
+import BudgetStickyOverlay from '@/ResearchFormRS/component/BudgetStickyOverlay.vue'
 import ReportView from './Report.vue'
 import Multiselect from 'vue-multiselect'
 import { DatePicker } from 'v-calendar'
@@ -851,6 +860,7 @@ export default {
     SignatureCard,
     StatusBadge,
     FeedbackSection,
+    BudgetStickyOverlay,
     ReportView,
     Multiselect,
     'v-date-picker': DatePicker
@@ -942,6 +952,7 @@ export default {
       feedbackSectionCardStates: {},
       feedbackSectionDrafts: {},
       feedbackSectionBaselines: {},
+      budgetStickySummary: null,
       projectDetailsData: {
         problemSignificance: '',
         objectives: '',
@@ -4436,6 +4447,24 @@ export default {
       }
 
       this.markAsEdited()
+    },
+    handleBudgetStickySummaryUpdate (summary) {
+      this.budgetStickySummary = (summary && typeof summary === 'object')
+        ? (this.cloneSerializable(summary) || summary)
+        : null
+    },
+    jumpToBudgetStickyIssue () {
+      const projectDetailsForm = this.$refs && this.$refs.projectDetailsForm
+      const budgetSection = projectDetailsForm && projectDetailsForm.$refs
+        ? projectDetailsForm.$refs.budgetSection
+        : null
+
+      if (budgetSection && typeof budgetSection.jumpToFirstBudgetIssue === 'function') {
+        budgetSection.jumpToFirstBudgetIssue()
+        return
+      }
+
+      this.focusBudgetSection()
     },
     canAutoSave () {
       if (this.suppressAutoSave) return false
