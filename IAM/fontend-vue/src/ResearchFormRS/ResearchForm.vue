@@ -4833,9 +4833,6 @@ export default {
       const std = form && form.researchStandard && typeof form.researchStandard === 'object'
         ? form.researchStandard
         : null
-      const attachments = std && std.attachments && typeof std.attachments === 'object'
-        ? std.attachments
-        : {}
 
       if (!std) {
         return { ok: false, message: section18AlertMessage }
@@ -4853,20 +4850,10 @@ export default {
       const humanSubType = String(std.humanSubType || '').trim()
       const animalSubType = String(std.animalSubType || '').trim()
       const missingSections = []
-      const hasAttachment = (file) => {
-        if (!file || typeof file !== 'object') return false
-        const fileId = String(file.fileId || file.id || file._id || '').trim()
-        const fileName = String(file.name || file.originalName || file.fileName || '').trim()
-        return fileId !== '' || fileName !== ''
-      }
 
       if (mainType === 'none') {
         if (hasPlant && !plantSubType) {
           missingSections.push('18. Research standard (plant collection details)')
-        } else if (hasPlant && plantSubType === 'approved' && !hasAttachment(attachments.plantApproved)) {
-          missingSections.push('18. Research standard (attach Section 53 plant collection notification document)')
-        } else if (hasPlant && plantSubType === 'pending' && !hasAttachment(attachments.plantPending)) {
-          missingSections.push('18. Research standard (attach supporting document for pending plant collection request)')
         }
       }
 
@@ -4877,18 +4864,10 @@ export default {
 
         if (hasHuman && !humanSubType) {
           missingSections.push('18. Research standard (human research subtype)')
-        } else if (hasHuman && humanSubType === 'approved' && !hasAttachment(attachments.humanApproved)) {
-          missingSections.push('18. Research standard (attach human ethics approval document)')
-        } else if (hasHuman && humanSubType === 'pending' && !hasAttachment(attachments.humanPending)) {
-          missingSections.push('18. Research standard (attach proof of human ethics submission)')
         }
 
         if (hasAnimal && !animalSubType) {
           missingSections.push('18. Research standard (animal use subtype)')
-        } else if (hasAnimal && animalSubType === 'approved' && !hasAttachment(attachments.animalApproved)) {
-          missingSections.push('18. Research standard (attach animal ethics approval document)')
-        } else if (hasAnimal && animalSubType === 'pending' && !hasAttachment(attachments.animalPending)) {
-          missingSections.push('18. Research standard (attach proof of animal ethics submission)')
         }
       }
 

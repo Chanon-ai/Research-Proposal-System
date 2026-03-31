@@ -1,5 +1,5 @@
 <template>
-  <CCard>
+  <CCard class="text-editors-page">
     <CCardHeader>
       Quill - modern rich text editor
       <a 
@@ -51,3 +51,37 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+/* Force visible list markers in Vue2 + Quill (covers multiple deep-selector syntaxes). */
+.text-editors-page /deep/ .ql-editor ol,
+.text-editors-page >>> .ql-editor ol,
+.text-editors-page::v-deep .ql-editor ol,
+.text-editors-page /deep/ .ql-editor ul,
+.text-editors-page >>> .ql-editor ul,
+.text-editors-page::v-deep .ql-editor ul {
+  padding-left: 1.5rem !important;
+}
+
+.text-editors-page /deep/ .ql-editor ol > li,
+.text-editors-page >>> .ql-editor ol > li,
+.text-editors-page::v-deep .ql-editor ol > li {
+  list-style-type: decimal !important;
+  list-style-position: outside !important;
+  padding-left: 0 !important;
+}
+
+.text-editors-page /deep/ .ql-editor ul > li,
+.text-editors-page >>> .ql-editor ul > li,
+.text-editors-page::v-deep .ql-editor ul > li {
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  padding-left: 0 !important;
+}
+
+.text-editors-page /deep/ .ql-editor li > .ql-ui,
+.text-editors-page >>> .ql-editor li > .ql-ui,
+.text-editors-page::v-deep .ql-editor li > .ql-ui {
+  display: none !important;
+}
+</style>
