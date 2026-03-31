@@ -37,15 +37,51 @@
             <tr v-for="(item, itemIndex) in category.items" :key="item.id" class="bg-light">
               
               <td class="text-left align-middle bg-white">
-                <textarea 
-                  class="form-control mb-2 auto-grow-textarea" 
-                  v-model="item.name" 
-                  placeholder="ระบุชื่อรายการ..."
-                  rows="1"
-                  @input="resizeTextarea($event); checkKeyword(catIndex, item)"
-                  :readonly="isReadOnly" 
-                ></textarea>
-                
+                <template v-if="category.isOther">
+                  <textarea 
+                    class="form-control auto-grow-textarea"
+                    :class="{ 'budget-item-name-invalid': Boolean(item.forbiddenItemMessage) }"
+                    v-model="item.name" 
+                    placeholder="ระบุชื่อรายการ..."
+                    rows="1"
+                    @input="handleItemNameInput(catIndex, item, $event)"
+                    @blur="handleItemNameBlur(catIndex, item)"
+                    @change="handleItemNameBlur(catIndex, item)"
+                    :readonly="isReadOnly" 
+                  ></textarea>
+                </template>
+                <template v-else>
+                  <div class="budget-item-search-wrap">
+                    <input
+                      type="search"
+                      class="form-control budget-item-search"
+                      :class="{ 'budget-item-name-invalid': Boolean(item.forbiddenItemMessage) }"
+                      v-model="item.name"
+                      :list="getItemSearchListId(catIndex)"
+                      placeholder="ค้นหา/ระบุชื่อรายการ..."
+                      @input="handleItemNameInput(catIndex, item, $event)"
+                      @blur="handleItemNameBlur(catIndex, item)"
+                      @change="handleItemNameBlur(catIndex, item)"
+                      :readonly="isReadOnly"
+                    >
+                    <span
+                      class="budget-item-search-icon"
+                      :class="{ 'is-invalid': Boolean(item.forbiddenItemMessage) }"
+                      aria-hidden="true"
+                    ></span>
+                  </div>
+                  <datalist :id="getItemSearchListId(catIndex)">
+                    <option
+                      v-for="(option, optIndex) in getSearchOptionsByCategory(category, catIndex)"
+                      :key="`${catIndex}-${optIndex}`"
+                      :value="option"
+                    />
+                  </datalist>
+                </template>
+                <small v-if="item.forbiddenItemMessage" class="text-danger d-block mb-2 budget-item-forbidden-text">
+                  <i class="fa fa-ban mr-1" aria-hidden="true"></i>{{ item.forbiddenItemMessage }}
+                </small>
+                 
                 <div v-if="item.attachment" class="attachment-box border rounded p-2 mt-2 bg-light">
                   <div
                     v-if="getAttachmentDisplayUrl(item)"
@@ -98,11 +134,9 @@
               </td>
 
               <td class="align-middle bg-white">
-                <div class="d-flex justify-content-center align-items-center flex-wrap" style="gap: 8px; padding-top: 8px;">
-                  
-                  <div v-for="(mult, mIndex) in item.multipliers" :key="mIndex" class="position-relative multiplier-box">
-                    
-                    <template v-if="category.isOther">
+                <div class="d-flex justify-content-center align-items-center flex-wrap" style="gap: 8px;">
+                  <template v-if="category.isOther">
+                    <div v-for="(mult, mIndex) in item.multipliers" :key="mIndex" class="position-relative multiplier-box">
                       <CButton v-if="!isReadOnly && item.multipliers.length > 1" 
                                color="danger" 
                                size="sm"
@@ -119,25 +153,45 @@
                              @keypress="isNumber"
                              @input="cleanNumber(mult, 'value'); calculateItemTotal(item)"
                              :readonly="isReadOnly">
-                    </template>
+                    </div>
+                    <CButton v-if="!isReadOnly" color="primary" size="sm" class="mt-4" title="เพิ่มตัวคูณ" @click="addMultiplier(item)" style="height: 38px;">
+                      <CIcon name="cil-plus" class="m-1"/>
+                    </CButton>
+                  </template>
 
-                    <template v-else>
+                  <template v-else>
+                    <div
+                      v-for="field in getFieldsForRow(item)"
+                      :key="`${item.id}-${field.key}`"
+                      class="position-relative multiplier-box"
+                    >
                       <div class="floating-outline-wrap">
-                        <input type="text" inputmode="numeric" 
-                               class="input-floating-outline text-center" 
-                               placeholder=" "
-                               v-model="mult.value" 
-                               :readonly="mult.isAdmin || isReadOnly" 
-                               @keypress="isNumber"
-                               @input="cleanNumber(mult, 'value'); calculateItemTotal(item)">
-                        <label class="label-floating-outline">{{ mult.label }}</label>
+                        <input
+                          type="text"
+                          inputmode="numeric"
+                          class="input-floating-outline text-center"
+                          placeholder=" "
+                          v-model="item.inputs[field.key]"
+                          :readonly="isReadOnly"
+                          @keypress="isNumber"
+                          @input="handleCalcInputChange(catIndex, item, field.key)"
+                        >
+                        <label class="label-floating-outline">{{ field.label }}</label>
                       </div>
-                    </template>
-                  </div>
-                  
-                  <CButton v-if="category.isOther && !isReadOnly" color="primary" size="sm" class="mt-4" title="เพิ่มตัวคูณ" @click="addMultiplier(item)" style="height: 38px;">
-                    <CIcon name="cil-plus" class="m-1"/>
-                  </CButton>
+                    </div>
+                  </template>
+                </div>
+
+                <div v-if="!category.isOther" class="formula-preview-box text-left">
+                  <small v-if="item.detectedRuleKey" class="text-success d-block formula-indicator">
+                    ตรวจพบสูตรอัตโนมัติ: {{ getFormulaLabel(item) }}
+                  </small>
+                  <small v-else class="text-muted d-block formula-indicator">
+                    ใช้สูตรเริ่มต้นของหมวด: {{ getFormulaLabel(item) }}
+                  </small>
+                  <small class="text-primary d-block formula-live-preview">
+                    {{ getFormulaPreview(item) }}
+                  </small>
                 </div>
               </td>
 
@@ -146,7 +200,7 @@
               </td>
 
               <td class="align-middle bg-white">
-                <div class="floating-outline-wrap mt-2">
+                <div class="floating-outline-wrap">
                   <input type="text" inputmode="numeric" 
                          class="input-floating-outline text-center" 
                          :class="{'border-danger text-danger error-shadow': item.periodError}"
@@ -162,7 +216,7 @@
               </td>
 
               <td class="align-middle bg-white">
-                <div class="floating-outline-wrap mt-2">
+                <div class="floating-outline-wrap">
                   <input type="text" inputmode="numeric" 
                          class="input-floating-outline text-center" 
                          :class="{'border-danger text-danger error-shadow': item.periodError}"
@@ -178,7 +232,7 @@
               </td>
 
               <td class="align-middle bg-white">
-                <div class="floating-outline-wrap mt-2">
+                <div class="floating-outline-wrap">
                   <input type="text" inputmode="numeric" 
                          class="input-floating-outline text-center" 
                          :class="{'border-danger text-danger error-shadow': item.periodError}"
@@ -380,6 +434,459 @@ const BUDGET_ATTACHMENT_EXAMPLES = Object.freeze({
   }
 })
 
+const BUDGET_CATEGORY_KEYS = Object.freeze({
+  COMPENSATION: 'compensation',
+  OPERATING: 'operating',
+  TRAVEL: 'travel',
+  MATERIAL: 'material',
+  UTILITY: 'utility',
+  EQUIPMENT: 'equipment',
+  OTHER: 'other'
+})
+
+const DEFAULT_CALC_TYPE_BY_CATEGORY = Object.freeze({
+  [BUDGET_CATEGORY_KEYS.COMPENSATION]: 'person_time_rate',
+  [BUDGET_CATEGORY_KEYS.OPERATING]: 'fixed_amount',
+  [BUDGET_CATEGORY_KEYS.TRAVEL]: 'trip_rate',
+  [BUDGET_CATEGORY_KEYS.MATERIAL]: 'quantity_unit_price',
+  [BUDGET_CATEGORY_KEYS.UTILITY]: 'month_rate',
+  [BUDGET_CATEGORY_KEYS.EQUIPMENT]: 'quantity_unit_price',
+  [BUDGET_CATEGORY_KEYS.OTHER]: 'fixed_amount'
+})
+
+const CALC_TYPE_SCHEMAS = Object.freeze({
+  fixed_amount: {
+    calcType: 'fixed_amount',
+    label: 'ยอดเหมาจ่าย',
+    formulaLabel: 'ยอดเงินรวม',
+    fields: [
+      { key: 'amount', label: 'ยอดเงิน (บาท)', defaultValue: 0, placeholder: '0' }
+    ]
+  },
+  quantity_unit_price: {
+    calcType: 'quantity_unit_price',
+    label: 'จำนวน × ราคาต่อหน่วย',
+    formulaLabel: 'จำนวน × ราคาต่อหน่วย',
+    fields: [
+      { key: 'quantity', label: 'จำนวน', defaultValue: 1, placeholder: '1' },
+      { key: 'unitPrice', label: 'ราคาต่อหน่วย', defaultValue: 0, placeholder: '0' }
+    ]
+  },
+  usage_unit_price: {
+    calcType: 'usage_unit_price',
+    label: 'ปริมาณใช้จริง × ราคาต่อหน่วย',
+    formulaLabel: 'ปริมาณใช้จริง × ราคาต่อหน่วย',
+    fields: [
+      { key: 'usageAmount', label: 'ปริมาณใช้จริง', defaultValue: 1, placeholder: '1' },
+      { key: 'unitPrice', label: 'ราคาต่อหน่วย', defaultValue: 0, placeholder: '0' }
+    ]
+  },
+  person_time_rate: {
+    calcType: 'person_time_rate',
+    label: 'จำนวนคน × จำนวนครั้ง × อัตราต่อครั้ง',
+    formulaLabel: 'จำนวนคน × จำนวนครั้ง × อัตราต่อครั้ง',
+    fields: [
+      { key: 'persons', label: 'จำนวนคน', defaultValue: 1, placeholder: '1' },
+      { key: 'times', label: 'จำนวนครั้ง', defaultValue: 1, placeholder: '1' },
+      { key: 'ratePerTime', label: 'อัตราต่อครั้ง', defaultValue: 0, placeholder: '0' }
+    ]
+  },
+  person_day_rate: {
+    calcType: 'person_day_rate',
+    label: 'จำนวนคน × จำนวนวัน × อัตราต่อคน',
+    formulaLabel: 'จำนวนคน × จำนวนวัน × อัตราต่อคน',
+    fields: [
+      { key: 'people', label: 'จำนวนคน', defaultValue: 1, placeholder: '1' },
+      { key: 'days', label: 'จำนวนวัน', defaultValue: 1, placeholder: '1' },
+      { key: 'ratePerPerson', label: 'อัตราต่อคน', defaultValue: 0, placeholder: '0' }
+    ]
+  },
+  person_month_rate: {
+    calcType: 'person_month_rate',
+    label: 'จำนวนคน × จำนวนเดือน × อัตราต่อเดือน',
+    formulaLabel: 'จำนวนคน × จำนวนเดือน × อัตราต่อเดือน',
+    fields: [
+      { key: 'persons', label: 'จำนวนคน', defaultValue: 1, placeholder: '1' },
+      { key: 'months', label: 'จำนวนเดือน', defaultValue: 1, placeholder: '1' },
+      { key: 'monthlyRate', label: 'อัตราต่อเดือน', defaultValue: 0, placeholder: '0' }
+    ]
+  },
+  month_rate: {
+    calcType: 'month_rate',
+    label: 'จำนวนเดือน × อัตราต่อเดือน',
+    formulaLabel: 'จำนวนเดือน × อัตราต่อเดือน',
+    fields: [
+      { key: 'months', label: 'จำนวนเดือน', defaultValue: 1, placeholder: '1' },
+      { key: 'monthlyRate', label: 'อัตราต่อเดือน', defaultValue: 0, placeholder: '0' }
+    ]
+  },
+  distance_rate: {
+    calcType: 'distance_rate',
+    label: 'ระยะทาง × อัตราต่อกม. × จำนวนเที่ยว',
+    formulaLabel: 'ระยะทาง × อัตราต่อกม. × จำนวนเที่ยว',
+    fields: [
+      { key: 'distanceKm', label: 'ระยะทาง (กม.)', defaultValue: 1, placeholder: '1' },
+      { key: 'ratePerKm', label: 'อัตราต่อกม.', defaultValue: 0, placeholder: '0' },
+      { key: 'trips', label: 'จำนวนเที่ยว', defaultValue: 1, placeholder: '1' }
+    ]
+  },
+  room_night_rate: {
+    calcType: 'room_night_rate',
+    label: 'จำนวนห้อง × จำนวนคืน × ราคาต่อห้อง',
+    formulaLabel: 'จำนวนห้อง × จำนวนคืน × ราคาต่อห้อง',
+    fields: [
+      { key: 'rooms', label: 'จำนวนห้อง', defaultValue: 1, placeholder: '1' },
+      { key: 'nights', label: 'จำนวนคืน', defaultValue: 1, placeholder: '1' },
+      { key: 'roomRate', label: 'ราคาต่อห้อง', defaultValue: 0, placeholder: '0' }
+    ]
+  },
+  trip_rate: {
+    calcType: 'trip_rate',
+    label: 'จำนวนหน่วย × จำนวนเที่ยว × อัตราต่อเที่ยว',
+    formulaLabel: 'จำนวนหน่วย × จำนวนเที่ยว × อัตราต่อเที่ยว',
+    fields: [
+      { key: 'quantity', label: 'จำนวนหน่วย', defaultValue: 1, placeholder: '1' },
+      { key: 'trips', label: 'จำนวนเที่ยว', defaultValue: 1, placeholder: '1' },
+      { key: 'ratePerTrip', label: 'อัตราต่อเที่ยว', defaultValue: 0, placeholder: '0' }
+    ]
+  },
+  license_subscription: {
+    calcType: 'license_subscription',
+    label: 'จำนวนสิทธิ์ × จำนวนเดือน × อัตราต่อเดือน',
+    formulaLabel: 'จำนวนสิทธิ์ × จำนวนเดือน × อัตราต่อเดือน',
+    fields: [
+      { key: 'licenses', label: 'จำนวนสิทธิ์', defaultValue: 1, placeholder: '1' },
+      { key: 'months', label: 'จำนวนเดือน', defaultValue: 1, placeholder: '1' },
+      { key: 'monthlyRate', label: 'อัตราต่อเดือน', defaultValue: 0, placeholder: '0' }
+    ]
+  }
+})
+
+const LEGACY_ROW_FIELD_ALIASES = Object.freeze({
+  amount: ['amount', 'total', 'budget'],
+  quantity: ['quantity', 'qty', 'count'],
+  unitPrice: ['unitPrice', 'unit_price', 'price', 'rate'],
+  usageAmount: ['usageAmount', 'usage', 'usageQty'],
+  persons: ['persons', 'people', 'personsCount'],
+  times: ['times', 'time', 'round', 'rounds'],
+  ratePerTime: ['ratePerTime', 'timeRate', 'rate'],
+  people: ['people', 'persons', 'participants'],
+  days: ['days', 'day'],
+  ratePerPerson: ['ratePerPerson', 'personRate', 'rate'],
+  months: ['months', 'month'],
+  monthlyRate: ['monthlyRate', 'monthRate', 'rate'],
+  distanceKm: ['distanceKm', 'distance', 'km'],
+  ratePerKm: ['ratePerKm', 'kmRate', 'rate'],
+  trips: ['trips', 'trip', 'times'],
+  rooms: ['rooms', 'room'],
+  nights: ['nights', 'night'],
+  roomRate: ['roomRate', 'rate'],
+  ratePerTrip: ['ratePerTrip', 'tripRate', 'rate'],
+  licenses: ['licenses', 'license']
+})
+
+const BUDGET_KEYWORD_RULES = Object.freeze([
+  {
+    key: 'compensation_student_academic',
+    category: BUDGET_CATEGORY_KEYS.COMPENSATION,
+    keywords: ['นักศึกษาช่วยงานด้านวิชาการ'],
+    aliases: ['นักศึกษาช่วยงานวิชาการ', 'นักศึกษาช่วยงาน'],
+    calcType: 'person_month_rate',
+    formulaLabel: 'จำนวนคน × จำนวนเดือน × อัตราต่อเดือน'
+  },
+  {
+    key: 'compensation_student_general',
+    category: BUDGET_CATEGORY_KEYS.COMPENSATION,
+    keywords: ['นักศึกษาช่วยงานทั่วไป'],
+    aliases: ['ผู้ช่วยงานทั่วไป'],
+    calcType: 'person_month_rate',
+    formulaLabel: 'จำนวนคน × จำนวนเดือน × อัตราต่อเดือน'
+  },
+  {
+    key: 'compensation_informant',
+    category: BUDGET_CATEGORY_KEYS.COMPENSATION,
+    keywords: ['ผู้ให้ข้อมูล', 'ผู้ให้สัมภาษณ์', 'ผู้ตอบแบบสอบถาม', 'อาสาสมัคร'],
+    aliases: ['informant', 'volunteer'],
+    calcType: 'person_time_rate',
+    formulaLabel: 'จำนวนคน × จำนวนครั้ง × อัตราต่อครั้ง'
+  },
+  {
+    key: 'operating_lunch',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['อาหารกลางวัน'],
+    aliases: ['อาหารเที่ยง'],
+    calcType: 'person_day_rate',
+    formulaLabel: 'จำนวนคน × จำนวนวัน × อัตราต่อคน'
+  },
+  {
+    key: 'operating_snack',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['อาหารว่าง'],
+    aliases: ['ของว่าง'],
+    calcType: 'person_day_rate',
+    formulaLabel: 'จำนวนคน × จำนวนวัน × อัตราต่อคน'
+  },
+  {
+    key: 'operating_human_ethics',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['จริยธรรมการวิจัยในมนุษย์'],
+    aliases: ['ค่าจริยธรรมการวิจัย'],
+    calcType: 'fixed_amount',
+    formulaLabel: 'ยอดเงินรวม'
+  },
+  {
+    key: 'operating_scientific_analysis',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['วิเคราะห์ทดสอบทางวิทยาศาสตร์', 'วิเคราะห์ทางการแพทย์', 'ใช้ห้องปฏิบัติการ', 'เครื่องมือวิเคราะห์ทดสอบ'],
+    aliases: ['ค่าตรวจวิเคราะห์', 'วิเคราะห์ตัวอย่าง'],
+    calcType: 'quantity_unit_price',
+    formulaLabel: 'จำนวน × ราคาต่อหน่วย'
+  },
+  {
+    key: 'operating_field_assistant',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['ผู้ช่วยเก็บข้อมูลในพื้นที่'],
+    aliases: ['ผู้ช่วยเก็บข้อมูล'],
+    calcType: 'quantity_unit_price',
+    formulaLabel: 'จำนวน × ราคาต่อหน่วย'
+  },
+  {
+    key: 'operating_local_guide',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['ผู้นำทางในพื้นที่'],
+    aliases: ['ผู้นำทาง'],
+    calcType: 'trip_rate',
+    formulaLabel: 'จำนวนหน่วย × จำนวนเที่ยว × อัตราต่อเที่ยว'
+  },
+  {
+    key: 'operating_transcription',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['ถอดเทป'],
+    aliases: ['ถอดเสียง'],
+    calcType: 'usage_unit_price',
+    formulaLabel: 'ปริมาณใช้จริง × ราคาต่อหน่วย'
+  },
+  {
+    key: 'operating_contract',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['ค่าจ้างเหมาอื่นๆ', 'ค่าธรรมเนียมอื่น'],
+    aliases: ['ค่าจ้างเหมา', 'ค่าธรรมเนียม'],
+    calcType: 'fixed_amount',
+    formulaLabel: 'ยอดเงินรวม'
+  },
+  {
+    key: 'operating_copy',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['ถ่ายเอกสาร', 'จัดทำรูปเล่มรายงานวิจัย'],
+    aliases: ['รูปเล่มรายงาน', 'พิมพ์รายงาน'],
+    calcType: 'quantity_unit_price',
+    formulaLabel: 'จำนวน × ราคาต่อหน่วย'
+  },
+  {
+    key: 'operating_delivery',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['ไปรษณีย์และขนส่ง'],
+    aliases: ['ไปรษณีย์', 'ขนส่ง'],
+    calcType: 'quantity_unit_price',
+    formulaLabel: 'จำนวน × ราคาต่อหน่วย'
+  },
+  {
+    key: 'operating_phone',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['โทรศัพท์และโทรสารในประเทศ'],
+    aliases: ['โทรศัพท์', 'โทรสาร'],
+    calcType: 'month_rate',
+    formulaLabel: 'จำนวนเดือน × อัตราต่อเดือน'
+  },
+  {
+    key: 'operating_internet_service',
+    category: BUDGET_CATEGORY_KEYS.OPERATING,
+    keywords: ['บริการทางอินเตอร์เน็ต'],
+    aliases: ['บริการทางอินเทอร์เน็ต', 'internet service'],
+    calcType: 'month_rate',
+    formulaLabel: 'จำนวนเดือน × อัตราต่อเดือน'
+  },
+  {
+    key: 'travel_flight',
+    category: BUDGET_CATEGORY_KEYS.TRAVEL,
+    keywords: ['เครื่องบิน'],
+    aliases: ['airfare', 'flight'],
+    calcType: 'trip_rate',
+    formulaLabel: 'จำนวนหน่วย × จำนวนเที่ยว × อัตราต่อเที่ยว'
+  },
+  {
+    key: 'travel_personal_car',
+    category: BUDGET_CATEGORY_KEYS.TRAVEL,
+    keywords: ['รถยนต์ส่วนบุคคล'],
+    aliases: ['รถส่วนตัว'],
+    calcType: 'distance_rate',
+    formulaLabel: 'ระยะทาง × อัตราต่อกม. × จำนวนเที่ยว'
+  },
+  {
+    key: 'travel_van',
+    category: BUDGET_CATEGORY_KEYS.TRAVEL,
+    keywords: ['รถตู้'],
+    aliases: ['van'],
+    calcType: 'trip_rate',
+    formulaLabel: 'จำนวนหน่วย × จำนวนเที่ยว × อัตราต่อเที่ยว'
+  },
+  {
+    key: 'travel_taxi',
+    category: BUDGET_CATEGORY_KEYS.TRAVEL,
+    keywords: ['taxi', 'แท็กซี่'],
+    aliases: ['แทกซี่'],
+    calcType: 'trip_rate',
+    formulaLabel: 'จำนวนหน่วย × จำนวนเที่ยว × อัตราต่อเที่ยว'
+  },
+  {
+    key: 'travel_accommodation',
+    category: BUDGET_CATEGORY_KEYS.TRAVEL,
+    keywords: ['ที่พัก'],
+    aliases: ['ค่าที่พัก'],
+    calcType: 'room_night_rate',
+    formulaLabel: 'จำนวนห้อง × จำนวนคืน × ราคาต่อห้อง'
+  },
+  {
+    key: 'travel_allowance',
+    category: BUDGET_CATEGORY_KEYS.TRAVEL,
+    keywords: ['เบี้ยเลี้ยง'],
+    aliases: ['ค่าเบี้ยเลี้ยง'],
+    calcType: 'person_day_rate',
+    formulaLabel: 'จำนวนคน × จำนวนวัน × อัตราต่อคน'
+  },
+  {
+    key: 'material_program',
+    category: BUDGET_CATEGORY_KEYS.MATERIAL,
+    keywords: ['โปรแกรมคอมพิวเตอร์'],
+    aliases: ['software'],
+    calcType: 'quantity_unit_price',
+    formulaLabel: 'จำนวน × ราคาต่อหน่วย'
+  },
+  {
+    key: 'material_program_license',
+    category: BUDGET_CATEGORY_KEYS.MATERIAL,
+    keywords: ['ลิขสิทธิ์โปรแกรมคอมพิวเตอร์'],
+    aliases: ['software license', 'subscription'],
+    calcType: 'license_subscription',
+    formulaLabel: 'จำนวนสิทธิ์ × จำนวนเดือน × อัตราต่อเดือน'
+  },
+  {
+    key: 'material_general',
+    category: BUDGET_CATEGORY_KEYS.MATERIAL,
+    keywords: [
+      'วัสดุสำนักงาน',
+      'วัสดุคอมพิวเตอร์',
+      'วัสดุวิทยาศาสตร์',
+      'วัสดุไฟฟ้าและวิทยุ',
+      'วัสดุงานบ้านงานครัว',
+      'วัสดุก่อสร้างและประปา',
+      'วัสดุเชื้อเพลิงและหล่อลื่น',
+      'วัสดุการเกษตร',
+      'วัสดุโฆษณาและเผยแพร่',
+      'วัสดุเครื่องแต่งกาย',
+      'วัสดุกีฬา',
+      'วัสดุสื่อ/ตำรา/วารสาร',
+      'เวชภัณฑ์ยา',
+      'เวชภัณฑ์ที่มิใช่ยา',
+      'บรรจุภัณฑ์',
+      'วัสดุของที่ระลึก'
+    ],
+    aliases: ['วัสดุ', 'อุปกรณ์สิ้นเปลือง'],
+    calcType: 'quantity_unit_price',
+    formulaLabel: 'จำนวน × ราคาต่อหน่วย'
+  },
+  {
+    key: 'utility_water',
+    category: BUDGET_CATEGORY_KEYS.UTILITY,
+    keywords: ['ค่าน้ำ'],
+    aliases: ['ค่าน้ํา'],
+    calcType: 'month_rate',
+    formulaLabel: 'จำนวนเดือน × อัตราต่อเดือน'
+  },
+  {
+    key: 'utility_electric',
+    category: BUDGET_CATEGORY_KEYS.UTILITY,
+    keywords: ['ค่าไฟ'],
+    aliases: ['ค่าไฟฟ้า'],
+    calcType: 'month_rate',
+    formulaLabel: 'จำนวนเดือน × อัตราต่อเดือน'
+  },
+  {
+    key: 'utility_internet',
+    category: BUDGET_CATEGORY_KEYS.UTILITY,
+    keywords: ['ค่าอินเทอร์เน็ต', 'ค่าอินเตอร์เน็ต'],
+    aliases: ['internet'],
+    calcType: 'month_rate',
+    formulaLabel: 'จำนวนเดือน × อัตราต่อเดือน'
+  },
+  {
+    key: 'utility_system_service',
+    category: BUDGET_CATEGORY_KEYS.UTILITY,
+    keywords: ['ค่าใช้บริการระบบ'],
+    aliases: ['system service'],
+    calcType: 'fixed_amount',
+    formulaLabel: 'ยอดเงินรวม'
+  }
+])
+
+const FORBIDDEN_BUDGET_ITEM_RULES = Object.freeze([
+  {
+    key: 'forbidden_compensation_research_team',
+    label: 'ค่าตอบแทนคณะผู้วิจัย',
+    keywords: ['ค่าตอบแทนคณะผู้วิจัย']
+  },
+  {
+    key: 'forbidden_compensation_advisor',
+    label: 'ค่าตอบแทนที่ปรึกษาโครงการวิจัย',
+    keywords: ['ค่าตอบแทนที่ปรึกษาโครงการวิจัย1', 'ค่าตอบแทนที่ปรึกษาโครงการวิจัย 1', 'ค่าตอบแทนที่ปรึกษาโครงการวิจัย']
+  },
+  {
+    key: 'forbidden_team_meeting_travel_training',
+    label: 'ค่าใช้จ่ายการจัดการประชุม เดินทางเข้าร่วมประชุม สัมมนา ฝึกอบรม ของคณะผู้วิจัย',
+    keywords: ['ค่าใช้จ่ายการจัดการประชุม เดินทางเข้าร่วมประชุม สัมมนา ฝึกอบรม ของคณะผู้วิจัย']
+  },
+  {
+    key: 'forbidden_statistical_analysis',
+    label: 'ค่าวิเคราะห์ข้อมูลทางสถิติ',
+    keywords: ['ค่าวิเคราะห์ข้อมูลทางสถิติ', 'วิเคราะห์ข้อมูลทางสถิติ']
+  },
+  {
+    key: 'forbidden_construction_cost',
+    label: 'ค่าสิ่งก่อสร้าง หรือ วัสดุที่เกี่ยวกับการก่อสร้าง',
+    keywords: ['ค่าสิ่งก่อสร้าง', 'วัสดุที่เกี่ยวกับการก่อสร้าง', 'วัสดุก่อสร้าง']
+  },
+  {
+    key: 'forbidden_project_management',
+    label: 'ค่าบริหารจัดการโครงการวิจัย',
+    keywords: ['ค่าบริหารจัดการโครงการวิจัย', 'ค่าบริหารจัดการโครงการ']
+  },
+  {
+    key: 'forbidden_overtime_staff',
+    label: 'ค่าปฏิบัติงานล่วงเวลาของพนักงาน',
+    keywords: ['ค่าปฏิบัติงานล่วงเวลาของพนักงาน', 'ค่าล่วงเวลาของพนักงาน', 'ค่าปฏิบัติงานล่วงเวลา']
+  },
+  {
+    key: 'forbidden_page_charge',
+    label: 'ค่าธรรมเนียมการตีพิมพ์บทความในวารสารวิชาการ (ค่า Page Charge)',
+    keywords: ['ค่าธรรมเนียมการตีพิมพ์บทความในวารสารวิชาการ', 'ค่า page charge', 'page charge']
+  },
+  {
+    key: 'forbidden_review_literature',
+    label: 'ค่าตอบแทนผู้ทบทวนวรรณกรรม (Review Literature)',
+    keywords: ['ค่าตอบแทนผู้ทบทวนวรรณกรรม', 'review literature']
+  },
+  {
+    key: 'forbidden_translation_proofread_report',
+    label: 'ค่าจ้างเหมาแปลภาษา พิสูจน์อักษร พิมพ์รายงาน',
+    keywords: ['ค่าจ้างเหมาแปลภาษา พิสูจน์อักษร พิมพ์รายงาน', 'ค่าจ้างเหมาแปลภาษา', 'ค่าพิสูจน์อักษร', 'ค่าพิมพ์รายงาน']
+  },
+  {
+    key: 'forbidden_equipment_committee_clause',
+    label: 'ค่าครุภัณฑ์ ให้เป็นไปตามมติการพิจารณาของคณะกรรมการพิจารณาข้อเสนอโครงการ',
+    keywords: ['ค่าครุภัณฑ์ ให้เป็นไปตามมติการพิจารณาของคณะกรรมการพิจารณาข้อเสนอโครงการ']
+  }
+])
+
 export default {
   name: 'BudgetSection',
   model: {
@@ -413,56 +920,56 @@ export default {
       suppressEmit: false,
       emitScheduled: false,
       categories: [
-        { 
-          name: 'หมวดค่าตอบแทน', isOther: false, items: [],
+        {
+          key: BUDGET_CATEGORY_KEYS.COMPENSATION, name: 'หมวดค่าตอบแทน', isOther: false, items: [],
           defaultMultipliers: [
             { label: 'จำนวน (คน)', value: 1, isAdmin: false },
             { label: 'จำนวน (ครั้ง/ด.)', value: 1, isAdmin: false },
             { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
           ]
         },
-        { 
-          name: 'หมวดค่าใช้สอย', isOther: false, items: [],
+        {
+          key: BUDGET_CATEGORY_KEYS.OPERATING, name: 'หมวดค่าใช้สอย', isOther: false, items: [],
           defaultMultipliers: [
             { label: 'จำนวน (คน/ชิ้น)', value: 1, isAdmin: false },
             { label: 'จำนวน (วัน/ครั้ง)', value: 1, isAdmin: false },
             { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
           ]
         },
-        { 
-          name: 'หมวดค่าเดินทาง', isOther: false, items: [],
+        {
+          key: BUDGET_CATEGORY_KEYS.TRAVEL, name: 'หมวดค่าเดินทาง', isOther: false, items: [],
           defaultMultipliers: [
             { label: 'จำนวน (คน)', value: 1, isAdmin: false },
             { label: 'จำนวน (วัน/เที่ยว)', value: 1, isAdmin: false },
             { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
           ]
         },
-        { 
-          name: 'หมวดค่าวัสดุ', isOther: false, items: [],
+        {
+          key: BUDGET_CATEGORY_KEYS.MATERIAL, name: 'หมวดค่าวัสดุ', isOther: false, items: [],
           defaultMultipliers: [
             { label: 'จำนวน', value: 1, isAdmin: false },
             { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false },
             { label: 'ราคา/หน่วย', value: 5000, isAdmin: true }
           ]
         },
-        { 
-          name: 'หมวดค่าสาธารณูปโภค', isOther: false, items: [],
+        {
+          key: BUDGET_CATEGORY_KEYS.UTILITY, name: 'หมวดค่าสาธารณูปโภค', isOther: false, items: [],
           defaultMultipliers: [
             { label: 'จำนวน (เดือน)', value: 1, isAdmin: false },
             { label: 'จำนวน (หน่วย)', value: 1, isAdmin: false },
             { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
           ]
         },
-        { 
-          name: 'หมวดครุภัณฑ์', isOther: false, items: [],
+        {
+          key: BUDGET_CATEGORY_KEYS.EQUIPMENT, name: 'หมวดครุภัณฑ์', isOther: false, items: [],
           defaultMultipliers: [
             { label: 'จำนวน (รายการ)', value: 1, isAdmin: false },
             { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false },
             { label: 'ราคา/ชุด', value: 5000, isAdmin: true }
           ]
         },
-        { 
-          name: 'หมวดอื่นๆ', isOther: true, items: [],
+        {
+          key: BUDGET_CATEGORY_KEYS.OTHER, name: 'หมวดอื่นๆ', isOther: true, items: [],
           defaultMultipliers: [
             { label: 'จำนวน', value: 1, isAdmin: false },
             { label: 'หน่วย', value: 1, isAdmin: false },
@@ -527,12 +1034,16 @@ export default {
       return this.isCloseEnough(this.totalPeriod3, this.expectedPeriod3);
     },
     travelTotal() {
-      const travelCat = this.categories.find(c => c.name === 'หมวดค่าเดินทาง');
+      const travelCat = this.categories.find(c =>
+        this.getCategoryKey(c) === BUDGET_CATEGORY_KEYS.TRAVEL || c.name === 'หมวดค่าเดินทาง'
+      );
       return travelCat ? travelCat.items.reduce((sum, item) => sum + item.total, 0) : 0;
     },
     // 2. คำนวณยอดรวมเฉพาะหมวดครุภัณฑ์
     equipmentTotal() {
-      const equipCat = this.categories.find(c => c.name === 'หมวดครุภัณฑ์');
+      const equipCat = this.categories.find(c =>
+        this.getCategoryKey(c) === BUDGET_CATEGORY_KEYS.EQUIPMENT || c.name === 'หมวดครุภัณฑ์'
+      );
       return equipCat ? equipCat.items.reduce((sum, item) => sum + item.total, 0) : 0;
     },
     // 3. คำนวณเพดานสูงสุด (25% ของเพดานงบที่เลือก)
@@ -588,7 +1099,8 @@ export default {
   methods: {
     getCategoryTitle(category) {
       const name = category && category.name ? String(category.name) : ''
-      if (name === 'หมวดค่าเดินทาง' || name === 'หมวดครุภัณฑ์') {
+      const categoryKey = this.getCategoryKey(category)
+      if (categoryKey === BUDGET_CATEGORY_KEYS.TRAVEL || categoryKey === BUDGET_CATEGORY_KEYS.EQUIPMENT) {
         const limitAmount = this.formatNumber(this.limit25Percent)
         return `${name} (ไม่เกิน ร้อยละ 25 ของงบประมาณ/ไม่เกิน ${limitAmount} บาท)`
       }
@@ -632,6 +1144,15 @@ export default {
           ...match,
           defaultMultipliers: cat.defaultMultipliers || match.defaultMultipliers || []
         }
+      })
+
+      this.categories.forEach((category, catIndex) => {
+        if (!category || !Array.isArray(category.items)) return
+        category.key = this.getCategoryKey(category, catIndex)
+        category.items.forEach((item) => {
+          this.normalizeRowModel(item, category, catIndex)
+          this.calculateRowTotal(item)
+        })
       })
 
       this.formatAllNumericInputs()
@@ -732,12 +1253,18 @@ export default {
       this.categories.forEach((category) => {
         if (!category || !Array.isArray(category.items)) return
         category.items.forEach((item) => {
-          this.formatItemNumericInputs(item)
+          this.formatItemNumericInputs(item, category)
         })
       })
     },
-    formatItemNumericInputs(item) {
+    formatItemNumericInputs(item, category = null) {
       if (!item || typeof item !== 'object') return
+
+      if (item.inputs && typeof item.inputs === 'object') {
+        Object.keys(item.inputs).forEach((key) => {
+          item.inputs[key] = this.formatNumberInputValue(item.inputs[key])
+        })
+      }
 
       if (Array.isArray(item.multipliers)) {
         item.multipliers.forEach((multiplier) => {
@@ -749,6 +1276,10 @@ export default {
       if (Array.isArray(item.periods)) {
         item.periods = item.periods.map(period => this.formatNumberInputValue(period))
       }
+
+      if (!item.isManualMultiplier) {
+        this.syncRowMultipliersWithInputs(item, category)
+      }
     },
     getSanitizedCategories() {
       const categories = JSON.parse(JSON.stringify(this.categories || []))
@@ -756,10 +1287,16 @@ export default {
         if (!category || !Array.isArray(category.items)) return
         category.items.forEach((item) => {
           if (!item || typeof item !== 'object') return
+          item.categoryKey = this.getCategoryKey(category)
           if (Array.isArray(item.multipliers)) {
             item.multipliers.forEach((multiplier) => {
               if (!multiplier || typeof multiplier !== 'object') return
               multiplier.value = this.toRawNumberString(multiplier.value)
+            })
+          }
+          if (item.inputs && typeof item.inputs === 'object') {
+            Object.keys(item.inputs).forEach((key) => {
+              item.inputs[key] = this.toRawNumberString(item.inputs[key])
             })
           }
           if (Array.isArray(item.periods)) {
@@ -769,127 +1306,370 @@ export default {
       })
       return categories
     },
-    checkKeyword(catIndex, item) {
-      const cat = this.categories[catIndex];
-      const text = item.name || '';
-      
-      // ตั้งค่าเริ่มต้น (หากไม่เจอ Keyword ใดๆ จะกลับมาใช้ค่า Default ของหมวดนั้น)
-      let targetTemplate = 'default';
-      let newMultipliers = JSON.parse(JSON.stringify(cat.defaultMultipliers));
+    setRowProp(row, key, value) {
+      if (!row || typeof row !== 'object') return
+      if (Object.prototype.hasOwnProperty.call(row, key)) {
+        row[key] = value
+        return
+      }
+      this.$set(row, key, value)
+    },
+    getCategoryKey(category, index = -1) {
+      const fromCategory = category && category.key ? String(category.key).trim() : ''
+      if (fromCategory) return fromCategory
 
-      // 1. หมวดค่าตอบแทน
-      if (cat.name === 'หมวดค่าตอบแทน') {
-        if (text.includes('นักศึกษาช่วยงาน')) {
-          targetTemplate = 'student';
-          newMultipliers = [
-            { label: 'ชั่วโมง', value: 1, isAdmin: false },
-            { label: 'คน', value: 1, isAdmin: false },
-            { label: 'เดือน', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 0, isAdmin: true }
-          ];
-        } else if (text.includes('อาสาสมัคร') || text.includes('ผู้ให้ข้อมูล')) {
-          targetTemplate = 'volunteer';
-          newMultipliers = [
-            { label: 'คน', value: 1, isAdmin: false },
-            { label: 'ครั้ง', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 0, isAdmin: true }
-          ];
-        } else if (text.includes('พิจารณาเครื่องมือ')) {
-          targetTemplate = 'expert_tool';
-          newMultipliers = [
-            { label: 'คน', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 0, isAdmin: true }
-          ];
-        }
-      } 
-      
-      // 2. หมวดค่าใช้สอย
-      else if (cat.name === 'หมวดค่าใช้สอย') {
-        if (text.includes('อาหาร')) {
-          targetTemplate = 'food';
-          newMultipliers = [
-            { label: 'คน', value: 1, isAdmin: false },
-            { label: 'มื้อ', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 0, isAdmin: true } // อ้างอิง: กลางวัน 120, ว่าง 50 [cite: 88]
-          ];
-        } else if (text.includes('เช่ารถ') || text.includes('เช่ายานพาหนะ')) {
-          targetTemplate = 'car_rent';
-          newMultipliers = [
-            { label: 'คัน', value: 1, isAdmin: false },
-            { label: 'วัน', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 0, isAdmin: true }
-          ];
-        } else if (text.includes('ถ่ายเอกสาร') || text.includes('รูปเล่ม')) {
-          targetTemplate = 'copy';
-          newMultipliers = [
-            { label: 'จำนวน (ชุด/เล่ม)', value: 1, isAdmin: false },
-            { label: 'อัตราเหมา (บาท)', value: 0, isAdmin: true }
-          ];
+      const normalizedName = category && category.name ? String(category.name).trim() : ''
+      if (normalizedName.includes('ค่าตอบแทน')) return BUDGET_CATEGORY_KEYS.COMPENSATION
+      if (normalizedName.includes('ค่าใช้สอย')) return BUDGET_CATEGORY_KEYS.OPERATING
+      if (normalizedName.includes('ค่าเดินทาง')) return BUDGET_CATEGORY_KEYS.TRAVEL
+      if (normalizedName.includes('ค่าวัสดุ')) return BUDGET_CATEGORY_KEYS.MATERIAL
+      if (normalizedName.includes('สาธารณูปโภค')) return BUDGET_CATEGORY_KEYS.UTILITY
+      if (normalizedName.includes('ครุภัณฑ์')) return BUDGET_CATEGORY_KEYS.EQUIPMENT
+      if (normalizedName.includes('อื่น')) return BUDGET_CATEGORY_KEYS.OTHER
+
+      const fallbackByIndex = [
+        BUDGET_CATEGORY_KEYS.COMPENSATION,
+        BUDGET_CATEGORY_KEYS.OPERATING,
+        BUDGET_CATEGORY_KEYS.TRAVEL,
+        BUDGET_CATEGORY_KEYS.MATERIAL,
+        BUDGET_CATEGORY_KEYS.UTILITY,
+        BUDGET_CATEGORY_KEYS.EQUIPMENT,
+        BUDGET_CATEGORY_KEYS.OTHER
+      ]
+
+      if (Number.isInteger(index) && index >= 0 && index < fallbackByIndex.length) {
+        return fallbackByIndex[index]
+      }
+      return BUDGET_CATEGORY_KEYS.OTHER
+    },
+    getItemSearchListId(catIndex) {
+      return `budget-item-search-list-${catIndex}`
+    },
+    getSearchOptionsByCategory(category, catIndex = -1) {
+      const categoryKey = this.getCategoryKey(category, catIndex)
+      const seen = new Set()
+      const options = []
+
+      BUDGET_KEYWORD_RULES.forEach((rule) => {
+        if (!rule || rule.category !== categoryKey) return
+        const words = []
+          .concat(Array.isArray(rule.keywords) ? rule.keywords : [])
+          .concat(Array.isArray(rule.aliases) ? rule.aliases : [])
+
+        words.forEach((word) => {
+          const normalizedWord = String(word || '').trim()
+          if (!normalizedWord) return
+          if (this.detectForbiddenBudgetItem(normalizedWord)) return
+          const key = normalizedWord.toLowerCase()
+          if (seen.has(key)) return
+          seen.add(key)
+          options.push(normalizedWord)
+        })
+      })
+
+      return options
+    },
+    isKnownCalcType(calcType) {
+      return Boolean(calcType && CALC_TYPE_SCHEMAS[calcType])
+    },
+    getDefaultCalcTypeByCategory(category) {
+      const categoryKey = typeof category === 'string'
+        ? this.getCategoryKey({ key: category, name: category })
+        : this.getCategoryKey(category)
+      return DEFAULT_CALC_TYPE_BY_CATEGORY[categoryKey] || 'fixed_amount'
+    },
+    getSchemaByCalcType(calcType) {
+      if (this.isKnownCalcType(calcType)) return CALC_TYPE_SCHEMAS[calcType]
+      return CALC_TYPE_SCHEMAS.fixed_amount
+    },
+    getFieldsForRow(row) {
+      const schema = this.getSchemaByCalcType(row && row.calcType)
+      return Array.isArray(schema.fields) ? schema.fields : []
+    },
+    getFormulaLabel(row) {
+      if (!row || typeof row !== 'object') return ''
+      if (row.formulaPreview) return row.formulaPreview
+      return this.getSchemaByCalcType(row.calcType).formulaLabel
+    },
+    getFormulaPreview(row) {
+      if (!row || typeof row !== 'object') return ''
+      const schema = this.getSchemaByCalcType(row.calcType)
+      const fields = Array.isArray(schema.fields) ? schema.fields : []
+      if (fields.length === 0) return schema.formulaLabel
+
+      const values = fields.map(field => this.toNumber(row.inputs && row.inputs[field.key]))
+      const hasValue = values.some(value => value > 0)
+      if (!hasValue) return schema.formulaLabel
+
+      const total = this.getCalculatedTotalByCalcType(row.calcType, row.inputs)
+      if (values.length === 1) {
+        return `${this.formatNumber(values[0])} = ${this.formatNumber(total)}`
+      }
+      return `${values.map(value => this.formatNumber(value)).join(' × ')} = ${this.formatNumber(total)}`
+    },
+    normalizeKeywordText(text) {
+      return String(text || '')
+        .toLowerCase()
+        .replace(/[()（）]/g, ' ')
+        .replace(/[.,\-_/\\]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    },
+    detectForbiddenBudgetItem(itemName) {
+      const normalizedName = this.normalizeKeywordText(itemName)
+      if (!normalizedName) return null
+
+      for (let index = 0; index < FORBIDDEN_BUDGET_ITEM_RULES.length; index += 1) {
+        const rule = FORBIDDEN_BUDGET_ITEM_RULES[index]
+        if (!rule || !Array.isArray(rule.keywords)) continue
+
+        const isMatched = rule.keywords.some((keyword) => {
+          const normalizedKeyword = this.normalizeKeywordText(keyword)
+          return normalizedKeyword && normalizedName.includes(normalizedKeyword)
+        })
+
+        if (isMatched) return rule
+      }
+
+      return null
+    },
+    applyForbiddenItemState(item) {
+      if (!item || typeof item !== 'object') return null
+
+      const rule = this.detectForbiddenBudgetItem(item.name)
+      if (!rule) {
+        this.setRowProp(item, 'forbiddenRuleKey', '')
+        this.setRowProp(item, 'forbiddenItemMessage', '')
+        return null
+      }
+
+      this.setRowProp(item, 'forbiddenRuleKey', rule.key)
+      this.setRowProp(item, 'forbiddenItemMessage', `มหาวิทยาลัยไม่สนับสนุนให้ตั้งงบประมาณรายการ: ${rule.label}`)
+      return rule
+    },
+    hasUsableValue(value) {
+      return !(value === null || value === undefined || value === '')
+    },
+    getLegacyValueForField(fieldKey, row, multipliers, index = 0) {
+      const aliases = LEGACY_ROW_FIELD_ALIASES[fieldKey] || []
+      for (let i = 0; i < aliases.length; i += 1) {
+        const alias = aliases[i]
+        if (row && this.hasUsableValue(row[alias])) return row[alias]
+      }
+
+      if (Array.isArray(multipliers) && multipliers[index] && this.hasUsableValue(multipliers[index].value)) {
+        return multipliers[index].value
+      }
+
+      if (fieldKey === 'unitPrice' || fieldKey === 'monthlyRate' || fieldKey === 'ratePerTime' || fieldKey === 'ratePerPerson' || fieldKey === 'ratePerTrip' || fieldKey === 'ratePerKm' || fieldKey === 'roomRate') {
+        const lastMultiplier = Array.isArray(multipliers) && multipliers.length > 0
+          ? multipliers[multipliers.length - 1]
+          : null
+        if (lastMultiplier && this.hasUsableValue(lastMultiplier.value)) {
+          return lastMultiplier.value
         }
       }
 
-      // 3. หมวดค่าเดินทาง
-      else if (cat.name === 'หมวดค่าเดินทาง') {
-        if (text.includes('เบี้ยเลี้ยง')) {
-          targetTemplate = 'allowance';
-          newMultipliers = [
-            { label: 'คน', value: 1, isAdmin: false },
-            { label: 'วัน', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 0, isAdmin: true } // อ้างอิง: 350 บาท/วัน [cite: 88]
-          ];
-        } else if (text.includes('ที่พัก')) {
-          targetTemplate = 'accommodation';
-          newMultipliers = [
-            { label: 'คน', value: 1, isAdmin: false },
-            { label: 'คืน', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 0, isAdmin: true } // อ้างอิง: เหมา 800 หรือ ตามจริงไม่เกิน 1800 [cite: 88]
-          ];
-        } else if (text.includes('เครื่องบิน')) {
-          targetTemplate = 'flight';
-          newMultipliers = [
-            { label: 'คน', value: 1, isAdmin: false },
-            { label: 'เที่ยว(ไป-กลับ)', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 0, isAdmin: true } // อ้างอิง: ไม่เกิน 5,500 บาท 
-          ];
-        } else if (text.includes('แท็กซี่') || text.toUpperCase().includes('TAXI')) {
-          targetTemplate = 'taxi';
-          newMultipliers = [
-            { label: 'คน', value: 1, isAdmin: false },
-            { label: 'เที่ยว', value: 1, isAdmin: false },
-            { label: 'อัตราเหมา (บาท)', value: 0, isAdmin: true } // อ้างอิง: ไม่เกิน 700 บาท/คน 
-          ];
-        } else if (text.includes('รถยนต์ส่วนตัว')) {
-          targetTemplate = 'personal_car';
-          newMultipliers = [
-            { label: 'ระยะทาง (กม.)', value: 1, isAdmin: false },
-            { label: 'รอบ (ไป-กลับ)', value: 2, isAdmin: false },
-            { label: 'อัตรา (บาท/กม.)', value: 4, isAdmin: true } // อ้างอิง: 4 บาท/กม. 
-          ];
-        }
+      if (fieldKey === 'amount' && row && this.hasUsableValue(row.total)) {
+        return row.total
       }
 
-      // 4. หมวดค่าวัสดุ
-      else if (cat.name === 'หมวดค่าวัสดุ') {
-        if (text.includes('น้ำมันเชื้อเพลิง') || text.includes('ค่าน้ำมัน')) {
-          targetTemplate = 'fuel';
-          newMultipliers = [
-            { label: 'คัน', value: 1, isAdmin: false },
-            { label: 'วัน', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 0, isAdmin: true } // อ้างอิง: 1,500 หรือ 2,000 บาท [cite: 91, 95]
-          ];
+      return ''
+    },
+    normalizeCalcInputs(calcType, existingInputs = {}, legacyMultipliers = [], row = null) {
+      const schema = this.getSchemaByCalcType(calcType)
+      const fields = Array.isArray(schema.fields) ? schema.fields : []
+      const safeInputs = existingInputs && typeof existingInputs === 'object' ? existingInputs : {}
+      const normalized = {}
+
+      fields.forEach((field, index) => {
+        let value = safeInputs[field.key]
+        if (!this.hasUsableValue(value)) {
+          value = this.getLegacyValueForField(field.key, row, legacyMultipliers, index)
         }
+        if (!this.hasUsableValue(value)) {
+          value = field.defaultValue
+        }
+        normalized[field.key] = this.formatNumberInputValue(value)
+      })
+
+      return normalized
+    },
+    detectRuleFromKeyword(itemName, category) {
+      const text = String(itemName || '').toLowerCase().trim()
+      if (!text) return null
+
+      const categoryKey = this.getCategoryKey({ key: category, name: category })
+      for (let ruleIndex = 0; ruleIndex < BUDGET_KEYWORD_RULES.length; ruleIndex += 1) {
+        const rule = BUDGET_KEYWORD_RULES[ruleIndex]
+        if (!rule || rule.category !== categoryKey) continue
+
+        const candidates = []
+          .concat(Array.isArray(rule.keywords) ? rule.keywords : [])
+          .concat(Array.isArray(rule.aliases) ? rule.aliases : [])
+
+        const matched = candidates.some(keyword => {
+          const normalizedKeyword = String(keyword || '').toLowerCase().trim()
+          return normalizedKeyword && text.includes(normalizedKeyword)
+        })
+
+        if (matched) return rule
       }
 
-      // สลับ Template เฉพาะเมื่อมีการเปลี่ยนแปลงรูปแบบ ป้องกันการเคลียร์ค่าที่กรอกแล้วระหว่างพิมพ์
-      if (item.currentTemplate !== targetTemplate) {
-        // หากเปลี่ยนจาก Template เฉพาะกลับเป็น Default หรือเปลี่ยนข้ามประเภท ให้โหลดตัวคูณใหม่
-        item.multipliers = JSON.parse(JSON.stringify(newMultipliers));
-        item.currentTemplate = targetTemplate;
-        this.calculateItemTotal(item);
+      return null
+    },
+    syncRowMultipliersWithInputs(row, category = null) {
+      if (!row || typeof row !== 'object') return
+      const isManual = Boolean(row.isManualMultiplier || (category && category.isOther))
+      if (isManual) return
+
+      const fields = this.getFieldsForRow(row)
+      const multipliers = fields.map(field => ({
+        label: field.label,
+        value: this.formatNumberInputValue(row.inputs && row.inputs[field.key]),
+        isAdmin: false,
+        fieldKey: field.key
+      }))
+      this.setRowProp(row, 'multipliers', multipliers)
+    },
+    getCalculatedTotalByCalcType(calcType, inputs = {}) {
+      const values = inputs && typeof inputs === 'object' ? inputs : {}
+      switch (calcType) {
+        case 'fixed_amount':
+          return this.toNumber(values.amount)
+        case 'quantity_unit_price':
+          return this.toNumber(values.quantity) * this.toNumber(values.unitPrice)
+        case 'usage_unit_price':
+          return this.toNumber(values.usageAmount) * this.toNumber(values.unitPrice)
+        case 'person_time_rate':
+          return this.toNumber(values.persons) * this.toNumber(values.times) * this.toNumber(values.ratePerTime)
+        case 'person_day_rate':
+          return this.toNumber(values.people) * this.toNumber(values.days) * this.toNumber(values.ratePerPerson)
+        case 'person_month_rate':
+          return this.toNumber(values.persons) * this.toNumber(values.months) * this.toNumber(values.monthlyRate)
+        case 'month_rate':
+          return this.toNumber(values.months) * this.toNumber(values.monthlyRate)
+        case 'distance_rate':
+          return this.toNumber(values.distanceKm) * this.toNumber(values.ratePerKm) * this.toNumber(values.trips)
+        case 'room_night_rate':
+          return this.toNumber(values.rooms) * this.toNumber(values.nights) * this.toNumber(values.roomRate)
+        case 'trip_rate':
+          return this.toNumber(values.quantity) * this.toNumber(values.trips) * this.toNumber(values.ratePerTrip)
+        case 'license_subscription':
+          return this.toNumber(values.licenses) * this.toNumber(values.months) * this.toNumber(values.monthlyRate)
+        default:
+          return 0
       }
     },
+    normalizeRowModel(item, category, catIndex = -1) {
+      if (!item || typeof item !== 'object') return
+
+      const categoryKey = this.getCategoryKey(category, catIndex)
+      const isManualMultiplier = Boolean(category && category.isOther)
+      this.setRowProp(item, 'categoryKey', categoryKey)
+      this.setRowProp(item, 'isManualMultiplier', isManualMultiplier)
+      this.setRowProp(item, 'name', String(item.name || ''))
+      this.setRowProp(item, 'attachment', item.attachment || null)
+      this.setRowProp(item, 'periodError', Boolean(item.periodError))
+      this.setRowProp(item, 'forbiddenRuleKey', String(item.forbiddenRuleKey || ''))
+      this.setRowProp(item, 'forbiddenItemMessage', String(item.forbiddenItemMessage || ''))
+
+      const periods = Array.isArray(item.periods) ? item.periods.slice(0, 3) : []
+      while (periods.length < 3) periods.push('')
+      this.setRowProp(item, 'periods', periods.map(period => this.formatNumberInputValue(period)))
+
+      if (!Array.isArray(item.multipliers)) {
+        const defaults = category && Array.isArray(category.defaultMultipliers)
+          ? JSON.parse(JSON.stringify(category.defaultMultipliers))
+          : []
+        this.setRowProp(item, 'multipliers', defaults)
+      }
+
+      let calcType = this.isKnownCalcType(item.calcType) ? item.calcType : ''
+      const detectedRule = this.detectRuleFromKeyword(item.name, categoryKey)
+
+      if (!calcType) {
+        calcType = detectedRule && this.isKnownCalcType(detectedRule.calcType)
+          ? detectedRule.calcType
+          : this.getDefaultCalcTypeByCategory(categoryKey)
+      }
+
+      const normalizedInputs = this.normalizeCalcInputs(calcType, item.inputs, item.multipliers, item)
+      const formulaLabel = detectedRule && detectedRule.calcType === calcType
+        ? (detectedRule.formulaLabel || this.getSchemaByCalcType(calcType).formulaLabel)
+        : this.getSchemaByCalcType(calcType).formulaLabel
+
+      this.setRowProp(item, 'calcType', calcType)
+      this.setRowProp(item, 'inputs', normalizedInputs)
+      this.setRowProp(item, 'detectedRuleKey', detectedRule && detectedRule.calcType === calcType ? detectedRule.key : String(item.detectedRuleKey || ''))
+      this.setRowProp(item, 'formulaPreview', formulaLabel)
+      this.applyForbiddenItemState(item)
+
+      if (!isManualMultiplier) {
+        this.syncRowMultipliersWithInputs(item, category)
+      }
+    },
+    applyRuleToRow(item, rule, category, catIndex = -1) {
+      if (!item || typeof item !== 'object') return
+      const categoryKey = this.getCategoryKey(category, catIndex)
+      if (categoryKey === BUDGET_CATEGORY_KEYS.OTHER) return
+
+      const targetCalcType = rule && this.isKnownCalcType(rule.calcType)
+        ? rule.calcType
+        : this.getDefaultCalcTypeByCategory(categoryKey)
+      const calcTypeChanged = String(item.calcType || '') !== targetCalcType
+      const baseInputs = calcTypeChanged ? {} : item.inputs
+      const normalizedInputs = this.normalizeCalcInputs(targetCalcType, baseInputs, item.multipliers, item)
+
+      this.setRowProp(item, 'calcType', targetCalcType)
+      this.setRowProp(item, 'inputs', normalizedInputs)
+      this.setRowProp(item, 'detectedRuleKey', rule ? rule.key : '')
+      this.setRowProp(item, 'formulaPreview', rule && rule.formulaLabel ? rule.formulaLabel : this.getSchemaByCalcType(targetCalcType).formulaLabel)
+
+      this.syncRowMultipliersWithInputs(item, category)
+      this.calculateRowTotal(item)
+    },
+    applySmartDetection(catIndex, item) {
+      const category = this.categories[catIndex]
+      if (!category || !item) return
+
+      this.normalizeRowModel(item, category, catIndex)
+      const forbiddenRule = this.applyForbiddenItemState(item)
+      if (forbiddenRule) {
+        this.calculateRowTotal(item)
+        return
+      }
+      if (category.isOther) return
+
+      const categoryKey = this.getCategoryKey(category, catIndex)
+      const detectedRule = this.detectRuleFromKeyword(item.name, categoryKey)
+      this.applyRuleToRow(item, detectedRule, category, catIndex)
+    },
+    handleItemNameInput(catIndex, item, event) {
+      this.resizeTextarea(event)
+      this.applySmartDetection(catIndex, item)
+    },
+    handleItemNameBlur(catIndex, item) {
+      this.applySmartDetection(catIndex, item)
+    },
+    checkKeyword(catIndex, item) {
+      this.applySmartDetection(catIndex, item)
+    },
+    handleCalcInputChange(catIndex, item, fieldKey) {
+      const category = this.categories[catIndex]
+      if (!category || !item || category.isOther) return
+      if (!item.inputs || typeof item.inputs !== 'object') {
+        this.setRowProp(item, 'inputs', {})
+      }
+
+      this.cleanNumber(item.inputs, fieldKey)
+      this.syncRowMultipliersWithInputs(item, category)
+      this.calculateRowTotal(item)
+    },
     resizeTextarea(event) {
+      if (!event || !event.target) return
       const el = event.target;
+      if (el.tagName !== 'TEXTAREA') return
       el.style.height = 'auto';
       el.style.height = el.scrollHeight + 'px';
     },
@@ -909,7 +1689,7 @@ export default {
         this.$set(arr, index, this.formatNumberInputValue(arr[index]));
       }
     },
-    createItem(category, attachment = null) {
+    createItem(category, attachment = null, catIndex = -1) {
       const multipliers = JSON.parse(JSON.stringify(category.defaultMultipliers));
       const item = {
         id: Date.now() + Math.random(),
@@ -918,14 +1698,24 @@ export default {
         total: 0,
         periods: [0, 0, 0],
         attachment: attachment,
-        periodError: false // เพิ่มสถานะเช็คการเกินงบ
+        periodError: false,
+        calcType: '',
+        inputs: {},
+        detectedRuleKey: '',
+        formulaPreview: '',
+        forbiddenRuleKey: '',
+        forbiddenItemMessage: '',
+        categoryKey: this.getCategoryKey(category, catIndex),
+        isManualMultiplier: Boolean(category && category.isOther)
       };
-      this.formatItemNumericInputs(item);
+      this.normalizeRowModel(item, category, catIndex);
+      this.formatItemNumericInputs(item, category);
+      this.calculateRowTotal(item);
       return item;
     },
     addItem(catIndex) {
       const cat = this.categories[catIndex];
-      const newItem = this.createItem(cat);
+      const newItem = this.createItem(cat, null, catIndex);
       cat.items.push(newItem);
       this.calculateItemTotal(newItem);
     },
@@ -958,16 +1748,27 @@ export default {
       this.calculateItemTotal(item);
     },
     calculateItemTotal(item) {
-      if (item.multipliers.length === 0) {
-        item.total = 0;
+      this.calculateRowTotal(item);
+    },
+    calculateRowTotal(item) {
+      if (!item || typeof item !== 'object') return 0;
+
+      if (item.isManualMultiplier) {
+        if (!Array.isArray(item.multipliers) || item.multipliers.length === 0) {
+          item.total = 0;
+        } else {
+          item.total = item.multipliers.reduce((acc, curr) => {
+            const val = this.toNumber(curr && curr.value);
+            return acc * val;
+          }, 1);
+        }
       } else {
-        item.total = item.multipliers.reduce((acc, curr) => {
-          const val = this.toNumber(curr.value);
-          return acc * val;
-        }, 1);
+        item.total = this.getCalculatedTotalByCalcType(item.calcType, item.inputs);
       }
+
       this.enforceAllPeriodLimits(item);
       this.validatePeriods(item);
+      return item.total;
     },
     getPeriodInputMax(item, activeIndex) {
       const totalBudget = Math.max(this.toNumber(item && item.total), 0);
@@ -1037,7 +1838,7 @@ export default {
           fileId: null,
           uploading: true
         };
-        const newItem = this.createItem(cat, attachment);
+        const newItem = this.createItem(cat, attachment, catIndex);
         cat.items.push(newItem);
         this.calculateItemTotal(newItem);
         this.$emit('upload-attachment', {
@@ -1143,6 +1944,16 @@ export default {
     },
     getSubmissionValidationResult() {
       const errors = [];
+
+      this.categories.forEach((category) => {
+        if (!category || !Array.isArray(category.items)) return
+        category.items.forEach((item, itemIndex) => {
+          const forbiddenRule = this.detectForbiddenBudgetItem(item && item.name)
+          if (!forbiddenRule) return
+          const categoryName = String(category.name || 'หมวดงบประมาณ')
+          errors.push(`มหาวิทยาลัยไม่สนับสนุนให้ตั้งงบประมาณรายการ: "${forbiddenRule.label}" ใน${categoryName} (รายการที่ ${itemIndex + 1})`)
+        })
+      })
 
       if (this.grandTotal > 0 && !this.isPeriod1Valid) {
         errors.push(`สรุปยอดรวมการเบิกจ่ายงวด 1 ต้องเท่ากับ ${this.formatNumber(this.expectedPeriod1)} บาท`);
@@ -1364,7 +2175,22 @@ export default {
   box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.22);
 }
 .multiplier-box {
-  width: 105px; 
+  width: 118px;
+}
+
+.formula-preview-box {
+  display: none;
+}
+
+.formula-indicator {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.formula-live-preview {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
 }
 .remove-mult-btn {
   top: -8px;
@@ -1462,6 +2288,67 @@ export default {
   resize: none;
   overflow: hidden;
   min-height: 38px;
+}
+
+.budget-item-search-wrap {
+  position: relative;
+}
+
+.budget-item-search {
+  min-height: 38px;
+  padding-right: 34px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.budget-item-search-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-40%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid #2f3b4a;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.budget-item-search-icon.is-invalid {
+  border-top-color: #e55353;
+}
+
+.budget-item-name-invalid {
+  border-color: #e55353 !important;
+}
+
+.budget-item-name-invalid:focus {
+  border-color: #e55353 !important;
+  box-shadow: 0 0 0 1px #e55353 !important;
+}
+
+.budget-item-forbidden-text {
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.budget-item-search::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  width: 0;
+}
+
+.budget-item-search::-webkit-search-cancel-button,
+.budget-item-search::-webkit-search-decoration,
+.budget-item-search::-webkit-search-results-button,
+.budget-item-search::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.budget-section-container.is-dark .budget-item-search-icon {
+  border-top-color: #d5e0ec;
 }
 
 /* =========================================================
