@@ -129,6 +129,33 @@
               {{ detail }}
             </li>
           </ul>
+          <div v-if="normalizedSummary.checklistItems.length" class="budget-summary-checklist">
+            <div class="budget-summary-checklist-header">
+              <div class="budget-summary-checklist-title">Checklist ข้อมูลที่ต้องกรอก</div>
+              <button
+                type="button"
+                class="budget-summary-checklist-toggle"
+                :title="isChecklistExpanded ? 'ยุบ Checklist' : 'กาง Checklist'"
+                :aria-label="isChecklistExpanded ? 'ยุบ Checklist' : 'กาง Checklist'"
+                @click="toggleChecklistExpanded"
+              >
+                <CIcon :name="isChecklistExpanded ? 'cil-chevron-top' : 'cil-chevron-bottom'" />
+              </button>
+            </div>
+            <ul v-show="isChecklistExpanded" class="budget-summary-checklist-list">
+              <li
+                v-for="item in normalizedSummary.checklistItems"
+                :key="item.key"
+                class="budget-summary-checklist-item"
+              >
+                <span class="budget-summary-checklist-label">{{ item.label }}</span>
+                <CIcon
+                  :name="item.ok ? 'cil-check-circle' : 'cil-x-circle'"
+                  :class="item.ok ? 'text-success' : 'text-danger'"
+                />
+              </li>
+            </ul>
+          </div>
         </CCardBody>
       </CCard>
 
@@ -169,13 +196,21 @@ export default {
   },
   data() {
     return {
-      isExpanded: true
+      isExpanded: true,
+      isChecklistExpanded: true
     }
   },
   computed: {
     normalizedSummary() {
       const src = this.summary && typeof this.summary === 'object' ? this.summary : {}
       const details = Array.isArray(src.budgetSummaryFeedbackDetails) ? src.budgetSummaryFeedbackDetails : []
+      const checklistItems = Array.isArray(src.checklistItems)
+        ? src.checklistItems.map(item => ({
+          key: String(item && item.key ? item.key : ''),
+          label: String(item && item.label ? item.label : '-'),
+          ok: Boolean(item && item.ok)
+        }))
+        : []
       return {
         grandTotal: Number(src.grandTotal || 0),
         summaryRemainingAmount: Number(src.summaryRemainingAmount || 0),
@@ -197,7 +232,8 @@ export default {
         pillLabel: String(src.budgetSummaryPillLabel || 'ยังไม่มีข้อมูล'),
         statusClass: String(src.budgetSummaryStatusClass || 'text-muted'),
         statusText: String(src.budgetSummaryStatusText || 'ยังไม่มีข้อมูล'),
-        feedbackDetails: details
+        feedbackDetails: details,
+        checklistItems
       }
     }
   },
@@ -207,6 +243,9 @@ export default {
     },
     expandFromIcon() {
       this.isExpanded = true
+    },
+    toggleChecklistExpanded() {
+      this.isChecklistExpanded = !this.isChecklistExpanded
     },
     formatNumber(num) {
       return Number(num || 0).toLocaleString('th-TH')
@@ -437,6 +476,72 @@ export default {
   line-height: 1.5;
 }
 
+.budget-summary-checklist {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #d7dee7;
+}
+
+.budget-summary-checklist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.budget-summary-checklist-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.budget-summary-checklist-toggle {
+  border: 1px solid #d9e2ec;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.budget-summary-checklist-toggle .c-icon {
+  width: 0.78rem;
+  height: 0.78rem;
+}
+
+.budget-summary-checklist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+.budget-summary-checklist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  padding: 3px 0;
+}
+
+.budget-summary-checklist-label {
+  color: #1f2937;
+  padding-right: 8px;
+}
+
+.budget-summary-checklist-item .c-icon {
+  flex: 0 0 auto;
+}
+
 .budget-floating-fade-enter-active,
 .budget-floating-fade-leave-active {
   transition: opacity 0.2s ease, transform 0.22s ease;
@@ -506,6 +611,21 @@ export default {
 
 .budget-floating-summary.is-dark .budget-summary-feedback-list {
   color: #fecaca;
+}
+
+.budget-floating-summary.is-dark .budget-summary-checklist {
+  border-top-color: #33475c;
+}
+
+.budget-floating-summary.is-dark .budget-summary-checklist-title,
+.budget-floating-summary.is-dark .budget-summary-checklist-label {
+  color: #d6e2f0;
+}
+
+.budget-floating-summary.is-dark .budget-summary-checklist-toggle {
+  background: #223142;
+  color: #d6e2f0;
+  border-color: #3c4e63;
 }
 
 .budget-floating-summary.is-dark .budget-summary-separator {
