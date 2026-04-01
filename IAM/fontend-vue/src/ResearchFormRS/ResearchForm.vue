@@ -17,7 +17,7 @@
           </div>
         </div>
       </div>
-
+ 
       <!-- Research Team Form Component -->
       <ResearchTeamForm
         ref="researchTeamForm"
