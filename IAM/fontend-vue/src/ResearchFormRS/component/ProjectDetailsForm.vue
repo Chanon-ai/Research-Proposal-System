@@ -134,88 +134,13 @@
 
         <div ref="expected_outcomes" :class="sectionClass('expected_outcomes')">
           <h6 class="section-title">14. ผลลัพธ์ที่คาดว่าจะได้รับ <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <div class="funding-options">
-
-          <div v-if="!form.fundingType" class="alert alert-warning">
-            <i class="cil-info me-2"></i> กรุณาเลือก "ประเภททุน" ในหัวข้อที่ 2 เพื่อเลือกผลลัพธ์
-          </div>
-
-          <div v-if="form.fundingType === 'new-researcher'" class="mb-3">
-            <label class="form-check-label" :class="{'text-muted': isReadOnly && form.fundingType !== 'new-researcher'}">
-              <strong>14.1 ทุนนักวิจัยรุ่นใหม่</strong>
-            </label>
-            <div class="sub-options">
-              <div class="form-check">
-                <input v-model="form.selectedOutcome" type="radio" value="internationalConference" class="form-check-input" id="outcome1-1" :disabled="isReadOnly">
-                <label class="form-check-label" for="outcome1-1">นำเสนอในการประชุมวิชาการระดับนานาชาติ (Proceedings)</label>
-              </div>
-              <div class="form-check">
-                <input v-model="form.selectedOutcome" type="radio" value="scopusJournal" class="form-check-input" id="outcome1-2" :disabled="isReadOnly">
-                <label class="form-check-label" for="outcome1-2">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
-              </div>
-              <div class="form-check">
-                <input v-model="form.selectedOutcome" type="radio" value="tciJournal" class="form-check-input" id="outcome1-3" :disabled="isReadOnly">
-                <label class="form-check-label" for="outcome1-3">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
-              </div>
-              <div class="form-check">
-                <input v-model="form.selectedOutcome" type="radio" value="patent" class="form-check-input" id="outcome1-4" :disabled="isReadOnly">
-                <label class="form-check-label" for="outcome1-4">อนุสิทธิบัตร/สิทธิบัตร</label>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="form.fundingType === 'researcher-development'" class="mb-3">
-            <label class="form-check-label" :class="{'text-muted': isReadOnly && form.fundingType !== 'researcher-development'}">
-              <strong>14.2 ทุนพัฒนานักวิจัย</strong>
-            </label>
-            <div class="sub-options">
-              <div class="form-check">
-                <input v-model="form.selectedOutcome" type="radio" value="scopusJournal" class="form-check-input" id="outcome2-1" :disabled="isReadOnly">
-                <label class="form-check-label" for="outcome2-1">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
-              </div>
-              <div class="form-check">
-                <input v-model="form.selectedOutcome" type="radio" value="tciJournal" class="form-check-input" id="outcome2-2" :disabled="isReadOnly">
-                <label class="form-check-label" for="outcome2-2">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
-              </div>
-              <div class="form-check">
-                <input v-model="form.selectedOutcome" type="radio" value="patent" class="form-check-input" id="outcome2-3" :disabled="isReadOnly">
-                <label class="form-check-label" for="outcome2-3">อนุสิทธิบัตร/สิทธิบัตร</label>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="form.fundingType === 'strategic-research'" class="mb-3">
-            <label class="form-check-label" :class="{'text-muted': isReadOnly && form.fundingType !== 'strategic-research'}">
-              <strong>14.3 ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์</strong>
-            </label>
-            <div class="sub-options">
-              <div class="form-check">
-                <input v-model="form.selectedOutcome" type="radio" value="scopusJournal" class="form-check-input" id="outcome3-1" :disabled="isReadOnly">
-                <label class="form-check-label" for="outcome3-1">ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.</label>
-              </div>
-              <div class="form-check">
-                <input v-model="form.selectedOutcome" type="radio" value="tciJournal" class="form-check-input" id="outcome3-2" :disabled="isReadOnly">
-                <label class="form-check-label" for="outcome3-2">ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น</label>
-              </div>
-              <div class="form-check">
-                <input v-model="form.selectedOutcome" type="radio" value="patent" class="form-check-input" id="outcome3-3" :disabled="isReadOnly">
-                <label class="form-check-label" for="outcome3-3">อนุสิทธิบัตร/สิทธิบัตร</label>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="form.fundingType === 'industry-extension'" class="mb-3">
-            <label class="form-check-label" :class="{'text-muted': isReadOnly && form.fundingType !== 'industry-extension'}">
-              <strong>14.4 ทุนต่อยอดสู่ภาคอุตสาหกรรม</strong>
-            </label>
-            <div class="sub-options">
-              <div class="form-check">
-                <input v-model="form.selectedOutcome" type="radio" value="ipRegistration" class="form-check-input" id="outcome4-1" :disabled="isReadOnly">
-                <label class="form-check-label" for="outcome4-1">การยื่นขอจดทะเบียนทรัพย์สินทางปัญญา (มีเลขคำขอฯ)</label>
-              </div>
-            </div>
-          </div>
-          </div>
+          <ProjectExpectedOutcomesSection
+            :funding-type="form.fundingType"
+            :selected-outcome="form.selectedOutcome"
+            :is-read-only="isReadOnly"
+            :is-dark-theme="isDarkTheme"
+            @outcome-card-click="onExpectedOutcomeCardClick"
+          />
         </div>
 
         <div ref="integration" :class="sectionClass('integration')">
@@ -288,6 +213,7 @@ import ResearchStandardSection from './ResearchStandardSection.vue'
 import ProjectFundingTypeSection from './ProjectFundingTypeSection.vue'
 import ProjectCollaborationSection from './ProjectCollaborationSection.vue'
 import ProjectResearchTypeSection from './ProjectResearchTypeSection.vue'
+import ProjectExpectedOutcomesSection from './ProjectExpectedOutcomesSection.vue'
 
 // Structured funding definitions reserved for future cross-section constraints
 // (e.g. budget-cap rules) without changing template wiring.
@@ -402,7 +328,8 @@ export default {
     ResearchStandardSection,
     ProjectFundingTypeSection,
     ProjectCollaborationSection,
-    ProjectResearchTypeSection
+    ProjectResearchTypeSection,
+    ProjectExpectedOutcomesSection
   },
   // รับค่า isReadOnly มาจากไฟล์แม่ (ResearchForm.vue)
   props: {
@@ -707,6 +634,14 @@ export default {
         if (target.closest('a, button, details, summary')) return
       }
       this.form.researchType = typeValue
+    },
+    onExpectedOutcomeCardClick(outcomeValue, event) {
+      if (this.isReadOnly) return
+      const target = event && event.target
+      if (target && typeof target.closest === 'function') {
+        if (target.closest('a, button, details, summary')) return
+      }
+      this.form.selectedOutcome = outcomeValue
     },
     createCollaborationRecord(seed = {}) {
       const touchedSeed = seed && typeof seed.touched === 'object' ? seed.touched : {}
@@ -2113,4 +2048,5 @@ export default {
   }
 }
 </style>
+
 
