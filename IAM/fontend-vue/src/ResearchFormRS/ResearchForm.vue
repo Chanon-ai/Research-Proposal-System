@@ -1135,7 +1135,7 @@ export default {
     },
     mainFormReadOnly () {
       if (this.effectiveReadOnly) return true
-      return Boolean(!this.isAdminView && this.isRevisionRequested)
+      return String(this.currentStatus || '').trim().toLowerCase() !== 'draft'
     },
     showAdminFooterBar () {
       return Boolean(this.isAdminView && this.viewProposalId)
