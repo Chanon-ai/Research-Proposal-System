@@ -31,8 +31,8 @@
 
                   <div v-else>
                     <div class="btn-group w-100 mb-2" role="group">
-                      <button type="button" class="btn btn-sm" :class="signatures.projectLeader.mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('projectLeader', 'draw')"><CIcon name="cil-chevron-right" class="mr-1" /> วาดลายเซ็น</button>
-                      <button type="button" class="btn btn-sm" :class="signatures.projectLeader.mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('projectLeader', 'upload')"><CIcon name="cil-chevron-right" class="mr-1" /> แนบรูปภาพ</button>
+                      <button type="button" class="btn btn-sm" :class="signatures.projectLeader.mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('projectLeader', 'draw')"><CIcon name="cil-pen-nib" class="mr-1" /> วาดลายเซ็น</button>
+                      <button type="button" class="btn btn-sm" :class="signatures.projectLeader.mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('projectLeader', 'upload')"><CIcon name="cil-satelite" class="mr-1" /> แนบรูปภาพ</button>
                     </div>
 
                     <div v-if="signatures.projectLeader.mode === 'draw'">
@@ -69,8 +69,8 @@
 
               <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly && canEditSignature('projectLeader')">
                 <template v-if="!signatures.projectLeader.completed">
-                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('projectLeader')" v-if="signatures.projectLeader.mode === 'draw'"><CIcon name="cil-chevron-right" class="mr-1" /> ลบ</button>
-                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('projectLeader')" v-if="signatures.projectLeader.mode === 'draw'"><CIcon name="cil-chevron-right" class="mr-1" /> บันทึก</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('projectLeader')" v-if="signatures.projectLeader.mode === 'draw'"><CIcon name="cil-trash" class="mr-1" /> ลบ</button>
+                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('projectLeader')" v-if="signatures.projectLeader.mode === 'draw'"><CIcon name="cil-save" class="mr-1" /> บันทึก</button>
                 </template>
                 <template v-else>
                   <button @click="editSignature('projectLeader')" class="btn btn-sm btn-outline-primary"><i class="cil-pencil"></i> แก้ไข</button>
@@ -105,8 +105,8 @@
 
                   <div v-else>
                     <div class="btn-group w-100 mb-2" role="group">
-                      <button type="button" class="btn btn-sm" :class="signatures['coResearcher-' + index].mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('coResearcher-' + index, 'draw')"><CIcon name="cil-chevron-right" class="mr-1" /> วาด</button>
-                      <button type="button" class="btn btn-sm" :class="signatures['coResearcher-' + index].mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('coResearcher-' + index, 'upload')"><CIcon name="cil-chevron-right" class="mr-1" /> แนบรูป</button>
+                      <button type="button" class="btn btn-sm" :class="signatures['coResearcher-' + index].mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('coResearcher-' + index, 'draw')"><CIcon name="cil-pen-nib" class="mr-1" /> วาด</button>
+                      <button type="button" class="btn btn-sm" :class="signatures['coResearcher-' + index].mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('coResearcher-' + index, 'upload')"><CIcon name="cil-satelite" class="mr-1" /> แนบรูป</button>
                     </div>
 
                     <div v-if="signatures['coResearcher-' + index].mode === 'draw'">
@@ -142,8 +142,8 @@
 
               <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly && canEditSignature('coResearcher-' + index)">
                 <template v-if="!signatures['coResearcher-' + index].completed">
-                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('coResearcher-' + index)" v-if="signatures['coResearcher-' + index].mode === 'draw'"><CIcon name="cil-chevron-right" class="mr-1" /> ลบ</button>
-                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('coResearcher-' + index)" v-if="signatures['coResearcher-' + index].mode === 'draw'"><CIcon name="cil-chevron-right" class="mr-1" /> บันทึก</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('coResearcher-' + index)" v-if="signatures['coResearcher-' + index].mode === 'draw'"><CIcon name="cil-trash" class="mr-1" /> ลบ</button>
+                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('coResearcher-' + index)" v-if="signatures['coResearcher-' + index].mode === 'draw'"><CIcon name="cil-save" class="mr-1" /> บันทึก</button>
                 </template>
                 <template v-else>
                   <button @click="editSignature('coResearcher-' + index)" class="btn btn-sm btn-outline-primary"><i class="cil-pencil"></i> แก้ไข</button>
@@ -178,8 +178,8 @@
 
                   <div v-else>
                     <div class="btn-group w-100 mb-2" role="group">
-                      <button type="button" class="btn btn-sm" :class="signatures['advisor-' + index].mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('advisor-' + index, 'draw')"><CIcon name="cil-chevron-right" class="mr-1" /> วาด</button>
-                      <button type="button" class="btn btn-sm" :class="signatures['advisor-' + index].mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('advisor-' + index, 'upload')"><CIcon name="cil-chevron-right" class="mr-1" /> แนบรูป</button>
+                      <button type="button" class="btn btn-sm" :class="signatures['advisor-' + index].mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('advisor-' + index, 'draw')"><CIcon name="cil-pen-nib" class="mr-1" /> วาด</button>
+                      <button type="button" class="btn btn-sm" :class="signatures['advisor-' + index].mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('advisor-' + index, 'upload')"><CIcon name="cil-satelite" class="mr-1" /> แนบรูป</button>
                     </div>
 
                     <div v-if="signatures['advisor-' + index].mode === 'draw'">
@@ -215,8 +215,8 @@
 
               <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly && canEditSignature('advisor-' + index)">
                 <template v-if="!signatures['advisor-' + index].completed">
-                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('advisor-' + index)" v-if="signatures['advisor-' + index].mode === 'draw'"><CIcon name="cil-chevron-right" class="mr-1" /> ลบ</button>
-                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('advisor-' + index)" v-if="signatures['advisor-' + index].mode === 'draw'"><CIcon name="cil-chevron-right" class="mr-1" /> บันทึก</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('advisor-' + index)" v-if="signatures['advisor-' + index].mode === 'draw'"><CIcon name="cil-trash" class="mr-1" /> ลบ</button>
+                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('advisor-' + index)" v-if="signatures['advisor-' + index].mode === 'draw'"><CIcon name="cil-save" class="mr-1" /> บันทึก</button>
                 </template>
                 <template v-else>
                   <button @click="editSignature('advisor-' + index)" class="btn btn-sm btn-outline-primary"><i class="cil-pencil"></i> แก้ไข</button>

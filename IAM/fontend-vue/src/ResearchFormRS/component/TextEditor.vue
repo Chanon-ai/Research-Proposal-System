@@ -97,6 +97,31 @@ export default {
   line-height: 1.55;
 }
 
+/* Quill list marker fallback for this project setup (Vue2 + vue-quill-editor + Quill2). */
+.quill-wrapper::v-deep .ql-editor ol,
+.quill-wrapper::v-deep .ql-editor ul {
+  padding-left: 1.5rem !important;
+}
+
+.quill-wrapper::v-deep .ql-editor li[data-list='ordered'],
+.quill-wrapper::v-deep .ql-editor ol > li:not([data-list]) {
+  list-style-type: decimal !important;
+  list-style-position: outside !important;
+  padding-left: 0 !important;
+}
+
+.quill-wrapper::v-deep .ql-editor li[data-list='bullet'],
+.quill-wrapper::v-deep .ql-editor ul > li:not([data-list]) {
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  padding-left: 0 !important;
+}
+
+.quill-wrapper::v-deep .ql-editor li[data-list='ordered'] > .ql-ui,
+.quill-wrapper::v-deep .ql-editor li[data-list='bullet'] > .ql-ui {
+  display: none !important;
+}
+
 .is-readonly {
   background: #f3f4f6;
 }

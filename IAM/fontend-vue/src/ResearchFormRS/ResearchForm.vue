@@ -17,7 +17,7 @@
           </div>
         </div>
       </div>
-
+ 
       <!-- Research Team Form Component -->
       <ResearchTeamForm
         ref="researchTeamForm"
@@ -37,6 +37,7 @@
         :revision-highlight-sections="adminRevisionProjectSectionKeys"
         @form-changed="syncProjectDetailsData"
         @budget-changed="handleBudgetAutoSave"
+        @budget-sticky-summary-update="handleBudgetStickySummaryUpdate"
         @budget-attachment-upload="handleBudgetAttachmentUpload"
         @budget-attachment-open="handleBudgetAttachmentOpen"
         @budget-attachment-meta-change="handleBudgetAttachmentMetaChange"
@@ -44,6 +45,13 @@
         @research-standard-upload="handleResearchStandardUpload"
         @research-standard-open="handleResearchStandardOpen"
         @research-standard-remove="handleResearchStandardRemove"
+      />
+
+      <BudgetStickyOverlay
+        :visible="stickyOverlaySummaryModel.visible"
+        :summary="stickyOverlaySummaryModel"
+        :is-dark="isDarkTheme"
+        @jump-to-error="jumpToBudgetStickyIssue"
       />
 
       <!-- File Management Component -->
@@ -759,6 +767,7 @@ import FileManagement from '@/ResearchFormRS/component/FileManagement.vue'
 import SignatureCard from '@/ResearchFormRS/component/SignatureCard.vue'
 import StatusBadge from '@/ResearchFormRS/component/StatusBadge.vue'
 import FeedbackSection from '@/ResearchFormRS/component/FeedbackSection.vue'
+import BudgetStickyOverlay from '@/ResearchFormRS/component/BudgetStickyOverlay.vue'
 import ReportView from './Report.vue'
 import Multiselect from 'vue-multiselect'
 import { DatePicker } from 'v-calendar'
@@ -851,6 +860,7 @@ export default {
     SignatureCard,
     StatusBadge,
     FeedbackSection,
+    BudgetStickyOverlay,
     ReportView,
     Multiselect,
     'v-date-picker': DatePicker
@@ -942,6 +952,7 @@ export default {
       feedbackSectionCardStates: {},
       feedbackSectionDrafts: {},
       feedbackSectionBaselines: {},
+      budgetStickySummary: null,
       projectDetailsData: {
         problemSignificance: '',
         objectives: '',
@@ -1056,6 +1067,55 @@ export default {
   computed: {
     isDarkTheme () {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+    stickyOverlayChecklistItems () {
+      const detailsForm = this.$refs && this.$refs.projectDetailsForm
+      const formFromRef = detailsForm && typeof detailsForm.getFormData === 'function'
+        ? detailsForm.getFormData()
+        : null
+      const form = formFromRef && typeof formFromRef === 'object'
+        ? formFromRef
+        : (this.projectDetailsData || {})
+      const hasText = (value) => String(value || '').trim() !== ''
+      const fundingType = String(form.fundingType || '').trim()
+      const requiresFundingSubType = ['new-researcher', 'researcher-development', 'industry-extension'].includes(fundingType)
+      const teamValidation = this.$refs && this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.getValidationResult === 'function'
+        ? this.$refs.researchTeamForm.getValidationResult()
+        : null
+      const teamOk = teamValidation ? Boolean(teamValidation.ok) : this.validateForm(this.researchTeamData)
+
+      const budgetCompleteness = this.getBudgetCompletenessValidationResult()
+      const budgetValidation = this.getBudgetValidationResult()
+
+      return [
+        { key: 'research-team', label: 'ข้อมูลคณะผู้วิจัย', ok: teamOk },
+        { key: 'section-1', label: '1. ชื่อโครงการ', ok: hasText(form.projectNameThai) && hasText(form.projectNameEnglish) },
+        { key: 'section-2', label: '2. ประเภททุน', ok: Boolean(fundingType) && (!requiresFundingSubType || hasText(form.fundingSubType)) },
+        { key: 'section-4', label: '4. ประเภทงานวิจัย', ok: hasText(form.researchType) },
+        { key: 'section-5', label: '5. คำสำคัญ', ok: hasText(form.keywords) },
+        { key: 'section-6', label: '6. ความสำคัญของปัญหาและแนวคิด', ok: hasText(form.problemSignificance) },
+        { key: 'section-7', label: '7. วัตถุประสงค์', ok: hasText(form.objectives) },
+        { key: 'section-8', label: '8. ทบทวนวรรณกรรม', ok: hasText(form.literatureReview) },
+        { key: 'section-9', label: '9. เอกสารอ้างอิง', ok: hasText(form.references) },
+        { key: 'section-10', label: '10. วิธีดำเนินการวิจัย', ok: hasText(form.researchMethodology) },
+        { key: 'section-11', label: '11. ขอบเขตการวิจัย', ok: hasText(form.researchScope) },
+        { key: 'section-12', label: '12. แผนการดำเนินงาน', ok: this.hasWorkPlanData(form.workPlan) },
+        { key: 'section-13', label: '13. ผลงานตามระยะเวลาการรายงาน', ok: hasText(form.milestones) },
+        { key: 'section-14', label: '14. ผลลัพธ์ที่คาดว่าจะได้รับ', ok: hasText(form.selectedOutcome) },
+        { key: 'section-15', label: '15. การบูรณาการงานวิจัย', ok: hasText(form.integration) },
+        { key: 'section-16', label: '16. ระดับการถ่ายทอดสู่สังคม', ok: hasText(form.transferLevel) },
+        { key: 'section-17', label: '17. งบประมาณโครงการ', ok: Boolean(budgetCompleteness && budgetCompleteness.ok) && Boolean(budgetValidation && budgetValidation.ok) }
+      ]
+    },
+    stickyOverlaySummaryModel () {
+      const base = this.budgetStickySummary && typeof this.budgetStickySummary === 'object'
+        ? this.budgetStickySummary
+        : {}
+      return {
+        ...base,
+        visible: Boolean(base.visible),
+        checklistItems: this.stickyOverlayChecklistItems
+      }
     },
     currentUserRole () {
       const storeRole = this.$store && this.$store.getters ? this.$store.getters['Authentication/userRole'] : null
@@ -4437,6 +4497,24 @@ export default {
 
       this.markAsEdited()
     },
+    handleBudgetStickySummaryUpdate (summary) {
+      this.budgetStickySummary = (summary && typeof summary === 'object')
+        ? (this.cloneSerializable(summary) || summary)
+        : null
+    },
+    jumpToBudgetStickyIssue () {
+      const projectDetailsForm = this.$refs && this.$refs.projectDetailsForm
+      const budgetSection = projectDetailsForm && projectDetailsForm.$refs
+        ? projectDetailsForm.$refs.budgetSection
+        : null
+
+      if (budgetSection && typeof budgetSection.jumpToFirstBudgetIssue === 'function') {
+        budgetSection.jumpToFirstBudgetIssue()
+        return
+      }
+
+      this.focusBudgetSection()
+    },
     canAutoSave () {
       if (this.suppressAutoSave) return false
       if (this.isAdminView) return false
@@ -4833,9 +4911,6 @@ export default {
       const std = form && form.researchStandard && typeof form.researchStandard === 'object'
         ? form.researchStandard
         : null
-      const attachments = std && std.attachments && typeof std.attachments === 'object'
-        ? std.attachments
-        : {}
 
       if (!std) {
         return { ok: false, message: section18AlertMessage }
@@ -4853,20 +4928,10 @@ export default {
       const humanSubType = String(std.humanSubType || '').trim()
       const animalSubType = String(std.animalSubType || '').trim()
       const missingSections = []
-      const hasAttachment = (file) => {
-        if (!file || typeof file !== 'object') return false
-        const fileId = String(file.fileId || file.id || file._id || '').trim()
-        const fileName = String(file.name || file.originalName || file.fileName || '').trim()
-        return fileId !== '' || fileName !== ''
-      }
 
       if (mainType === 'none') {
         if (hasPlant && !plantSubType) {
           missingSections.push('18. Research standard (plant collection details)')
-        } else if (hasPlant && plantSubType === 'approved' && !hasAttachment(attachments.plantApproved)) {
-          missingSections.push('18. Research standard (attach Section 53 plant collection notification document)')
-        } else if (hasPlant && plantSubType === 'pending' && !hasAttachment(attachments.plantPending)) {
-          missingSections.push('18. Research standard (attach supporting document for pending plant collection request)')
         }
       }
 
@@ -4877,18 +4942,10 @@ export default {
 
         if (hasHuman && !humanSubType) {
           missingSections.push('18. Research standard (human research subtype)')
-        } else if (hasHuman && humanSubType === 'approved' && !hasAttachment(attachments.humanApproved)) {
-          missingSections.push('18. Research standard (attach human ethics approval document)')
-        } else if (hasHuman && humanSubType === 'pending' && !hasAttachment(attachments.humanPending)) {
-          missingSections.push('18. Research standard (attach proof of human ethics submission)')
         }
 
         if (hasAnimal && !animalSubType) {
           missingSections.push('18. Research standard (animal use subtype)')
-        } else if (hasAnimal && animalSubType === 'approved' && !hasAttachment(attachments.animalApproved)) {
-          missingSections.push('18. Research standard (attach animal ethics approval document)')
-        } else if (hasAnimal && animalSubType === 'pending' && !hasAttachment(attachments.animalPending)) {
-          missingSections.push('18. Research standard (attach proof of animal ethics submission)')
         }
       }
 
@@ -6886,5 +6943,6 @@ export default {
   fill: #c7d4e2 !important;
 }
 </style>
+
 
 
