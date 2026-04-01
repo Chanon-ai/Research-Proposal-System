@@ -363,9 +363,9 @@ export default {
 
 .funding-type-card.is-active,
 .funding-subtype-card.is-active {
-  border-color: #8b1212;
-  background: #fff7f7;
-  box-shadow: 0 0 0 2px rgba(139, 18, 18, 0.16), 0 6px 14px rgba(127, 29, 29, 0.08);
+  border-color: #60a5fa;
+  background: #eff6ff;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.14), 0 6px 14px rgba(30, 64, 175, 0.08);
   transform: translateY(-1px);
 }
 
@@ -439,8 +439,8 @@ export default {
 }
 
 .funding-subtype-card__marker.is-active {
-  border-color: #8b1212;
-  background: #8b1212;
+  border-color: #2563eb;
+  background: #2563eb;
   color: #ffffff;
 }
 
@@ -589,9 +589,9 @@ export default {
 
 .funding-type-section.is-dark .funding-type-card.is-active,
 .funding-type-section.is-dark .funding-subtype-card.is-active {
-  border-color: #c59b3a;
-  box-shadow: 0 0 0 3px rgba(197, 155, 58, 0.18);
-  background: #29384a;
+  border-color: #6aa7ff;
+  box-shadow: 0 0 0 3px rgba(106, 167, 255, 0.22);
+  background: rgba(29, 78, 216, 0.26);
 }
 
 .funding-type-section.is-dark .funding-selector__step-title,
@@ -639,9 +639,9 @@ export default {
 }
 
 .funding-type-section.is-dark .funding-subtype-card__marker.is-active {
-  border-color: #c59b3a;
-  color: #fef3c7;
-  background: rgba(197, 155, 58, 0.24);
+  border-color: #7fb6ff;
+  color: #ffffff;
+  background: #4f86db;
 }
 
 .funding-type-section.is-dark .funding-selection-summary__status.is-complete {
