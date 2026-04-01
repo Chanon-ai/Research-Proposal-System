@@ -28,24 +28,58 @@
         :revision-highlight-sections="adminRevisionResearchTeamSectionKeys"
       />
 
-      <!-- Project Details Form Component -->
-      <ProjectDetailsForm
-        ref="projectDetailsForm"
-        :is-read-only="mainFormReadOnly"
-        :proposal-id="viewProposalId"
-        :disable-project-title-section="shouldDisableProjectTitleSection"
-        :revision-highlight-sections="adminRevisionProjectSectionKeys"
-        @form-changed="syncProjectDetailsData"
-        @budget-changed="handleBudgetAutoSave"
-        @budget-sticky-summary-update="handleBudgetStickySummaryUpdate"
-        @budget-attachment-upload="handleBudgetAttachmentUpload"
-        @budget-attachment-open="handleBudgetAttachmentOpen"
-        @budget-attachment-meta-change="handleBudgetAttachmentMetaChange"
-        @budget-attachment-remove="handleBudgetAttachmentRemove"
-        @research-standard-upload="handleResearchStandardUpload"
-        @research-standard-open="handleResearchStandardOpen"
-        @research-standard-remove="handleResearchStandardRemove"
-      />
+      <section class="rf-doc-section">
+        <header class="rf-doc-section__header">
+          <div class="rf-doc-section__title-row">
+            <h3 class="rf-doc-section__title">1. Research Team Information</h3>
+            <button type="button" class="rf-help-tooltip" title="Provide legal names, roles, and affiliations exactly as official records." aria-label="Research team help">
+              <CIcon name="cil-info" />
+            </button>
+          </div>
+          <p class="rf-doc-section__helper mb-1"><strong>Critical:</strong> Enter legal names, roles, and organization details exactly as official records.</p>
+          <p class="rf-doc-section__hint mb-0">Hint: Keep researcher identity data consistent across all sections and attachments.</p>
+        </header>
+        <!-- Research Team Form Component -->
+        <ResearchTeamForm
+          ref="researchTeamForm"
+          @team-changed="syncResearchTeamData"
+          :is-read-only="mainFormReadOnly"
+          :current-status="currentStatus"
+          :allow-auto-prefill="true"
+          :revision-highlight-sections="adminRevisionResearchTeamSectionKeys"
+        />
+      </section>
+
+      <section class="rf-doc-section">
+        <header class="rf-doc-section__header">
+          <div class="rf-doc-section__title-row">
+            <h3 class="rf-doc-section__title">2. Project Details and Budget</h3>
+            <button type="button" class="rf-help-tooltip" title="Define scope, method, outcomes, and budget distribution in one consistent narrative." aria-label="Project and budget help">
+              <CIcon name="cil-info" />
+            </button>
+          </div>
+          <p class="rf-doc-section__helper mb-1"><strong>Critical:</strong> Make sure scope, methods, outcomes, and budget totals are aligned.</p>
+          <p class="rf-doc-section__hint mb-0">Hint: Validate period allocations with summary checks before final submit.</p>
+        </header>
+        <!-- Project Details Form Component -->
+        <ProjectDetailsForm
+          ref="projectDetailsForm"
+          :is-read-only="mainFormReadOnly"
+          :proposal-id="viewProposalId"
+          :disable-project-title-section="shouldDisableProjectTitleSection"
+          :revision-highlight-sections="adminRevisionProjectSectionKeys"
+          @form-changed="syncProjectDetailsData"
+          @budget-changed="handleBudgetAutoSave"
+          @budget-sticky-summary-update="handleBudgetStickySummaryUpdate"
+          @budget-attachment-upload="handleBudgetAttachmentUpload"
+          @budget-attachment-open="handleBudgetAttachmentOpen"
+          @budget-attachment-meta-change="handleBudgetAttachmentMetaChange"
+          @budget-attachment-remove="handleBudgetAttachmentRemove"
+          @research-standard-upload="handleResearchStandardUpload"
+          @research-standard-open="handleResearchStandardOpen"
+          @research-standard-remove="handleResearchStandardRemove"
+        />
+      </section>
 
       <BudgetStickyOverlay
         :visible="stickyOverlaySummaryModel.visible"
@@ -54,26 +88,50 @@
         @jump-to-error="jumpToBudgetStickyIssue"
       />
 
-      <!-- File Management Component -->
-      <FileManagement
-        ref="fileManagement"
-        :files="files"
-        :is-read-only="mainFormReadOnly"
-        @upload="handleUpload"
-        @open="openFile"
-        @update:files="handleFilesUpdate"
-        @remove="removeFile"
-      />
+      <section class="rf-doc-section">
+        <header class="rf-doc-section__header">
+          <div class="rf-doc-section__title-row">
+            <h3 class="rf-doc-section__title">3. Supporting Documents</h3>
+            <button type="button" class="rf-help-tooltip" title="Attach readable files with clear names so reviewers can verify evidence quickly." aria-label="Supporting document help">
+              <CIcon name="cil-info" />
+            </button>
+          </div>
+          <p class="rf-doc-section__helper mb-1"><strong>Critical:</strong> Attach required files in readable format with meaningful file names.</p>
+          <p class="rf-doc-section__hint mb-0">Hint: Keep filenames consistent with section names for easier review.</p>
+        </header>
+        <!-- File Management Component -->
+        <FileManagement
+          ref="fileManagement"
+          :files="files"
+          :is-read-only="mainFormReadOnly"
+          @upload="handleUpload"
+          @open="openFile"
+          @update:files="handleFilesUpdate"
+          @remove="removeFile"
+        />
+      </section>
 
-      <!-- Signature Card Component -->
-      <SignatureCard
-        ref="signatureCard"
-        v-model="signatureData"
-        :project-leader="researchTeamData.projectLeader"
-        :co-researchers="researchTeamData.coResearchers"
-        :advisors="researchTeamData.advisors"
-        :is-read-only="mainFormReadOnly"
-      />
+      <section class="rf-doc-section">
+        <header class="rf-doc-section__header">
+          <div class="rf-doc-section__title-row">
+            <h3 class="rf-doc-section__title">4. Signature Confirmation</h3>
+            <button type="button" class="rf-help-tooltip" title="Only designated people should sign in their own signature slots." aria-label="Signature section help">
+              <CIcon name="cil-info" />
+            </button>
+          </div>
+          <p class="rf-doc-section__helper mb-1"><strong>Critical:</strong> Verify signer identity and signing date before confirmation.</p>
+          <p class="rf-doc-section__hint mb-0">Hint: Use draw/upload mode only in the correct signer slot.</p>
+        </header>
+        <!-- Signature Card Component -->
+        <SignatureCard
+          ref="signatureCard"
+          v-model="signatureData"
+          :project-leader="researchTeamData.projectLeader"
+          :co-researchers="researchTeamData.coResearchers"
+          :advisors="researchTeamData.advisors"
+          :is-read-only="mainFormReadOnly"
+        />
+      </section>
 
       <div v-if="revisionDiffSummaryForDisplay && revisionDiffSummaryForDisplay.sections && revisionDiffSummaryForDisplay.sections.length" class="card mt-3 mb-3 revision-diff-summary-card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap" style="gap:8px;">
@@ -6942,7 +7000,117 @@ export default {
 .research-form--dark ::v-deep .ql-snow .ql-fill {
   fill: #c7d4e2 !important;
 }
+
+/* Layered help usability styles */
+.rf-help-framework {
+  border-radius: 10px !important;
+  border: 1px solid #d8dee6 !important;
+  box-shadow: none !important;
+  margin-bottom: 1rem;
+}
+
+.rf-help-framework__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.35rem;
+}
+
+.rf-help-framework__description {
+  color: #4b5b70;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.rf-help-framework__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #556478;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.rf-help-framework__list li + li {
+  margin-top: 0.2rem;
+}
+
+.rf-doc-section {
+  margin-top: 1rem;
+}
+
+.rf-doc-section__header {
+  border: 1px solid #d8dee6;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: #f8fafc;
+  padding: 11px 14px 10px;
+}
+
+.rf-doc-section__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rf-doc-section__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.rf-doc-section__helper {
+  margin-top: 0.35rem;
+  color: #3f4f63;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.rf-doc-section__hint {
+  color: #66758a;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.rf-help-tooltip {
+  border: 1px solid #d0d8e3;
+  background: #ffffff;
+  color: #5c6d81;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: help;
+  flex: 0 0 auto;
+}
+
+.rf-help-tooltip .c-icon {
+  width: 0.88rem;
+  height: 0.88rem;
+}
+
+.rf-doc-section ::v-deep .card {
+  margin-top: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-top: 1px solid #d8dee6 !important;
+  box-shadow: none !important;
+}
+
+.research-form ::v-deep .form-text,
+.research-form ::v-deep small.text-muted {
+  color: #5f6d80 !important;
+  line-height: 1.45;
+}
+
+.research-form ::v-deep .btn:hover,
+.research-form ::v-deep .btn:focus,
+.research-form ::v-deep .btn:active {
+  transform: none !important;
+  box-shadow: none !important;
+}
 </style>
-
-
-
