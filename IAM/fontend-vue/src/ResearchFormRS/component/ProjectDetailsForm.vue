@@ -150,26 +150,15 @@
 
         <div ref="transfer_level" :class="sectionClass('transfer_level')">
           <h6 class="section-title">16. ระดับการถ่ายทอดสู่สังคม <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <div class="funding-options">
-            <div class="form-check mb-3">
-              <input v-model="form.transferLevel" type="radio" class="form-check-input" id="transfer1" value="national-international" :disabled="isReadOnly">
-              <label for="transfer1" :class="{'text-muted': isReadOnly && form.transferLevel !== 'national-international'}">
-                <strong>สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้ในระดับภูมิภาค ประเทศ หรือ นานาชาติ</strong>
-              </label>
-            </div>
-            <div class="form-check mb-3">
-              <input v-model="form.transferLevel" type="radio" class="form-check-input" id="transfer2" value="community-provincial" :disabled="isReadOnly">
-              <label for="transfer2" :class="{'text-muted': isReadOnly && form.transferLevel !== 'community-provincial'}">
-                <strong>สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้เฉพาะกลุ่มอาชีพ ชุมชน หรือจังหวัด</strong>
-              </label>
-            </div>
-            <div class="form-check mb-3">
-              <input v-model="form.transferLevel" type="radio" class="form-check-input" id="transfer3" value="none" :disabled="isReadOnly">
-              <label for="transfer3" :class="{'text-muted': isReadOnly && form.transferLevel !== 'none'}">
-                <strong>ไม่มีการนำไปถ่ายทอดสู่สังคม</strong>
-              </label>
-            </div>
-          </div>
+          <ProjectTransferLevelSection
+            :transfer-level-options="transferLevelOptions"
+            :transfer-level="form.transferLevel"
+            :selected-transfer-level-label="selectedTransferLevelLabel"
+            :is-transfer-level-selected="isTransferLevelSelected"
+            :is-read-only="isReadOnly"
+            :is-dark-theme="isDarkTheme"
+            @transfer-level-card-click="onTransferLevelCardClick"
+          />
         </div>
 
         <div ref="budget" :class="sectionClass('budget')">
@@ -214,6 +203,7 @@ import ProjectFundingTypeSection from './ProjectFundingTypeSection.vue'
 import ProjectCollaborationSection from './ProjectCollaborationSection.vue'
 import ProjectResearchTypeSection from './ProjectResearchTypeSection.vue'
 import ProjectExpectedOutcomesSection from './ProjectExpectedOutcomesSection.vue'
+import ProjectTransferLevelSection from './ProjectTransferLevelSection.vue'
 
 // Structured funding definitions reserved for future cross-section constraints
 // (e.g. budget-cap rules) without changing template wiring.
@@ -319,6 +309,24 @@ const RESEARCH_TYPE_OPTIONS = [
   }
 ]
 
+const TRANSFER_LEVEL_OPTIONS = [
+  {
+    value: 'national-international',
+    label: 'ระดับภูมิภาค/ประเทศ/นานาชาติ',
+    description: 'สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้ในระดับภูมิภาค ประเทศ หรือ นานาชาติ'
+  },
+  {
+    value: 'community-provincial',
+    label: 'ระดับกลุ่มอาชีพ/ชุมชน/จังหวัด',
+    description: 'สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้เฉพาะกลุ่มอาชีพ ชุมชน หรือจังหวัด'
+  },
+  {
+    value: 'none',
+    label: 'ยังไม่มีการถ่ายทอดสู่สังคม',
+    description: 'ผลลัพธ์โครงการยังไม่มีการนำไปถ่ายทอดสู่สังคมในระยะนี้'
+  }
+]
+
 export default {
   name: 'ProjectDetailsForm',
   components: {
@@ -329,7 +337,8 @@ export default {
     ProjectFundingTypeSection,
     ProjectCollaborationSection,
     ProjectResearchTypeSection,
-    ProjectExpectedOutcomesSection
+    ProjectExpectedOutcomesSection,
+    ProjectTransferLevelSection
   },
   // รับค่า isReadOnly มาจากไฟล์แม่ (ResearchForm.vue)
   props: {
@@ -425,6 +434,22 @@ export default {
 
     isResearchTypeSelected() {
       return Boolean(this.selectedResearchTypeOption)
+    },
+
+    transferLevelOptions() {
+      return TRANSFER_LEVEL_OPTIONS
+    },
+
+    selectedTransferLevelOption() {
+      return this.transferLevelOptions.find((item) => item.value === this.form.transferLevel) || null
+    },
+
+    selectedTransferLevelLabel() {
+      return this.selectedTransferLevelOption ? this.selectedTransferLevelOption.label : ''
+    },
+
+    isTransferLevelSelected() {
+      return Boolean(this.selectedTransferLevelOption)
     },
 
     collaborationValidationCount() {
@@ -634,6 +659,14 @@ export default {
         if (target.closest('a, button, details, summary')) return
       }
       this.form.researchType = typeValue
+    },
+    onTransferLevelCardClick(transferLevelValue, event) {
+      if (this.isReadOnly) return
+      const target = event && event.target
+      if (target && typeof target.closest === 'function') {
+        if (target.closest('a, button, details, summary')) return
+      }
+      this.form.transferLevel = transferLevelValue
     },
     onExpectedOutcomeCardClick(outcomeValue, event) {
       if (this.isReadOnly) return
@@ -2048,5 +2081,4 @@ export default {
   }
 }
 </style>
-
 
