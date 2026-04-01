@@ -89,37 +89,107 @@
 
         <div class="section mb-4">
           <h6 class="section-title">5. คำสำคัญ (Keywords) <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <TextEditor v-model="form.keywords" :is-read-only="isReadOnly" />
+          <TextEditor
+            v-model="form.keywords"
+            :is-read-only="isReadOnly"
+            :is-dark-theme="isDarkTheme"
+            :field-key="textEditorFieldConfig.keywords.key"
+            :field-label="textEditorFieldConfig.keywords.label"
+            :helper-text="textEditorFieldConfig.keywords.helperText"
+            :placeholder="textEditorFieldConfig.keywords.placeholder"
+            :min-height="textEditorFieldConfig.keywords.minHeight"
+            :toolbar-preset="textEditorFieldConfig.keywords.toolbarPreset"
+          />
         </div>
 
         <div ref="problem_significance" :class="sectionClass('problem_significance')">
           <h6 class="section-title">6. ความสำคัญของปัญหาและแนวคิด <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <TextEditor v-model="form.problemSignificance" :is-read-only="isReadOnly" />
+          <TextEditor
+            v-model="form.problemSignificance"
+            :is-read-only="isReadOnly"
+            :is-dark-theme="isDarkTheme"
+            :field-key="textEditorFieldConfig.problemSignificance.key"
+            :field-label="textEditorFieldConfig.problemSignificance.label"
+            :helper-text="textEditorFieldConfig.problemSignificance.helperText"
+            :placeholder="textEditorFieldConfig.problemSignificance.placeholder"
+            :min-height="textEditorFieldConfig.problemSignificance.minHeight"
+            :toolbar-preset="textEditorFieldConfig.problemSignificance.toolbarPreset"
+          />
         </div>
 
         <div ref="objectives" :class="sectionClass('objectives')">
           <h6 class="section-title">7. วัตถุประสงค์ <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <TextEditor v-model="form.objectives" :is-read-only="isReadOnly" />
+          <TextEditor
+            v-model="form.objectives"
+            :is-read-only="isReadOnly"
+            :is-dark-theme="isDarkTheme"
+            :field-key="textEditorFieldConfig.objectives.key"
+            :field-label="textEditorFieldConfig.objectives.label"
+            :helper-text="textEditorFieldConfig.objectives.helperText"
+            :placeholder="textEditorFieldConfig.objectives.placeholder"
+            :min-height="textEditorFieldConfig.objectives.minHeight"
+            :toolbar-preset="textEditorFieldConfig.objectives.toolbarPreset"
+          />
         </div>
 
         <div ref="literature_review" :class="sectionClass('literature_review')">
           <h6 class="section-title">8. ทบทวนวรรณกรรม <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <TextEditor v-model="form.literatureReview" :is-read-only="isReadOnly" />
+          <TextEditor
+            v-model="form.literatureReview"
+            :is-read-only="isReadOnly"
+            :is-dark-theme="isDarkTheme"
+            :field-key="textEditorFieldConfig.literatureReview.key"
+            :field-label="textEditorFieldConfig.literatureReview.label"
+            :helper-text="textEditorFieldConfig.literatureReview.helperText"
+            :placeholder="textEditorFieldConfig.literatureReview.placeholder"
+            :min-height="textEditorFieldConfig.literatureReview.minHeight"
+            :toolbar-preset="textEditorFieldConfig.literatureReview.toolbarPreset"
+          />
         </div>
 
         <div class="section mb-4">
           <h6 class="section-title">9. เอกสารอ้างอิง <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <TextEditor v-model="form.references" :is-read-only="isReadOnly" />
+          <TextEditor
+            v-model="form.references"
+            :is-read-only="isReadOnly"
+            :is-dark-theme="isDarkTheme"
+            :field-key="textEditorFieldConfig.references.key"
+            :field-label="textEditorFieldConfig.references.label"
+            :helper-text="textEditorFieldConfig.references.helperText"
+            :placeholder="textEditorFieldConfig.references.placeholder"
+            :min-height="textEditorFieldConfig.references.minHeight"
+            :toolbar-preset="textEditorFieldConfig.references.toolbarPreset"
+          />
         </div>
 
         <div ref="research_methodology" :class="sectionClass('research_methodology')">
           <h6 class="section-title">10. วิธีดำเนินการวิจัย <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <TextEditor v-model="form.researchMethodology" :is-read-only="isReadOnly" />
+          <TextEditor
+            v-model="form.researchMethodology"
+            :is-read-only="isReadOnly"
+            :is-dark-theme="isDarkTheme"
+            :field-key="textEditorFieldConfig.researchMethodology.key"
+            :field-label="textEditorFieldConfig.researchMethodology.label"
+            :helper-text="textEditorFieldConfig.researchMethodology.helperText"
+            :placeholder="textEditorFieldConfig.researchMethodology.placeholder"
+            :min-height="textEditorFieldConfig.researchMethodology.minHeight"
+            :toolbar-preset="textEditorFieldConfig.researchMethodology.toolbarPreset"
+          />
         </div>
 
         <div class="section mb-4">
           <h6 class="section-title">11. ขอบเขตการวิจัย <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <TextEditor v-model="form.researchScope" :is-read-only="isReadOnly" />
+          <TextEditor
+            v-model="form.researchScope"
+            :is-read-only="isReadOnly"
+            :is-dark-theme="isDarkTheme"
+            :field-key="textEditorFieldConfig.researchScope.key"
+            :field-label="textEditorFieldConfig.researchScope.label"
+            :helper-text="textEditorFieldConfig.researchScope.helperText"
+            :placeholder="textEditorFieldConfig.researchScope.placeholder"
+            :min-height="textEditorFieldConfig.researchScope.minHeight"
+            :toolbar-preset="textEditorFieldConfig.researchScope.toolbarPreset"
+          />
         </div>
 
         <div ref="work_plan" :class="sectionClass('work_plan')">
@@ -129,7 +199,17 @@
 
         <div class="section mb-4">
           <h6 class="section-title">13. ผลงานตามระยะเวลาการรายงาน <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <TextEditor v-model="form.milestones" :is-read-only="isReadOnly" />
+          <TextEditor
+            v-model="form.milestones"
+            :is-read-only="isReadOnly"
+            :is-dark-theme="isDarkTheme"
+            :field-key="textEditorFieldConfig.milestones.key"
+            :field-label="textEditorFieldConfig.milestones.label"
+            :helper-text="textEditorFieldConfig.milestones.helperText"
+            :placeholder="textEditorFieldConfig.milestones.placeholder"
+            :min-height="textEditorFieldConfig.milestones.minHeight"
+            :toolbar-preset="textEditorFieldConfig.milestones.toolbarPreset"
+          />
         </div>
 
         <div ref="expected_outcomes" :class="sectionClass('expected_outcomes')">
@@ -145,7 +225,17 @@
 
         <div ref="integration" :class="sectionClass('integration')">
           <h6 class="section-title">15. การบูรณาการงานวิจัย <span v-if="!isReadOnly" class="text-danger">*</span></h6>
-          <TextEditor v-model="form.integration" :is-read-only="isReadOnly" />
+          <TextEditor
+            v-model="form.integration"
+            :is-read-only="isReadOnly"
+            :is-dark-theme="isDarkTheme"
+            :field-key="textEditorFieldConfig.integration.key"
+            :field-label="textEditorFieldConfig.integration.label"
+            :helper-text="textEditorFieldConfig.integration.helperText"
+            :placeholder="textEditorFieldConfig.integration.placeholder"
+            :min-height="textEditorFieldConfig.integration.minHeight"
+            :toolbar-preset="textEditorFieldConfig.integration.toolbarPreset"
+          />
         </div>
 
         <div ref="transfer_level" :class="sectionClass('transfer_level')">
@@ -327,6 +417,81 @@ const TRANSFER_LEVEL_OPTIONS = [
   }
 ]
 
+const TEXT_EDITOR_FIELD_CONFIG = {
+  keywords: {
+    key: 'keywords',
+    label: '5. คำสำคัญ (Keywords)',
+    helperText: 'ระบุคำสำคัญทั้งภาษาไทยและภาษาอังกฤษ และควรคั่นคำด้วยเครื่องหมายจุลภาค (,)',
+    placeholder: 'ตัวอย่าง: การจัดการน้ำชุมชน, เกษตรอัจฉริยะ, Community Water Management, Smart Agriculture',
+    minHeight: 100,
+    toolbarPreset: 'minimal'
+  },
+  problemSignificance: {
+    key: 'problemSignificance',
+    label: '6. ความสำคัญที่มาของปัญหาที่ทำการวิจัย และกรอบแนวความคิด',
+    helperText: 'อธิบายที่มาและความสำคัญของปัญหา สถานการณ์ปัจจุบัน ช่องว่างองค์ความรู้ และกรอบแนวความคิดของงานวิจัย',
+    placeholder: 'ควรอธิบายสถานการณ์ปัจจุบันของปัญหา ผลกระทบที่เกิดขึ้น ช่องว่างของความรู้จากงานเดิม และแนวคิดที่ใช้พัฒนาโครงการวิจัยนี้',
+    minHeight: 280,
+    toolbarPreset: 'basic'
+  },
+  objectives: {
+    key: 'objectives',
+    label: '7. วัตถุประสงค์ของโครงการวิจัย',
+    helperText: 'เขียนวัตถุประสงค์เป็นข้อ ๆ ให้ชัดเจน วัดผลได้ และสอดคล้องกับชื่อโครงการ',
+    placeholder: '1) เพื่อศึกษา...\n2) เพื่อพัฒนา...\n3) เพื่อประเมิน...',
+    minHeight: 180,
+    toolbarPreset: 'list'
+  },
+  literatureReview: {
+    key: 'literatureReview',
+    label: '8. การทบทวนวรรณกรรม ผลงานวิจัยต่างๆ ที่เกี่ยวข้อง',
+    helperText: 'สรุปทฤษฎีและงานวิจัยที่เกี่ยวข้อง พร้อมระบุช่องว่างของงานวิจัยที่โครงการนี้จะเติมเต็ม',
+    placeholder: 'สรุปว่าใครศึกษาอะไร ใช้วิธีใด พบผลอย่างไร และยังขาดประเด็นใดที่โครงการนี้จะต่อยอด',
+    minHeight: 280,
+    toolbarPreset: 'methodology'
+  },
+  references: {
+    key: 'references',
+    label: '9. เอกสารอ้างอิงของโครงการวิจัย',
+    helperText: 'จัดรูปแบบเอกสารอ้างอิงตามระบบสากลที่ใช้ในสาขา (เช่น APA, IEEE หรือ Vancouver) ให้สม่ำเสมอทั้งเอกสาร',
+    placeholder: 'ตัวอย่าง: สมชาย ใจดี. (2568). ชื่อบทความ. ชื่อวารสาร, 12(3), 45-60.\nSmith, J. (2025). Article title. Journal Name, 12(3), 45-60.',
+    minHeight: 220,
+    toolbarPreset: 'reference'
+  },
+  researchMethodology: {
+    key: 'researchMethodology',
+    label: '10. กระบวนการและวิธีการดำเนินโครงการวิจัย สถานที่ทำการทดลองและเก็บข้อมูล',
+    helperText: 'ระบุให้ครบ: วิธีวิจัย, พื้นที่ศึกษา, ประชากร/กลุ่มตัวอย่าง, วิธีสุ่มตัวอย่าง, เครื่องมือเก็บข้อมูล, วิธีวิเคราะห์ข้อมูล และหากใช้แบบสอบถาม ควรแนบตัวอย่างแบบสอบถาม',
+    placeholder: 'โครงลำดับที่แนะนำ:\n1) รูปแบบการวิจัย\n2) พื้นที่ศึกษาและช่วงเวลา\n3) ประชากร/กลุ่มตัวอย่างและวิธีสุ่มตัวอย่าง\n4) เครื่องมือและวิธีเก็บข้อมูล\n5) วิธีวิเคราะห์ข้อมูล',
+    minHeight: 360,
+    toolbarPreset: 'methodology'
+  },
+  researchScope: {
+    key: 'researchScope',
+    label: '11. ขอบเขตของโครงการวิจัย',
+    helperText: 'กำหนดขอบเขตให้เชื่อมโยงกับชื่อโครงการและวัตถุประสงค์ โดยครอบคลุมด้านเนื้อหา พื้นที่ ประชากร/กลุ่มตัวอย่าง และเวลา',
+    placeholder: 'ตัวอย่าง:\n- ขอบเขตด้านเนื้อหา: ...\n- ขอบเขตด้านพื้นที่: ...\n- ขอบเขตด้านประชากร/กลุ่มตัวอย่าง: ...\n- ขอบเขตด้านเวลา: ...',
+    minHeight: 190,
+    toolbarPreset: 'list'
+  },
+  milestones: {
+    key: 'milestones',
+    label: '13. ผลงานตามระยะเวลาการรายงานความก้าวหน้างานวิจัย',
+    helperText: 'ระบุผลงานหรือผลลัพธ์ที่คาดว่าจะได้รับเมื่อดำเนินงานได้ประมาณ 50% ของแผน ไม่ใช่ระบุเฉพาะกิจกรรมที่ดำเนินการ',
+    placeholder: 'ตัวอย่างผลลัพธ์: ได้ข้อมูลภาคสนามครบ 50%, ได้ต้นแบบฉบับที่ 1, ได้ผลวิเคราะห์เบื้องต้นพร้อมข้อค้นพบสำคัญ',
+    minHeight: 180,
+    toolbarPreset: 'list'
+  },
+  integration: {
+    key: 'integration',
+    label: '15. การบูรณาการงานวิจัย',
+    helperText: 'อธิบายได้ทั้งกรณีมีการบูรณาการข้ามศาสตร์/หน่วยงาน และกรณีไม่มีการบูรณาการ โดยระบุเหตุผลอย่างชัดเจน',
+    placeholder: 'กรณีมี: โครงการบูรณาการระหว่าง... โดยแต่ละสาขารับผิดชอบ...\nกรณีไม่มี: โครงการนี้เป็นงานเฉพาะสาขา... จึงยังไม่จำเป็นต้องบูรณาการ',
+    minHeight: 180,
+    toolbarPreset: 'basic'
+  }
+}
+
 export default {
   name: 'ProjectDetailsForm',
   components: {
@@ -450,6 +615,10 @@ export default {
 
     isTransferLevelSelected() {
       return Boolean(this.selectedTransferLevelOption)
+    },
+
+    textEditorFieldConfig() {
+      return TEXT_EDITOR_FIELD_CONFIG
     },
 
     collaborationValidationCount() {

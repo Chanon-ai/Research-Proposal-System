@@ -1,11 +1,15 @@
 <template>
-  <div class="quill-wrapper" :class="{ 'is-readonly': isReadOnly }">
-    <quill-editor
-      v-model="localContent"
-      :options="editorOptions"
-      :disabled="isReadOnly"
-      class="quill-editor"
-    />
+  <div class="text-editor-shell" :class="{ 'is-dark': isDarkTheme }" :data-editor-key="fieldKey || null">
+    <small v-if="helperText" class="text-editor-helper">{{ helperText }}</small>
+    <div class="quill-wrapper" :class="{ 'is-readonly': isReadOnly }" :style="editorWrapperStyle">
+      <quill-editor
+        v-model="localContent"
+        :options="editorOptions"
+        :disabled="isReadOnly"
+        class="quill-editor"
+        :aria-label="fieldLabel || fieldKey || 'text-editor'"
+      />
+    </div>
   </div>
 </template>
 
@@ -17,6 +21,45 @@ import 'quill/dist/quill.snow.css'
 import 'quill/dist/quill.bubble.css'
 
 Vue.use(VueQuillEditor)
+
+const TOOLBAR_PRESETS = {
+  legacy: [
+    ['bold', 'italic', 'underline'],
+    [{ header: 1 }, { header: 2 }],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    [{ script: 'sub' }, { script: 'super' }],
+    [{ color: [] }, { background: [] }],
+    [{ align: [] }]
+  ],
+  minimal: [
+    ['bold', 'italic'],
+    ['clean']
+  ],
+  list: [
+    ['bold', 'italic', 'underline'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['clean']
+  ],
+  basic: [
+    ['bold', 'italic', 'underline'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    [{ align: [] }],
+    ['clean']
+  ],
+  reference: [
+    ['bold', 'italic', 'underline'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link'],
+    ['clean']
+  ],
+  methodology: [
+    ['bold', 'italic', 'underline'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    [{ align: [] }],
+    ['link'],
+    ['clean']
+  ]
+}
 
 export default {
   name: 'TextEditor',
@@ -32,6 +75,34 @@ export default {
     isReadOnly: {
       type: Boolean,
       default: false
+    },
+    fieldKey: {
+      type: String,
+      default: ''
+    },
+    fieldLabel: {
+      type: String,
+      default: ''
+    },
+    helperText: {
+      type: String,
+      default: ''
+    },
+    placeholder: {
+      type: String,
+      default: ''
+    },
+    minHeight: {
+      type: [Number, String],
+      default: 140
+    },
+    toolbarPreset: {
+      type: [String, Array],
+      default: 'legacy'
+    },
+    isDarkTheme: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -40,20 +111,35 @@ export default {
     }
   },
   computed: {
+    normalizedMinHeight () {
+      if (typeof this.minHeight === 'number' && Number.isFinite(this.minHeight)) {
+        return `${Math.max(this.minHeight, 90)}px`
+      }
+      const raw = String(this.minHeight || '').trim()
+      if (!raw) return '140px'
+      if (/^\d+(\.\d+)?$/.test(raw)) return `${raw}px`
+      return raw
+    },
+    editorWrapperStyle () {
+      return {
+        '--editor-min-height': this.normalizedMinHeight
+      }
+    },
+    resolvedToolbar () {
+      if (Array.isArray(this.toolbarPreset) && this.toolbarPreset.length) {
+        return this.toolbarPreset
+      }
+      const presetKey = String(this.toolbarPreset || 'legacy').trim()
+      return TOOLBAR_PRESETS[presetKey] || TOOLBAR_PRESETS.legacy
+    },
     editorOptions () {
       return {
         theme: 'snow',
+        placeholder: this.placeholder || '',
         modules: this.isReadOnly
           ? { toolbar: false }
           : {
-              toolbar: [
-                ['bold', 'italic', 'underline'],
-                [{ header: 1 }, { header: 2 }],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                [{ script: 'sub' }, { script: 'super' }],
-                [{ color: [] }, { background: [] }],
-                [{ align: [] }]
-              ]
+              toolbar: this.resolvedToolbar
             }
       }
     }
@@ -74,6 +160,18 @@ export default {
 </script>
 
 <style scoped>
+.text-editor-shell {
+  display: block;
+}
+
+.text-editor-helper {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #5b6b80;
+}
+
 .quill-wrapper {
   border: 1px solid #ced4da;
   border-radius: 4px;
@@ -93,7 +191,7 @@ export default {
 }
 
 .quill-wrapper::v-deep .ql-editor {
-  min-height: 140px;
+  min-height: var(--editor-min-height, 140px);
   line-height: 1.55;
 }
 
@@ -128,5 +226,28 @@ export default {
 
 .is-readonly::v-deep .ql-container {
   background: transparent;
+}
+
+.text-editor-shell.is-dark .text-editor-helper {
+  color: #aab9ca;
+}
+
+.text-editor-shell.is-dark .quill-wrapper {
+  background: #223142;
+  border-color: #3b4d62;
+}
+
+.text-editor-shell.is-dark .quill-wrapper::v-deep .ql-toolbar {
+  background: #1a2432;
+  border-bottom-color: #324458;
+}
+
+.text-editor-shell.is-dark .quill-wrapper::v-deep .ql-container,
+.text-editor-shell.is-dark .quill-wrapper::v-deep .ql-editor {
+  color: #edf4fc;
+}
+
+.text-editor-shell.is-dark .quill-wrapper::v-deep .ql-editor.ql-blank::before {
+  color: #9caec2;
 }
 </style>
