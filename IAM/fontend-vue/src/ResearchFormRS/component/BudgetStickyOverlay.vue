@@ -391,7 +391,7 @@ export default {
 }
 
 .budget-floating-summary.is-collapsed {
-  width: min(620px, calc(100vw - 30px));
+  width: min(480px, calc(100vw - 30px));
 }
 
 .budget-floating-summary-card {
@@ -788,6 +788,10 @@ export default {
   .budget-floating-summary {
     right: 12px;
     width: min(380px, calc(100vw - 24px));
+  }
+
+  .budget-floating-summary.is-collapsed {
+    width: min(440px, calc(100vw - 24px));
   }
 }
 
