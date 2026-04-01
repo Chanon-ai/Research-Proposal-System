@@ -129,20 +129,9 @@
             >
               <CIcon name="cil-chevron-right" class="mr-1" /> ล้างตัวกรอง
             </CButton>
-            <CButton
-              class="collapse-toggle"
-              color="secondary"
-              variant="ghost"
-              size="sm"
-              :aria-label="showTable ? 'พับตาราง' : 'ขยายตาราง'"
-              @click="showTable = !showTable"
-            >
-              <CIcon :name="showTable ? 'cil-chevron-top' : 'cil-chevron-bottom'" />
-            </CButton>
           </div>
         </div>
       </CCardHeader>
-      <CCollapse :show="showTable" :duration="220">
       <CCardBody class="card-body-tight">
         <div v-if="loading" class="state-box">
           <div class="spinner"></div>
@@ -247,7 +236,6 @@
           </div>
         </div>
       </CCardBody>
-      </CCollapse>
     </CCard>
 
     <button class="fab" title="สร้างโครงการใหม่" @click="onAdd"><CIcon name="cil-chevron-right" class="mr-1" /> ＋</button>
@@ -374,7 +362,6 @@ export default {
       allProjects: [],
       loading: true,
       fetchError: null,
-      showTable: true,
       searchQuery: '',
       perPage: 5,
       perPageOptions: [5, 10, 20, 50],
@@ -948,6 +935,27 @@ export default {
   z-index: 2;
 }
 
+.widget-click-area .user-widget-card ::v-deep(.card-body) {
+  padding: 1.25rem 1.3rem 0;
+}
+
+.widget-click-area .user-widget-card ::v-deep(.text-value-lg) {
+  font-size: clamp(2.5rem, 3.1vw, 3.5rem);
+  line-height: 0.9;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.34rem;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+
+.widget-click-area .user-widget-card ::v-deep(.text-value-lg + div) {
+  font-size: clamp(1.1rem, 1.2vw, 1.24rem);
+  line-height: 1.3;
+  font-weight: 700;
+  opacity: 0.96;
+}
+
 .widget-click-area .user-widget-card ::v-deep(.card-footer) {
   border-radius: 0 0 0.5rem 0.5rem;
   overflow: hidden;
@@ -993,6 +1001,14 @@ export default {
     margin-bottom: 0.25rem;
   }
 
+  .widget-click-area .user-widget-card ::v-deep(.text-value-lg) {
+    font-size: clamp(2.2rem, 5.6vw, 2.9rem);
+  }
+
+  .widget-click-area .user-widget-card ::v-deep(.text-value-lg + div) {
+    font-size: 1.08rem;
+  }
+
   .widget-click-area .user-widget-card::before {
     background-size: 104px 104px;
     background-position: calc(100% + 4px) -8px;
@@ -1007,6 +1023,14 @@ export default {
 
   .widget-click-area.is-active {
     transform: scale(1.01);
+  }
+
+  .widget-click-area .user-widget-card ::v-deep(.text-value-lg) {
+    font-size: 2.25rem;
+  }
+
+  .widget-click-area .user-widget-card ::v-deep(.text-value-lg + div) {
+    font-size: 1.02rem;
   }
 }
 
@@ -1148,28 +1172,6 @@ export default {
   border-color: rgba(181, 133, 34, 0.35);
 }
 
-.collapse-toggle {
-  height: 34px;
-  min-width: 34px;
-  padding: 0 0.5rem;
-  border-radius: 10px;
-  color: #6b7280;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.collapse-toggle:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: #374151;
-}
-
-.collapse-toggle /deep/ svg,
-.collapse-toggle >>> svg,
-.collapse-toggle::v-deep svg {
-  width: 18px;
-  height: 18px;
-}
 
 .clear-filter-btn {
   background: rgba(181, 133, 34, 0.1);
@@ -1614,16 +1616,12 @@ body.c-dark-theme .state-text {
 }
 
 [data-coreui-theme='dark'] .clear-filter-btn,
-body.c-dark-theme .clear-filter-btn,
-[data-coreui-theme='dark'] .collapse-toggle,
-body.c-dark-theme .collapse-toggle {
+body.c-dark-theme .clear-filter-btn {
   background: rgba(71, 85, 105, 0.28);
   border-color: rgba(148, 163, 184, 0.45);
   color: #e5e7eb;
 }
 
-[data-coreui-theme='dark'] .collapse-toggle:hover,
-body.c-dark-theme .collapse-toggle:hover,
 [data-coreui-theme='dark'] .clear-filter-btn:hover,
 body.c-dark-theme .clear-filter-btn:hover {
   background: rgba(71, 85, 105, 0.44);
