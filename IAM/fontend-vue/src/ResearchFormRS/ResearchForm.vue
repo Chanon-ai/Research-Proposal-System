@@ -35,6 +35,7 @@
         :proposal-id="viewProposalId"
         :disable-project-title-section="shouldDisableProjectTitleSection"
         :revision-highlight-sections="adminRevisionProjectSectionKeys"
+        :funding-budget-config="fundingBudgetConfig"
         @form-changed="syncProjectDetailsData"
         @budget-changed="handleBudgetAutoSave"
         @budget-sticky-summary-update="handleBudgetStickySummaryUpdate"
@@ -772,6 +773,18 @@ import ReportView from './Report.vue'
 import Multiselect from 'vue-multiselect'
 import { DatePicker } from 'v-calendar'
 import { COMMITTEE_SECTION_FEEDBACK_MAP, getCommitteeFeedbackMeta } from '@/ResearchFormRS/constants/committeeFeedback'
+import {
+  FUNDING_BUDGET_SETTING_KEY,
+  createDefaultFundingBudgetConfig,
+  parseFundingBudgetSettingValue,
+  readFundingBudgetConfigFromFallbackStorage,
+  shouldRequireFundingSubType,
+  getFundingTypeBudgetLimit,
+  getFundingTypeLabel,
+  getFundingSubTypeBudgetLimit,
+  getFundingSubTypeLabel,
+  writeFundingBudgetConfigToFallbackStorage
+} from '@/ResearchFormRS/utils/fundingBudgetConfig'
 import Swal from 'sweetalert2'
 import Service, { instance as axios } from '@/service/api'
 
@@ -894,6 +907,7 @@ export default {
         maxRounds: 2,
         allowRevisionAfterMeeting: true
       },
+      fundingBudgetConfig: createDefaultFundingBudgetConfig(),
 
       adminShowMeetingPopup: false,
       adminMeetingSubmitting: false,
@@ -1010,6 +1024,8 @@ export default {
       }
     }
 
+    await this.fetchFundingBudgetConfig()
+
     // Sync research team data when component is mounted
     this.syncResearchTeamData();
 
@@ -1078,7 +1094,8 @@ export default {
         : (this.projectDetailsData || {})
       const hasText = (value) => String(value || '').trim() !== ''
       const fundingType = String(form.fundingType || '').trim()
-      const requiresFundingSubType = ['new-researcher', 'researcher-development', 'industry-extension'].includes(fundingType)
+      const requiresFundingSubType = this.requiresFundingSubType(fundingType)
+      const requiresExpectedOutcome = this.isExpectedOutcomeSelectionRequired(fundingType)
       const teamValidation = this.$refs && this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.getValidationResult === 'function'
         ? this.$refs.researchTeamForm.getValidationResult()
         : null
@@ -1101,7 +1118,7 @@ export default {
         { key: 'section-11', label: '11. ขอบเขตการวิจัย', ok: hasText(form.researchScope) },
         { key: 'section-12', label: '12. แผนการดำเนินงาน', ok: this.hasWorkPlanData(form.workPlan) },
         { key: 'section-13', label: '13. ผลงานตามระยะเวลาการรายงาน', ok: hasText(form.milestones) },
-        { key: 'section-14', label: '14. ผลลัพธ์ที่คาดว่าจะได้รับ', ok: hasText(form.selectedOutcome) },
+        { key: 'section-14', label: '14. ผลลัพธ์ที่คาดว่าจะได้รับ', ok: !requiresExpectedOutcome || hasText(form.selectedOutcome) },
         { key: 'section-15', label: '15. การบูรณาการงานวิจัย', ok: hasText(form.integration) },
         { key: 'section-16', label: '16. ระดับการถ่ายทอดสู่สังคม', ok: hasText(form.transferLevel) },
         { key: 'section-17', label: '17. งบประมาณโครงการ', ok: Boolean(budgetCompleteness && budgetCompleteness.ok) && Boolean(budgetValidation && budgetValidation.ok) }
@@ -1634,6 +1651,63 @@ export default {
         icon: 'success',
         confirmButtonText: 'ตกลง'
       })
+    },
+    parseSettingsPayload (response) {
+      const payload = response && response.data && response.data.data
+      if (Array.isArray(payload)) return payload
+      if (payload && Array.isArray(payload.settings)) return payload.settings
+      if (Array.isArray(response && response.data)) return response.data
+      return []
+    },
+    async fetchFundingBudgetConfig () {
+      try {
+        const response = await axios.get('/api/v1/setting')
+        const settings = this.parseSettingsPayload(response)
+        const setting = settings.find(item => item && item.key === FUNDING_BUDGET_SETTING_KEY)
+        const rawValue = setting ? setting.value : null
+        this.fundingBudgetConfig = parseFundingBudgetSettingValue(rawValue, { fallbackToDefault: true })
+        writeFundingBudgetConfigToFallbackStorage(this.fundingBudgetConfig)
+      } catch (error) {
+        const fallbackConfig = readFundingBudgetConfigFromFallbackStorage()
+        this.fundingBudgetConfig = (Array.isArray(fallbackConfig) && fallbackConfig.length > 0)
+          ? fallbackConfig
+          : createDefaultFundingBudgetConfig()
+      }
+    },
+    requiresFundingSubType (fundingType) {
+      return shouldRequireFundingSubType(this.fundingBudgetConfig, fundingType)
+    },
+    isExpectedOutcomeSelectionRequired (fundingType) {
+      return [
+        'new-researcher',
+        'researcher-development',
+        'strategic-research',
+        'industry-extension'
+      ].includes(String(fundingType || '').trim())
+    },
+    resolveFundingBudgetLimitContext (fundingType, fundingSubType = '') {
+      const subTypeBudgetLimit = getFundingSubTypeBudgetLimit(this.fundingBudgetConfig, fundingType, fundingSubType)
+      const fundingTypeLabel = getFundingTypeLabel(this.fundingBudgetConfig, fundingType, fundingType || 'ประเภททุนที่เลือก')
+      if (subTypeBudgetLimit !== null) {
+        const fundingSubTypeLabel = getFundingSubTypeLabel(
+          this.fundingBudgetConfig,
+          fundingType,
+          fundingSubType,
+          fundingSubType || ''
+        )
+        const scopedLabel = fundingSubTypeLabel
+          ? `${fundingTypeLabel} (${fundingSubTypeLabel})`
+          : fundingTypeLabel
+        return {
+          budgetLimit: Number(subTypeBudgetLimit),
+          label: scopedLabel
+        }
+      }
+
+      return {
+        budgetLimit: getFundingTypeBudgetLimit(this.fundingBudgetConfig, fundingType),
+        label: fundingTypeLabel
+      }
     },
     feedbackSectionProgressStorageKey (proposalId = this.viewProposalId) {
       const normalizedProposalId = String(proposalId || '').trim()
@@ -3161,7 +3235,7 @@ export default {
         if (!strategicDraft.fundingType) {
           return fail(`กรุณาเลือกประเภททุนในหัวข้อ ${sectionLabel}`)
         }
-        const requiresSubType = ['new-researcher', 'researcher-development', 'industry-extension'].includes(strategicDraft.fundingType)
+        const requiresSubType = this.requiresFundingSubType(strategicDraft.fundingType)
         if (requiresSubType && !strategicDraft.fundingSubType) {
           return fail(`กรุณาเลือกประเภทย่อยในหัวข้อ ${sectionLabel}`)
         }
@@ -3175,7 +3249,8 @@ export default {
           ((this.$refs.projectDetailsForm && this.$refs.projectDetailsForm.form && this.$refs.projectDetailsForm.form.fundingType) || this.projectDetailsData.fundingType || '')
         )
         const outcomesDraft = this.normalizeExpectedOutcomesValue(this.feedbackSectionDraft(sectionKey), fallbackFundingType)
-        if (!outcomesDraft.selectedOutcome) {
+        const requiresExpectedOutcome = this.isExpectedOutcomeSelectionRequired(outcomesDraft.fundingType || fallbackFundingType)
+        if (requiresExpectedOutcome && !outcomesDraft.selectedOutcome) {
           return fail(`กรุณาเลือกผลลัพธ์ในหัวข้อ ${sectionLabel}`)
         }
         return { ok: true, message: '' }
@@ -4788,19 +4863,9 @@ export default {
         (budget && budget.grandTotal) || computedGrandTotal
       )
       const fundingType = String((form && form.fundingType) || '').trim()
-      const budgetLimitMap = {
-        'new-researcher': 100000,
-        'researcher-development': 200000,
-        'strategic-research': 300000,
-        'industry-extension': 300000
-      }
-      const fundingTypeLabelMap = {
-        'new-researcher': 'ทุนนักวิจัยรุ่นใหม่',
-        'researcher-development': 'ทุนพัฒนานักวิจัย',
-        'strategic-research': 'ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์',
-        'industry-extension': 'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
-      }
-      const budgetLimit = this.normalizeBudgetNumber(budgetLimitMap[fundingType] || 0)
+      const fundingSubType = String((form && form.fundingSubType) || '').trim()
+      const budgetLimitContext = this.resolveFundingBudgetLimitContext(fundingType, fundingSubType)
+      const budgetLimit = this.normalizeBudgetNumber(budgetLimitContext.budgetLimit)
 
       const travelCategory = this.findBudgetCategory(categories, 'หมวดค่าเดินทาง', 2)
       const travelTotal = this.sumBudgetCategoryItems(travelCategory)
@@ -4823,7 +4888,7 @@ export default {
       }
 
       if (budgetLimit > 0 && grandTotal > budgetLimit) {
-        const fundingLabel = fundingTypeLabelMap[fundingType] || fundingType || 'ประเภททุนที่เลือก'
+        const fundingLabel = budgetLimitContext.label || fundingType || 'ประเภททุนที่เลือก'
         errors.push(
           `งบประมาณรวมเกินเพดานของ${fundingLabel} (เพดาน ${budgetLimit.toLocaleString('th-TH')} บาท, กรอก ${grandTotal.toLocaleString('th-TH')} บาท)`
         )
@@ -4875,7 +4940,8 @@ export default {
 
       const hasText = (value) => String(value || '').trim() !== ''
       const fundingType = String(form.fundingType || '').trim()
-      const requiresFundingSubType = ['new-researcher', 'researcher-development', 'industry-extension'].includes(fundingType)
+      const requiresFundingSubType = this.requiresFundingSubType(fundingType)
+      const requiresExpectedOutcome = this.isExpectedOutcomeSelectionRequired(fundingType)
       const missingSections = []
 
       if (!hasText(form.projectNameThai) || !hasText(form.projectNameEnglish)) missingSections.push('1. ชื่อโครงการ')
@@ -4890,7 +4956,7 @@ export default {
       if (!hasText(form.researchScope)) missingSections.push('11. ขอบเขตการวิจัย')
       if (!this.hasWorkPlanData(form.workPlan)) missingSections.push('12. แผนการดำเนินงาน')
       if (!hasText(form.milestones)) missingSections.push('13. ผลงานตามระยะเวลาการรายงาน')
-      if (!hasText(form.selectedOutcome)) missingSections.push('14. ผลลัพธ์ที่คาดว่าจะได้รับ')
+      if (requiresExpectedOutcome && !hasText(form.selectedOutcome)) missingSections.push('14. ผลลัพธ์ที่คาดว่าจะได้รับ')
       if (!hasText(form.integration)) missingSections.push('15. การบูรณาการงานวิจัย')
       if (!hasText(form.transferLevel)) missingSections.push('16. ระดับการถ่ายทอดสู่สังคม')
 

@@ -259,6 +259,8 @@
             :is-read-only="isReadOnly"
             :proposal-id="proposalId"
             :funding-type="form.fundingType"
+            :funding-sub-type="form.fundingSubType"
+            :funding-budget-config="fundingBudgetConfig"
             :reset-token="budgetFundingResetToken"
             @update:modelValue="handleBudgetUpdate"
             @sticky-overlay-update="$emit('budget-sticky-summary-update', $event)"
@@ -294,6 +296,10 @@ import ProjectCollaborationSection from './ProjectCollaborationSection.vue'
 import ProjectResearchTypeSection from './ProjectResearchTypeSection.vue'
 import ProjectExpectedOutcomesSection from './ProjectExpectedOutcomesSection.vue'
 import ProjectTransferLevelSection from './ProjectTransferLevelSection.vue'
+import {
+  normalizeFundingBudgetConfig,
+  normalizeFundingBudgetKey
+} from '@/ResearchFormRS/utils/fundingBudgetConfig'
 
 // Structured funding definitions reserved for future cross-section constraints
 // (e.g. budget-cap rules) without changing template wiring.
@@ -522,6 +528,10 @@ export default {
     revisionHighlightSections: {
       type: Array,
       default: () => []
+    },
+    fundingBudgetConfig: {
+      type: Array,
+      default: () => []
     }
   },
   computed: {
@@ -533,18 +543,24 @@ export default {
       return this.isReadOnly || this.disableProjectTitleSection
     },
 
+    normalizedFundingBudgetConfig() {
+      return normalizeFundingBudgetConfig(this.fundingBudgetConfig, { fallbackToDefault: false })
+    },
+
     fundingTypeOptions() {
-      return FUNDING_TYPE_OPTIONS
+      return this.buildFundingTypeOptions(this.normalizedFundingBudgetConfig)
     },
 
     selectedFundingTypeOption() {
-      return this.fundingTypeOptions.find((item) => item.value === this.form.fundingType) || null
+      const fundingTypeKey = normalizeFundingBudgetKey(this.form.fundingType)
+      return this.fundingTypeOptions.find((item) => item.value === fundingTypeKey) || null
     },
 
     selectedFundingSubTypeOption() {
       const parent = this.selectedFundingTypeOption
       if (!parent || !Array.isArray(parent.subOptions)) return null
-      return parent.subOptions.find((item) => item.value === this.form.fundingSubType) || null
+      const fundingSubTypeKey = normalizeFundingBudgetKey(this.form.fundingSubType)
+      return parent.subOptions.find((item) => item.value === fundingSubTypeKey) || null
     },
 
     selectedFundingTypeLabel() {
@@ -709,6 +725,16 @@ export default {
       if (newVal !== oldVal) {
         this.pulseFundingSummary()
       }
+    },
+    fundingBudgetConfig: {
+      deep: true,
+      handler() {
+        if (this.isHydrating) return
+        const normalizedFundingSubType = this.normalizeFundingSubTypeForType(this.form.fundingType, this.form.fundingSubType)
+        if (normalizedFundingSubType !== this.form.fundingSubType) {
+          this.form.fundingSubType = normalizedFundingSubType
+        }
+      }
     }
   },
   mounted() {
@@ -777,33 +803,119 @@ export default {
         }
       }
     },
+    buildFundingSubOptions(typeKey, configSubOptions, fallbackSubOptions = []) {
+      const fallbackMap = new Map(
+        (Array.isArray(fallbackSubOptions) ? fallbackSubOptions : []).map(item => [
+          normalizeFundingBudgetKey(item && item.value),
+          item
+        ])
+      )
+      const source = Array.isArray(configSubOptions) ? configSubOptions : []
+
+      return source.map((subOption, subIndex) => {
+        const subTypeKey = normalizeFundingBudgetKey(subOption && subOption.key)
+        const fallbackOption = fallbackMap.get(subTypeKey) || {}
+        const fallbackValue = normalizeFundingBudgetKey(fallbackOption && fallbackOption.value)
+        const value = subTypeKey || fallbackValue || `${typeKey || 'funding'}-sub-${subIndex + 1}`
+        const shortName = String(
+          (subOption && subOption.label) ||
+          fallbackOption.shortName ||
+          fallbackOption.label ||
+          ''
+        ).trim() || `ทุนย่อย ${subIndex + 1}`
+        const officialText = String(
+          fallbackOption.officialText ||
+          shortName
+        ).trim()
+        const shortDescription = String(fallbackOption.shortDescription || '').trim()
+        const constraintKey = fallbackOption.constraintKey || `funding.${typeKey || 'custom'}.${value}`
+
+        return {
+          ...fallbackOption,
+          value,
+          shortName,
+          officialText,
+          shortDescription,
+          constraintKey
+        }
+      }).filter(option => Boolean(option && option.value))
+    },
+    buildFundingTypeOptions(config) {
+      const normalizedConfig = Array.isArray(config) ? config : []
+      if (!normalizedConfig.length) return FUNDING_TYPE_OPTIONS
+
+      const fallbackMap = new Map(
+        FUNDING_TYPE_OPTIONS.map(item => [normalizeFundingBudgetKey(item && item.value), item])
+      )
+
+      return normalizedConfig.map((fundingType, typeIndex) => {
+        const typeKey = normalizeFundingBudgetKey(fundingType && fundingType.key)
+        const fallbackType = fallbackMap.get(typeKey) || {}
+        const fallbackValue = normalizeFundingBudgetKey(fallbackType && fallbackType.value)
+        const value = typeKey || fallbackValue || `funding-type-${typeIndex + 1}`
+        const shortName = String(
+          (fundingType && fundingType.label) ||
+          fallbackType.shortName ||
+          fallbackType.label ||
+          ''
+        ).trim() || `ประเภททุน ${typeIndex + 1}`
+        const shortDescription = String(fallbackType.shortDescription || '').trim()
+        const officialText = String(
+          fallbackType.officialText ||
+          shortName
+        ).trim()
+        const fallbackSubOptions = Array.isArray(fallbackType.subOptions) ? fallbackType.subOptions : []
+        const mappedSubOptions = this.buildFundingSubOptions(
+          value,
+          fundingType && fundingType.subOptions,
+          fallbackSubOptions
+        )
+        const fallbackSubSectionTitle = String(fallbackType.subSectionTitle || '').trim()
+        const subSectionTitle = fallbackSubSectionTitle || (mappedSubOptions.length ? 'กรอบการวิจัย (เลือก 1)' : '')
+        const constraintKey = fallbackType.constraintKey || `funding.${value}`
+
+        return {
+          ...fallbackType,
+          value,
+          shortName,
+          shortDescription,
+          officialText,
+          subSectionTitle,
+          constraintKey,
+          subOptions: mappedSubOptions
+        }
+      }).filter(option => Boolean(option && option.value))
+    },
     getFundingTypeOptionByValue(fundingType) {
-      const key = String(fundingType || '').trim()
-      return FUNDING_TYPE_OPTIONS.find((item) => item.value === key) || null
+      const key = normalizeFundingBudgetKey(fundingType)
+      return this.fundingTypeOptions.find((item) => item.value === key) || null
     },
     normalizeFundingSubTypeForType(fundingType, fundingSubType) {
-      const typeKey = String(fundingType || '').trim()
-      const subTypeKey = String(fundingSubType || '').trim()
+      const typeKey = normalizeFundingBudgetKey(fundingType)
+      const subTypeKey = normalizeFundingBudgetKey(fundingSubType)
       if (!typeKey) return ''
-
-      if (typeKey === 'new-researcher') {
-        if (!subTypeKey) return ''
-        if (subTypeKey === 'qualification-alignment') return subTypeKey
-        const legacy = ['basic-research', 'applied-research', 'interdisciplinary']
-        return legacy.includes(subTypeKey) ? 'qualification-alignment' : 'qualification-alignment'
-      }
-
-      if (typeKey === 'industry-extension') {
-        if (!subTypeKey) return ''
-        if (subTypeKey === 'competitiveness') return subTypeKey
-        const legacy = ['product-development', 'process-innovation', 'technology-transfer']
-        return legacy.includes(subTypeKey) ? 'competitiveness' : 'competitiveness'
-      }
-
       const parent = this.getFundingTypeOptionByValue(typeKey)
       if (!parent || !Array.isArray(parent.subOptions) || parent.subOptions.length === 0) return ''
       const allowedValues = parent.subOptions.map((item) => item.value)
-      return allowedValues.includes(subTypeKey) ? subTypeKey : ''
+      if (allowedValues.includes(subTypeKey)) return subTypeKey
+
+      const legacyAliasMap = {
+        'new-researcher': {
+          preferred: 'qualification-alignment',
+          aliases: ['qualification-alignment', 'basic-research', 'applied-research', 'interdisciplinary']
+        },
+        'industry-extension': {
+          preferred: 'competitiveness',
+          aliases: ['competitiveness', 'product-development', 'process-innovation', 'technology-transfer']
+        }
+      }
+      const legacyConfig = legacyAliasMap[typeKey]
+      if (!legacyConfig || !subTypeKey) return ''
+      if (!legacyConfig.aliases.includes(subTypeKey)) return ''
+
+      if (allowedValues.includes(legacyConfig.preferred)) return legacyConfig.preferred
+      const compatibleAlias = allowedValues.find((value) => legacyConfig.aliases.includes(value))
+      return compatibleAlias || ''
     },
     onFundingSubTypeCardClick(subTypeValue, event) {
       if (this.isReadOnly) return
@@ -1099,6 +1211,7 @@ export default {
       this.suppressFundingWatcher = true
 
       const nextForm = Object.assign(this.createDefaultForm(), this.cloneSerializable(data) || {})
+      nextForm.fundingType = normalizeFundingBudgetKey(nextForm.fundingType)
       nextForm.fundingSubType = this.normalizeFundingSubTypeForType(nextForm.fundingType, nextForm.fundingSubType)
       Object.keys(nextForm).forEach((key) => {
         this.$set(this.form, key, nextForm[key])

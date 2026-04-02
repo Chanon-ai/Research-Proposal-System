@@ -92,6 +92,11 @@
       </CTab>
 
       <CTab>
+        <template slot="title">ทุนและงบประมาณ</template>
+        <AdminFundingBudgetSettings />
+      </CTab>
+
+      <CTab>
         <template slot="title">Workflow</template>
 
         <CAlert
@@ -349,6 +354,7 @@
 <script>
 import { instance as axios } from '@/service/api'
 import AdminUsersManagement from '@/components/admin/AdminUsersManagement.vue'
+import AdminFundingBudgetSettings from '@/ResearchFormRS/admin/AdminFundingBudgetSettings.vue'
 import Swal from 'sweetalert2'
 
 const LOCAL_FALLBACK_KEY = 'admin_settings_local_fallback_v1'
@@ -443,16 +449,17 @@ const ALLOWED_TRANSITIONS = {
 
 const SETTINGS_TAB_INDEX = {
   general: 0,
-  workflow: 1,
-  email: 2,
-  users: 3
+  funding_budget: 1,
+  workflow: 2,
+  email: 3,
+  users: 4
 }
 
-const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'workflow', 'email', 'users']
+const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'funding_budget', 'workflow', 'email', 'users']
 
 export default {
   name: 'AdminSettings',
-  components: { AdminUsersManagement },
+  components: { AdminUsersManagement, AdminFundingBudgetSettings },
   data () {
     return {
       activeTab: 0,
@@ -580,7 +587,11 @@ export default {
         admin: 'general',
         admins: 'general',
         system_admin: 'general',
-        'system-admin': 'general'
+        'system-admin': 'general',
+        budget: 'funding_budget',
+        budgets: 'funding_budget',
+        funding: 'funding_budget',
+        'funding-budget': 'funding_budget'
       }
       return legacyMap[key] || key
     },
