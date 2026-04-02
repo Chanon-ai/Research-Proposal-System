@@ -42,6 +42,7 @@
 
 <script>
 import Service from '@/service/api'
+import { isProposalReadOnlyStatus, normalizeProposalStatus } from '@/ResearchFormRS/constants/proposalWorkflow'
 
 export default {
   name: 'UserHistoryPage',
@@ -145,7 +146,7 @@ export default {
     },
 
     toHistoryItem (item) {
-      const status = String(item && item.currentStatus ? item.currentStatus : '').toLowerCase()
+      const status = normalizeProposalStatus(item && item.currentStatus)
       return {
         _id: item && item._id,
         code: item && item.proposalCode ? item.proposalCode : '-',
@@ -177,11 +178,7 @@ export default {
     },
 
     isReadOnlyStatus (status) {
-      return [
-        'pending_confirm', 'submitted', 'faculty_review_pending', 'faculty_approved',
-        'office_received', 'document_checking', 'assigned_to_committee',
-        'under_review', 'meeting_completed', 'approved', 'rejected', 'announced'
-      ].includes(String(status || '').toLowerCase())
+      return isProposalReadOnlyStatus(status)
     },
 
     select (proj) {
@@ -192,7 +189,7 @@ export default {
         query: {
           id: proj._id,
           readOnly: this.isReadOnlyStatus(proj.currentStatus) ? 'true' : 'false',
-          scrollFeedback: String(proj.currentStatus || '').toLowerCase() === 'revision_requested' ? '1' : '0'
+          scrollFeedback: normalizeProposalStatus(proj.currentStatus) === 'revision_requested' ? '1' : '0'
         }
       })
     },
