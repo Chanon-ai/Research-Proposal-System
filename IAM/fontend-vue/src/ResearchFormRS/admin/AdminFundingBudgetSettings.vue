@@ -233,6 +233,105 @@
                   </tbody>
                 </table>
               </div>
+
+              <div class="funding-suboptions-title mt-3">รายการเฉพาะในหมวด (Override)</div>
+              <small class="text-muted d-block mb-2">
+                ระบบจะใช้รูปแบบตัวคูณนี้เมื่อชื่อรายการมีคำที่ระบุ เช่น ผู้ให้ข้อมูล
+              </small>
+
+              <div
+                v-for="(itemOverride, overrideIndex) in category.itemOverrides"
+                :key="`${category.categoryKey}-override-${overrideIndex}`"
+                class="budget-item-override-card"
+              >
+                <div class="d-flex justify-content-between align-items-center flex-wrap mb-2" style="gap: 8px;">
+                  <strong>รายการเฉพาะ {{ overrideIndex + 1 }}</strong>
+                  <CButton
+                    color="danger"
+                    variant="outline"
+                    size="sm"
+                    @click="removeBudgetItemOverride(categoryIndex, overrideIndex)"
+                  >
+                    <CIcon name="cil-x" class="mr-1" /> ลบรายการเฉพาะ
+                  </CButton>
+                </div>
+
+                <div class="mb-2">
+                  <label class="mb-1 font-weight-bold">คำที่ใช้จับคู่ในชื่อรายการ</label>
+                  <input
+                    class="form-control"
+                    :value="itemOverride.matchText"
+                    placeholder="เช่น ผู้ให้ข้อมูล"
+                    @input="updateBudgetItemOverrideMatchText(categoryIndex, overrideIndex, $event.target.value)"
+                  />
+                </div>
+
+                <div class="table-responsive funding-suboptions-table">
+                  <table class="table table-bordered table-striped mb-0">
+                    <thead>
+                      <tr>
+                        <th style="width: 52%;">ชื่อตัวคูณ</th>
+                        <th style="width: 28%;">ค่าเริ่มต้น</th>
+                        <th style="width: 20%;">จัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="(overrideMultiplier, overrideMultiplierIndex) in itemOverride.multipliers"
+                        :key="`${category.categoryKey}-override-${overrideIndex}-multiplier-${overrideMultiplierIndex}`"
+                      >
+                        <td>
+                          <input
+                            class="form-control"
+                            :value="overrideMultiplier.label"
+                            placeholder="เช่น จำนวน (คน)"
+                            @input="updateBudgetItemOverrideMultiplierLabel(categoryIndex, overrideIndex, overrideMultiplierIndex, $event.target.value)"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            class="form-control"
+                            :value="overrideMultiplier.value"
+                            placeholder="0"
+                            @input="updateBudgetItemOverrideMultiplierValue(categoryIndex, overrideIndex, overrideMultiplierIndex, $event.target.value)"
+                          />
+                        </td>
+                        <td class="text-center">
+                          <CButton
+                            color="danger"
+                            variant="outline"
+                            size="sm"
+                            :disabled="itemOverride.multipliers.length <= 1"
+                            @click="removeBudgetItemOverrideMultiplier(categoryIndex, overrideIndex, overrideMultiplierIndex)"
+                          >
+                            <CIcon name="cil-x" class="mr-1" /> ลบ
+                          </CButton>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="mt-2">
+                  <CButton
+                    color="secondary"
+                    variant="outline"
+                    size="sm"
+                    @click="addBudgetItemOverrideMultiplier(categoryIndex, overrideIndex)"
+                  >
+                    <CIcon name="cil-plus" class="mr-1" /> เพิ่มตัวคูณของรายการนี้
+                  </CButton>
+                </div>
+              </div>
+
+              <div class="mt-2">
+                <CButton color="secondary" variant="outline" size="sm" @click="addBudgetItemOverride(categoryIndex)">
+                  <CIcon name="cil-plus" class="mr-1" /> เพิ่มรายการเฉพาะในหมวดนี้
+                </CButton>
+              </div>
             </CCardBody>
           </CCard>
 
@@ -275,6 +374,11 @@ import {
 
 const createFundingTypeTemplate = () => ({ key: '', label: '', budgetLimit: 0, subOptions: [] })
 const createFundingSubOptionTemplate = () => ({ key: '', label: '' })
+const createBudgetMultiplierTemplate = () => ({ label: '', value: 1, isAdmin: false })
+const createBudgetItemOverrideTemplate = () => ({
+  matchText: '',
+  multipliers: [createBudgetMultiplierTemplate()]
+})
 
 export default {
   name: 'AdminFundingBudgetSettings',
@@ -398,6 +502,33 @@ export default {
           const numeric = Number(multiplier && multiplier.value)
           if (!Number.isFinite(numeric) || numeric < 0) {
             return `${categoryLabel}: ตัวคูณลำดับที่ ${no} มีค่าเริ่มต้นไม่ถูกต้อง`
+          }
+        }
+
+        const itemOverrides = Array.isArray(category && category.itemOverrides) ? category.itemOverrides : []
+        for (let overrideIndex = 0; overrideIndex < itemOverrides.length; overrideIndex += 1) {
+          const itemOverride = itemOverrides[overrideIndex]
+          const overrideNo = overrideIndex + 1
+          const matchText = String(itemOverride && itemOverride.matchText || '').trim()
+          if (!matchText) {
+            return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ต้องระบุคำจับคู่`
+          }
+
+          const overrideMultipliers = Array.isArray(itemOverride && itemOverride.multipliers) ? itemOverride.multipliers : []
+          if (!overrideMultipliers.length) {
+            return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ต้องมีอย่างน้อย 1 ตัวคูณ`
+          }
+
+          for (let overrideMultiplierIndex = 0; overrideMultiplierIndex < overrideMultipliers.length; overrideMultiplierIndex += 1) {
+            const overrideMultiplier = overrideMultipliers[overrideMultiplierIndex]
+            const overrideMultiplierNo = overrideMultiplierIndex + 1
+            if (!String(overrideMultiplier && overrideMultiplier.label || '').trim()) {
+              return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ตัวคูณลำดับที่ ${overrideMultiplierNo} ต้องระบุชื่อ`
+            }
+            const overrideNumeric = Number(overrideMultiplier && overrideMultiplier.value)
+            if (!Number.isFinite(overrideNumeric) || overrideNumeric < 0) {
+              return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ตัวคูณลำดับที่ ${overrideMultiplierNo} มีค่าเริ่มต้นไม่ถูกต้อง`
+            }
           }
         }
       }
@@ -573,6 +704,68 @@ export default {
       if (!multiplier) return
       this.$set(multiplier, 'value', this.toMultiplierNumber(value, 0))
     },
+    addBudgetItemOverride (categoryIndex) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      if (!category) return
+      if (!Array.isArray(category.itemOverrides)) {
+        this.$set(category, 'itemOverrides', [])
+      }
+      category.itemOverrides.push(createBudgetItemOverrideTemplate())
+    },
+    removeBudgetItemOverride (categoryIndex, overrideIndex) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      if (!category || !Array.isArray(category.itemOverrides)) return
+      category.itemOverrides.splice(overrideIndex, 1)
+    },
+    updateBudgetItemOverrideMatchText (categoryIndex, overrideIndex, value) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      if (!itemOverride) return
+      this.$set(itemOverride, 'matchText', value)
+    },
+    addBudgetItemOverrideMultiplier (categoryIndex, overrideIndex) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      if (!itemOverride) return
+      if (!Array.isArray(itemOverride.multipliers)) {
+        this.$set(itemOverride, 'multipliers', [])
+      }
+      itemOverride.multipliers.push(createBudgetMultiplierTemplate())
+    },
+    removeBudgetItemOverrideMultiplier (categoryIndex, overrideIndex, overrideMultiplierIndex) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      if (!itemOverride || !Array.isArray(itemOverride.multipliers) || itemOverride.multipliers.length <= 1) return
+      itemOverride.multipliers.splice(overrideMultiplierIndex, 1)
+    },
+    updateBudgetItemOverrideMultiplierLabel (categoryIndex, overrideIndex, overrideMultiplierIndex, value) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      const multiplier = itemOverride && Array.isArray(itemOverride.multipliers)
+        ? itemOverride.multipliers[overrideMultiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'label', value)
+    },
+    updateBudgetItemOverrideMultiplierValue (categoryIndex, overrideIndex, overrideMultiplierIndex, value) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      const multiplier = itemOverride && Array.isArray(itemOverride.multipliers)
+        ? itemOverride.multipliers[overrideMultiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'value', this.toMultiplierNumber(value, 0))
+    },
     async resetBudgetMultipliersToDefault () {
       const result = await Swal.fire({
         icon: 'warning',
@@ -726,6 +919,14 @@ export default {
   border-radius: 10px;
 }
 
+.budget-item-override-card {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid rgba(140, 21, 21, 0.14);
+  border-radius: 10px;
+  background: #ffffff;
+}
+
 .funding-budget-actions {
   display: flex;
   justify-content: flex-end;
@@ -743,6 +944,12 @@ body.c-dark-theme .funding-budget-empty {
 [data-coreui-theme='dark'] .funding-suboptions-title,
 body.c-dark-theme .funding-suboptions-title {
   color: #dbe8f6;
+}
+
+[data-coreui-theme='dark'] .budget-item-override-card,
+body.c-dark-theme .budget-item-override-card {
+  background: #1b2735;
+  border-color: rgba(126, 164, 207, 0.35);
 }
 
 @media (max-width: 768px) {

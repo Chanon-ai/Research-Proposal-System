@@ -115,12 +115,26 @@ const normalizeMultiplierEntry = (entry) => ({
   isAdmin: Boolean(entry && entry.isAdmin)
 })
 
+const normalizeOverrideMatchText = (value) => String(value || '').trim()
+
 const cloneMultipliers = (multipliers) => (
   (Array.isArray(multipliers) ? multipliers : []).map(multiplier => ({
     label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
     value: toMultiplierNumber(multiplier && multiplier.value, 0),
     isAdmin: Boolean(multiplier && multiplier.isAdmin)
   }))
+)
+
+const normalizeItemOverrideEntry = (entry) => ({
+  matchText: normalizeOverrideMatchText(entry && entry.matchText),
+  multipliers: cloneMultipliers(entry && entry.multipliers).filter(multiplier => multiplier.label)
+})
+
+const cloneItemOverrides = (itemOverrides) => (
+  (Array.isArray(itemOverrides) ? itemOverrides : []).map(itemOverride => ({
+    matchText: normalizeOverrideMatchText(itemOverride && itemOverride.matchText),
+    multipliers: cloneMultipliers(itemOverride && itemOverride.multipliers)
+  })).filter(itemOverride => itemOverride.matchText && itemOverride.multipliers.length > 0)
 )
 
 const normalizeFromSource = (source, fallbackToDefault) => {
@@ -132,10 +146,13 @@ const normalizeFromSource = (source, fallbackToDefault) => {
     const categoryKey = normalizeCategoryKey(category && (category.categoryKey !== undefined ? category.categoryKey : category.key))
     if (!categoryKey || normalizedMap.has(categoryKey)) return
 
-    const fallbackCategory = defaultMap.get(categoryKey) || { categoryKey, categoryLabel: categoryKey, multipliers: [] }
+    const fallbackCategory = defaultMap.get(categoryKey) || { categoryKey, categoryLabel: categoryKey, multipliers: [], itemOverrides: [] }
     const normalizedMultipliers = (Array.isArray(category && category.multipliers) ? category.multipliers : [])
       .map(normalizeMultiplierEntry)
       .filter(multiplier => multiplier.label)
+    const normalizedItemOverrides = (Array.isArray(category && category.itemOverrides) ? category.itemOverrides : [])
+      .map(normalizeItemOverrideEntry)
+      .filter(itemOverride => itemOverride.matchText && itemOverride.multipliers.length > 0)
 
     normalizedMap.set(categoryKey, {
       categoryKey,
@@ -144,25 +161,28 @@ const normalizeFromSource = (source, fallbackToDefault) => {
       || fallbackCategory.categoryLabel || categoryKey).trim() || fallbackCategory.categoryLabel || categoryKey,
       multipliers: normalizedMultipliers.length
         ? normalizedMultipliers
-        : (fallbackToDefault ? cloneMultipliers(fallbackCategory.multipliers) : [])
+        : (fallbackToDefault ? cloneMultipliers(fallbackCategory.multipliers) : []),
+      itemOverrides: cloneItemOverrides(normalizedItemOverrides)
     })
   })
 
   if (fallbackToDefault) {
     return CATEGORY_KEY_ORDER.map((categoryKey) => {
-      const fallbackCategory = defaultMap.get(categoryKey) || { categoryKey, categoryLabel: categoryKey, multipliers: [] }
+      const fallbackCategory = defaultMap.get(categoryKey) || { categoryKey, categoryLabel: categoryKey, multipliers: [], itemOverrides: [] }
       const normalizedCategory = normalizedMap.get(categoryKey)
       if (!normalizedCategory) {
         return {
           categoryKey,
           categoryLabel: fallbackCategory.categoryLabel || categoryKey,
-          multipliers: cloneMultipliers(fallbackCategory.multipliers)
+          multipliers: cloneMultipliers(fallbackCategory.multipliers),
+          itemOverrides: cloneItemOverrides(fallbackCategory.itemOverrides)
         }
       }
       return {
         categoryKey,
         categoryLabel: normalizedCategory.categoryLabel || fallbackCategory.categoryLabel || categoryKey,
-        multipliers: cloneMultipliers(normalizedCategory.multipliers)
+        multipliers: cloneMultipliers(normalizedCategory.multipliers),
+        itemOverrides: cloneItemOverrides(normalizedCategory.itemOverrides)
       }
     })
   }
@@ -170,7 +190,8 @@ const normalizeFromSource = (source, fallbackToDefault) => {
   return Array.from(normalizedMap.values()).map(category => ({
     categoryKey: category.categoryKey,
     categoryLabel: String(category.categoryLabel || '').trim(),
-    multipliers: cloneMultipliers(category.multipliers).filter(multiplier => multiplier.label)
+    multipliers: cloneMultipliers(category.multipliers).filter(multiplier => multiplier.label),
+    itemOverrides: cloneItemOverrides(category.itemOverrides)
   }))
 }
 
@@ -201,15 +222,30 @@ export const sanitizeBudgetMultiplierConfigForSave = (rawConfig) => {
   return normalized.map(category => ({
     categoryKey: normalizeCategoryKey(category.categoryKey),
     categoryLabel: String(category.categoryLabel || '').trim(),
-    multipliers: cloneMultipliers(category.multipliers).filter(multiplier => multiplier.label)
+    multipliers: cloneMultipliers(category.multipliers).filter(multiplier => multiplier.label),
+    itemOverrides: cloneItemOverrides(category.itemOverrides)
   })).filter(category => category.categoryKey)
 }
 
 export const buildBudgetMultiplierConfigMap = (config) => {
+  const categoryMap = buildBudgetMultiplierCategoryMap(config)
+  const mapped = new Map()
+  categoryMap.forEach((category, categoryKey) => {
+    mapped.set(categoryKey, cloneMultipliers(category && category.multipliers))
+  })
+  return mapped
+}
+
+export const buildBudgetMultiplierCategoryMap = (config) => {
   const normalized = normalizeBudgetMultiplierConfig(config, { fallbackToDefault: true })
   const mapped = new Map()
   normalized.forEach((category) => {
-    mapped.set(category.categoryKey, cloneMultipliers(category.multipliers))
+    mapped.set(category.categoryKey, {
+      categoryKey: category.categoryKey,
+      categoryLabel: String(category.categoryLabel || '').trim(),
+      multipliers: cloneMultipliers(category.multipliers),
+      itemOverrides: cloneItemOverrides(category.itemOverrides)
+    })
   })
   return mapped
 }

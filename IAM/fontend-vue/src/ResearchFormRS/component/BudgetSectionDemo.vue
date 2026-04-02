@@ -465,7 +465,7 @@ import {
 import {
   createDefaultBudgetMultiplierConfig,
   normalizeBudgetMultiplierConfig,
-  buildBudgetMultiplierConfigMap
+  buildBudgetMultiplierCategoryMap
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
 
 const BUDGET_ATTACHMENT_EXAMPLE_WINDOW_NAME = 'budget-attachment-example-doc'
@@ -539,6 +539,13 @@ const cloneMultiplierList = (multipliers = []) => (
     value: Number.isFinite(Number(multiplier && multiplier.value)) ? Math.max(0, Number(multiplier.value)) : 0,
     isAdmin: Boolean(multiplier && multiplier.isAdmin)
   }))
+)
+
+const cloneItemOverrideList = (itemOverrides = []) => (
+  (Array.isArray(itemOverrides) ? itemOverrides : []).map(itemOverride => ({
+    matchText: String(itemOverride && itemOverride.matchText ? itemOverride.matchText : '').trim(),
+    multipliers: cloneMultiplierList(itemOverride && itemOverride.multipliers)
+  })).filter(itemOverride => itemOverride.matchText && itemOverride.multipliers.length > 0)
 )
 
 const DEFAULT_CALC_TYPE_BY_CATEGORY = Object.freeze({
@@ -1022,12 +1029,20 @@ export default {
   },
   data() {
     const normalizedMultiplierConfig = normalizeBudgetMultiplierConfig(this.budgetMultiplierConfig, { fallbackToDefault: true })
-    const configuredMultiplierMap = buildBudgetMultiplierConfigMap(normalizedMultiplierConfig)
-    const fallbackMultiplierMap = buildBudgetMultiplierConfigMap(createDefaultBudgetMultiplierConfig())
+    const configuredCategoryMap = buildBudgetMultiplierCategoryMap(normalizedMultiplierConfig)
+    const fallbackCategoryMap = buildBudgetMultiplierCategoryMap(createDefaultBudgetMultiplierConfig())
+    const resolveCategoryConfig = (categoryKey) => {
+      const configured = configuredCategoryMap.get(categoryKey)
+      if (configured) return configured
+      return fallbackCategoryMap.get(categoryKey) || { multipliers: [], itemOverrides: [] }
+    }
     const resolveDefaultMultipliers = (categoryKey) => {
-      const configured = configuredMultiplierMap.get(categoryKey)
-      if (Array.isArray(configured) && configured.length) return cloneMultiplierList(configured)
-      return cloneMultiplierList(fallbackMultiplierMap.get(categoryKey) || [])
+      const categoryConfig = resolveCategoryConfig(categoryKey)
+      return cloneMultiplierList(categoryConfig && categoryConfig.multipliers)
+    }
+    const resolveItemOverrides = (categoryKey) => {
+      const categoryConfig = resolveCategoryConfig(categoryKey)
+      return cloneItemOverrideList(categoryConfig && categoryConfig.itemOverrides)
     }
 
     return {
@@ -1040,31 +1055,38 @@ export default {
       categories: [
         {
           key: BUDGET_CATEGORY_KEYS.COMPENSATION, name: 'หมวดค่าตอบแทน', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.COMPENSATION)
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.COMPENSATION),
+          itemOverrides: resolveItemOverrides(BUDGET_CATEGORY_KEYS.COMPENSATION)
         },
         {
           key: BUDGET_CATEGORY_KEYS.OPERATING, name: 'หมวดค่าใช้สอย', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.OPERATING)
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.OPERATING),
+          itemOverrides: resolveItemOverrides(BUDGET_CATEGORY_KEYS.OPERATING)
         },
         {
           key: BUDGET_CATEGORY_KEYS.TRAVEL, name: 'หมวดค่าเดินทาง', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.TRAVEL)
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.TRAVEL),
+          itemOverrides: resolveItemOverrides(BUDGET_CATEGORY_KEYS.TRAVEL)
         },
         {
           key: BUDGET_CATEGORY_KEYS.MATERIAL, name: 'หมวดค่าวัสดุ', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.MATERIAL)
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.MATERIAL),
+          itemOverrides: resolveItemOverrides(BUDGET_CATEGORY_KEYS.MATERIAL)
         },
         {
           key: BUDGET_CATEGORY_KEYS.UTILITY, name: 'หมวดค่าสาธารณูปโภค', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.UTILITY)
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.UTILITY),
+          itemOverrides: resolveItemOverrides(BUDGET_CATEGORY_KEYS.UTILITY)
         },
         {
           key: BUDGET_CATEGORY_KEYS.EQUIPMENT, name: 'หมวดครุภัณฑ์', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.EQUIPMENT)
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.EQUIPMENT),
+          itemOverrides: resolveItemOverrides(BUDGET_CATEGORY_KEYS.EQUIPMENT)
         },
         {
           key: BUDGET_CATEGORY_KEYS.OTHER, name: 'หมวดอื่นๆ', isOther: true, isExpanded: true, items: [],
-          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.OTHER)
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.OTHER),
+          itemOverrides: resolveItemOverrides(BUDGET_CATEGORY_KEYS.OTHER)
         },
       ]
     };
@@ -1461,16 +1483,19 @@ export default {
     },
     applyBudgetMultiplierConfig(rawConfig) {
       const normalized = normalizeBudgetMultiplierConfig(rawConfig, { fallbackToDefault: true })
-      const multiplierMap = buildBudgetMultiplierConfigMap(normalized)
+      const categoryMap = buildBudgetMultiplierCategoryMap(normalized)
 
       this.suppressEmit = true
       this.categories = (this.categories || []).map((category, catIndex) => {
         const categoryKey = this.getCategoryKey(category, catIndex)
-        const configuredMultipliers = cloneMultiplierList(multiplierMap.get(categoryKey) || [])
+        const configuredCategory = categoryMap.get(categoryKey) || { multipliers: [], itemOverrides: [] }
+        const configuredMultipliers = cloneMultiplierList(configuredCategory.multipliers)
+        const configuredItemOverrides = cloneItemOverrideList(configuredCategory.itemOverrides)
         const nextCategory = {
           ...category,
           key: categoryKey,
-          defaultMultipliers: configuredMultipliers
+          defaultMultipliers: configuredMultipliers,
+          itemOverrides: configuredItemOverrides
         }
 
         if (Array.isArray(nextCategory.items)) {
@@ -1493,7 +1518,12 @@ export default {
         if (!category || !Array.isArray(category.items)) return
         category.items.forEach((item) => {
           if (!item || typeof item !== 'object') return
-          if (!item.isManualMultiplier) return
+          if (!item.isManualMultiplier) {
+            this.applyRowMultiplierOverride(item, category)
+            const normalizedInputs = this.normalizeCalcInputs(item.calcType, item.inputs, item.multipliers, item)
+            this.setRowProp(item, 'inputs', normalizedInputs)
+            this.syncRowMultipliersWithInputs(item, category)
+          }
           this.calculateRowTotal(item)
         })
       })
@@ -1529,7 +1559,8 @@ export default {
         return {
           ...cat,
           ...match,
-          defaultMultipliers: cat.defaultMultipliers || match.defaultMultipliers || []
+          defaultMultipliers: cat.defaultMultipliers || match.defaultMultipliers || [],
+          itemOverrides: cat.itemOverrides || match.itemOverrides || []
         }
       })
 
@@ -1692,6 +1723,12 @@ export default {
           if (Array.isArray(item.periods)) {
             item.periods = item.periods.map(period => this.toRawNumberString(period))
           }
+          if (Object.prototype.hasOwnProperty.call(item, 'multiplierFieldOverrides')) {
+            delete item.multiplierFieldOverrides
+          }
+          if (Object.prototype.hasOwnProperty.call(item, 'itemOverrideMatch')) {
+            delete item.itemOverrideMatch
+          }
         })
       })
       return categories
@@ -1774,7 +1811,19 @@ export default {
     },
     getFieldsForRow(row) {
       const schema = this.getSchemaByCalcType(row && row.calcType)
-      return Array.isArray(schema.fields) ? schema.fields : []
+      const baseFields = Array.isArray(schema.fields) ? schema.fields : []
+      const overrides = Array.isArray(row && row.multiplierFieldOverrides) ? row.multiplierFieldOverrides : []
+      if (!overrides.length) return baseFields
+
+      return baseFields.map((field, index) => {
+        const override = overrides[index]
+        const hasOverrideValue = Number.isFinite(Number(override && override.value))
+        return {
+          ...field,
+          label: String(override && override.label ? override.label : field.label || '').trim() || field.label,
+          defaultValue: hasOverrideValue ? Number(override.value) : field.defaultValue
+        }
+      })
     },
     getFormulaLabel(row) {
       if (!row || typeof row !== 'object') return ''
@@ -1784,7 +1833,7 @@ export default {
     getFormulaPreview(row) {
       if (!row || typeof row !== 'object') return ''
       const schema = this.getSchemaByCalcType(row.calcType)
-      const fields = Array.isArray(schema.fields) ? schema.fields : []
+      const fields = this.getFieldsForRow(row)
       if (fields.length === 0) return schema.formulaLabel
 
       const values = fields.map(field => this.toNumber(row.inputs && row.inputs[field.key]))
@@ -1826,6 +1875,27 @@ export default {
         .replace(/[.,\-_/\\]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim()
+    },
+    findCategoryItemOverride(category, itemName) {
+      if (!category || category.isOther) return null
+      const normalizedItemName = this.normalizeKeywordText(itemName)
+      if (!normalizedItemName) return null
+
+      const overrides = Array.isArray(category.itemOverrides) ? category.itemOverrides : []
+      for (let index = 0; index < overrides.length; index += 1) {
+        const itemOverride = overrides[index]
+        const normalizedMatchText = this.normalizeKeywordText(itemOverride && itemOverride.matchText)
+        if (!normalizedMatchText) continue
+        if (normalizedItemName.includes(normalizedMatchText)) return itemOverride
+      }
+      return null
+    },
+    applyRowMultiplierOverride(row, category) {
+      if (!row || typeof row !== 'object') return
+      const itemOverride = this.findCategoryItemOverride(category, row.name)
+      const multipliers = itemOverride ? cloneMultiplierList(itemOverride.multipliers) : []
+      this.setRowProp(row, 'itemOverrideMatch', itemOverride ? String(itemOverride.matchText || '') : '')
+      this.setRowProp(row, 'multiplierFieldOverrides', multipliers)
     },
     detectForbiddenBudgetItem(itemName) {
       const normalizedName = this.normalizeKeywordText(itemName)
@@ -1889,8 +1959,7 @@ export default {
       return ''
     },
     normalizeCalcInputs(calcType, existingInputs = {}, legacyMultipliers = [], row = null) {
-      const schema = this.getSchemaByCalcType(calcType)
-      const fields = Array.isArray(schema.fields) ? schema.fields : []
+      const fields = this.getFieldsForRow({ calcType, multiplierFieldOverrides: row && row.multiplierFieldOverrides })
       const safeInputs = existingInputs && typeof existingInputs === 'object' ? existingInputs : {}
       const normalized = {}
 
@@ -2006,6 +2075,13 @@ export default {
           : this.getDefaultCalcTypeByCategory(categoryKey)
       }
 
+      if (!isManualMultiplier) {
+        this.applyRowMultiplierOverride(item, category)
+      } else {
+        this.setRowProp(item, 'itemOverrideMatch', '')
+        this.setRowProp(item, 'multiplierFieldOverrides', [])
+      }
+
       const normalizedInputs = this.normalizeCalcInputs(calcType, item.inputs, item.multipliers, item)
       const formulaLabel = detectedRule && detectedRule.calcType === calcType
         ? (detectedRule.formulaLabel || this.getSchemaByCalcType(calcType).formulaLabel)
@@ -2030,6 +2106,7 @@ export default {
         ? rule.calcType
         : this.getDefaultCalcTypeByCategory(categoryKey)
       const calcTypeChanged = String(item.calcType || '') !== targetCalcType
+      this.applyRowMultiplierOverride(item, category)
       const baseInputs = calcTypeChanged ? {} : item.inputs
       const normalizedInputs = this.normalizeCalcInputs(targetCalcType, baseInputs, item.multipliers, item)
 
