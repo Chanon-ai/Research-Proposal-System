@@ -7,7 +7,7 @@ export const DEFAULT_FUNDING_BUDGET_CONFIG = Object.freeze([
     label: 'ทุนนักวิจัยรุ่นใหม่',
     budgetLimit: 100000,
     subOptions: [
-      { key: 'qualification-alignment', label: 'สอดคล้องกับคุณวุฒิ/สาขาวิชา/ภาระงาน', budgetLimit: null }
+      { key: 'qualification-alignment', label: 'สอดคล้องกับคุณวุฒิ/สาขาวิชา/ภาระงาน' }
     ]
   },
   {
@@ -15,10 +15,10 @@ export const DEFAULT_FUNDING_BUDGET_CONFIG = Object.freeze([
     label: 'ทุนพัฒนานักวิจัย',
     budgetLimit: 200000,
     subOptions: [
-      { key: 'economic-development', label: 'เศรษฐกิจสร้างสรรค์และการแข่งขัน', budgetLimit: null },
-      { key: 'social-environment', label: 'สังคมและสิ่งแวดล้อม', budgetLimit: null },
-      { key: 'science-technology', label: 'วิทยาศาสตร์ เทคโนโลยี และนวัตกรรม', budgetLimit: null },
-      { key: 'human-resources', label: 'กำลังคนและสถาบันวิจัย', budgetLimit: null }
+      { key: 'economic-development', label: 'เศรษฐกิจสร้างสรรค์และการแข่งขัน' },
+      { key: 'social-environment', label: 'สังคมและสิ่งแวดล้อม' },
+      { key: 'science-technology', label: 'วิทยาศาสตร์ เทคโนโลยี และนวัตกรรม' },
+      { key: 'human-resources', label: 'กำลังคนและสถาบันวิจัย' }
     ]
   },
   {
@@ -32,7 +32,7 @@ export const DEFAULT_FUNDING_BUDGET_CONFIG = Object.freeze([
     label: 'ทุนต่อยอดสู่ภาคอุตสาหกรรม',
     budgetLimit: 300000,
     subOptions: [
-      { key: 'competitiveness', label: 'การเพิ่มขีดความสามารถการแข่งขัน', budgetLimit: null }
+      { key: 'competitiveness', label: 'การเพิ่มขีดความสามารถการแข่งขัน' }
     ]
   }
 ])
@@ -61,13 +61,6 @@ export const toBudgetLimitNumber = (value, fallback = 0) => {
   return Math.max(0, numeric)
 }
 
-export const toOptionalBudgetLimitNumber = (value) => {
-  if (value === '' || value === undefined || value === null) return null
-  const numeric = Number(value)
-  if (!Number.isFinite(numeric)) return null
-  return Math.max(0, numeric)
-}
-
 export const normalizeFundingBudgetConfig = (rawConfig, { fallbackToDefault = true } = {}) => {
   const source = Array.isArray(rawConfig) ? rawConfig : []
   const normalized = source.map(type => {
@@ -78,8 +71,7 @@ export const normalizeFundingBudgetConfig = (rawConfig, { fallbackToDefault = tr
       budgetLimit: toBudgetLimitNumber(type && type.budgetLimit, 0),
       subOptions: subOptions.map(subOption => ({
         key: normalizeFundingBudgetKey(subOption && (subOption.key !== undefined ? subOption.key : subOption.value)),
-        label: String(subOption && (subOption.label !== undefined ? subOption.label : (subOption.shortName !== undefined ? subOption.shortName : subOption.name)) || '').trim(),
-        budgetLimit: toOptionalBudgetLimitNumber(subOption && subOption.budgetLimit)
+        label: String(subOption && (subOption.label !== undefined ? subOption.label : (subOption.shortName !== undefined ? subOption.shortName : subOption.name)) || '').trim()
       })).filter(subOption => subOption.key || subOption.label)
     }
   }).filter(type => type.key || type.label)
@@ -111,8 +103,7 @@ export const sanitizeFundingBudgetConfigForSave = (rawConfig) => {
     budgetLimit: toBudgetLimitNumber(type.budgetLimit, 0),
     subOptions: (Array.isArray(type.subOptions) ? type.subOptions : []).map(subOption => ({
       key: normalizeFundingBudgetKey(subOption.key),
-      label: String(subOption.label || '').trim(),
-      budgetLimit: toOptionalBudgetLimitNumber(subOption.budgetLimit)
+      label: String(subOption.label || '').trim()
     })).filter(subOption => subOption.key || subOption.label)
   })).filter(type => type.key || type.label)
 }
@@ -141,17 +132,6 @@ export const getFundingTypeLabel = (config, fundingType, fallback = '') => {
   const type = findFundingTypeConfig(config, fundingType)
   if (!type) return fallback
   return String(type.label || '').trim() || fallback
-}
-
-export const getFundingSubTypeBudgetLimit = (config, fundingType, fundingSubType) => {
-  const subType = findFundingSubTypeConfig(config, fundingType, fundingSubType)
-  return toOptionalBudgetLimitNumber(subType && subType.budgetLimit)
-}
-
-export const getFundingSubTypeLabel = (config, fundingType, fundingSubType, fallback = '') => {
-  const subType = findFundingSubTypeConfig(config, fundingType, fundingSubType)
-  if (!subType) return fallback
-  return String(subType.label || '').trim() || fallback
 }
 
 export const shouldRequireFundingSubType = (config, fundingType) => {

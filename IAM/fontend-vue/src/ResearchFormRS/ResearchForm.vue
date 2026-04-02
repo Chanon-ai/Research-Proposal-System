@@ -781,8 +781,6 @@ import {
   shouldRequireFundingSubType,
   getFundingTypeBudgetLimit,
   getFundingTypeLabel,
-  getFundingSubTypeBudgetLimit,
-  getFundingSubTypeLabel,
   writeFundingBudgetConfigToFallbackStorage
 } from '@/ResearchFormRS/utils/fundingBudgetConfig'
 import Swal from 'sweetalert2'
@@ -1685,25 +1683,12 @@ export default {
         'industry-extension'
       ].includes(String(fundingType || '').trim())
     },
-    resolveFundingBudgetLimitContext (fundingType, fundingSubType = '') {
-      const subTypeBudgetLimit = getFundingSubTypeBudgetLimit(this.fundingBudgetConfig, fundingType, fundingSubType)
-      const fundingTypeLabel = getFundingTypeLabel(this.fundingBudgetConfig, fundingType, fundingType || 'ประเภททุนที่เลือก')
-      if (subTypeBudgetLimit !== null) {
-        const fundingSubTypeLabel = getFundingSubTypeLabel(
-          this.fundingBudgetConfig,
-          fundingType,
-          fundingSubType,
-          fundingSubType || ''
-        )
-        const scopedLabel = fundingSubTypeLabel
-          ? `${fundingTypeLabel} (${fundingSubTypeLabel})`
-          : fundingTypeLabel
-        return {
-          budgetLimit: Number(subTypeBudgetLimit),
-          label: scopedLabel
-        }
-      }
-
+    resolveFundingBudgetLimitContext (fundingType) {
+      const fundingTypeLabel = getFundingTypeLabel(
+        this.fundingBudgetConfig,
+        fundingType,
+        fundingType || 'ประเภททุนที่เลือก'
+      )
       return {
         budgetLimit: getFundingTypeBudgetLimit(this.fundingBudgetConfig, fundingType),
         label: fundingTypeLabel
@@ -4863,8 +4848,7 @@ export default {
         (budget && budget.grandTotal) || computedGrandTotal
       )
       const fundingType = String((form && form.fundingType) || '').trim()
-      const fundingSubType = String((form && form.fundingSubType) || '').trim()
-      const budgetLimitContext = this.resolveFundingBudgetLimitContext(fundingType, fundingSubType)
+      const budgetLimitContext = this.resolveFundingBudgetLimitContext(fundingType)
       const budgetLimit = this.normalizeBudgetNumber(budgetLimitContext.budgetLimit)
 
       const travelCategory = this.findBudgetCategory(categories, 'หมวดค่าเดินทาง', 2)
@@ -7009,6 +6993,3 @@ export default {
   fill: #c7d4e2 !important;
 }
 </style>
-
-
-

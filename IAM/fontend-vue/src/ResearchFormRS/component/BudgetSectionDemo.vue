@@ -460,9 +460,7 @@
 import {
   normalizeFundingBudgetConfig,
   getFundingTypeBudgetLimit,
-  getFundingTypeLabel,
-  getFundingSubTypeBudgetLimit,
-  getFundingSubTypeLabel
+  getFundingTypeLabel
 } from '@/ResearchFormRS/utils/fundingBudgetConfig'
 
 const BUDGET_ATTACHMENT_EXAMPLE_WINDOW_NAME = 'budget-attachment-example-doc'
@@ -992,10 +990,6 @@ export default {
       type: String,
       default: ''
     },
-    fundingSubType: {
-      type: String,
-      default: ''
-    },
     fundingBudgetConfig: {
       type: Array,
       default: () => []
@@ -1166,40 +1160,18 @@ export default {
     normalizedFundingBudgetConfig() {
       return normalizeFundingBudgetConfig(this.fundingBudgetConfig, { fallbackToDefault: true })
     },
-    fundingSubTypeBudgetLimit() {
-      return getFundingSubTypeBudgetLimit(
-        this.normalizedFundingBudgetConfig,
-        this.fundingType,
-        this.fundingSubType
-      )
-    },
     budgetLimit() {
-      if (this.fundingSubTypeBudgetLimit !== null) {
-        return Number(this.fundingSubTypeBudgetLimit)
-      }
       return getFundingTypeBudgetLimit(this.normalizedFundingBudgetConfig, this.fundingType)
     },
     hasBudgetLimit() {
       return this.budgetLimit > 0
     },
     fundingTypeLabel() {
-      const baseLabel = getFundingTypeLabel(
+      return getFundingTypeLabel(
         this.normalizedFundingBudgetConfig,
         this.fundingType,
         'ไม่ระบุประเภททุน'
       )
-
-      if (this.fundingSubTypeBudgetLimit !== null) {
-        const subTypeLabel = getFundingSubTypeLabel(
-          this.normalizedFundingBudgetConfig,
-          this.fundingType,
-          this.fundingSubType,
-          ''
-        )
-        if (subTypeLabel) return `${baseLabel} (${subTypeLabel})`
-      }
-
-      return baseLabel
     },
     remainingBudget() {
       if (!this.hasBudgetLimit) return 0
@@ -3448,4 +3420,3 @@ export default {
   background-color: #f8f9fa;
 }
 </style>
-

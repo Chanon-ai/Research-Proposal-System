@@ -259,7 +259,6 @@
             :is-read-only="isReadOnly"
             :proposal-id="proposalId"
             :funding-type="form.fundingType"
-            :funding-sub-type="form.fundingSubType"
             :funding-budget-config="fundingBudgetConfig"
             :reset-token="budgetFundingResetToken"
             @update:modelValue="handleBudgetUpdate"

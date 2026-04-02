@@ -78,7 +78,6 @@
                     <tr>
                       <th style="width: 22%;">รหัสทุนย่อย</th>
                       <th>ชื่อทุนย่อย</th>
-                      <th style="width: 24%;">งบประมาณทุนย่อย (ถ้ามี)</th>
                       <th style="width: 120px;">จัดการ</th>
                     </tr>
                   </thead>
@@ -104,17 +103,6 @@
                           @input="updateSubOptionLabel(typeIndex, subIndex, $event.target.value)"
                         />
                       </td>
-                      <td>
-                        <input
-                          class="form-control"
-                          type="number"
-                          min="0"
-                          step="1000"
-                          :value="subOption.budgetLimit"
-                          placeholder="เว้นว่าง = ใช้เพดานทุนหลัก"
-                          @input="updateSubOptionBudget(typeIndex, subIndex, $event.target.value)"
-                        />
-                      </td>
                       <td class="text-center">
                         <CButton
                           color="danger"
@@ -127,7 +115,7 @@
                       </td>
                     </tr>
                     <tr v-if="!type.subOptions || type.subOptions.length === 0">
-                      <td colspan="4" class="text-center text-muted">ยังไม่มีทุนย่อยสำหรับประเภททุนนี้</td>
+                      <td colspan="3" class="text-center text-muted">ยังไม่มีทุนย่อยสำหรับประเภททุนนี้</td>
                     </tr>
                   </tbody>
                 </table>
@@ -169,12 +157,11 @@ import {
   normalizeFundingBudgetConfig as normalizeFundingBudgetConfigUtil,
   normalizeFundingBudgetKey,
   sanitizeFundingBudgetConfigForSave as sanitizeFundingBudgetConfigForSaveUtil,
-  toBudgetLimitNumber as toBudgetLimitNumberUtil,
-  toOptionalBudgetLimitNumber as toOptionalBudgetLimitNumberUtil
+  toBudgetLimitNumber as toBudgetLimitNumberUtil
 } from '@/ResearchFormRS/utils/fundingBudgetConfig'
 
 const createFundingTypeTemplate = () => ({ key: '', label: '', budgetLimit: 0, subOptions: [] })
-const createFundingSubOptionTemplate = () => ({ key: '', label: '', budgetLimit: null })
+const createFundingSubOptionTemplate = () => ({ key: '', label: '' })
 
 export default {
   name: 'AdminFundingBudgetSettings',
@@ -209,9 +196,6 @@ export default {
     },
     toBudgetLimitNumber (value, fallback = 0) {
       return toBudgetLimitNumberUtil(value, fallback)
-    },
-    toOptionalBudgetLimitNumber (value) {
-      return toOptionalBudgetLimitNumberUtil(value)
     },
     normalizeFundingBudgetConfig (rawConfig) {
       return normalizeFundingBudgetConfigUtil(rawConfig, { fallbackToDefault: true })
@@ -252,9 +236,6 @@ export default {
           subKeySet.add(subOption.key)
 
           if (!subOption.label) return `ทุนย่อยลำดับที่ ${subNo} ของ "${type.label}": กรุณากรอกชื่อ`
-          if (subOption.budgetLimit !== null && (!Number.isFinite(subOption.budgetLimit) || subOption.budgetLimit < 0)) {
-            return `ทุนย่อยลำดับที่ ${subNo} ของ "${type.label}": งบประมาณไม่ถูกต้อง`
-          }
         }
       }
 
@@ -370,18 +351,6 @@ export default {
         : null
       if (!subOption) return
       this.$set(subOption, 'label', value)
-    },
-    updateSubOptionBudget (typeIndex, subIndex, value) {
-      const subOption = this.fundingBudgetConfig[typeIndex] && this.fundingBudgetConfig[typeIndex].subOptions
-        ? this.fundingBudgetConfig[typeIndex].subOptions[subIndex]
-        : null
-      if (!subOption) return
-      if (value === '' || value === null || value === undefined) {
-        this.$set(subOption, 'budgetLimit', null)
-        return
-      }
-      const numeric = Number(value)
-      this.$set(subOption, 'budgetLimit', Number.isFinite(numeric) ? numeric : null)
     },
     async resetToDefault () {
       const result = await Swal.fire({
