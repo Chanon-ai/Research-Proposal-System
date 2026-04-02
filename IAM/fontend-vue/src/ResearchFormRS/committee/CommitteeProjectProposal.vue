@@ -97,7 +97,7 @@
                   </template>
                   <template #action="{item}">
                     <td>
-                      <CButton size="sm" color="primary" variant="outline" @click="view(item)">
+                      <CButton v-if="canAccessCommitteeProposalDetail" size="sm" color="primary" variant="outline" @click="view(item)">
                         <CIcon name="cil-folder-open" class="mr-1" /> ดูรายละเอียด
                       </CButton>
                     </td>
@@ -144,7 +144,7 @@
               <div class="block-sub">แสดงรายการการประชุมที่กำหนดไว้ในระยะใกล้</div>
             </div>
           </div>
-          <CButton class="block-action" size="sm" color="primary" variant="outline" @click="goToMeetings"><CIcon name="cil-folder-open" class="mr-1" /> ดูทั้งหมด</CButton>
+          <CButton v-if="canAccessCommitteeMeetings" class="block-action" size="sm" color="primary" variant="outline" @click="goToMeetings"><CIcon name="cil-folder-open" class="mr-1" /> ดูทั้งหมด</CButton>
         </div>
         <div v-if="nextMeetings.length === 0" class="block-empty">ไม่พบรายการการประชุมที่ใกล้ถึงกำหนด</div>
         <div v-else class="block-list">
@@ -173,7 +173,7 @@
               <div class="block-sub">แสดงเหตุการณ์สำคัญล่าสุดเพื่อการติดตาม</div>
             </div>
           </div>
-          <CButton class="block-action" size="sm" color="primary" variant="outline" @click="goToNotifications"><CIcon name="cil-folder-open" class="mr-1" /> ดูทั้งหมด</CButton>
+          <CButton v-if="canAccessCommitteeNotifications" class="block-action" size="sm" color="primary" variant="outline" @click="goToNotifications"><CIcon name="cil-folder-open" class="mr-1" /> ดูทั้งหมด</CButton>
         </div>
         <div v-if="latestNotifs.length === 0" class="block-empty">ไม่พบรายการแจ้งเตือนล่าสุด</div>
         <div v-else class="block-list">
@@ -192,6 +192,14 @@
 
 <script>
 import Service from '@/service/api'
+import {
+  createDefaultRolePageAccessConfig,
+  isRoleAllowedForPath
+} from '@/ResearchFormRS/utils/rolePageAccessConfig'
+import {
+  loadRolePageAccessRuntimeConfig,
+  mapRoleForResearchAccess
+} from '@/ResearchFormRS/utils/rolePageAccessRuntime'
 
 export default {
   name: 'CommitteeProjectProposal',
@@ -217,10 +225,12 @@ export default {
         { key: 'submissionDate', label: 'วันที่ส่ง' },
         { key: 'statusDisplay', label: 'สถานะ' },
         { key: 'action', label: '', sorter: false, filter: false }
-      ]
+      ],
+      rolePageAccessConfig: createDefaultRolePageAccessConfig()
     }
   },
   mounted () {
+    this.fetchRolePageAccessConfig()
     this.loadLatestNotifsCache()
     this.fetchAssignedProposals()
     this.fetchSidePanels()
@@ -237,6 +247,37 @@ export default {
     currentUserId () {
       const user = this.currentUser
       return user && user._id ? String(user._id) : ''
+    },
+    currentResearchRole () {
+      const storeRole = this.$store && this.$store.getters
+        ? this.$store.getters['Authentication/userRole']
+        : ''
+      const role = storeRole || (this.currentUser && this.currentUser.role) || ''
+      return mapRoleForResearchAccess(role)
+    },
+    canAccessCommitteeProposalDetail () {
+      return isRoleAllowedForPath(
+        this.rolePageAccessConfig,
+        '/committee/proposals',
+        this.currentResearchRole,
+        { defaultAllow: true }
+      )
+    },
+    canAccessCommitteeMeetings () {
+      return isRoleAllowedForPath(
+        this.rolePageAccessConfig,
+        '/committee/meetings',
+        this.currentResearchRole,
+        { defaultAllow: true }
+      )
+    },
+    canAccessCommitteeNotifications () {
+      return isRoleAllowedForPath(
+        this.rolePageAccessConfig,
+        '/committee/notifications',
+        this.currentResearchRole,
+        { defaultAllow: true }
+      )
     },
     reviewMap () {
       const map = {}
@@ -389,6 +430,16 @@ export default {
     }
   },
   methods: {
+    async fetchRolePageAccessConfig () {
+      try {
+        const config = await loadRolePageAccessRuntimeConfig()
+        if (Array.isArray(config) && config.length > 0) {
+          this.rolePageAccessConfig = config
+        }
+      } catch (error) {
+        void error
+      }
+    },
     decisionLabel (decision, isReviewed) {
       if (!isReviewed) return 'ยังไม่ส่งผล'
       const key = String(decision || '').toLowerCase()
@@ -710,12 +761,15 @@ export default {
       return `${year} ปีที่แล้ว`
     },
     view (item) {
+      if (!this.canAccessCommitteeProposalDetail) return
       this.$router.push({ name: 'committeeProposalDetail', params: { id: item.proposalId || item.id } })
     },
     goToMeetings () {
+      if (!this.canAccessCommitteeMeetings) return
       this.$router.push('/committee/meetings')
     },
     goToNotifications () {
+      if (!this.canAccessCommitteeNotifications) return
       this.$router.push('/committee/notifications')
     }
   }

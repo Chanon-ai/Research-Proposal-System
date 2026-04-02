@@ -44,9 +44,25 @@
 <script>
 import nav from './_nav'
 import { mapGetters } from 'vuex'
+import {
+  createDefaultRolePageAccessConfig,
+  isRoleAllowedForPath
+} from '@/ResearchFormRS/utils/rolePageAccessConfig'
+import {
+  loadRolePageAccessRuntimeConfig,
+  mapRoleForResearchAccess
+} from '@/ResearchFormRS/utils/rolePageAccessRuntime'
 
 export default {
   name: 'TheSidebar',
+  data() {
+    return {
+      rolePageAccessConfig: createDefaultRolePageAccessConfig()
+    }
+  },
+  mounted() {
+    this.fetchRolePageAccessConfig()
+  },
   computed: {
     ...mapGetters({
       currentLanguage: 'setting/lang'
@@ -72,8 +88,8 @@ export default {
       }
     },
     navs() {
-      const _lang = this.currentLanguage
       const role = this.currentRole
+      const roleForAccess = mapRoleForResearchAccess(role)
       if (!role) return this.translateNavTree(nav)
 
       const filterByRole = (items) => {
@@ -88,6 +104,15 @@ export default {
           }
 
           const next = { ...item }
+          const targetPath = this.resolveNavTargetPath(next)
+          if (
+            targetPath &&
+            roleForAccess &&
+            !isRoleAllowedForPath(this.rolePageAccessConfig, targetPath, roleForAccess, { defaultAllow: true })
+          ) {
+            return acc
+          }
+
           if (Array.isArray(next.items)) {
             next.items = filterByRole(next.items)
             if (next.items.length === 0 && !next.to) {
@@ -113,12 +138,31 @@ export default {
           ...section,
           _children: filterByRole(section._children)
         }
-      })
+      }).filter(section => (
+        !section || !Array.isArray(section._children) || section._children.length > 0
+      ))
 
       return this.translateNavTree(filtered)
     }
   },
   methods: {
+    async fetchRolePageAccessConfig() {
+      try {
+        const config = await loadRolePageAccessRuntimeConfig()
+        if (Array.isArray(config) && config.length > 0) {
+          this.rolePageAccessConfig = config
+        }
+      } catch (error) {
+        void error
+      }
+    },
+    resolveNavTargetPath(item) {
+      if (!item) return ''
+      if (typeof item.to === 'string') return item.to
+      if (item.to && typeof item.to === 'object' && typeof item.to.path === 'string') return item.to.path
+      if (typeof item.route === 'string') return item.route
+      return ''
+    },
     translateLabel (label) {
       if (typeof label === 'string' && (label.startsWith('nav.') || label.startsWith('common.') || label.startsWith('header.'))) {
         return this.$t(label)
@@ -152,10 +196,6 @@ export default {
         }
         return next
       })
-    }
-  },
-  data() {
-    return {
     }
   }
 }

@@ -187,6 +187,7 @@
               <td class="action-body-cell" @click.stop>
                 <div class="action-cell">
                   <CButton
+                    v-if="canAccessResearchForm"
                     size="sm"
                     color="primary"
                     class="mr-2 action-btn action-btn-view"
@@ -238,7 +239,7 @@
       </CCardBody>
     </CCard>
 
-    <button class="fab" title="สร้างโครงการใหม่" @click="onAdd"><CIcon name="cil-chevron-right" class="mr-1" /> ＋</button>
+    <button v-if="canAccessResearchForm" class="fab" title="สร้างโครงการใหม่" @click="onAdd"><CIcon name="cil-chevron-right" class="mr-1" /> ＋</button>
   </div>
 </template>
 
@@ -255,6 +256,14 @@ import {
   STATUS_STEP_MAP,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import {
+  createDefaultRolePageAccessConfig,
+  isRoleAllowedForPath
+} from '@/ResearchFormRS/utils/rolePageAccessConfig'
+import {
+  loadRolePageAccessRuntimeConfig,
+  mapRoleForResearchAccess
+} from '@/ResearchFormRS/utils/rolePageAccessRuntime'
 
 const STATUS_LABEL_MAP = Object.freeze({
   draft: 'แบบร่าง',
@@ -347,15 +356,42 @@ export default {
           line: { borderWidth: 2, tension: 0.4 },
           point: { radius: 0 }
         }
-      }
+      },
+      rolePageAccessConfig: createDefaultRolePageAccessConfig()
     };
   },
 
   async mounted() {
-    await this.fetchResearch();
+    await Promise.all([
+      this.fetchRolePageAccessConfig(),
+      this.fetchResearch()
+    ]);
   },
 
   computed: {
+    currentResearchRole() {
+      const storeRole = this.$store && this.$store.getters
+        ? this.$store.getters['Authentication/userRole']
+        : ''
+      if (storeRole) return mapRoleForResearchAccess(storeRole)
+
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return ''
+        const parsed = JSON.parse(raw)
+        return mapRoleForResearchAccess(parsed && parsed.role ? parsed.role : '')
+      } catch (e) {
+        return ''
+      }
+    },
+    canAccessResearchForm() {
+      return isRoleAllowedForPath(
+        this.rolePageAccessConfig,
+        '/research-form',
+        this.currentResearchRole,
+        { defaultAllow: true }
+      )
+    },
     currentUserId() {
       const user = this.$store && this.$store.getters
         ? this.$store.getters['Authentication/currentUser']
@@ -434,6 +470,16 @@ export default {
   },
 
   methods: {
+    async fetchRolePageAccessConfig() {
+      try {
+        const config = await loadRolePageAccessRuntimeConfig()
+        if (Array.isArray(config) && config.length > 0) {
+          this.rolePageAccessConfig = config
+        }
+      } catch (error) {
+        void error
+      }
+    },
     setFilter(filterKey) {
       if (this.activeFilter === filterKey) {
         this.activeFilter = null;

@@ -102,7 +102,7 @@
                 <template #actions="{ item }">
                   <td class="text-nowrap">
                     <div class="admin-actions">
-                      <CButton color="primary" variant="outline" size="sm" class="admin-action-btn" @click="viewDetail(item)"><CIcon name="cil-folder-open" class="mr-1" /> {{ $t('admin.actions.viewDetail') }}</CButton>
+                      <CButton v-if="canAccessResearchForm" color="primary" variant="outline" size="sm" class="admin-action-btn" @click="viewDetail(item)"><CIcon name="cil-folder-open" class="mr-1" /> {{ $t('admin.actions.viewDetail') }}</CButton>
                     </div>
                   </td>
                 </template>
@@ -322,6 +322,14 @@ import {
   PROPOSAL_STATUS_KEYS as STATUS_KEYS,
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import {
+  createDefaultRolePageAccessConfig,
+  isRoleAllowedForPath
+} from '@/ResearchFormRS/utils/rolePageAccessConfig'
+import {
+  loadRolePageAccessRuntimeConfig,
+  mapRoleForResearchAccess
+} from '@/ResearchFormRS/utils/rolePageAccessRuntime'
 
 const SUMMARY_ALL_EXCLUDED_STATUSES = ['draft', 'pending_confirm']
 
@@ -403,11 +411,35 @@ export default {
         maxRounds: 2,
         allowRevisionAfterMeeting: true
       },
+      rolePageAccessConfig: createDefaultRolePageAccessConfig(),
 
       // tableFields moved to computed to allow $t() usage
     }
   },
   computed: {
+    currentResearchRole () {
+      const storeRole = this.$store && this.$store.getters
+        ? this.$store.getters['Authentication/userRole']
+        : ''
+      if (storeRole) return mapRoleForResearchAccess(storeRole)
+
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return ''
+        const parsed = JSON.parse(raw)
+        return mapRoleForResearchAccess(parsed && parsed.role ? parsed.role : '')
+      } catch (e) {
+        return ''
+      }
+    },
+    canAccessResearchForm () {
+      return isRoleAllowedForPath(
+        this.rolePageAccessConfig,
+        '/research-form',
+        this.currentResearchRole,
+        { defaultAllow: true }
+      )
+    },
     tableFields () {
       return [
         { key: 'proposalCode', label: this.$t('admin.table.proposalCode') },
@@ -494,6 +526,7 @@ export default {
   },
   mounted () {
     this.startElapsedTicker()
+    this.fetchRolePageAccessConfig()
     this.fetchWorkflowApprovalPolicy()
     this.fetchSummary()
     this.fetchProposals()
@@ -505,6 +538,16 @@ export default {
     this.stopElapsedTicker()
   },
   methods: {
+    async fetchRolePageAccessConfig () {
+      try {
+        const config = await loadRolePageAccessRuntimeConfig()
+        if (Array.isArray(config) && config.length > 0) {
+          this.rolePageAccessConfig = config
+        }
+      } catch (error) {
+        void error
+      }
+    },
     hasAssignedCommittee (proposal) {
       return Array.isArray(proposal && proposal.committeeIds) && proposal.committeeIds.length > 0
     },
@@ -794,6 +837,7 @@ export default {
       this.fetchProposals()
     },
     viewDetail (proposal) {
+      if (!this.canAccessResearchForm) return
       this.$router.push({
         path: '/research-form',
         query: {
