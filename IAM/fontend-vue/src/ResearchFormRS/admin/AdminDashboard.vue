@@ -11,49 +11,17 @@
     </div>
 
     <div v-else>
-      <CRow class="mb-2">
-        <CCol sm="6" lg="3" class="mb-3" v-for="card in summaryRow1" :key="card.status">
-          <div
-            class="summary-card"
-            :class="[card.toneClass, { active: selectedStatus === card.status }]"
-            @click="onCardClick(card.status)"
-          >
-            <div class="summary-card-bg" aria-hidden="true"></div>
-            <div class="summary-card-content">
-              <small class="summary-label">{{ $t(card.labelKey) }}</small>
-              <div class="summary-number">{{ summary[card.status] || 0 }}</div>
-            </div>
-          </div>
-        </CCol>
-      </CRow>
-
-      <CRow class="mb-2">
-        <CCol sm="6" lg="3" class="mb-3" v-for="card in summaryRow2" :key="card.status">
-          <div
-            class="summary-card"
-            :class="[card.toneClass, { active: selectedStatus === card.status }]"
-            @click="onCardClick(card.status)"
-          >
-            <div class="summary-card-bg" aria-hidden="true"></div>
-            <div class="summary-card-content">
-              <small class="summary-label">{{ $t(card.labelKey) }}</small>
-              <div class="summary-number">{{ summary[card.status] || 0 }}</div>
-            </div>
-          </div>
-        </CCol>
-      </CRow>
-
       <CRow class="mb-4">
-        <CCol sm="6" lg="3" class="mb-3" v-for="card in summaryRow3" :key="card.status">
+        <CCol sm="6" lg="3" class="mb-3" v-for="card in summaryCards" :key="card.key">
           <div
-            class="summary-card summary-card-small"
-            :class="[card.toneClass, { active: selectedStatus === card.status }]"
-            @click="onCardClick(card.status)"
+            class="summary-card"
+            :class="[card.toneClass, { active: selectedSummaryFilter === card.key }]"
+            @click="onCardClick(card.key)"
           >
             <div class="summary-card-bg" aria-hidden="true"></div>
             <div class="summary-card-content">
-              <small class="summary-label">{{ $t(card.labelKey) }}</small>
-              <div class="summary-number">{{ summary[card.status] || 0 }}</div>
+              <small class="summary-label">{{ card.label }}</small>
+              <div class="summary-number">{{ card.count }}</div>
             </div>
           </div>
         </CCol>
@@ -81,12 +49,6 @@
                 :options="yearFilterOptions"
                 @change="onYearChange"
               />
-              <CButton
-                color="secondary"
-                variant="outline"
-                class="mfu-reset-btn mfu-reset-btn--compact"
-                @click="onReset"
-              ><CIcon name="cil-reload" class="mr-1" /> {{ $t('admin.actions.reset') }}</CButton>
             </div>
           </div>
         </CCardHeader>
@@ -101,15 +63,13 @@
               <CDataTable
                 :items="tableItems"
                 :fields="tableFields"
+                :sorter="{ resetable: false }"
+                :sorter-value.sync="sorterValue"
                 hover
                 striped
                 :items-per-page="limit"
                 :no-items-view="{ noItems: $t('admin.table.noItems'), noResults: $t('admin.table.noResults') }"
               >
-                <template #index="{ item }">
-                  <td>{{ item.index }}</td>
-                </template>
-
                 <template #projectTitleTh="{ item }">
                   <td>
                     <div class="font-weight-bold">{{ item.projectTitleTh || '-' }}</div>
@@ -134,7 +94,9 @@
                 </template>
 
                 <template #updatedAt="{ item }">
-                  <td>{{ formatDate(item.updatedAt) }}</td>
+                  <td :title="formatAbsoluteDate(getLastActionAt(item))">
+                    {{ formatElapsedFromLastAction(item) }}
+                  </td>
                 </template>
 
                 <template #actions="{ item }">
@@ -407,19 +369,6 @@ const STATUS_COLORS = {
   announced: 'primary'
 }
 
-const SUMMARY_CARDS = {
-  draft: { label: 'แบบร่าง', toneClass: 'summary-tone-draft' },
-  submitted: { label: 'ยื่นแล้ว', toneClass: 'summary-tone-submitted' },
-  faculty_review_pending: { label: 'รอประธานพิจารณา', toneClass: 'summary-tone-meeting' },
-  document_checking: { label: 'ตรวจสอบเอกสาร', toneClass: 'summary-tone-checking' },
-  assigned_to_committee: { label: 'มอบหมายกรรมการแล้ว', toneClass: 'summary-tone-assigned' },
-  under_review: { label: 'กรรมการได้ให้ความเห็นแล้ว', toneClass: 'summary-tone-review' },
-  revision_requested: { label: 'ขอแก้ไข', toneClass: 'summary-tone-revision' },
-  approved: { label: 'อนุมัติ', toneClass: 'summary-tone-approved' },
-  rejected: { label: 'ปฏิเสธ', toneClass: 'summary-tone-rejected' },
-  announced: { label: 'ประกาศผลแล้ว', toneClass: 'summary-tone-announced' }
-}
-
 const STATUS_KEYS = [
   'draft',
   'pending_confirm',
@@ -439,6 +388,43 @@ const STATUS_KEYS = [
   'announced'
 ]
 
+const SUMMARY_ALL_EXCLUDED_STATUSES = ['draft', 'pending_confirm']
+
+const SUMMARY_ALL_STATUSES = STATUS_KEYS.filter(status => (
+  !SUMMARY_ALL_EXCLUDED_STATUSES.includes(status)
+))
+
+const SUMMARY_IN_PROGRESS = SUMMARY_ALL_STATUSES.filter(status => (
+  !['approved', 'rejected', 'announced'].includes(status)
+))
+
+const SUMMARY_FILTER_CARDS = [
+  {
+    key: 'all',
+    label: 'ทั้งหมด',
+    toneClass: 'summary-tone-submitted',
+    statuses: SUMMARY_ALL_STATUSES
+  },
+  {
+    key: 'in_progress',
+    label: 'กำลังดำเนินการ',
+    toneClass: 'summary-tone-checking',
+    statuses: SUMMARY_IN_PROGRESS
+  },
+  {
+    key: 'approved',
+    label: 'อนุมัติ',
+    toneClass: 'summary-tone-approved',
+    statuses: ['approved']
+  },
+  {
+    key: 'rejected',
+    label: 'ไม่อนุมัติ',
+    toneClass: 'summary-tone-rejected',
+    statuses: ['rejected']
+  }
+]
+
 export default {
   name: 'AdminDashboard',
   data () {
@@ -451,9 +437,13 @@ export default {
       loadingSummary: false,
       loadingTable: false,
       selectedStatus: '',
+      selectedSummaryFilter: 'all',
       selectedYear: '',
+      sorterValue: { column: 'updatedAt', asc: false },
       limit: 10,
       perPageOptions: [5, 10, 20, 50],
+      nowTs: Date.now(),
+      elapsedTickerId: null,
 
       showStatusModal: false,
       selectedProposal: null,
@@ -485,24 +475,23 @@ export default {
   computed: {
     tableFields () {
       return [
-        { key: 'index', label: '#' },
         { key: 'proposalCode', label: this.$t('admin.table.proposalCode') },
         { key: 'projectTitleTh', label: this.$t('admin.table.projectTitleTh') },
         { key: 'fundingType', label: this.$t('admin.table.fundingType') },
         { key: 'currentStatus', label: this.$t('admin.table.currentStatus') },
         { key: 'currentRound', label: this.$t('admin.table.currentRound') },
         { key: 'updatedAt', label: this.$t('admin.table.updatedAt') },
-        { key: 'actions', label: this.$t('admin.table.actions'), _classes: 'text-center text-nowrap' }
+        { key: 'actions', label: this.$t('admin.table.actions'), _classes: 'text-center text-nowrap', sorter: false }
       ]
     },
-    summaryRow1 () {
-      return ['draft', 'submitted', 'faculty_review_pending', 'document_checking'].map(this.toSummaryCard)
-    },
-    summaryRow2 () {
-      return ['assigned_to_committee', 'under_review', 'revision_requested', 'approved'].map(this.toSummaryCard)
-    },
-    summaryRow3 () {
-      return ['rejected', 'announced'].map(this.toSummaryCard)
+    summaryCards () {
+      return SUMMARY_FILTER_CARDS.map(card => {
+        const isAllCard = card.key === 'all'
+        return {
+          ...card,
+          count: isAllCard ? this.getSummaryAllCount() : this.getSummaryCountByStatuses(card.statuses)
+        }
+      })
     },
     statusFilterOptions () {
       return [
@@ -520,10 +509,7 @@ export default {
       ]
     },
     tableItems () {
-      return this.proposals.map((proposal, idx) => ({
-        ...proposal,
-        index: (this.page - 1) * this.limit + idx + 1
-      }))
+      return this.proposals
     },
     nextStatusOptions () {
       const statuses = this.selectedProposal ? this.getNextStatuses(this.selectedProposal.currentStatus) : []
@@ -572,9 +558,16 @@ export default {
     }
   },
   mounted () {
+    this.startElapsedTicker()
     this.fetchWorkflowApprovalPolicy()
     this.fetchSummary()
     this.fetchProposals()
+  },
+  beforeDestroy () {
+    this.stopElapsedTicker()
+  },
+  beforeUnmount () {
+    this.stopElapsedTicker()
   },
   methods: {
     hasAssignedCommittee (proposal) {
@@ -670,9 +663,27 @@ export default {
         this.committeeUsersLoading = false
       }
     },
-    toSummaryCard (status) {
-      const toneClass = (SUMMARY_CARDS[status] && SUMMARY_CARDS[status].toneClass) || ''
-      return { status, toneClass, labelKey: `status.${status}` }
+    getSummaryCountByStatuses (statuses) {
+      return (statuses || []).reduce((sum, status) => sum + (Number(this.summary[status]) || 0), 0)
+    },
+    getSummaryAllCount () {
+      const summary = this.summary || {}
+      return Object.keys(summary).reduce((sum, status) => {
+        if (SUMMARY_ALL_EXCLUDED_STATUSES.includes(String(status || '').trim())) return sum
+        return sum + (Number(summary[status]) || 0)
+      }, 0)
+    },
+    resolveActiveStatuses () {
+      if (this.selectedStatus) return [this.selectedStatus]
+      if (this.selectedSummaryFilter === 'all') {
+        const dynamicStatuses = Object.keys(this.summary || {}).filter(status => (
+          !SUMMARY_ALL_EXCLUDED_STATUSES.includes(String(status || '').trim())
+        ))
+        if (dynamicStatuses.length > 0) return dynamicStatuses
+        return SUMMARY_ALL_STATUSES
+      }
+      const card = SUMMARY_FILTER_CARDS.find(item => item.key === this.selectedSummaryFilter)
+      return card && Array.isArray(card.statuses) ? card.statuses : []
     },
     getStatusLabel (status) {
       try {
@@ -693,11 +704,79 @@ export default {
     getSelectValue (val) {
       return val && val.target ? val.target.value : val
     },
-    formatDate (value) {
-      if (!value) return '-'
+    startElapsedTicker () {
+      this.stopElapsedTicker()
+      this.nowTs = Date.now()
+      this.elapsedTickerId = setInterval(() => {
+        this.nowTs = Date.now()
+      }, 60000)
+    },
+    stopElapsedTicker () {
+      if (this.elapsedTickerId) {
+        clearInterval(this.elapsedTickerId)
+        this.elapsedTickerId = null
+      }
+    },
+    toTimestamp (value) {
+      if (!value) return 0
+      if (value instanceof Date) return Number(value.getTime()) || 0
       const d = new Date(value)
-      if (Number.isNaN(d.getTime())) return '-'
+      const ts = d.getTime()
+      return Number.isFinite(ts) ? ts : 0
+    },
+    getLastActionAt (proposal) {
+      if (!proposal || typeof proposal !== 'object') return null
+
+      const statusLogs = Array.isArray(proposal.statusLogs) ? proposal.statusLogs : []
+      const logTimestamp = statusLogs.reduce((latest, log) => {
+        const ts = Math.max(
+          this.toTimestamp(log && log.changedAt),
+          this.toTimestamp(log && log.updatedAt),
+          this.toTimestamp(log && log.createdAt),
+          this.toTimestamp(log && log.dateTime)
+        )
+        return ts > latest ? ts : latest
+      }, 0)
+
+      const directTimestamp = Math.max(
+        this.toTimestamp(proposal.lastActionAt),
+        this.toTimestamp(proposal.statusUpdatedAt),
+        this.toTimestamp(proposal.currentStatusUpdatedAt),
+        this.toTimestamp(proposal.updatedAt),
+        this.toTimestamp(proposal.createdAt)
+      )
+
+      const finalTimestamp = Math.max(logTimestamp, directTimestamp)
+      if (!finalTimestamp) return null
+      return new Date(finalTimestamp)
+    },
+    formatAbsoluteDate (value) {
+      if (!value) return ''
+      const d = value instanceof Date ? value : new Date(value)
+      if (Number.isNaN(d.getTime())) return ''
       return d.toLocaleString('th-TH')
+    },
+    formatElapsedFromLastAction (proposal) {
+      const lastActionDate = this.getLastActionAt(proposal)
+      if (!lastActionDate) return '-'
+
+      const diffMs = Math.max(0, this.nowTs - lastActionDate.getTime())
+      const diffMinutes = Math.floor(diffMs / 60000)
+
+      if (diffMinutes < 1) return 'เมื่อสักครู่'
+      if (diffMinutes < 60) return `${diffMinutes} นาทีที่แล้ว`
+
+      const diffHours = Math.floor(diffMinutes / 60)
+      if (diffHours < 24) return `${diffHours} ชั่วโมงที่แล้ว`
+
+      const diffDays = Math.floor(diffHours / 24)
+      if (diffDays < 30) return `${diffDays} วันที่แล้ว`
+
+      const diffMonths = Math.floor(diffDays / 30)
+      if (diffMonths < 12) return `${diffMonths} เดือนที่แล้ว`
+
+      const diffYears = Math.floor(diffDays / 365)
+      return `${diffYears} ปีที่แล้ว`
     },
     async fetchSummary () {
       this.loadingSummary = true
@@ -719,7 +798,12 @@ export default {
           page: this.page,
           limit: this.limit
         }
-        if (this.selectedStatus) params.status = this.selectedStatus
+        const activeStatuses = this.resolveActiveStatuses()
+        if (activeStatuses.length === 1) {
+          params.status = activeStatuses[0]
+        } else if (activeStatuses.length > 1) {
+          params.status = activeStatuses.join(',')
+        }
         if (this.selectedYear) params.fiscalYear = this.selectedYear
 
         const response = await axios.get('/api/v1/proposals', { params })
@@ -743,8 +827,9 @@ export default {
         this.loadingTable = false
       }
     },
-    onCardClick (status) {
-      this.selectedStatus = status
+    onCardClick (filterKey) {
+      this.selectedSummaryFilter = filterKey
+      this.selectedStatus = ''
       this.page = 1
       this.fetchProposals()
       this.$nextTick(() => {
@@ -755,6 +840,7 @@ export default {
     },
     onStatusChange (val) {
       this.selectedStatus = this.getSelectValue(val)
+      this.selectedSummaryFilter = this.selectedStatus ? '' : 'all'
       this.page = 1
       this.fetchProposals()
     },
@@ -764,12 +850,6 @@ export default {
       this.fetchProposals()
     },
     onLimitChange () {
-      this.page = 1
-      this.fetchProposals()
-    },
-    onReset () {
-      this.selectedStatus = ''
-      this.selectedYear = ''
       this.page = 1
       this.fetchProposals()
     },
@@ -1123,20 +1203,6 @@ export default {
   line-height: 1.2;
 }
 
-.mfu-reset-btn {
-  height: 34px;
-  border-radius: 10px;
-  background: rgba(181, 133, 34, 0.1);
-  border-color: rgba(181, 133, 34, 0.3);
-  color: #6b0f0f;
-}
-
-.mfu-reset-btn:hover {
-  background: rgba(181, 133, 34, 0.16);
-  border-color: rgba(181, 133, 34, 0.42);
-  color: #6b0f0f;
-}
-
 .mfu-header-tools {
   display: flex;
   align-items: center;
@@ -1175,10 +1241,6 @@ export default {
 .mfu-header-tools::v-deep .form-control:focus {
   border-color: rgba(181, 133, 34, 0.7);
   box-shadow: 0 0 0 3px rgba(181, 133, 34, 0.16);
-}
-
-.mfu-reset-btn--compact {
-  padding: 0 14px;
 }
 
 .mfu-count-badge {
@@ -1588,20 +1650,6 @@ body.c-dark-theme .mfu-header-tools::v-deep .custom-select:focus {
 body.c-dark-theme .mfu-header-tools::v-deep select option {
   background: #111827;
   color: #e5e7eb;
-}
-
-[data-coreui-theme='dark'] .mfu-reset-btn,
-body.c-dark-theme .mfu-reset-btn {
-  background: rgba(71, 85, 105, 0.28);
-  border-color: rgba(148, 163, 184, 0.45);
-  color: #e5e7eb;
-}
-
-[data-coreui-theme='dark'] .mfu-reset-btn:hover,
-body.c-dark-theme .mfu-reset-btn:hover {
-  background: rgba(71, 85, 105, 0.42);
-  border-color: rgba(148, 163, 184, 0.6);
-  color: #ffffff;
 }
 
 [data-coreui-theme='dark'] .committee-selection-summary,

@@ -372,8 +372,29 @@ async function getProposalList(query = {}, user) {
   if (user && user.role === 'committee' && user._id) {
     filter.committeeIds = user._id;
   }
-  if (query.currentStatus) filter.currentStatus = query.currentStatus;
-  if (query.status) filter.currentStatus = query.status;
+  const statusTokens = [];
+  const pushStatusTokens = (raw) => {
+    if (!raw) return;
+    if (Array.isArray(raw)) {
+      raw.forEach(pushStatusTokens);
+      return;
+    }
+    const text = String(raw).trim();
+    if (!text) return;
+    text
+      .split(',')
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+      .forEach((item) => statusTokens.push(item));
+  };
+  pushStatusTokens(query.currentStatus);
+  pushStatusTokens(query.status);
+  const uniqueStatusTokens = Array.from(new Set(statusTokens));
+  if (uniqueStatusTokens.length === 1) {
+    filter.currentStatus = uniqueStatusTokens[0];
+  } else if (uniqueStatusTokens.length > 1) {
+    filter.currentStatus = { $in: uniqueStatusTokens };
+  }
   if (query.fiscalYear) filter.fiscalYear = query.fiscalYear;
   if (query.keyword) {
     const kw = query.keyword;
