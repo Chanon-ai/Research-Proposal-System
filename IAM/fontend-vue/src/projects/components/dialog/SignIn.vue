@@ -80,13 +80,37 @@
     export default {
         name: 'SignIn',
         methods: {
+          extractGooglePicture(googleUser) {
+            try {
+              const profile = googleUser && typeof googleUser.getBasicProfile === 'function'
+                ? googleUser.getBasicProfile()
+                : null
+              if (profile && typeof profile.getImageUrl === 'function') {
+                const imageUrl = profile.getImageUrl()
+                return imageUrl && String(imageUrl).trim() ? String(imageUrl).trim() : ''
+              }
+            } catch (e) {
+              // Ignore profile parsing errors.
+            }
+            return ''
+          },
+          persistAvatarHint(imageUrl) {
+            const normalized = imageUrl && String(imageUrl).trim() ? String(imageUrl).trim() : ''
+            if (!normalized) return
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem('auth_avatar_hint', normalized)
+            }
+          },
           async onAuthenGoogle() {
             try {
               const googleUser = await this.$gAuth.signIn();
               const id_token = googleUser.getAuthResponse().id_token;
+              const picture = this.extractGooglePicture(googleUser)
+              this.persistAvatarHint(picture)
               const body = {
                 token: id_token,
-                authType: "689c06d5255db4e56aea8902"
+                authType: "689c06d5255db4e56aea8902",
+                picture
               };
               await this.$store.dispatch("auth/signIn", body)
 

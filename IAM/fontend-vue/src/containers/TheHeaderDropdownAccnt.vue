@@ -47,7 +47,8 @@ export default {
   data() {
     return {
       defaultAvatarSrc: require('@/assets/avatars/1.jpg'),
-      avatarLoadFailed: false
+      avatarLoadFailed: false,
+      avatarBootstrapTried: false
     }
   },
 
@@ -95,18 +96,44 @@ export default {
       return profile && typeof profile === 'object' ? profile : null
     },
 
+    avatarHint () {
+      try {
+        const raw = localStorage.getItem('auth_avatar_hint')
+        return raw && String(raw).trim() ? String(raw).trim() : ''
+      } catch (e) {
+        return ''
+      }
+    },
+
     rawAvatarSrc () {
+      const legacyProfileImage = this.legacyProfile && this.legacyProfile.userinfo && this.legacyProfile.userinfo.image
+      const legacyProfileImageNested = this.legacyProfile
+        && this.legacyProfile.userinfo
+        && this.legacyProfile.userinfo.imageProfile
+        && this.legacyProfile.userinfo.imageProfile.src
+
       const candidates = [
         this.researchUser && this.researchUser.avatarUrl,
         this.researchUser && this.researchUser.avatar,
         this.researchUser && this.researchUser.picture,
         this.researchUser && this.researchUser.image,
-        this.legacyProfile && this.legacyProfile.userinfo && this.legacyProfile.userinfo.image,
-        this.legacyProfile && this.legacyProfile.userinfo && this.legacyProfile.userinfo.imageProfile && this.legacyProfile.userinfo.imageProfile.src
+        this.researchUser && this.researchUser.photo,
+        this.researchUser && this.researchUser.photoURL,
+        this.researchUser && this.researchUser.profileImage,
+        this.researchUser && this.researchUser.profileImageUrl,
+        this.researchUser && this.researchUser.userinfo && this.researchUser.userinfo.image,
+        this.researchUser && this.researchUser.userinfo && this.researchUser.userinfo.imageProfile && this.researchUser.userinfo.imageProfile.src,
+        this.legacyProfile && this.legacyProfile.avatarUrl,
+        this.legacyProfile && this.legacyProfile.avatar,
+        this.legacyProfile && this.legacyProfile.picture,
+        this.legacyProfile && this.legacyProfile.photo,
+        legacyProfileImage,
+        legacyProfileImageNested,
+        this.avatarHint
       ]
 
       const found = candidates.find(item => typeof item === 'string' && item.trim())
-      return found ? String(found).trim() : ''
+      return this.normalizeAvatarUrl(found || '')
     },
 
     avatarSrc () {
@@ -122,12 +149,79 @@ export default {
   },
 
   watch: {
-    rawAvatarSrc () {
+    rawAvatarSrc (value) {
       this.avatarLoadFailed = false
+      if (!value) {
+        this.tryBootstrapLegacyProfile()
+      }
     }
   },
 
+  mounted () {
+    this.tryBootstrapLegacyProfile()
+  },
+
   methods: {
+    getApiBaseUrl () {
+      const raw = process.env.VUE_APP_API_BASE_URL || process.env.VUE_APP_API_URL || ''
+      return String(raw || '').trim().replace(/\/+$/, '')
+    },
+
+    normalizeAvatarUrl (value) {
+      const raw = String(value || '').trim()
+      if (!raw) return ''
+
+      if (/^data:/i.test(raw) || /^blob:/i.test(raw)) {
+        return raw
+      }
+
+      if (/^https?:\/\//i.test(raw)) {
+        return raw
+      }
+
+      if (raw.startsWith('//')) {
+        const protocol = (typeof window !== 'undefined' && window.location && window.location.protocol)
+          ? window.location.protocol
+          : 'https:'
+        return `${protocol}${raw}`
+      }
+
+      const baseUrl = this.getApiBaseUrl()
+      if (!baseUrl) return raw
+
+      if (raw.startsWith('/')) {
+        return `${baseUrl}${raw}`
+      }
+
+      return `${baseUrl}/${raw.replace(/^\.?\//, '')}`
+    },
+
+    hasLegacyToken () {
+      const fromStore = this.$store && this.$store.state ? this.$store.state.XAccessToken : ''
+      if (fromStore && String(fromStore).trim()) return true
+
+      try {
+        const fromLocalStorage = localStorage.getItem('x-access-token')
+        return !!(fromLocalStorage && String(fromLocalStorage).trim())
+      } catch (e) {
+        return false
+      }
+    },
+
+    async tryBootstrapLegacyProfile () {
+      if (this.rawAvatarSrc) return
+      if (this.avatarBootstrapTried) return
+      if (!this.hasLegacyToken()) return
+      if (this.legacyProfile) return
+
+      this.avatarBootstrapTried = true
+      try {
+        await this.$store.dispatch('auth/bootstrapSession')
+      } catch (e) {
+        // Ignore avatar fallback failures to avoid blocking the UI.
+      }
+    },
+
     onAvatarError () {
       this.avatarLoadFailed = true
     },

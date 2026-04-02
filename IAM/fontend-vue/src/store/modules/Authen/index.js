@@ -7,6 +7,7 @@ const TRUSTED_DEVICE_ID_KEY = 'trusted-device-id-v1';
 const X_ACCESS_TOKEN_STORAGE_KEY = 'x-access-token';
 const RESEARCH_TOKEN_STORAGE_KEY = 'auth_token';
 const RESEARCH_USER_STORAGE_KEY = 'auth_user';
+const RESEARCH_AVATAR_HINT_STORAGE_KEY = 'auth_avatar_hint';
 
 function getOrCreateDeviceId() {
     if (typeof window === 'undefined' || !window.localStorage) {
@@ -49,14 +50,88 @@ function parseResearchAuth(raw) {
     return { token, user };
 }
 
-function applyResearchAuth(raw) {
+function readAvatarHint() {
+    if (typeof window === 'undefined' || !window.localStorage) {
+        return '';
+    }
+    const raw = window.localStorage.getItem(RESEARCH_AVATAR_HINT_STORAGE_KEY);
+    return raw && String(raw).trim() ? String(raw).trim() : '';
+}
+
+function writeAvatarHint(value) {
+    if (typeof window === 'undefined' || !window.localStorage) {
+        return;
+    }
+    const normalized = value && String(value).trim() ? String(value).trim() : '';
+    if (!normalized) {
+        window.localStorage.removeItem(RESEARCH_AVATAR_HINT_STORAGE_KEY);
+        return;
+    }
+    window.localStorage.setItem(RESEARCH_AVATAR_HINT_STORAGE_KEY, normalized);
+}
+
+function pickFirstNonEmpty(items) {
+    if (!Array.isArray(items)) return '';
+    const found = items.find(function (item) {
+        return item && String(item).trim();
+    });
+    return found ? String(found).trim() : '';
+}
+
+function extractAvatarUrl(raw) {
+    if (!raw || typeof raw !== 'object') return '';
+    const userinfo = raw.userinfo && typeof raw.userinfo === 'object' ? raw.userinfo : null;
+    const imageProfile = userinfo && userinfo.imageProfile && typeof userinfo.imageProfile === 'object'
+        ? userinfo.imageProfile
+        : null;
+    return pickFirstNonEmpty([
+        raw.avatarUrl,
+        raw.avatar,
+        raw.picture,
+        raw.photo,
+        raw.photoURL,
+        raw.image,
+        raw.profileImage,
+        raw.profileImageUrl,
+        userinfo && userinfo.image,
+        imageProfile && imageProfile.src
+    ]);
+}
+
+function enrichResearchUserWithAvatar(user, fallbackProfile, explicitAvatar) {
+    if (!user || typeof user !== 'object') return user;
+    const normalizedUser = Object.assign({}, user);
+    const currentAvatar = extractAvatarUrl(normalizedUser);
+    const fallbackAvatar = pickFirstNonEmpty([
+        explicitAvatar,
+        extractAvatarUrl(fallbackProfile),
+        readAvatarHint()
+    ]);
+    const resolvedAvatar = currentAvatar || fallbackAvatar;
+
+    if (!resolvedAvatar) return normalizedUser;
+
+    if (!String(normalizedUser.avatarUrl || '').trim()) normalizedUser.avatarUrl = resolvedAvatar;
+    if (!String(normalizedUser.avatar || '').trim()) normalizedUser.avatar = resolvedAvatar;
+    if (!String(normalizedUser.picture || '').trim()) normalizedUser.picture = resolvedAvatar;
+
+    writeAvatarHint(resolvedAvatar);
+    return normalizedUser;
+}
+
+function applyResearchAuth(raw, fallbackProfile, explicitAvatar) {
     const auth = parseResearchAuth(raw);
     if (!auth) return false;
+    const enrichedUser = enrichResearchUserWithAvatar(auth.user, fallbackProfile, explicitAvatar);
+    const enrichedAuth = {
+        token: auth.token,
+        user: enrichedUser
+    };
     if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem(RESEARCH_TOKEN_STORAGE_KEY, auth.token);
-        window.localStorage.setItem(RESEARCH_USER_STORAGE_KEY, JSON.stringify(auth.user));
+        window.localStorage.setItem(RESEARCH_TOKEN_STORAGE_KEY, enrichedAuth.token);
+        window.localStorage.setItem(RESEARCH_USER_STORAGE_KEY, JSON.stringify(enrichedAuth.user));
     }
-    store.commit('Authentication/SET_AUTH', auth);
+    store.commit('Authentication/SET_AUTH', enrichedAuth);
     return true;
 }
 
@@ -64,6 +139,7 @@ function clearResearchAuth() {
     if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem(RESEARCH_TOKEN_STORAGE_KEY);
         window.localStorage.removeItem(RESEARCH_USER_STORAGE_KEY);
+        window.localStorage.removeItem(RESEARCH_AVATAR_HINT_STORAGE_KEY);
     }
     store.commit('Authentication/CLEAR_AUTH');
 }
@@ -144,7 +220,7 @@ const ServerModule = {
                         const meRes = await Service.authenticated('me', {}, {});
                         const mePayload = meRes && meRes.data ? meRes.data.data : null;
                         if (mePayload && mePayload.researchAuth) {
-                            applyResearchAuth(mePayload.researchAuth);
+                            applyResearchAuth(mePayload.researchAuth, mePayload);
                         }
                         const me = mePayload && typeof mePayload === 'object'
                             ? Object.assign({}, mePayload)
@@ -218,6 +294,9 @@ const ServerModule = {
                 clearResearchAuth();
                 const payload = Object.assign({}, data || {});
                 payload.deviceId = getOrCreateDeviceId();
+                if (payload.picture && String(payload.picture).trim()) {
+                    writeAvatarHint(payload.picture);
+                }
 
                 const response = await Service.authenticated('signin', payload, {});
                 const objs = response && response.data ? response.data.data : null;
@@ -239,11 +318,11 @@ const ServerModule = {
                 if (!require2FA) {
                     await setItem('objs', { xAccessToken: token });
                     setTokenToLocalStorage(token);
-                    let hasAppliedResearchAuth = applyResearchAuth(researchAuthFromSignin);
+                    applyResearchAuth(researchAuthFromSignin, null, payload.picture || payload.avatarUrl || '');
                     const meRes = await Service.authenticated('me', {}, {});
                     const mePayload = meRes && meRes.data ? meRes.data.data : null;
-                    if (!hasAppliedResearchAuth && mePayload && mePayload.researchAuth) {
-                        hasAppliedResearchAuth = applyResearchAuth(mePayload.researchAuth);
+                    if (mePayload && mePayload.researchAuth) {
+                        applyResearchAuth(mePayload.researchAuth, mePayload, payload.picture || payload.avatarUrl || '');
                     }
                     const me = mePayload && typeof mePayload === 'object'
                         ? Object.assign({}, mePayload)
@@ -310,9 +389,9 @@ const ServerModule = {
         async twofaSend({ commit, state }, data) {
             const verifyRes = await Service.authenticated('twofa-verify', data || {}, {});
             const verifyPayload = verifyRes && verifyRes.data ? verifyRes.data.data : null;
-            let hasAppliedResearchAuth = false;
+            const explicitAvatar = data && data.picture ? data.picture : readAvatarHint();
             if (verifyPayload && verifyPayload.researchAuth) {
-                hasAppliedResearchAuth = applyResearchAuth(verifyPayload.researchAuth);
+                applyResearchAuth(verifyPayload.researchAuth, null, explicitAvatar);
             }
             if (!state.pendingToken) {
                 throw new Error('missing_pending_token');
@@ -321,8 +400,8 @@ const ServerModule = {
             setTokenToLocalStorage(state.pendingToken);
             const meRes = await Service.authenticated('me', {}, {});
             const mePayload = meRes && meRes.data ? meRes.data.data : null;
-            if (!hasAppliedResearchAuth && mePayload && mePayload.researchAuth) {
-                hasAppliedResearchAuth = applyResearchAuth(mePayload.researchAuth);
+            if (mePayload && mePayload.researchAuth) {
+                applyResearchAuth(mePayload.researchAuth, mePayload, explicitAvatar);
             }
             const me = mePayload && typeof mePayload === 'object'
                 ? Object.assign({}, mePayload)
