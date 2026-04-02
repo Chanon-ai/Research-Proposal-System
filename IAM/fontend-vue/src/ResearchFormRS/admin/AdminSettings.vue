@@ -97,6 +97,11 @@
       </CTab>
 
       <CTab>
+        <template slot="title">สิทธิ์การเข้าถึง</template>
+        <AdminRolePageAccessSettings />
+      </CTab>
+
+      <CTab>
         <template slot="title">Workflow</template>
 
         <CAlert
@@ -355,6 +360,7 @@
 import { instance as axios } from '@/service/api'
 import AdminUsersManagement from '@/components/admin/AdminUsersManagement.vue'
 import AdminFundingBudgetSettings from '@/ResearchFormRS/admin/AdminFundingBudgetSettings.vue'
+import AdminRolePageAccessSettings from '@/ResearchFormRS/admin/AdminRolePageAccessSettings.vue'
 import Swal from 'sweetalert2'
 import {
   PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
@@ -423,16 +429,17 @@ const STATUS_ICONS = {
 const SETTINGS_TAB_INDEX = {
   general: 0,
   funding_budget: 1,
-  workflow: 2,
-  email: 3,
-  users: 4
+  role_access: 2,
+  workflow: 3,
+  email: 4,
+  users: 5
 }
 
-const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'funding_budget', 'workflow', 'email', 'users']
+const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'funding_budget', 'role_access', 'workflow', 'email', 'users']
 
 export default {
   name: 'AdminSettings',
-  components: { AdminUsersManagement, AdminFundingBudgetSettings },
+  components: { AdminUsersManagement, AdminFundingBudgetSettings, AdminRolePageAccessSettings },
   data () {
     return {
       activeTab: 0,
@@ -564,7 +571,14 @@ export default {
         budget: 'funding_budget',
         budgets: 'funding_budget',
         funding: 'funding_budget',
-        'funding-budget': 'funding_budget'
+        'funding-budget': 'funding_budget',
+        access: 'role_access',
+        permission: 'role_access',
+        permissions: 'role_access',
+        role: 'role_access',
+        roles: 'role_access',
+        role_access: 'role_access',
+        'role-access': 'role_access'
       }
       return legacyMap[key] || key
     },

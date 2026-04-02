@@ -1,6 +1,16 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import store from '@/store/store'
+import { instance as axios } from '@/service/api'
+import {
+  ROLE_PAGE_ACCESS_SETTING_KEY,
+  createDefaultRolePageAccessConfig,
+  parseRolePageAccessSettingValue,
+  readRolePageAccessConfigFromFallbackStorage,
+  writeRolePageAccessConfigToFallbackStorage,
+  isRoleAllowedForPath,
+  resolveRoleLandingPath
+} from '@/ResearchFormRS/utils/rolePageAccessConfig'
 
 const TheContainer = () => import('@/containers/TheContainer')
 
@@ -813,6 +823,58 @@ function getRoleHome(role) {
   return '/userdashboard'
 }
 
+const ROLE_PAGE_ACCESS_CACHE_TTL_MS = 60 * 1000
+let rolePageAccessCache = null
+let rolePageAccessCachedAt = 0
+let rolePageAccessFetchPromise = null
+
+function parseSettingsPayload(response) {
+  const payload = response && response.data && response.data.data
+  if (Array.isArray(payload)) return payload
+  if (payload && Array.isArray(payload.settings)) return payload.settings
+  if (Array.isArray(response && response.data)) return response.data
+  return []
+}
+
+async function loadRolePageAccessConfig() {
+  const now = Date.now()
+  if (
+    Array.isArray(rolePageAccessCache) &&
+    rolePageAccessCache.length > 0 &&
+    now - rolePageAccessCachedAt < ROLE_PAGE_ACCESS_CACHE_TTL_MS
+  ) {
+    return rolePageAccessCache
+  }
+
+  if (rolePageAccessFetchPromise) return rolePageAccessFetchPromise
+
+  rolePageAccessFetchPromise = (async () => {
+    try {
+      const response = await axios.get('/api/v1/setting')
+      const settings = parseSettingsPayload(response)
+      const setting = settings.find(item => item && item.key === ROLE_PAGE_ACCESS_SETTING_KEY)
+      const config = parseRolePageAccessSettingValue(setting ? setting.value : null, { fallbackToDefault: true })
+      rolePageAccessCache = config
+      rolePageAccessCachedAt = Date.now()
+      writeRolePageAccessConfigToFallbackStorage(config)
+      return config
+    } catch (error) {
+      const fallbackConfig = readRolePageAccessConfigFromFallbackStorage()
+      if (Array.isArray(fallbackConfig) && fallbackConfig.length > 0) {
+        rolePageAccessCache = parseRolePageAccessSettingValue(fallbackConfig, { fallbackToDefault: true })
+      } else {
+        rolePageAccessCache = createDefaultRolePageAccessConfig()
+      }
+      rolePageAccessCachedAt = Date.now()
+      return rolePageAccessCache
+    } finally {
+      rolePageAccessFetchPromise = null
+    }
+  })()
+
+  return rolePageAccessFetchPromise
+}
+
 function hasResearchToken() {
   if (typeof window === 'undefined' || !window.localStorage) return false
   return !!window.localStorage.getItem('auth_token')
@@ -865,6 +927,19 @@ router.beforeEach(async (to, from, next) => {
         if (researchRole === 'committee') return next('/committee/assigned')
         return next('/userdashboard')
       }
+    }
+
+    const rolePageAccessConfig = await loadRolePageAccessConfig()
+    const allowedByRolePageAccess = isRoleAllowedForPath(
+      rolePageAccessConfig,
+      to.path,
+      researchRole,
+      { defaultAllow: true }
+    )
+    if (!allowedByRolePageAccess) {
+      const fallbackPath = resolveRoleLandingPath(rolePageAccessConfig, researchRole, researchHome)
+      if (fallbackPath && fallbackPath !== to.path) return next(fallbackPath)
+      return next('/pages/404')
     }
 
     return next()
