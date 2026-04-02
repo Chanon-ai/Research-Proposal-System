@@ -462,6 +462,11 @@ import {
   getFundingTypeBudgetLimit,
   getFundingTypeLabel
 } from '@/ResearchFormRS/utils/fundingBudgetConfig'
+import {
+  createDefaultBudgetMultiplierConfig,
+  normalizeBudgetMultiplierConfig,
+  buildBudgetMultiplierConfigMap
+} from '@/ResearchFormRS/utils/budgetMultiplierConfig'
 
 const BUDGET_ATTACHMENT_EXAMPLE_WINDOW_NAME = 'budget-attachment-example-doc'
 
@@ -527,6 +532,14 @@ const BUDGET_CATEGORY_KEYS = Object.freeze({
   EQUIPMENT: 'equipment',
   OTHER: 'other'
 })
+
+const cloneMultiplierList = (multipliers = []) => (
+  (Array.isArray(multipliers) ? multipliers : []).map(multiplier => ({
+    label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
+    value: Number.isFinite(Number(multiplier && multiplier.value)) ? Math.max(0, Number(multiplier.value)) : 0,
+    isAdmin: Boolean(multiplier && multiplier.isAdmin)
+  }))
+)
 
 const DEFAULT_CALC_TYPE_BY_CATEGORY = Object.freeze({
   [BUDGET_CATEGORY_KEYS.COMPENSATION]: 'person_time_rate',
@@ -994,6 +1007,10 @@ export default {
       type: Array,
       default: () => []
     },
+    budgetMultiplierConfig: {
+      type: Array,
+      default: () => []
+    },
     resetToken: {
       type: [Number, String],
       default: 0
@@ -1004,6 +1021,15 @@ export default {
     }
   },
   data() {
+    const normalizedMultiplierConfig = normalizeBudgetMultiplierConfig(this.budgetMultiplierConfig, { fallbackToDefault: true })
+    const configuredMultiplierMap = buildBudgetMultiplierConfigMap(normalizedMultiplierConfig)
+    const fallbackMultiplierMap = buildBudgetMultiplierConfigMap(createDefaultBudgetMultiplierConfig())
+    const resolveDefaultMultipliers = (categoryKey) => {
+      const configured = configuredMultiplierMap.get(categoryKey)
+      if (Array.isArray(configured) && configured.length) return cloneMultiplierList(configured)
+      return cloneMultiplierList(fallbackMultiplierMap.get(categoryKey) || [])
+    }
+
     return {
       suppressEmit: false,
       emitScheduled: false,
@@ -1014,59 +1040,31 @@ export default {
       categories: [
         {
           key: BUDGET_CATEGORY_KEYS.COMPENSATION, name: 'หมวดค่าตอบแทน', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: [
-            { label: 'จำนวน (คน)', value: 1, isAdmin: false },
-            { label: 'จำนวน (ครั้ง/ด.)', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
-          ]
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.COMPENSATION)
         },
         {
           key: BUDGET_CATEGORY_KEYS.OPERATING, name: 'หมวดค่าใช้สอย', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: [
-            { label: 'จำนวน (คน/ชิ้น)', value: 1, isAdmin: false },
-            { label: 'จำนวน (วัน/ครั้ง)', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
-          ]
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.OPERATING)
         },
         {
           key: BUDGET_CATEGORY_KEYS.TRAVEL, name: 'หมวดค่าเดินทาง', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: [
-            { label: 'จำนวน (คน)', value: 1, isAdmin: false },
-            { label: 'จำนวน (วัน/เที่ยว)', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
-          ]
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.TRAVEL)
         },
         {
           key: BUDGET_CATEGORY_KEYS.MATERIAL, name: 'หมวดค่าวัสดุ', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: [
-            { label: 'จำนวน', value: 1, isAdmin: false },
-            { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false },
-            { label: 'ราคา/หน่วย', value: 5000, isAdmin: true }
-          ]
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.MATERIAL)
         },
         {
           key: BUDGET_CATEGORY_KEYS.UTILITY, name: 'หมวดค่าสาธารณูปโภค', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: [
-            { label: 'จำนวน (เดือน)', value: 1, isAdmin: false },
-            { label: 'จำนวน (หน่วย)', value: 1, isAdmin: false },
-            { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
-          ]
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.UTILITY)
         },
         {
           key: BUDGET_CATEGORY_KEYS.EQUIPMENT, name: 'หมวดครุภัณฑ์', isOther: false, isExpanded: true, items: [],
-          defaultMultipliers: [
-            { label: 'จำนวน (รายการ)', value: 1, isAdmin: false },
-            { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false },
-            { label: 'ราคา/ชุด', value: 5000, isAdmin: true }
-          ]
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.EQUIPMENT)
         },
         {
           key: BUDGET_CATEGORY_KEYS.OTHER, name: 'หมวดอื่นๆ', isOther: true, isExpanded: true, items: [],
-          defaultMultipliers: [
-            { label: 'จำนวน', value: 1, isAdmin: false },
-            { label: 'หน่วย', value: 1, isAdmin: false },
-            { label: 'ราคา/หน่วย', value: 0, isAdmin: false }
-          ]
+          defaultMultipliers: resolveDefaultMultipliers(BUDGET_CATEGORY_KEYS.OTHER)
         },
       ]
     };
@@ -1320,6 +1318,13 @@ export default {
         this.applyModelValue(val)
       }
     },
+    budgetMultiplierConfig: {
+      immediate: true,
+      deep: true,
+      handler(val) {
+        this.applyBudgetMultiplierConfig(val)
+      }
+    },
     resetToken(newVal, oldVal) {
       if (newVal === oldVal) return
       this.resetBudgetData()
@@ -1452,6 +1457,51 @@ export default {
       this.$nextTick(() => {
         this.emitScheduled = false
         this.emitModelValue()
+      })
+    },
+    applyBudgetMultiplierConfig(rawConfig) {
+      const normalized = normalizeBudgetMultiplierConfig(rawConfig, { fallbackToDefault: true })
+      const multiplierMap = buildBudgetMultiplierConfigMap(normalized)
+
+      this.suppressEmit = true
+      this.categories = (this.categories || []).map((category, catIndex) => {
+        const categoryKey = this.getCategoryKey(category, catIndex)
+        const configuredMultipliers = cloneMultiplierList(multiplierMap.get(categoryKey) || [])
+        const nextCategory = {
+          ...category,
+          key: categoryKey,
+          defaultMultipliers: configuredMultipliers
+        }
+
+        if (Array.isArray(nextCategory.items)) {
+          nextCategory.items = nextCategory.items.map((item) => {
+            if (!item || typeof item !== 'object') return item
+            const isManualItem = Boolean(item.isManualMultiplier || nextCategory.isOther)
+            if (!isManualItem) return item
+            if (Array.isArray(item.multipliers) && item.multipliers.length > 0) return item
+            return {
+              ...item,
+              multipliers: cloneMultiplierList(configuredMultipliers)
+            }
+          })
+        }
+
+        return nextCategory
+      })
+
+      this.categories.forEach((category) => {
+        if (!category || !Array.isArray(category.items)) return
+        category.items.forEach((item) => {
+          if (!item || typeof item !== 'object') return
+          if (!item.isManualMultiplier) return
+          this.calculateRowTotal(item)
+        })
+      })
+
+      this.formatAllNumericInputs()
+
+      this.$nextTick(() => {
+        this.suppressEmit = false
       })
     },
     resetBudgetData() {
@@ -2101,7 +2151,21 @@ export default {
       }
     },
     addMultiplier(item) {
-      item.multipliers.push({ label: 'ตัวคูณใหม่', value: 1, isAdmin: false });
+      if (!item || typeof item !== 'object') return;
+      if (!Array.isArray(item.multipliers)) {
+        this.setRowProp(item, 'multipliers', []);
+      }
+
+      const categoryKey = String(item.categoryKey || '');
+      const category = (this.categories || []).find(cat => this.getCategoryKey(cat) === categoryKey);
+      const defaults = category && Array.isArray(category.defaultMultipliers) ? category.defaultMultipliers : [];
+      const lastTemplate = defaults.length > 0 ? defaults[defaults.length - 1] : null;
+
+      item.multipliers.push({
+        label: String(lastTemplate && lastTemplate.label ? lastTemplate.label : 'ตัวคูณใหม่'),
+        value: Number.isFinite(Number(lastTemplate && lastTemplate.value)) ? Number(lastTemplate.value) : 1,
+        isAdmin: Boolean(lastTemplate && lastTemplate.isAdmin)
+      });
       this.formatItemNumericInputs(item);
       this.calculateItemTotal(item);
     },

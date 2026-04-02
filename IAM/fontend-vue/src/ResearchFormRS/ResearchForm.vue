@@ -36,6 +36,7 @@
         :disable-project-title-section="shouldDisableProjectTitleSection"
         :revision-highlight-sections="adminRevisionProjectSectionKeys"
         :funding-budget-config="fundingBudgetConfig"
+        :budget-multiplier-config="budgetMultiplierConfig"
         @form-changed="syncProjectDetailsData"
         @budget-changed="handleBudgetAutoSave"
         @budget-sticky-summary-update="handleBudgetStickySummaryUpdate"
@@ -743,6 +744,13 @@ import {
   getFundingTypeLabel,
   writeFundingBudgetConfigToFallbackStorage
 } from '@/ResearchFormRS/utils/fundingBudgetConfig'
+import {
+  BUDGET_MULTIPLIER_SETTING_KEY,
+  createDefaultBudgetMultiplierConfig,
+  parseBudgetMultiplierSettingValue,
+  readBudgetMultiplierConfigFromFallbackStorage,
+  writeBudgetMultiplierConfigToFallbackStorage
+} from '@/ResearchFormRS/utils/budgetMultiplierConfig'
 import Swal from 'sweetalert2'
 import Service, { instance as axios } from '@/service/api'
 import {
@@ -815,6 +823,7 @@ export default {
         allowRevisionAfterMeeting: true
       },
       fundingBudgetConfig: createDefaultFundingBudgetConfig(),
+      budgetMultiplierConfig: createDefaultBudgetMultiplierConfig(),
 
       adminShowMeetingPopup: false,
       adminMeetingSubmitting: false,
@@ -931,7 +940,10 @@ export default {
       }
     }
 
-    await this.fetchFundingBudgetConfig()
+    await Promise.all([
+      this.fetchFundingBudgetConfig(),
+      this.fetchBudgetMultiplierConfig()
+    ])
 
     // Sync research team data when component is mounted
     this.syncResearchTeamData();
@@ -1559,6 +1571,21 @@ export default {
         this.fundingBudgetConfig = (Array.isArray(fallbackConfig) && fallbackConfig.length > 0)
           ? fallbackConfig
           : createDefaultFundingBudgetConfig()
+      }
+    },
+    async fetchBudgetMultiplierConfig () {
+      try {
+        const response = await axios.get('/api/v1/setting')
+        const settings = this.parseSettingsPayload(response)
+        const setting = settings.find(item => item && item.key === BUDGET_MULTIPLIER_SETTING_KEY)
+        const rawValue = setting ? setting.value : null
+        this.budgetMultiplierConfig = parseBudgetMultiplierSettingValue(rawValue, { fallbackToDefault: true })
+        writeBudgetMultiplierConfigToFallbackStorage(this.budgetMultiplierConfig)
+      } catch (error) {
+        const fallbackConfig = readBudgetMultiplierConfigFromFallbackStorage()
+        this.budgetMultiplierConfig = (Array.isArray(fallbackConfig) && fallbackConfig.length > 0)
+          ? fallbackConfig
+          : createDefaultBudgetMultiplierConfig()
       }
     },
     requiresFundingSubType (fundingType) {

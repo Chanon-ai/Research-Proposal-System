@@ -143,6 +143,110 @@
         </template>
       </CCardBody>
     </CCard>
+
+    <CCard class="mt-3">
+      <CCardHeader>
+        <div class="funding-budget-toolbar">
+          <div>
+            <div class="font-weight-bold">ตั้งค่ารูปแบบตัวคูณงบประมาณ</div>
+            <small class="text-muted">
+              เพิ่ม/ลด/ปรับชื่อและค่าเริ่มต้นของตัวคูณในแต่ละหมวด เพื่อใช้ในหน้า BudgetSectionDemo
+            </small>
+          </div>
+          <div class="funding-budget-summary">
+            <CBadge color="info">หมวดงบ {{ budgetMultiplierConfig.length }}</CBadge>
+            <CBadge color="secondary">ตัวคูณทั้งหมด {{ totalMultiplierCount }}</CBadge>
+          </div>
+        </div>
+      </CCardHeader>
+
+      <CCardBody>
+        <div v-if="loading" class="text-center py-4">
+          <CSpinner color="primary" />
+          <div class="mt-2 text-muted">กำลังโหลดรูปแบบตัวคูณ...</div>
+        </div>
+
+        <template v-else>
+          <CCard
+            v-for="(category, categoryIndex) in budgetMultiplierConfig"
+            :key="`budget-multiplier-${category.categoryKey}-${categoryIndex}`"
+            class="funding-type-card mb-3"
+          >
+            <CCardHeader class="funding-type-card__header">
+              <div class="font-weight-bold">
+                {{ category.categoryLabel || category.categoryKey }}
+                <small class="text-muted ml-1">({{ category.categoryKey }})</small>
+              </div>
+              <CButton color="secondary" variant="outline" size="sm" @click="addBudgetMultiplier(categoryIndex)">
+                <CIcon name="cil-plus" class="mr-1" /> เพิ่มตัวคูณ
+              </CButton>
+            </CCardHeader>
+            <CCardBody>
+              <div class="table-responsive funding-suboptions-table">
+                <table class="table table-bordered table-striped mb-0">
+                  <thead>
+                    <tr>
+                      <th style="width: 52%;">ชื่อตัวคูณ</th>
+                      <th style="width: 28%;">ค่าเริ่มต้น</th>
+                      <th style="width: 20%;">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="(multiplier, multiplierIndex) in category.multipliers"
+                      :key="`${category.categoryKey}-multiplier-${multiplierIndex}`"
+                    >
+                      <td>
+                        <input
+                          class="form-control"
+                          :value="multiplier.label"
+                          placeholder="เช่น จำนวน (คน)"
+                          @input="updateBudgetMultiplierLabel(categoryIndex, multiplierIndex, $event.target.value)"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          class="form-control"
+                          :value="multiplier.value"
+                          placeholder="0"
+                          @input="updateBudgetMultiplierValue(categoryIndex, multiplierIndex, $event.target.value)"
+                        />
+                      </td>
+                      <td class="text-center">
+                        <CButton
+                          color="danger"
+                          variant="outline"
+                          size="sm"
+                          :disabled="category.multipliers.length <= 1"
+                          @click="removeBudgetMultiplier(categoryIndex, multiplierIndex)"
+                        >
+                          <CIcon name="cil-x" class="mr-1" /> ลบ
+                        </CButton>
+                      </td>
+                    </tr>
+                    <tr v-if="!category.multipliers || category.multipliers.length === 0">
+                      <td colspan="3" class="text-center text-muted">ยังไม่มีตัวคูณในหมวดนี้</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CCardBody>
+          </CCard>
+
+          <div class="funding-budget-actions">
+            <CButton color="warning" variant="outline" @click="resetBudgetMultipliersToDefault">
+              <CIcon name="cil-reload" class="mr-1" /> รีเซ็ตค่าเริ่มต้น
+            </CButton>
+            <CButton color="primary" :disabled="savingMultiplier" @click="saveBudgetMultiplierConfig">
+              <CIcon name="cil-save" class="mr-1" /> {{ savingMultiplier ? 'กำลังบันทึก...' : 'บันทึกรูปแบบตัวคูณ' }}
+            </CButton>
+          </div>
+        </template>
+      </CCardBody>
+    </CCard>
   </div>
 </template>
 
@@ -159,6 +263,15 @@ import {
   sanitizeFundingBudgetConfigForSave as sanitizeFundingBudgetConfigForSaveUtil,
   toBudgetLimitNumber as toBudgetLimitNumberUtil
 } from '@/ResearchFormRS/utils/fundingBudgetConfig'
+import {
+  BUDGET_MULTIPLIER_SETTING_KEY,
+  BUDGET_MULTIPLIER_LOCAL_FALLBACK_KEY,
+  createDefaultBudgetMultiplierConfig,
+  parseBudgetMultiplierSettingValue,
+  normalizeBudgetMultiplierConfig as normalizeBudgetMultiplierConfigUtil,
+  sanitizeBudgetMultiplierConfigForSave as sanitizeBudgetMultiplierConfigForSaveUtil,
+  toMultiplierNumber as toMultiplierNumberUtil
+} from '@/ResearchFormRS/utils/budgetMultiplierConfig'
 
 const createFundingTypeTemplate = () => ({ key: '', label: '', budgetLimit: 0, subOptions: [] })
 const createFundingSubOptionTemplate = () => ({ key: '', label: '' })
@@ -169,8 +282,10 @@ export default {
     return {
       loading: false,
       saving: false,
+      savingMultiplier: false,
       settingsCache: [],
-      fundingBudgetConfig: createDefaultFundingBudgetConfig()
+      fundingBudgetConfig: createDefaultFundingBudgetConfig(),
+      budgetMultiplierConfig: createDefaultBudgetMultiplierConfig()
     }
   },
   computed: {
@@ -178,10 +293,23 @@ export default {
       return this.fundingBudgetConfig.reduce((sum, type) => (
         sum + ((type && Array.isArray(type.subOptions)) ? type.subOptions.length : 0)
       ), 0)
+    },
+    totalMultiplierCount () {
+      return this.budgetMultiplierConfig.reduce((sum, category) => (
+        sum + ((category && Array.isArray(category.multipliers)) ? category.multipliers.length : 0)
+      ), 0)
     }
   },
-  mounted () {
-    this.fetchFundingBudgetConfig()
+  async mounted () {
+    this.loading = true
+    try {
+      await Promise.all([
+        this.fetchFundingBudgetConfig(),
+        this.fetchBudgetMultiplierConfig()
+      ])
+    } finally {
+      this.loading = false
+    }
   },
   methods: {
     parseSettingsPayload (response) {
@@ -202,6 +330,15 @@ export default {
     },
     sanitizeFundingBudgetConfigForSave (config = this.fundingBudgetConfig) {
       return sanitizeFundingBudgetConfigForSaveUtil(config)
+    },
+    toMultiplierNumber (value, fallback = 0) {
+      return toMultiplierNumberUtil(value, fallback)
+    },
+    normalizeBudgetMultiplierConfig (rawConfig) {
+      return normalizeBudgetMultiplierConfigUtil(rawConfig, { fallbackToDefault: true })
+    },
+    sanitizeBudgetMultiplierConfigForSave (config = this.budgetMultiplierConfig) {
+      return sanitizeBudgetMultiplierConfigForSaveUtil(config)
     },
     validateFundingBudgetPayload (payload) {
       if (!Array.isArray(payload) || payload.length === 0) {
@@ -241,6 +378,32 @@ export default {
 
       return ''
     },
+    validateBudgetMultiplierPayload (payload) {
+      if (!Array.isArray(payload) || payload.length === 0) {
+        return 'ไม่พบข้อมูลรูปแบบตัวคูณ'
+      }
+
+      for (let categoryIndex = 0; categoryIndex < payload.length; categoryIndex += 1) {
+        const category = payload[categoryIndex]
+        const categoryLabel = category && (category.categoryLabel || category.categoryKey || `หมวดที่ ${categoryIndex + 1}`)
+        const multipliers = Array.isArray(category && category.multipliers) ? category.multipliers : []
+        if (!multipliers.length) return `${categoryLabel}: ต้องมีอย่างน้อย 1 ตัวคูณ`
+
+        for (let multiplierIndex = 0; multiplierIndex < multipliers.length; multiplierIndex += 1) {
+          const multiplier = multipliers[multiplierIndex]
+          const no = multiplierIndex + 1
+          if (!String(multiplier && multiplier.label || '').trim()) {
+            return `${categoryLabel}: ตัวคูณลำดับที่ ${no} ต้องระบุชื่อ`
+          }
+          const numeric = Number(multiplier && multiplier.value)
+          if (!Number.isFinite(numeric) || numeric < 0) {
+            return `${categoryLabel}: ตัวคูณลำดับที่ ${no} มีค่าเริ่มต้นไม่ถูกต้อง`
+          }
+        }
+      }
+
+      return ''
+    },
     saveFallback () {
       const payload = {
         fundingBudgetConfig: this.sanitizeFundingBudgetConfigForSave(),
@@ -258,6 +421,26 @@ export default {
         return true
       } catch (error) {
         console.error('[AdminFundingBudgetSettings] load fallback error:', error)
+        return false
+      }
+    },
+    saveBudgetMultiplierFallback () {
+      const payload = {
+        budgetMultiplierConfig: this.sanitizeBudgetMultiplierConfigForSave(),
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem(BUDGET_MULTIPLIER_LOCAL_FALLBACK_KEY, JSON.stringify(payload))
+    },
+    loadBudgetMultiplierFallback () {
+      try {
+        const raw = localStorage.getItem(BUDGET_MULTIPLIER_LOCAL_FALLBACK_KEY)
+        if (!raw) return false
+        const parsed = JSON.parse(raw)
+        if (!parsed || !Array.isArray(parsed.budgetMultiplierConfig)) return false
+        this.budgetMultiplierConfig = this.normalizeBudgetMultiplierConfig(parsed.budgetMultiplierConfig)
+        return true
+      } catch (error) {
+        console.error('[AdminFundingBudgetSettings] load multiplier fallback error:', error)
         return false
       }
     },
@@ -284,7 +467,6 @@ export default {
       }
     },
     async fetchFundingBudgetConfig () {
-      this.loading = true
       try {
         const settings = await this.fetchSettingCache()
         const setting = settings.find(item => item && item.key === FUNDING_BUDGET_SETTING_KEY)
@@ -294,8 +476,18 @@ export default {
       } catch (error) {
         console.error('[AdminFundingBudgetSettings] fetch config error:', error)
         if (!this.loadFallback()) this.fundingBudgetConfig = createDefaultFundingBudgetConfig()
-      } finally {
-        this.loading = false
+      }
+    },
+    async fetchBudgetMultiplierConfig () {
+      try {
+        const settings = await this.fetchSettingCache()
+        const setting = settings.find(item => item && item.key === BUDGET_MULTIPLIER_SETTING_KEY)
+        const rawValue = setting ? setting.value : null
+        this.budgetMultiplierConfig = parseBudgetMultiplierSettingValue(rawValue, { fallbackToDefault: true })
+        this.saveBudgetMultiplierFallback()
+      } catch (error) {
+        console.error('[AdminFundingBudgetSettings] fetch multiplier config error:', error)
+        if (!this.loadBudgetMultiplierFallback()) this.budgetMultiplierConfig = createDefaultBudgetMultiplierConfig()
       }
     },
     addFundingType () {
@@ -352,6 +544,47 @@ export default {
       if (!subOption) return
       this.$set(subOption, 'label', value)
     },
+    addBudgetMultiplier (categoryIndex) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      if (!category) return
+      if (!Array.isArray(category.multipliers)) {
+        this.$set(category, 'multipliers', [])
+      }
+      category.multipliers.push({ label: 'ตัวคูณใหม่', value: 1, isAdmin: false })
+    },
+    removeBudgetMultiplier (categoryIndex, multiplierIndex) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      if (!category || !Array.isArray(category.multipliers) || category.multipliers.length <= 1) return
+      category.multipliers.splice(multiplierIndex, 1)
+    },
+    updateBudgetMultiplierLabel (categoryIndex, multiplierIndex, value) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const multiplier = category && Array.isArray(category.multipliers)
+        ? category.multipliers[multiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'label', value)
+    },
+    updateBudgetMultiplierValue (categoryIndex, multiplierIndex, value) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const multiplier = category && Array.isArray(category.multipliers)
+        ? category.multipliers[multiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'value', this.toMultiplierNumber(value, 0))
+    },
+    async resetBudgetMultipliersToDefault () {
+      const result = await Swal.fire({
+        icon: 'warning',
+        title: 'รีเซ็ตรูปแบบตัวคูณเป็นค่าเริ่มต้น?',
+        text: 'การแก้ไขรูปแบบตัวคูณในหน้าจอจะถูกแทนที่ด้วยค่ามาตรฐาน',
+        showCancelButton: true,
+        confirmButtonText: 'รีเซ็ต',
+        cancelButtonText: 'ยกเลิก'
+      })
+      if (!result.isConfirmed) return
+      this.budgetMultiplierConfig = createDefaultBudgetMultiplierConfig()
+    },
     async resetToDefault () {
       const result = await Swal.fire({
         icon: 'warning',
@@ -363,6 +596,43 @@ export default {
       })
       if (!result.isConfirmed) return
       this.fundingBudgetConfig = createDefaultFundingBudgetConfig()
+    },
+    async saveBudgetMultiplierConfig () {
+      const payload = this.sanitizeBudgetMultiplierConfigForSave()
+      const validationError = this.validateBudgetMultiplierPayload(payload)
+      if (validationError) {
+        await Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบถ้วน', text: validationError })
+        return
+      }
+
+      this.savingMultiplier = true
+      try {
+        await this.upsertSettingByKey(
+          BUDGET_MULTIPLIER_SETTING_KEY,
+          JSON.stringify(payload),
+          'รูปแบบตัวคูณเริ่มต้นของแต่ละหมวดงบประมาณ',
+          'general'
+        )
+        this.budgetMultiplierConfig = this.normalizeBudgetMultiplierConfig(payload)
+        this.saveBudgetMultiplierFallback()
+        await this.fetchBudgetMultiplierConfig()
+        await Swal.fire({
+          icon: 'success',
+          title: 'บันทึกรูปแบบตัวคูณสำเร็จ',
+          timer: 1300,
+          showConfirmButton: false
+        })
+      } catch (error) {
+        console.error('[AdminFundingBudgetSettings] save multiplier fallback:', error)
+        this.saveBudgetMultiplierFallback()
+        await Swal.fire({
+          icon: 'info',
+          title: 'บันทึกในเครื่องแล้ว',
+          text: 'API ยังไม่พร้อม จึงบันทึกรูปแบบตัวคูณแบบ local fallback'
+        })
+      } finally {
+        this.savingMultiplier = false
+      }
     },
     async saveFundingBudgetConfig () {
       const payload = this.sanitizeFundingBudgetConfigForSave()
