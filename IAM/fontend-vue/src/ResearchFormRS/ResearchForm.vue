@@ -473,49 +473,10 @@
             </div>
 
             <div class="committee-tools row align-items-end">
-              <div class="col-md-6 mb-2">
+              <div class="col-md-12 mb-2">
                 <label class="mb-1"><strong>ค้นหา</strong></label>
                 <input v-model="adminCommitteeSearch" type="text" class="form-control" placeholder="ชื่อ / อีเมล / หน่วยงาน" />
               </div>
-              <div class="col-md-6 mb-2">
-                <label class="mb-1"><strong>ตัวกรอง</strong></label>
-                <div class="d-flex flex-wrap" style="gap: 8px;">
-                  <CButton
-                    size="sm"
-                    color="primary"
-                    variant="outline"
-                    :disabled="!adminHasRecommendedCommitteeUsers"
-                    @click="setAdminCommitteeFilterMode('recommended')"
-                  >
-                    <CIcon name="cil-chevron-right" class="mr-1" /> แนะนำ
-                  </CButton>
-                  <CButton
-                    size="sm"
-                    color="primary"
-                    variant="outline"
-                    @click="setAdminCommitteeFilterMode('all')"
-                  >
-                    <CIcon name="cil-chevron-right" class="mr-1" /> ทั้งหมด
-                  </CButton>
-                  <CButton
-                    size="sm"
-                    color="primary"
-                    variant="outline"
-                    @click="setAdminCommitteeFilterMode('department')"
-                  >
-                    <CIcon name="cil-chevron-right" class="mr-1" /> หน่วยงาน
-                  </CButton>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="adminCommitteeFilterMode === 'department'" class="mt-2">
-              <CSelect
-                label="เลือกหน่วยงาน"
-                :value="adminSelectedCommitteeDepartment"
-                :options="adminCommitteeDepartmentOptions"
-                @change="onAdminCommitteeDepartmentChange"
-              />
             </div>
 
             <div v-if="adminCommitteeUsersLoading" class="text-center py-3">
@@ -544,7 +505,6 @@
                     <div class="text-muted" style="font-size: 0.85rem;">
                       <span v-if="u.email">{{ u.email }}</span>
                       <span v-if="u.department"> • {{ u.department }}</span>
-                      <span v-if="u.isRecommended" class="badge badge-success ml-2">แนะนำ</span>
                     </div>
                   </div>
                 </label>
@@ -848,10 +808,6 @@ export default {
       adminCommitteeUsers: [],
       adminCommitteeSearch: '',
       adminSelectedCommitteeIds: [],
-      adminCommitteeFilterMode: 'all',
-      adminSelectedCommitteeDepartment: '',
-      adminCommitteeDepartments: [],
-      adminProposalDepartmentHint: '',
       workflowApprovalPolicy: {
         minScore: 60,
         minCommittee: 3,
@@ -1122,33 +1078,13 @@ export default {
       return [{ value: '', label: 'เลือกสถานะ' }, ...statuses.map(s => ({ value: s, label: this.adminGetStatusLabel(s) }))]
     },
     adminFilteredCommitteeUsers () {
-      let scopedUsers = this.adminCommitteeUsers || []
-
-      if (this.adminCommitteeFilterMode === 'recommended') {
-        scopedUsers = scopedUsers.filter(u => Boolean(u && u.isRecommended))
-      } else if (this.adminCommitteeFilterMode === 'department') {
-        const selected = String(this.adminSelectedCommitteeDepartment || '').trim().toLowerCase()
-        if (selected) {
-          scopedUsers = scopedUsers.filter(u => String(u && u.department ? u.department : '').trim().toLowerCase() === selected)
-        }
-      }
-
+      const scopedUsers = this.adminCommitteeUsers || []
       const q = String(this.adminCommitteeSearch || '').trim().toLowerCase()
       if (!q) return scopedUsers
       return scopedUsers.filter(u => {
         const text = [u.fullName, u.email, u.department].filter(Boolean).join(' ').toLowerCase()
         return text.includes(q)
       })
-    },
-    adminCommitteeDepartmentOptions () {
-      const options = [{ value: '', label: 'ทุกหน่วยงาน' }]
-      ;(this.adminCommitteeDepartments || []).forEach(dep => {
-        if (dep) options.push({ value: dep, label: dep })
-      })
-      return options
-    },
-    adminHasRecommendedCommitteeUsers () {
-      return (this.adminCommitteeUsers || []).some(u => Boolean(u && u.isRecommended))
     },
     adminSelectedCommitteeProfiles () {
       const byId = new Map((this.adminCommitteeUsers || []).map(u => [String(u._id), u]))
@@ -2136,14 +2072,12 @@ export default {
       const ids = (this.loadedProposal && Array.isArray(this.loadedProposal.committeeIds)) ? this.loadedProposal.committeeIds : []
       this.adminSelectedCommitteeIds = ids.map(String)
       this.adminCommitteeSearch = ''
-      this.adminSelectedCommitteeDepartment = ''
       this.adminShowCommitteeModal = true
       this.fetchAdminCommitteeUsers()
     },
     closeAdminCommitteeModal () {
       this.adminShowCommitteeModal = false
       this.adminCommitteeSearch = ''
-      this.adminSelectedCommitteeDepartment = ''
       this.adminSelectedCommitteeIds = []
     },
     isAdminSelectedCommittee (id) {
@@ -2165,16 +2099,6 @@ export default {
     removeAdminSelectedCommittee (id) {
       const key = String(id)
       this.adminSelectedCommitteeIds = (this.adminSelectedCommitteeIds || []).map(String).filter(x => x !== key)
-    },
-    setAdminCommitteeFilterMode (mode) {
-      this.adminCommitteeFilterMode = mode
-      if (mode === 'department' && !this.adminSelectedCommitteeDepartment) {
-        this.adminSelectedCommitteeDepartment = this.adminProposalDepartmentHint || ''
-      }
-    },
-    onAdminCommitteeDepartmentChange (val) {
-      this.adminSelectedCommitteeDepartment = this.adminGetSelectValue(val)
-      this.adminCommitteeFilterMode = this.adminSelectedCommitteeDepartment ? 'department' : 'all'
     },
     async fetchWorkflowApprovalPolicy () {
       try {
@@ -2202,33 +2126,12 @@ export default {
         else if (payload && Array.isArray(payload.data)) this.adminCommitteeUsers = payload.data
         else this.adminCommitteeUsers = []
 
-        this.adminCommitteeDepartments = []
-        this.adminProposalDepartmentHint = ''
-
         if (payload && payload.data && !Array.isArray(payload.data)) {
           const wrapped = payload.data
           this.adminCommitteeUsers = Array.isArray(wrapped.items) ? wrapped.items : []
-          this.adminCommitteeDepartments = Array.isArray(wrapped.departments) ? wrapped.departments : []
-          this.adminProposalDepartmentHint = String(wrapped.proposalDepartment || '').trim()
         }
-
-        if (!this.adminCommitteeDepartments.length) {
-          const dedup = Array.from(new Set((this.adminCommitteeUsers || []).map(u => String(u && u.department ? u.department : '').trim()).filter(Boolean)))
-          this.adminCommitteeDepartments = dedup.sort((a, b) => a.localeCompare(b, 'th'))
-        }
-
-        if (this.adminHasRecommendedCommitteeUsers) {
-          this.adminCommitteeFilterMode = 'recommended'
-        } else {
-          this.adminCommitteeFilterMode = 'all'
-        }
-        this.adminSelectedCommitteeDepartment = this.adminProposalDepartmentHint || ''
       } catch (err) {
         this.adminCommitteeUsers = []
-        this.adminCommitteeDepartments = []
-        this.adminProposalDepartmentHint = ''
-        this.adminCommitteeFilterMode = 'all'
-        this.adminSelectedCommitteeDepartment = ''
         this.adminCommitteeUsersError = (err && err.response && err.response.data && err.response.data.message)
           || err.message
           || 'Unknown error'
