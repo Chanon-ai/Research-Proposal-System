@@ -76,7 +76,6 @@ const Toaster = () => import('@/views/notifications/Toaster')
 const Page404 = () => import('@/views/pages/Page404')
 const Page500 = () => import('@/views/pages/Page500')
 const Login = () => import('@/views/pages/Login')
-const ResearchLogin = () => import('@/views/pages/ResearchLogin')
 const Register = () => import('@/views/pages/Register')
 
 const Users = () => import('@/views/users/Users')
@@ -121,7 +120,7 @@ const router = new Router({
   routes: [
     {
       path: '/',
-      redirect: '/pages/research-login',
+      redirect: '/pages/login',
       name: 'Home',
       component: TheContainer,
       children: [
@@ -700,9 +699,7 @@ const router = new Router({
         },
         {
           path: 'research-login',
-          name: 'ResearchLogin',
-          component: ResearchLogin,
-          meta: { guestOnly: true }
+          redirect: '/pages/login'
         },
         {
           path: 'register',
@@ -855,7 +852,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (isResearchRoute) {
     if (!researchAuthenticated) {
-      return next('/pages/research-login')
+      return next('/pages/login')
     }
 
     const roleRecords = to.matched.filter(record => (
@@ -881,7 +878,7 @@ router.beforeEach(async (to, from, next) => {
   const legacyAuthenticated = !!authState.isAuthen
 
   if (!researchAuthenticated && !legacyAuthenticated) {
-    return next('/pages/research-login')
+    return next('/pages/login')
   }
 
   const permissionMeta = to.meta && to.meta.permission

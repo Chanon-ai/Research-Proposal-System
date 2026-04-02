@@ -109,8 +109,8 @@ instance.interceptors.response.use(
               window.localStorage.removeItem('auth_token');
               window.localStorage.removeItem('auth_user');
             }
-            if (currentPath !== '/pages/research-login') {
-              router.push('/pages/research-login');
+            if (currentPath !== '/pages/login') {
+              router.push('/pages/login');
             }
           } else if (currentPath !== '/pages/login') {
             router.push('/pages/login');

@@ -36,6 +36,12 @@ function normalizeRole(role) {
   return 'researcher';
 }
 
+function normalizeAvatarUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return raw;
+}
+
 async function ensureUserByEmail(payload = {}) {
   const email = String(payload.email || '').toLowerCase().trim();
   if (!email) {
@@ -44,6 +50,9 @@ async function ensureUserByEmail(payload = {}) {
 
   const requestedRole = normalizeRole(payload.role || 'researcher');
   const requestedName = String(payload.fullName || '').trim();
+  const requestedAvatarUrl = normalizeAvatarUrl(
+    payload.avatarUrl || payload.picture || payload.photo || payload.image || ''
+  );
 
   let user = await User.findOne({ email });
   if (!user) {
@@ -53,7 +62,8 @@ async function ensureUserByEmail(payload = {}) {
       password: buildRandomPassword(),
       role: requestedRole,
       department: payload.department || '',
-      phone: payload.phone || ''
+      phone: payload.phone || '',
+      avatarUrl: requestedAvatarUrl || ''
     });
   } else {
     if (!user.fullName && requestedName) {
@@ -64,6 +74,9 @@ async function ensureUserByEmail(payload = {}) {
     }
     if (user.isDeleted) {
       user.isDeleted = false;
+    }
+    if (requestedAvatarUrl && String(user.avatarUrl || '').trim() !== requestedAvatarUrl) {
+      user.avatarUrl = requestedAvatarUrl;
     }
   }
 

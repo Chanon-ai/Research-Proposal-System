@@ -93,7 +93,7 @@ const Authentication = {
       commit('auth/pendingToken', '', { root: true });
       commit('security/reset', null, { root: true });
 
-      window.location.href = '/pages/research-login';
+      window.location.href = '/pages/login';
     },
 
     async restoreSession({ commit }) {

@@ -8,8 +8,7 @@
     <template #toggler>
       <CHeaderNavLink>
         <div class="c-avatar">
-          <img src="@/assets/avatars/1.jpg"  class="c-avatar-img" style="height: 100%"/>
-<!--          <img :src="profile.userinfo.imageProfile.src" class="c-avatar-img" style="height: 100%"/>-->
+          <img :src="avatarSrc" class="c-avatar-img" style="height: 100%" @error="onAvatarError"/>
         </div>
       </CHeaderNavLink>
     </template>
@@ -45,6 +44,12 @@
 <script>
 export default {
   name: 'TheHeaderDropdownAccnt',
+  data() {
+    return {
+      defaultAvatarSrc: require('@/assets/avatars/1.jpg'),
+      avatarLoadFailed: false
+    }
+  },
 
   computed: {
     isDarkTheme () {
@@ -71,12 +76,62 @@ export default {
       }
     },
 
+    researchUser () {
+      const fromStore = this.$store.getters['Authentication/currentUser']
+      if (fromStore && typeof fromStore === 'object') return fromStore
+
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        return parsed && typeof parsed === 'object' ? parsed : null
+      } catch (e) {
+        return null
+      }
+    },
+
+    legacyProfile () {
+      const profile = this.$store.getters['auth/profile']
+      return profile && typeof profile === 'object' ? profile : null
+    },
+
+    rawAvatarSrc () {
+      const candidates = [
+        this.researchUser && this.researchUser.avatarUrl,
+        this.researchUser && this.researchUser.avatar,
+        this.researchUser && this.researchUser.picture,
+        this.researchUser && this.researchUser.image,
+        this.legacyProfile && this.legacyProfile.userinfo && this.legacyProfile.userinfo.image,
+        this.legacyProfile && this.legacyProfile.userinfo && this.legacyProfile.userinfo.imageProfile && this.legacyProfile.userinfo.imageProfile.src
+      ]
+
+      const found = candidates.find(item => typeof item === 'string' && item.trim())
+      return found ? String(found).trim() : ''
+    },
+
+    avatarSrc () {
+      if (this.avatarLoadFailed) {
+        return this.defaultAvatarSrc
+      }
+      return this.rawAvatarSrc || this.defaultAvatarSrc
+    },
+
     showUserMenu () {
       return ['researcher', 'admin', 'chairman'].includes(this.currentRole)
     }
   },
 
+  watch: {
+    rawAvatarSrc () {
+      this.avatarLoadFailed = false
+    }
+  },
+
   methods: {
+    onAvatarError () {
+      this.avatarLoadFailed = true
+    },
+
     isActiveRoute (targetPath) {
       return this.$route && this.$route.path === targetPath
     },
@@ -92,7 +147,7 @@ export default {
       } catch (e) {
         localStorage.removeItem('auth_token')
         localStorage.removeItem('auth_user')
-        window.location.href = '/pages/research-login'
+        window.location.href = '/pages/login'
       }
     }
   }

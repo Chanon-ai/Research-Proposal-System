@@ -130,6 +130,24 @@ function buildLegacyAccountDisplayName(accountDoc, fallback) {
     return 'Researcher';
 }
 
+function resolveLegacyAvatarUrl(accountDoc, fallback) {
+    var fallbackUrl = String(fallback || '').trim();
+    if (fallbackUrl) return fallbackUrl;
+
+    var doc = accountDoc && typeof accountDoc === 'object' ? accountDoc : {};
+    if (doc.userinfo && doc.userinfo.image) {
+        var directImage = String(doc.userinfo.image || '').trim();
+        if (directImage) return directImage;
+    }
+
+    if (doc.userinfo && doc.userinfo.imageProfile && doc.userinfo.imageProfile.src) {
+        var imageProfileSrc = String(doc.userinfo.imageProfile.src || '').trim();
+        if (imageProfileSrc) return imageProfileSrc;
+    }
+
+    return '';
+}
+
 function toResearchAuthPayload(userDoc) {
     if (!userDoc) return null;
     if (userDoc.isDeleted || userDoc.isActive === false) return null;
@@ -151,7 +169,8 @@ async function ensureResearchUserFromLegacy(data) {
         return await authService.ensureUserByEmail({
             email: email,
             fullName: payload.fullName || '',
-            role: payload.role || 'researcher'
+            role: payload.role || 'researcher',
+            avatarUrl: payload.avatarUrl || payload.picture || ''
         });
     } catch (err) {
         console.warn('[auth-bridge] ensureUserByEmail failed:', err && err.message ? err.message : err);
@@ -337,7 +356,8 @@ exports.SingIn = async function (request, response, next) {
         const researchUser = await ensureResearchUserFromLegacy({
             email: loginEmail || isDoc.email,
             fullName: displayName,
-            role: 'researcher'
+            role: 'researcher',
+            avatarUrl: resolveLegacyAvatarUrl(isDoc, request.body.googlePicture)
         });
 
         const sessionQuery = { _id: new mongo.ObjectId(isDoc._id) };
@@ -448,7 +468,8 @@ exports.onMe = async function (request, response, next) {
         const researchUser = await ensureResearchUserFromLegacy({
             email: primaryEmail,
             fullName: buildLegacyAccountDisplayName(doc),
-            role: 'researcher'
+            role: 'researcher',
+            avatarUrl: resolveLegacyAvatarUrl(doc)
         });
         const researchAuth = toResearchAuthPayload(researchUser);
 
@@ -909,7 +930,8 @@ exports.onTwoFaVerify = async function (request, response, next) {
         const researchUser = await ensureResearchUserFromLegacy({
             email: verifyEmail,
             fullName: buildLegacyAccountDisplayName(account),
-            role: 'researcher'
+            role: 'researcher',
+            avatarUrl: resolveLegacyAvatarUrl(account)
         });
         const researchAuth = toResearchAuthPayload(researchUser);
 

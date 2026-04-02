@@ -61,8 +61,8 @@ export default {
       }
 
       const restored = await this.$store.dispatch('Authentication/restoreSession')
-      if (!restored && this.$route && this.$route.path !== '/pages/research-login') {
-        this.$router.replace('/pages/research-login')
+      if (!restored && this.$route && this.$route.path !== '/pages/login') {
+        this.$router.replace('/pages/login')
       }
       return
     }
