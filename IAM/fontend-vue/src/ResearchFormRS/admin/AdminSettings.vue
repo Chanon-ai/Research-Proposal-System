@@ -356,6 +356,10 @@ import { instance as axios } from '@/service/api'
 import AdminUsersManagement from '@/components/admin/AdminUsersManagement.vue'
 import AdminFundingBudgetSettings from '@/ResearchFormRS/admin/AdminFundingBudgetSettings.vue'
 import Swal from 'sweetalert2'
+import {
+  PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
+  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
+} from '@/ResearchFormRS/constants/proposalWorkflow'
 
 const LOCAL_FALLBACK_KEY = 'admin_settings_local_fallback_v1'
 const SECRET_MASK = '••••••••'
@@ -398,23 +402,6 @@ const DEFAULT_TEMPLATES = {
   }
 }
 
-const STATUS_LABELS = {
-  submitted: 'ยื่นแล้ว',
-  faculty_review_pending: 'รอประธานพิจารณา',
-  faculty_approved: 'ประธานอนุมัติ',
-  office_received: 'ส่วนบริหารรับแล้ว',
-  document_checking: 'ตรวจสอบเอกสาร',
-  assigned_to_committee: 'มอบหมายกรรมการแล้ว',
-  under_review: 'กรรมการได้ให้ความเห็นแล้ว',
-  meeting_completed: 'ประชุมเสร็จแล้ว',
-  revision_requested: 'ขอแก้ไข',
-  resubmitted: 'ส่งแก้ไขแล้ว',
-  second_round_review: 'พิจารณารอบ 2',
-  approved: 'อนุมัติ',
-  rejected: 'ปฏิเสธ',
-  announced: 'ประกาศผลแล้ว'
-}
-
 // flat SVG icon paths — keyed by status
 const STATUS_ICONS = {
   submitted:              '<path d="M8 2v8M5 7l3 3 3-3"/><rect x="2" y="11" width="12" height="2" rx="1"/>',
@@ -431,20 +418,6 @@ const STATUS_ICONS = {
   approved:               '<path d="M3 8l4 4 6-6"/>',
   rejected:               '<path d="M4 4l8 8M12 4l-8 8"/>',
   announced:              '<path d="M2 12c0 0 2-3 6-3s6 3 6 3"/><circle cx="8" cy="6" r="2.5"/><path d="M13 7l2 1-2 1"/>'
-}
-
-const ALLOWED_TRANSITIONS = {
-  submitted: ['faculty_review_pending'],
-  faculty_approved: ['office_received'],
-  office_received: ['document_checking'],
-  document_checking: ['assigned_to_committee', 'revision_requested'],
-  under_review: ['meeting_completed'],
-  meeting_completed: ['approved', 'rejected', 'revision_requested'],
-  revision_requested: ['resubmitted'],
-  resubmitted: ['second_round_review'],
-  second_round_review: ['approved', 'rejected', 'revision_requested'],
-  approved: ['announced'],
-  rejected: ['announced']
 }
 
 const SETTINGS_TAB_INDEX = {

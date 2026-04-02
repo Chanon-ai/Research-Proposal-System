@@ -308,60 +308,11 @@
 import { instance as axios } from '@/service/api'
 import Swal from 'sweetalert2'
 import { CChartBar, CChartDoughnut, CChartLine } from '@coreui/vue-chartjs'
-
-const STATUS_LABELS = {
-  draft: 'แบบร่าง',
-  submitted: 'ยื่นแล้ว',
-  faculty_review_pending: 'รอประธานพิจารณา',
-  faculty_approved: 'ประธานอนุมัติ',
-  office_received: 'ส่วนบริหารรับแล้ว',
-  document_checking: 'ตรวจสอบเอกสาร',
-  assigned_to_committee: 'มอบหมายกรรมการแล้ว',
-  under_review: 'กรรมการได้ให้ความเห็นแล้ว',
-  meeting_completed: 'ประชุมเสร็จแล้ว',
-  revision_requested: 'ขอแก้ไข',
-  resubmitted: 'ส่งแก้ไขแล้ว',
-  second_round_review: 'พิจารณารอบ 2',
-  approved: 'อนุมัติ',
-  rejected: 'ปฏิเสธ',
-  announced: 'ประกาศผลแล้ว'
-}
-
-const STATUS_COLORS = {
-  draft: '#6c757d',
-  submitted: '#17a2b8',
-  faculty_review_pending: '#ffc107',
-  faculty_approved: '#007bff',
-  office_received: '#17a2b8',
-  document_checking: '#fd7e14',
-  assigned_to_committee: '#007bff',
-  under_review: '#e83e8c',
-  meeting_completed: '#6f42c1',
-  revision_requested: '#dc3545',
-  resubmitted: '#20c997',
-  second_round_review: '#fd7e14',
-  approved: '#28a745',
-  rejected: '#dc3545',
-  announced: '#007bff'
-}
-
-const STATUS_KEYS = [
-  'draft',
-  'submitted',
-  'faculty_review_pending',
-  'faculty_approved',
-  'office_received',
-  'document_checking',
-  'assigned_to_committee',
-  'under_review',
-  'meeting_completed',
-  'revision_requested',
-  'resubmitted',
-  'second_round_review',
-  'approved',
-  'rejected',
-  'announced'
-]
+import {
+  PROPOSAL_STATUS_COLORS_HEX_REPORT as STATUS_COLORS,
+  PROPOSAL_STATUS_KEYS_REPORT as STATUS_KEYS,
+  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
+} from '@/ResearchFormRS/constants/proposalWorkflow'
 
 export default {
   name: 'AdminReports',

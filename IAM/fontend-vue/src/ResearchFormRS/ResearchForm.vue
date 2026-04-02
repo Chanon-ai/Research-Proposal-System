@@ -785,64 +785,17 @@ import {
 } from '@/ResearchFormRS/utils/fundingBudgetConfig'
 import Swal from 'sweetalert2'
 import Service, { instance as axios } from '@/service/api'
+import {
+  PROPOSAL_ALLOWED_TRANSITIONS as ADMIN_ALLOWED_TRANSITIONS,
+  PROPOSAL_STATUS_COLORS_COREUI_RESEARCH_FORM as ADMIN_STATUS_COLORS,
+  PROPOSAL_STATUS_LABELS_TH_RESEARCHER as ADMIN_STATUS_LABELS
+} from '@/ResearchFormRS/constants/proposalWorkflow'
 
 const ACTIVE_DRAFT_STORAGE_KEY = 'research_form_active_draft_id'
 const FEEDBACK_SECTION_PROGRESS_STORAGE_PREFIX = 'research_form_feedback_section_progress'
 const FEEDBACK_SECTION_BASELINE_STORAGE_PREFIX = 'research_form_feedback_section_baseline'
 const SUBMIT_SUCCESS_PENDING_STORAGE_PREFIX = 'research_form_submit_success_pending'
 const BASE_MEETING_START_TIME = '06:00'
-
-const ADMIN_ALLOWED_TRANSITIONS = {
-  submitted: ['faculty_review_pending'],
-  faculty_approved: ['office_received'],
-  office_received: ['document_checking'],
-  document_checking: ['assigned_to_committee', 'revision_requested'],
-  under_review: ['meeting_completed'],
-  meeting_completed: ['approved', 'rejected', 'revision_requested'],
-  revision_requested: ['resubmitted'],
-  resubmitted: ['second_round_review'],
-  second_round_review: ['approved', 'rejected', 'revision_requested'],
-  approved: ['announced'],
-  rejected: ['announced']
-}
-
-const ADMIN_STATUS_LABELS = {
-  draft: 'แบบร่าง',
-  pending_confirm: 'รอยืนยันผู้ร่วมโครงการ',
-  submitted: 'ยื่นแล้ว',
-  faculty_review_pending: 'รอประธานพิจารณา',
-  faculty_approved: 'ประธานอนุมัติ',
-  office_received: 'ส่วนบริหารรับแล้ว',
-  document_checking: 'ตรวจสอบเอกสาร',
-  assigned_to_committee: 'มอบหมายกรรมการแล้ว',
-  under_review: 'กำลังพิจารณา',
-  meeting_completed: 'ประชุมเสร็จแล้ว',
-  revision_requested: 'ขอแก้ไข',
-  resubmitted: 'ส่งแก้ไขแล้ว',
-  second_round_review: 'พิจารณารอบ 2',
-  approved: 'อนุมัติ',
-  rejected: 'ปฏิเสธ',
-  announced: 'ประกาศผลแล้ว'
-}
-
-const ADMIN_STATUS_COLORS = {
-  draft: 'secondary',
-  pending_confirm: 'warning',
-  submitted: 'info',
-  faculty_review_pending: 'warning',
-  faculty_approved: 'primary',
-  office_received: 'primary',
-  document_checking: 'warning',
-  assigned_to_committee: 'info',
-  under_review: 'danger',
-  meeting_completed: 'primary',
-  revision_requested: 'danger',
-  resubmitted: 'info',
-  second_round_review: 'warning',
-  approved: 'success',
-  rejected: 'danger',
-  announced: 'primary'
-}
 
 export default {
   name: 'ResearchForm',
