@@ -4640,6 +4640,27 @@ export default {
         this.isDraftSaving = false
       }
     },
+    getSubmitParticipantSummary () {
+      const teamData = this.$refs.researchTeamForm && typeof this.$refs.researchTeamForm.getFormData === 'function'
+        ? this.$refs.researchTeamForm.getFormData()
+        : (this.researchTeamData || {})
+
+      const coResearchers = Array.isArray(teamData && teamData.coResearchers)
+        ? teamData.coResearchers
+        : []
+      const advisors = Array.isArray(teamData && teamData.advisors)
+        ? teamData.advisors
+        : []
+
+      const coResearcherCount = coResearchers.length
+      const advisorCount = advisors.length
+
+      return {
+        coResearcherCount,
+        advisorCount,
+        requiresCollaborationConfirmation: (coResearcherCount + advisorCount) > 0
+      }
+    },
 
     async submitProject() {
       this.clearAutoSaveTimer()
@@ -4660,9 +4681,13 @@ export default {
         return
       }
 
-      this.showSubmitButton = true;
-      this.currentStatus = 'pending_confirm';
-      this.isReadOnly = true;
+      const participantSummary = this.getSubmitParticipantSummary()
+      const requiresCollaborationConfirmation = Boolean(participantSummary.requiresCollaborationConfirmation)
+      const optimisticStatus = requiresCollaborationConfirmation ? 'pending_confirm' : 'submitted'
+
+      this.showSubmitButton = true
+      this.currentStatus = optimisticStatus
+      this.isReadOnly = true
       try {
         const payload = this.normalizeApiPayload()
         let submitRes = null
@@ -4685,9 +4710,15 @@ export default {
         }
 
         const submitted = submitRes && submitRes.data && submitRes.data.data ? submitRes.data.data : null
-        const nextStatus = submitted && submitted.currentStatus
+        const fallbackStatus = requiresCollaborationConfirmation ? 'pending_confirm' : 'submitted'
+        const submittedStatus = submitted && submitted.currentStatus
           ? String(submitted.currentStatus)
-          : 'pending_confirm'
+          : ''
+        let nextStatus = submittedStatus || fallbackStatus
+
+        if (!requiresCollaborationConfirmation && String(nextStatus || '').trim().toLowerCase() === 'pending_confirm') {
+          nextStatus = 'submitted'
+        }
 
         this.currentStatus = nextStatus
         this.isReadOnly = nextStatus !== 'draft'
