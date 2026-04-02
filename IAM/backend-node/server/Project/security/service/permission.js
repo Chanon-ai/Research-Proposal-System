@@ -161,7 +161,7 @@ exports.onUpdateBatch = async function (request, response, next) {
 exports.onMyPermissions = async function (request, response, next) {
     try {
         var body = request.body && typeof request.body === 'object' ? request.body : {};
-        var accountId = body.accounts || request.query.accountId || body.accountId;
+        var accountId = body.accounts || null;
         if (!accountId || !mongo.ObjectId.isValid(accountId)) {
             var badRes = await resMsg.onMessage_Response(0,40400);
             return response.status(404).json(badRes);

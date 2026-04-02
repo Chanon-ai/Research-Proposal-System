@@ -31,6 +31,37 @@ function isResearchAppPath(pathname) {
   ].some(prefix => String(pathname || '').startsWith(prefix))
 }
 
+function normalizeRequestUrl(rawUrl) {
+  const url = String(rawUrl || '').trim();
+  if (!url) return '';
+
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    try {
+      return new URL(url).pathname || '';
+    } catch (err) {
+      return url;
+    }
+  }
+
+  return url;
+}
+
+function isLegacy2FAFlowRequest(path) {
+  const url = String(path || '');
+  return url.includes('/auth/2fa/')
+    || url.includes('/auth/trust-device')
+    || url.includes('/api/v1/auth/me');
+}
+
+function isResearchSessionCheckRequest(path) {
+  return String(path || '').includes('/api/v1/auth/user/me');
+}
+
+function isLegacyNotificationFallbackRequest(path, hasResearchToken, hasLegacyToken) {
+  const url = String(path || '');
+  return url.startsWith('/api/v1/notifications') && !hasResearchToken && !!hasLegacyToken;
+}
+
 instance.interceptors.request.use(
     (config) => {
       const legacyToken = getLegacyToken();
@@ -62,12 +93,18 @@ instance.interceptors.response.use(
     },
     (error) => {
       if (error.response && error.response.status === 401) {
-        const requestUrl = error.config && error.config.url ? String(error.config.url) : '';
-        const is2FAFlow = requestUrl.includes('/auth/2fa/') || requestUrl.includes('/auth/trust-device') || requestUrl.includes('/auth/me');
-        console.warn('[AXIOS-401]', requestUrl, is2FAFlow ? '(skipped redirect)' : '(redirecting)');
-        if (!is2FAFlow) {
+        const requestUrl = normalizeRequestUrl(error.config && error.config.url ? error.config.url : '');
+        const hasResearchToken = !!getResearchToken();
+        const hasLegacyToken = !!getLegacyToken();
+        const skipRedirect = isLegacy2FAFlowRequest(requestUrl)
+          || isResearchSessionCheckRequest(requestUrl)
+          || isLegacyNotificationFallbackRequest(requestUrl, hasResearchToken, hasLegacyToken);
+
+        console.warn('[AXIOS-401]', requestUrl, skipRedirect ? '(skipped redirect)' : '(redirecting)');
+
+        if (!skipRedirect) {
           const currentPath = router && router.currentRoute ? router.currentRoute.path : '';
-          if (isResearchAppPath(currentPath) || getResearchToken()) {
+          if (isResearchAppPath(currentPath) || hasResearchToken) {
             if (typeof window !== 'undefined' && window.localStorage) {
               window.localStorage.removeItem('auth_token');
               window.localStorage.removeItem('auth_user');

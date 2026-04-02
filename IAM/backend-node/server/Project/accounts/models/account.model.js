@@ -104,7 +104,10 @@ var objsSchema  = new Schema({
             deviceId                : {type: String, default: null},
             fingerprint             : {type: String, default: null},
             networkKey              : {type: String, default: null},
-            rememberDeviceRequested : {type: Boolean, default: false}
+            rememberDeviceRequested : {type: Boolean, default: false},
+            twoFactorRequired       : {type: Boolean, default: false},
+            twoFactorVerified       : {type: Boolean, default: false},
+            twoFactorVerifiedAt     : {type: Date, default: null}
         }]
     },
     status                  : {type: Schema.ObjectId, ref: 'Setting_Status', default: null},

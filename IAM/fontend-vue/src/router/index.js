@@ -888,21 +888,27 @@ router.beforeEach(async (to, from, next) => {
   const hasLegacyToken = !!store.state.XAccessToken
   const profile = store.getters['auth/profile'] || null
   const isOwner = isOwnerProfile(profile)
-  if (permissionMeta && hasLegacyToken && legacyAuthenticated && !isOwner) {
-    if (!store.getters['security/loaded']) {
-      try {
-        await store.dispatch('security/fetchMyPermissions')
-      } catch (err) {
-        // permission fetch failed, fallback to denied
-      }
-    }
-    const action = permissionMeta.action || 'view'
-    const pathCandidates = buildPermissionCandidates(to, permissionMeta)
-    const canAccess = pathCandidates.some(path => (
-      store.getters['security/canAccess'](path, action)
-    ))
-    if (!canAccess) {
+  if (permissionMeta) {
+    if (!hasLegacyToken || !legacyAuthenticated) {
       return next({ path: '/pages/404' })
+    }
+
+    if (!isOwner) {
+      if (!store.getters['security/loaded']) {
+        try {
+          await store.dispatch('security/fetchMyPermissions')
+        } catch (err) {
+          // permission fetch failed, fallback to denied
+        }
+      }
+      const action = permissionMeta.action || 'view'
+      const pathCandidates = buildPermissionCandidates(to, permissionMeta)
+      const canAccess = pathCandidates.some(path => (
+        store.getters['security/canAccess'](path, action)
+      ))
+      if (!canAccess) {
+        return next({ path: '/pages/404' })
+      }
     }
   }
 

@@ -1,4 +1,7 @@
 import Service from '../../../service/api.js';
+import { removeItem } from '../../../utils/db';
+
+const LEGACY_TOKEN_STORAGE_KEY = 'x-access-token';
 
 const Authentication = {
   namespaced: true,
@@ -69,9 +72,27 @@ const Authentication = {
         // Fire-and-forget logout endpoint.
       }
 
+      try {
+        await removeItem('objs');
+      } catch (err) {
+        // Ignore IndexedDB cleanup failures.
+      }
+
       commit('CLEAR_AUTH');
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
+      }
+
+      commit('set', ['XAccessToken', ''], { root: true });
+      commit('auth/authenticated', { isAuthen: false, isOAuth: false }, { root: true });
+      commit('auth/profile', null, { root: true });
+      commit('auth/isSignIn', true, { root: true });
+      commit('auth/is2FA', false, { root: true });
+      commit('auth/pendingToken', '', { root: true });
+      commit('security/reset', null, { root: true });
+
       window.location.href = '/pages/research-login';
     },
 

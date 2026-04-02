@@ -5,6 +5,8 @@ import router from "../../../router/index.js";
 
 const TRUSTED_DEVICE_ID_KEY = 'trusted-device-id-v1';
 const X_ACCESS_TOKEN_STORAGE_KEY = 'x-access-token';
+const RESEARCH_TOKEN_STORAGE_KEY = 'auth_token';
+const RESEARCH_USER_STORAGE_KEY = 'auth_user';
 
 function getOrCreateDeviceId() {
     if (typeof window === 'undefined' || !window.localStorage) {
@@ -37,6 +39,48 @@ function setTokenToLocalStorage(token) {
     } else {
         window.localStorage.removeItem(X_ACCESS_TOKEN_STORAGE_KEY);
     }
+}
+
+function parseResearchAuth(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const token = raw.token ? String(raw.token).trim() : '';
+    const user = raw.user && typeof raw.user === 'object' ? raw.user : null;
+    if (!token || !user) return null;
+    return { token, user };
+}
+
+function applyResearchAuth(raw) {
+    const auth = parseResearchAuth(raw);
+    if (!auth) return false;
+    if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(RESEARCH_TOKEN_STORAGE_KEY, auth.token);
+        window.localStorage.setItem(RESEARCH_USER_STORAGE_KEY, JSON.stringify(auth.user));
+    }
+    store.commit('Authentication/SET_AUTH', auth);
+    return true;
+}
+
+function clearResearchAuth() {
+    if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(RESEARCH_TOKEN_STORAGE_KEY);
+        window.localStorage.removeItem(RESEARCH_USER_STORAGE_KEY);
+    }
+    store.commit('Authentication/CLEAR_AUTH');
+}
+
+function resolveSignedInRoute() {
+    const isResearchSignedIn = !!(store.getters && store.getters['Authentication/isAuthenticated']);
+    if (!isResearchSignedIn) {
+        return '/dashboard';
+    }
+
+    const role = store.getters && store.getters['Authentication/userRole']
+        ? String(store.getters['Authentication/userRole']).trim().toLowerCase()
+        : '';
+
+    if (role === 'admin' || role === 'chairman') return '/admin/dashboard';
+    if (role === 'committee') return '/committee/assigned';
+    return '/userdashboard';
 }
 
 
@@ -98,7 +142,16 @@ const ServerModule = {
                     commit('isSignIn', false);
                     try {
                         const meRes = await Service.authenticated('me', {}, {});
-                        const me = meRes && meRes.data ? meRes.data.data : null;
+                        const mePayload = meRes && meRes.data ? meRes.data.data : null;
+                        if (mePayload && mePayload.researchAuth) {
+                            applyResearchAuth(mePayload.researchAuth);
+                        }
+                        const me = mePayload && typeof mePayload === 'object'
+                            ? Object.assign({}, mePayload)
+                            : mePayload;
+                        if (me && typeof me === 'object' && Object.prototype.hasOwnProperty.call(me, 'researchAuth')) {
+                            delete me.researchAuth;
+                        }
                         commit('profile', me);
                     } catch (err) {
                         removeItem('objs');
@@ -162,11 +215,13 @@ const ServerModule = {
         async signIn({commit, dispatch}, data) {
             store.commit("dialog/loading", true);
             try {
+                clearResearchAuth();
                 const payload = Object.assign({}, data || {});
                 payload.deviceId = getOrCreateDeviceId();
 
                 const response = await Service.authenticated('signin', payload, {});
                 const objs = response && response.data ? response.data.data : null;
+                const researchAuthFromSignin = objs && objs.researchAuth ? objs.researchAuth : null;
                 const token = objs && objs.xAccessToken ? String(objs.xAccessToken) : '';
                 if (!token) {
                     throw new Error('missing_token');
@@ -184,15 +239,25 @@ const ServerModule = {
                 if (!require2FA) {
                     await setItem('objs', { xAccessToken: token });
                     setTokenToLocalStorage(token);
+                    let hasAppliedResearchAuth = applyResearchAuth(researchAuthFromSignin);
                     const meRes = await Service.authenticated('me', {}, {});
-                    const me = meRes && meRes.data ? meRes.data.data : null;
+                    const mePayload = meRes && meRes.data ? meRes.data.data : null;
+                    if (!hasAppliedResearchAuth && mePayload && mePayload.researchAuth) {
+                        hasAppliedResearchAuth = applyResearchAuth(mePayload.researchAuth);
+                    }
+                    const me = mePayload && typeof mePayload === 'object'
+                        ? Object.assign({}, mePayload)
+                        : mePayload;
+                    if (me && typeof me === 'object' && Object.prototype.hasOwnProperty.call(me, 'researchAuth')) {
+                        delete me.researchAuth;
+                    }
                     commit('profile', me);
                     commit('authenticated', { isAuthen: true, isOAuth: true });
                     commit('isSignIn', false);
                     commit('is2FA', false);
                     commit('pendingToken', '');
                     if (router && typeof router.push === 'function') {
-                        router.push('/dashboard');
+                        router.push(resolveSignedInRoute());
                     }
                     return;
                 }
@@ -243,14 +308,28 @@ const ServerModule = {
         },
 
         async twofaSend({ commit, state }, data) {
-            await Service.authenticated('twofa-verify', data || {}, {});
+            const verifyRes = await Service.authenticated('twofa-verify', data || {}, {});
+            const verifyPayload = verifyRes && verifyRes.data ? verifyRes.data.data : null;
+            let hasAppliedResearchAuth = false;
+            if (verifyPayload && verifyPayload.researchAuth) {
+                hasAppliedResearchAuth = applyResearchAuth(verifyPayload.researchAuth);
+            }
             if (!state.pendingToken) {
                 throw new Error('missing_pending_token');
             }
             await setItem('objs', { xAccessToken: state.pendingToken });
             setTokenToLocalStorage(state.pendingToken);
             const meRes = await Service.authenticated('me', {}, {});
-            const me = meRes && meRes.data ? meRes.data.data : null;
+            const mePayload = meRes && meRes.data ? meRes.data.data : null;
+            if (!hasAppliedResearchAuth && mePayload && mePayload.researchAuth) {
+                hasAppliedResearchAuth = applyResearchAuth(mePayload.researchAuth);
+            }
+            const me = mePayload && typeof mePayload === 'object'
+                ? Object.assign({}, mePayload)
+                : mePayload;
+            if (me && typeof me === 'object' && Object.prototype.hasOwnProperty.call(me, 'researchAuth')) {
+                delete me.researchAuth;
+            }
 
             commit('profile', me);
             commit('authenticated', { isAuthen: true, isOAuth: true });
@@ -275,7 +354,7 @@ const ServerModule = {
                 }
             }
             if (router && typeof router.push === 'function') {
-                router.push('/dashboard');
+                router.push(resolveSignedInRoute());
             }
             return true;
         },
@@ -284,6 +363,7 @@ const ServerModule = {
             removeItem('objs')
             store.commit('set', ['XAccessToken', '']);
             setTokenToLocalStorage('');
+            clearResearchAuth();
             commit('authenticated', { isAuthen: false, isOAuth: false });
             commit('profile', null);
             commit('isSignIn', true);

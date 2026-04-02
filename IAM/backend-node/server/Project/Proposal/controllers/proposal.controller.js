@@ -14,9 +14,7 @@ function jsonResponse(res, { success = true, message = '', data = null, meta = n
 }
 
 function getUserFromReq(req) {
-  if (req.user) return req.user;
-  // Dev-shortcut fallback user so endpoints work without JWT/auth.
-  return { _id: new mongoose.Types.ObjectId('000000000000000000000001'), role: 'admin' };
+  return req && req.user ? req.user : null;
 }
 
 function handleKnownProposalError(res, err) {
