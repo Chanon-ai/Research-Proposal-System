@@ -239,7 +239,7 @@
       </CCardBody>
     </CCard>
 
-    <button v-if="canAccessResearchForm" class="fab" title="สร้างโครงการใหม่" @click="onAdd"><CIcon name="cil-chevron-right" class="mr-1" /> ＋</button>
+    <button v-if="canAccessResearchForm" class="fab" title="สร้างโครงการใหม่" @click="onAdd"><CIcon name="cil-plus" /></button>
   </div>
 </template>
 
