@@ -1,16 +1,31 @@
-FROM node:18.17.1-alpine as app
-RUN apk add --no-cache --update python3 make g++
-#RUN ln -s $(which python3) /usr/local/bin/python
+FROM node:18-bullseye-slim
 
-#RUN npm install --global node-gyp
-#RUN npm install node-pre-gyp -g
-RUN npm install -g node-gyp
-COPY ./package.json .
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libcairo2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpango1.0-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libjpeg-dev \
+    libgif-dev \
+    librsvg2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY package*.json ./
 RUN npm install
-#COPY . .
-#
-#EXPOSE 7002
-#ENTRYPOINT npm run start
 
+COPY . .
 
-#https://efiling.rd.go.th/rd-cms/api?utm_source=chatgpt.com
+EXPOSE 8081
+CMD ["node", "-r", "dotenv/config", "server.js"]

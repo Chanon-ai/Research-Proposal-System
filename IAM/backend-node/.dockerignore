@@ -1,0 +1,12 @@
+node_modules
+.runtime-packages
+npm-install.log
+server.out.txt
+server.err.txt
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+Dockerfile.mac
+Dockerfile.prod

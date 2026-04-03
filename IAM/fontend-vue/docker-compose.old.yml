@@ -1,0 +1,15 @@
+services:
+  vue-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VUE_APP_API_BASE_URL: ${VUE_APP_API_BASE_URL:-http://localhost:8081}
+        VUE_APP_API_URL: ${VUE_APP_API_URL:-http://localhost:8081}
+        VUE_APP_CLIENTID: ${VUE_APP_CLIENTID:-}
+        VUE_APP_SCOPE: ${VUE_APP_SCOPE:-profile email}
+        VUE_APP_PROMPT: ${VUE_APP_PROMPT:-select_account}
+    container_name: iam-frontend
+    ports:
+      - "8080:80"
+    restart: unless-stopped

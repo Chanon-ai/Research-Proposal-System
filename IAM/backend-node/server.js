@@ -4,6 +4,7 @@ var app = express();
 var http = require('http');
 var https = require('https');
 var fs = require('fs');
+var mongoose = require('mongoose');
 var cfg = require('./config/config');
 /**
  * Get port from environment and store in Express.
@@ -63,16 +64,25 @@ server.on('listening', onListening);
 
 
 // Graceful shutdown function
-const shutdown = () => {
-    console.log('Gracefully shutting down...');
+let isShuttingDown = false;
+const shutdown = (signal) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    console.log('Gracefully shutting down' + (signal ? ' (' + signal + ')' : '') + '...');
 
     // Stop accepting new requests
     server.close(async () => {
         console.log('Closed all HTTP connections');
 
         // Close MongoDB connection
-        await mongoose.connection.close();
-        console.log('Closed MongoDB connection');
+        try {
+            if (mongoose.connection && mongoose.connection.readyState !== 0) {
+                await mongoose.connection.close();
+                console.log('Closed MongoDB connection');
+            }
+        } catch (error) {
+            console.error('Failed to close MongoDB connection:', error && error.message ? error.message : error);
+        }
 
         process.exit(0); // Exit process
     });
@@ -85,8 +95,8 @@ const shutdown = () => {
 };
 
 // Listen for termination signals (e.g., from Docker, Kubernetes, or Ctrl+C)
-server.on('SIGTERM', shutdown);
-server.on('SIGINT', shutdown);
+process.on('SIGTERM', function () { shutdown('SIGTERM'); });
+process.on('SIGINT', function () { shutdown('SIGINT'); });
 
 /**
  * Event listener for HTTP server "error" event.

@@ -2,8 +2,21 @@ const redis = require("redis");
 
 class RedisClient {
     constructor() {
-        this.client = redis.createClient({
-            socket: { host: '127.0.0.1', port: 6379 }
+        const host = process.env.REDIS_HOST || '127.0.0.1';
+        const rawPort = Number(process.env.REDIS_PORT || 6379);
+        const port = Number.isInteger(rawPort) && rawPort > 0 ? rawPort : 6379;
+
+        const options = {
+            socket: { host, port }
+        };
+
+        if (process.env.REDIS_PASSWORD) {
+            options.password = process.env.REDIS_PASSWORD;
+        }
+
+        this.client = redis.createClient(options);
+        this.client.on('error', (error) => {
+            console.error("Redis client error:", error);
         });
         this.connect();
     }
