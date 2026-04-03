@@ -114,24 +114,6 @@
           :aria-disabled="(selectionMode && isMeetingActionable(meeting)) ? 'false' : 'true'">
           <div class="meeting-card__left-bar" aria-hidden="true"></div>
           <div class="meeting-card__surface">
-            <div v-if="canEditDelete && selectionMode && isSelectedMeeting(meeting)" class="meeting-card__selected-overlay" @click.stop>
-              <button type="button" class="meeting-card__overlay-close" aria-label="ปิดเมนูแก้ไข/ลบ"
-                @click.stop="clearSelectedMeeting">
-                <CIcon name="cil-x" width="18" aria-hidden="true" />
-              </button>
-              <div class="meeting-card__selected-actions">
-                <CButton size="sm" color="warning" class="meeting-card__overlay-btn meeting-card__overlay-btn--edit"
-                  @click.stop="openEditModal(meeting)">
-                  <CIcon name="cil-pencil" width="16" class="meeting-card__overlay-ic" aria-hidden="true" />
-                  แก้ไข
-                </CButton>
-                <CButton size="sm" color="danger" class="meeting-card__overlay-btn meeting-card__overlay-btn--delete"
-                  @click.stop="deleteMeeting(meeting)">
-                  <CIcon name="cil-trash" width="16" class="meeting-card__overlay-ic" aria-hidden="true" />
-                  ลบ
-                </CButton>
-              </div>
-            </div>
             <div class="meeting-card__top mt-1">
               <CBadge class="meeting-card__badge" :color="getStatusMeta(meeting.status).color">{{
                 getStatusMeta(meeting.status).label }}</CBadge>
@@ -223,11 +205,11 @@
                       <a v-if="meeting.videoLink" class="meeting-card__link-btn" :href="meeting.videoLink"
                         target="_blank" rel="noopener noreferrer" :aria-label="`เปิดลิงก์ประชุม: ${meeting.videoLink}`"
                         @click.stop>
-                        <CIcon name="cil-link" width="18" aria-hidden="true" />
+                        <CIcon name="cil-external-link" width="18" aria-hidden="true" />
                       </a>
                       <button v-else type="button" class="meeting-card__link-btn is-disabled" disabled
                         aria-disabled="true" @click.stop.prevent>
-                        <CIcon name="cil-link-broken" width="16" aria-hidden="true" />
+                        <CIcon name="cil-external-link" width="16" aria-hidden="true" />
                       </button>
                     </span>
                   </div>
@@ -242,16 +224,30 @@
               </div>
 
               <div class="meeting-card__footer">
-                <CButton size="sm" block
-                  :color="(isReadOnly(meeting) && readOnlyCtaTone === 'dark') ? 'primary' : (isReadOnly(meeting) ? 'secondary' : (meeting.status === 'completed' ? 'secondary' : 'primary'))"
-                  :class="[
-                    'meeting-card__cta',
-                    (meeting.status === 'completed' && !isReadOnly(meeting)) ? 'is-completed' : '',
-                    (isReadOnly(meeting) && readOnlyCtaTone === 'soft') ? 'meeting-card__cta--soft' : ''
-                  ]"
-                  @click.stop="openMinutesModal(meeting)">
-                  <CIcon name="cil-save" class="mr-1" /> {{ isReadOnly(meeting) ? 'ดูรายละเอียด' : (meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม') }}
-                </CButton>
+                <div class="meeting-card__footer-actions">
+                  <CButton size="sm"
+                    :color="(isReadOnly(meeting) && readOnlyCtaTone === 'dark') ? 'primary' : (isReadOnly(meeting) ? 'secondary' : (meeting.status === 'completed' ? 'secondary' : 'primary'))"
+                    :class="[
+                      'meeting-card__cta',
+                      (meeting.status === 'completed' && !isReadOnly(meeting)) ? 'is-completed' : '',
+                      (isReadOnly(meeting) && readOnlyCtaTone === 'soft') ? 'meeting-card__cta--soft' : ''
+                    ]"
+                    @click.stop="openMinutesModal(meeting)">
+                    <CIcon name="cil-save" class="mr-1" /> {{ isReadOnly(meeting) ? 'ดูรายละเอียด' : (meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม') }}
+                  </CButton>
+                  <div v-if="canEditDelete && isMeetingActionable(meeting)" class="meeting-card__footer-side-actions">
+                    <CButton size="sm" color="warning" class="meeting-card__side-btn meeting-card__side-btn--edit"
+                      @click.stop="openEditModal(meeting)">
+                      <CIcon name="cil-pencil" width="16" class="meeting-card__side-ic" aria-hidden="true" />
+                      แก้ไข
+                    </CButton>
+                    <CButton size="sm" color="danger" class="meeting-card__side-btn meeting-card__side-btn--delete"
+                      @click.stop="deleteMeeting(meeting)">
+                      <CIcon name="cil-trash" width="16" class="meeting-card__side-ic" aria-hidden="true" />
+                      ลบ
+                    </CButton>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1024,7 +1020,11 @@ export default {
     isMeetingActionable(meeting) { return !!(meeting && meeting.status === 'scheduled') },
     toggleSelectionMode() { if (!this.canEditDelete) return; this.selectionMode = !this.selectionMode; this.selectedMeetingForActions = null },
     clearSelectedMeeting() { this.selectedMeetingForActions = null },
-    selectMeetingForActions(meeting) { if (!this.isMeetingActionable(meeting)) return; this.selectedMeetingForActions = meeting || null },
+    selectMeetingForActions(meeting) {
+      if (!this.isMeetingActionable(meeting)) return
+      if (this.isSelectedMeeting(meeting)) { this.clearSelectedMeeting(); return }
+      this.selectedMeetingForActions = meeting || null
+    },
     isSelectedMeeting(meeting) {
       if (!this.selectionMode || !meeting || !this.selectedMeetingForActions) return false
       return String(meeting._id) === String(this.selectedMeetingForActions._id)
@@ -1395,23 +1395,17 @@ export default {
 .meeting-card__agenda-label { font-size: 0.86rem; color: #6b7280; margin-bottom: 6px; font-weight: 700; }
 .meeting-card__agenda-body { flex: 0 0 auto; height: 96px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--am-line); background: rgba(248,250,252,0.9); color: #111827; font-size: 0.9rem; line-height: 1.35; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
 .meeting-card__footer { margin-top: 18px; }
+.meeting-card__footer-actions { display: flex; align-items: stretch; gap: 8px; width: 100%; }
+.meeting-card__footer-side-actions { display: inline-flex; align-items: stretch; gap: 8px; flex: 0 0 auto; }
+.meeting-card__side-btn { min-width: 90px !important; padding: 0 12px !important; border-radius: 14px !important; font-weight: 900 !important; letter-spacing: 0.01em; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; border: 0 !important; box-shadow: 0 12px 22px rgba(15,23,42,0.14) !important; transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease !important; }
+.meeting-card__side-btn:hover { filter: brightness(1.03); transform: translateY(-1px); box-shadow: 0 14px 26px rgba(15,23,42,0.18) !important; }
+.meeting-card__side-btn:focus { outline: none !important; }
+.meeting-card__side-btn:focus-visible { outline: none !important; box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 26px rgba(15,23,42,0.18) !important; }
+.meeting-card__side-btn--edit { background: linear-gradient(135deg, rgba(197,155,58,0.98), rgba(241,165,0,0.98)) !important; color: #ffffff !important; }
+.meeting-card__side-btn--delete { background: linear-gradient(135deg, rgba(239,68,68,0.98), rgba(139,18,18,0.98)) !important; color: #ffffff !important; }
+.meeting-card__side-ic { opacity: 0.95; }
 
-.meeting-card__selected-overlay { position: absolute; inset: 0; z-index: 20; border-radius: inherit; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.42); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
-.meeting-card__overlay-close { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 999px; border: 1px solid rgba(148,163,184,0.5); background: rgba(255,255,255,0.78); color: #0f172a; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 12px 22px rgba(15,23,42,0.16); transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease; cursor: pointer; }
-.meeting-card__overlay-close:hover { filter: brightness(1.02); transform: translateY(-1px); box-shadow: 0 14px 26px rgba(15,23,42,0.18); }
-.meeting-card__overlay-close:focus { outline: none; }
-.meeting-card__overlay-close:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 26px rgba(15,23,42,0.18); }
-.meeting-card--selected .meeting-card__surface > :not(.meeting-card__selected-overlay) { filter: blur(2.5px); }
-.meeting-card__selected-actions { display: inline-flex; align-items: center; gap: 12px; }
-.meeting-card__overlay-btn { width: 108px !important; height: 40px !important; padding: 0 14px !important; border-radius: 14px !important; font-weight: 900 !important; letter-spacing: 0.01em; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; border: 0 !important; box-shadow: 0 14px 28px rgba(15,23,42,0.18) !important; transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease !important; }
-.meeting-card__overlay-btn:hover { filter: brightness(1.03); transform: translateY(-1px); box-shadow: 0 16px 32px rgba(15,23,42,0.22) !important; }
-.meeting-card__overlay-btn:focus { outline: none !important; }
-.meeting-card__overlay-btn:focus-visible { outline: none !important; box-shadow: 0 0 0 3px var(--am-accent-ring), 0 16px 32px rgba(15,23,42,0.22) !important; }
-.meeting-card__overlay-btn--edit { background: linear-gradient(135deg, rgba(197,155,58,0.98), rgba(241,165,0,0.98)) !important; color: #ffffff !important; }
-.meeting-card__overlay-btn--delete { background: linear-gradient(135deg, rgba(239,68,68,0.98), rgba(139,18,18,0.98)) !important; color: #ffffff !important; }
-.meeting-card__overlay-ic { opacity: 0.95; }
-
-.meeting-card__cta { border-radius: 14px !important; padding: 10px 12px !important; font-weight: 900 !important; letter-spacing: 0.01em; background: linear-gradient(135deg, rgba(197,155,58,0.98), rgba(139,18,18,0.98)) !important; border: 1px solid rgba(139,18,18,0.22) !important; color: #ffffff !important; box-shadow: 0 12px 22px rgba(15,23,42,0.14); transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease; }
+.meeting-card__cta { flex: 1 1 auto; min-width: 0; border-radius: 14px !important; padding: 10px 12px !important; font-weight: 900 !important; letter-spacing: 0.01em; background: linear-gradient(135deg, rgba(197,155,58,0.98), rgba(139,18,18,0.98)) !important; border: 1px solid rgba(139,18,18,0.22) !important; color: #ffffff !important; box-shadow: 0 12px 22px rgba(15,23,42,0.14); transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease; }
 .meeting-card__cta:hover { filter: brightness(1.03); box-shadow: 0 14px 26px rgba(15,23,42,0.18); transform: translateY(-1px); }
 .meeting-card__cta:focus { outline: none !important; }
 .meeting-card__cta:focus-visible { outline: none !important; box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 26px rgba(15,23,42,0.18); }
@@ -1429,6 +1423,11 @@ export default {
 
 @media (max-width: 991px) { .meetings-hero { flex-direction: column; align-items: flex-start; } .meetings-hero__action { width: 100%; } .hero-action-btn { width: 100%; } }
 @media (max-width: 767px) { .meetings-hero { padding: 22px 18px; border-radius: 18px; } .meetings-hero__title { font-size: 1.5rem; } }
+@media (max-width: 576px) {
+  .meeting-card__footer-actions { flex-wrap: wrap; }
+  .meeting-card__footer-side-actions { width: 100%; }
+  .meeting-card__side-btn { flex: 1 1 0; min-width: 0 !important; }
+}
 
 .meeting-modal .meeting-form, .minutes-modal .minutes-form { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; padding: 6px 0 2px; align-items: start; }
 .meeting-modal .meeting-form .full, .minutes-modal .minutes-form .full { grid-column: 1 / -1; }

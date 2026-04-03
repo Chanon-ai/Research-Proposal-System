@@ -22,7 +22,7 @@
           <div class="dashboard-card-title">ตัวกรองรายงาน</div>
           <div class="header-tools">
             <CButton class="collapse-toggle reports-refresh-btn" color="secondary" variant="outline" size="sm" @click="fetchData">
-              <CIcon name="cil-chevron-right" class="mr-1" /> โหลดข้อมูล
+              <CIcon name="cil-cloud-download" class="mr-1" /> โหลดข้อมูล
             </CButton>
           </div>
         </div>
@@ -44,7 +44,7 @@
             />
           </CCol>
           <CCol md="4" lg="3">
-            <CButton class="reports-refresh-btn w-100" color="primary" variant="outline" @click="fetchData"><CIcon name="cil-chevron-right" class="mr-1" /> โหลดข้อมูล</CButton>
+            <CButton class="reports-refresh-btn w-100" color="primary" variant="outline" @click="fetchData"><CIcon name="cil-cloud-download" class="mr-1" /> โหลดข้อมูล</CButton>
           </CCol>
         </CRow>
       </CCardBody>
