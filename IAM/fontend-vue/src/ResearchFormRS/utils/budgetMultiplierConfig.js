@@ -1,0 +1,283 @@
+export const BUDGET_MULTIPLIER_SETTING_KEY = 'budget_multiplier_config_json'
+export const BUDGET_MULTIPLIER_LOCAL_FALLBACK_KEY = 'admin_budget_multiplier_settings_fallback_v1'
+
+export const BUDGET_MULTIPLIER_CATEGORY_KEYS = Object.freeze({
+  COMPENSATION: 'compensation',
+  OPERATING: 'operating',
+  TRAVEL: 'travel',
+  MATERIAL: 'material',
+  UTILITY: 'utility',
+  EQUIPMENT: 'equipment',
+  OTHER: 'other'
+})
+
+const CATEGORY_KEY_ORDER = Object.freeze([
+  BUDGET_MULTIPLIER_CATEGORY_KEYS.COMPENSATION,
+  BUDGET_MULTIPLIER_CATEGORY_KEYS.OPERATING,
+  BUDGET_MULTIPLIER_CATEGORY_KEYS.TRAVEL,
+  BUDGET_MULTIPLIER_CATEGORY_KEYS.MATERIAL,
+  BUDGET_MULTIPLIER_CATEGORY_KEYS.UTILITY,
+  BUDGET_MULTIPLIER_CATEGORY_KEYS.EQUIPMENT,
+  BUDGET_MULTIPLIER_CATEGORY_KEYS.OTHER
+])
+
+const KNOWN_CATEGORY_KEY_SET = new Set(CATEGORY_KEY_ORDER)
+
+export const DEFAULT_BUDGET_MULTIPLIER_CONFIG = Object.freeze([
+  {
+    categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.COMPENSATION,
+    categoryLabel: 'หมวดค่าตอบแทน',
+    multipliers: [
+      { label: 'จำนวน (คน)', value: 1, isAdmin: false },
+      { label: 'จำนวน (ครั้ง/ด.)', value: 1, isAdmin: false },
+      { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
+    ]
+  },
+  {
+    categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.OPERATING,
+    categoryLabel: 'หมวดค่าใช้สอย',
+    multipliers: [
+      { label: 'จำนวน (คน/ชิ้น)', value: 1, isAdmin: false },
+      { label: 'จำนวน (วัน/ครั้ง)', value: 1, isAdmin: false },
+      { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
+    ]
+  },
+  {
+    categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.TRAVEL,
+    categoryLabel: 'หมวดค่าเดินทาง',
+    multipliers: [
+      { label: 'จำนวน (คน)', value: 1, isAdmin: false },
+      { label: 'จำนวน (วัน/เที่ยว)', value: 1, isAdmin: false },
+      { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
+    ]
+  },
+  {
+    categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.MATERIAL,
+    categoryLabel: 'หมวดค่าวัสดุ',
+    multipliers: [
+      { label: 'จำนวน', value: 1, isAdmin: false },
+      { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false },
+      { label: 'ราคา/หน่วย', value: 5000, isAdmin: true }
+    ]
+  },
+  {
+    categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.UTILITY,
+    categoryLabel: 'หมวดค่าสาธารณูปโภค',
+    multipliers: [
+      { label: 'จำนวน (เดือน)', value: 1, isAdmin: false },
+      { label: 'จำนวน (หน่วย)', value: 1, isAdmin: false },
+      { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
+    ]
+  },
+  {
+    categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.EQUIPMENT,
+    categoryLabel: 'หมวดครุภัณฑ์',
+    multipliers: [
+      { label: 'จำนวน (รายการ)', value: 1, isAdmin: false },
+      { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false },
+      { label: 'ราคา/ชุด', value: 5000, isAdmin: true }
+    ]
+  },
+  {
+    categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.OTHER,
+    categoryLabel: 'หมวดอื่นๆ',
+    multipliers: [
+      { label: 'จำนวน', value: 1, isAdmin: false },
+      { label: 'หน่วย', value: 1, isAdmin: false },
+      { label: 'ราคา/หน่วย', value: 0, isAdmin: false }
+    ]
+  }
+])
+
+export const createDefaultBudgetMultiplierConfig = () => (
+  JSON.parse(JSON.stringify(DEFAULT_BUDGET_MULTIPLIER_CONFIG))
+)
+
+export const toMultiplierNumber = (value, fallback = 0) => {
+  if (value === '' || value === undefined || value === null) return fallback
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return fallback
+  return Math.max(0, numeric)
+}
+
+const normalizeCategoryKey = (value) => {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '')
+    .replace(/_/g, '-')
+  return KNOWN_CATEGORY_KEY_SET.has(normalized) ? normalized : ''
+}
+
+const normalizeMultiplierEntry = (entry) => ({
+  label: String(entry && entry.label !== undefined ? entry.label : '').trim(),
+  value: toMultiplierNumber(entry && entry.value, 0),
+  isAdmin: Boolean(entry && entry.isAdmin)
+})
+
+const normalizeOverrideMatchText = (value) => String(value || '').trim()
+
+const cloneMultipliers = (multipliers) => (
+  (Array.isArray(multipliers) ? multipliers : []).map(multiplier => ({
+    label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
+    value: toMultiplierNumber(multiplier && multiplier.value, 0),
+    isAdmin: Boolean(multiplier && multiplier.isAdmin)
+  }))
+)
+
+const normalizeItemOverrideEntry = (entry) => ({
+  matchText: normalizeOverrideMatchText(entry && entry.matchText),
+  multipliers: cloneMultipliers(entry && entry.multipliers).filter(multiplier => multiplier.label)
+})
+
+const cloneItemOverrides = (itemOverrides) => (
+  (Array.isArray(itemOverrides) ? itemOverrides : []).map(itemOverride => ({
+    matchText: normalizeOverrideMatchText(itemOverride && itemOverride.matchText),
+    multipliers: cloneMultipliers(itemOverride && itemOverride.multipliers)
+  })).filter(itemOverride => itemOverride.matchText && itemOverride.multipliers.length > 0)
+)
+
+const normalizeFromSource = (source, fallbackToDefault) => {
+  const defaults = createDefaultBudgetMultiplierConfig()
+  const defaultMap = new Map(defaults.map(category => [category.categoryKey, category]))
+  const normalizedMap = new Map()
+
+  ;(Array.isArray(source) ? source : []).forEach((category) => {
+    const categoryKey = normalizeCategoryKey(category && (category.categoryKey !== undefined ? category.categoryKey : category.key))
+    if (!categoryKey || normalizedMap.has(categoryKey)) return
+
+    const fallbackCategory = defaultMap.get(categoryKey) || { categoryKey, categoryLabel: categoryKey, multipliers: [], itemOverrides: [] }
+    const normalizedMultipliers = (Array.isArray(category && category.multipliers) ? category.multipliers : [])
+      .map(normalizeMultiplierEntry)
+      .filter(multiplier => multiplier.label)
+    const normalizedItemOverrides = (Array.isArray(category && category.itemOverrides) ? category.itemOverrides : [])
+      .map(normalizeItemOverrideEntry)
+      .filter(itemOverride => itemOverride.matchText && itemOverride.multipliers.length > 0)
+
+    normalizedMap.set(categoryKey, {
+      categoryKey,
+      categoryLabel: String(
+        category && (category.categoryLabel !== undefined ? category.categoryLabel : category.label)
+      || fallbackCategory.categoryLabel || categoryKey).trim() || fallbackCategory.categoryLabel || categoryKey,
+      multipliers: normalizedMultipliers.length
+        ? normalizedMultipliers
+        : (fallbackToDefault ? cloneMultipliers(fallbackCategory.multipliers) : []),
+      itemOverrides: cloneItemOverrides(normalizedItemOverrides)
+    })
+  })
+
+  if (fallbackToDefault) {
+    return CATEGORY_KEY_ORDER.map((categoryKey) => {
+      const fallbackCategory = defaultMap.get(categoryKey) || { categoryKey, categoryLabel: categoryKey, multipliers: [], itemOverrides: [] }
+      const normalizedCategory = normalizedMap.get(categoryKey)
+      if (!normalizedCategory) {
+        return {
+          categoryKey,
+          categoryLabel: fallbackCategory.categoryLabel || categoryKey,
+          multipliers: cloneMultipliers(fallbackCategory.multipliers),
+          itemOverrides: cloneItemOverrides(fallbackCategory.itemOverrides)
+        }
+      }
+      return {
+        categoryKey,
+        categoryLabel: normalizedCategory.categoryLabel || fallbackCategory.categoryLabel || categoryKey,
+        multipliers: cloneMultipliers(normalizedCategory.multipliers),
+        itemOverrides: cloneItemOverrides(normalizedCategory.itemOverrides)
+      }
+    })
+  }
+
+  return Array.from(normalizedMap.values()).map(category => ({
+    categoryKey: category.categoryKey,
+    categoryLabel: String(category.categoryLabel || '').trim(),
+    multipliers: cloneMultipliers(category.multipliers).filter(multiplier => multiplier.label),
+    itemOverrides: cloneItemOverrides(category.itemOverrides)
+  }))
+}
+
+export const normalizeBudgetMultiplierConfig = (rawConfig, { fallbackToDefault = true } = {}) => {
+  const source = Array.isArray(rawConfig) ? rawConfig : []
+  const normalized = normalizeFromSource(source, fallbackToDefault)
+  if (!normalized.length && fallbackToDefault) return createDefaultBudgetMultiplierConfig()
+  return normalized
+}
+
+export const parseBudgetMultiplierSettingValue = (settingValue, { fallbackToDefault = true } = {}) => {
+  if (settingValue === undefined || settingValue === null || settingValue === '') {
+    return fallbackToDefault ? createDefaultBudgetMultiplierConfig() : []
+  }
+
+  try {
+    const parsed = typeof settingValue === 'string'
+      ? JSON.parse(settingValue)
+      : settingValue
+    return normalizeBudgetMultiplierConfig(parsed, { fallbackToDefault })
+  } catch (_) {
+    return fallbackToDefault ? createDefaultBudgetMultiplierConfig() : []
+  }
+}
+
+export const sanitizeBudgetMultiplierConfigForSave = (rawConfig) => {
+  const normalized = normalizeBudgetMultiplierConfig(rawConfig, { fallbackToDefault: true })
+  return normalized.map(category => ({
+    categoryKey: normalizeCategoryKey(category.categoryKey),
+    categoryLabel: String(category.categoryLabel || '').trim(),
+    multipliers: cloneMultipliers(category.multipliers).filter(multiplier => multiplier.label),
+    itemOverrides: cloneItemOverrides(category.itemOverrides)
+  })).filter(category => category.categoryKey)
+}
+
+export const buildBudgetMultiplierConfigMap = (config) => {
+  const categoryMap = buildBudgetMultiplierCategoryMap(config)
+  const mapped = new Map()
+  categoryMap.forEach((category, categoryKey) => {
+    mapped.set(categoryKey, cloneMultipliers(category && category.multipliers))
+  })
+  return mapped
+}
+
+export const buildBudgetMultiplierCategoryMap = (config) => {
+  const normalized = normalizeBudgetMultiplierConfig(config, { fallbackToDefault: true })
+  const mapped = new Map()
+  normalized.forEach((category) => {
+    mapped.set(category.categoryKey, {
+      categoryKey: category.categoryKey,
+      categoryLabel: String(category.categoryLabel || '').trim(),
+      multipliers: cloneMultipliers(category.multipliers),
+      itemOverrides: cloneItemOverrides(category.itemOverrides)
+    })
+  })
+  return mapped
+}
+
+export const getBudgetCategoryMultipliers = (config, categoryKey) => {
+  const key = normalizeCategoryKey(categoryKey)
+  if (!key) return []
+  const map = buildBudgetMultiplierConfigMap(config)
+  return map.get(key) || []
+}
+
+export const readBudgetMultiplierConfigFromFallbackStorage = () => {
+  if (typeof localStorage === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(BUDGET_MULTIPLIER_LOCAL_FALLBACK_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!parsed || !Array.isArray(parsed.budgetMultiplierConfig)) return []
+    return normalizeBudgetMultiplierConfig(parsed.budgetMultiplierConfig, { fallbackToDefault: false })
+  } catch (_) {
+    return []
+  }
+}
+
+export const writeBudgetMultiplierConfigToFallbackStorage = (config) => {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.setItem(BUDGET_MULTIPLIER_LOCAL_FALLBACK_KEY, JSON.stringify({
+      budgetMultiplierConfig: sanitizeBudgetMultiplierConfigForSave(config),
+      savedAt: new Date().toISOString()
+    }))
+  } catch (_) {
+    // Ignore localStorage write error.
+  }
+}

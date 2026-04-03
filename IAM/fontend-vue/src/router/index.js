@@ -1,6 +1,14 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import store from '@/store/store'
+import {
+  isRoleAllowedForPath,
+  resolveRoleLandingPath
+} from '@/ResearchFormRS/utils/rolePageAccessConfig'
+import {
+  loadRolePageAccessRuntimeConfig,
+  mapRoleForResearchAccess
+} from '@/ResearchFormRS/utils/rolePageAccessRuntime'
 
 const TheContainer = () => import('@/containers/TheContainer')
 
@@ -76,7 +84,6 @@ const Toaster = () => import('@/views/notifications/Toaster')
 const Page404 = () => import('@/views/pages/Page404')
 const Page500 = () => import('@/views/pages/Page500')
 const Login = () => import('@/views/pages/Login')
-const ResearchLogin = () => import('@/views/pages/ResearchLogin')
 const Register = () => import('@/views/pages/Register')
 
 const Users = () => import('@/views/users/Users')
@@ -121,7 +128,7 @@ const router = new Router({
   routes: [
     {
       path: '/',
-      redirect: '/pages/research-login',
+      redirect: '/pages/login',
       name: 'Home',
       component: TheContainer,
       children: [
@@ -700,9 +707,7 @@ const router = new Router({
         },
         {
           path: 'research-login',
-          name: 'ResearchLogin',
-          component: ResearchLogin,
-          meta: { guestOnly: true }
+          redirect: '/pages/login'
         },
         {
           path: 'register',
@@ -811,8 +816,9 @@ function getStoredRole() {
 }
 
 function getRoleHome(role) {
-  if (role === 'committee') return '/committee/assigned'
-  if (role === 'admin' || role === 'chairman') return '/admin/dashboard'
+  const normalizedRole = mapRoleForResearchAccess(role)
+  if (normalizedRole === 'committee') return '/committee/assigned'
+  if (normalizedRole === 'admin' || normalizedRole === 'chairman') return '/admin/dashboard'
   return '/userdashboard'
 }
 
@@ -843,6 +849,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const researchRole = store.getters['Authentication/userRole'] || getStoredRole()
+  const researchRoleForAccess = mapRoleForResearchAccess(researchRole)
   const researchHome = getRoleHome(researchRole)
   const isResearchGuestOnly = to.matched.some(record => record.meta && record.meta.guestOnly)
 
@@ -855,7 +862,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (isResearchRoute) {
     if (!researchAuthenticated) {
-      return next('/pages/research-login')
+      return next('/pages/login')
     }
 
     const roleRecords = to.matched.filter(record => (
@@ -870,6 +877,19 @@ router.beforeEach(async (to, from, next) => {
       }
     }
 
+    const rolePageAccessConfig = await loadRolePageAccessRuntimeConfig()
+    const allowedByRolePageAccess = isRoleAllowedForPath(
+      rolePageAccessConfig,
+      to.path,
+      researchRoleForAccess,
+      { defaultAllow: true }
+    )
+    if (!allowedByRolePageAccess) {
+      const fallbackPath = resolveRoleLandingPath(rolePageAccessConfig, researchRoleForAccess, researchHome)
+      if (fallbackPath && fallbackPath !== to.path) return next(fallbackPath)
+      return next('/pages/404')
+    }
+
     return next()
   }
 
@@ -881,28 +901,34 @@ router.beforeEach(async (to, from, next) => {
   const legacyAuthenticated = !!authState.isAuthen
 
   if (!researchAuthenticated && !legacyAuthenticated) {
-    return next('/pages/research-login')
+    return next('/pages/login')
   }
 
   const permissionMeta = to.meta && to.meta.permission
   const hasLegacyToken = !!store.state.XAccessToken
   const profile = store.getters['auth/profile'] || null
   const isOwner = isOwnerProfile(profile)
-  if (permissionMeta && hasLegacyToken && legacyAuthenticated && !isOwner) {
-    if (!store.getters['security/loaded']) {
-      try {
-        await store.dispatch('security/fetchMyPermissions')
-      } catch (err) {
-        // permission fetch failed, fallback to denied
-      }
-    }
-    const action = permissionMeta.action || 'view'
-    const pathCandidates = buildPermissionCandidates(to, permissionMeta)
-    const canAccess = pathCandidates.some(path => (
-      store.getters['security/canAccess'](path, action)
-    ))
-    if (!canAccess) {
+  if (permissionMeta) {
+    if (!hasLegacyToken || !legacyAuthenticated) {
       return next({ path: '/pages/404' })
+    }
+
+    if (!isOwner) {
+      if (!store.getters['security/loaded']) {
+        try {
+          await store.dispatch('security/fetchMyPermissions')
+        } catch (err) {
+          // permission fetch failed, fallback to denied
+        }
+      }
+      const action = permissionMeta.action || 'view'
+      const pathCandidates = buildPermissionCandidates(to, permissionMeta)
+      const canAccess = pathCandidates.some(path => (
+        store.getters['security/canAccess'](path, action)
+      ))
+      if (!canAccess) {
+        return next({ path: '/pages/404' })
+      }
     }
   }
 

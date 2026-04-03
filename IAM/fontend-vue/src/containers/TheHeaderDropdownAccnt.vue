@@ -8,8 +8,7 @@
     <template #toggler>
       <CHeaderNavLink>
         <div class="c-avatar">
-          <img src="@/assets/avatars/1.jpg"  class="c-avatar-img" style="height: 100%"/>
-<!--          <img :src="profile.userinfo.imageProfile.src" class="c-avatar-img" style="height: 100%"/>-->
+          <img :src="avatarSrc" class="c-avatar-img" style="height: 100%" @error="onAvatarError"/>
         </div>
       </CHeaderNavLink>
     </template>
@@ -45,6 +44,13 @@
 <script>
 export default {
   name: 'TheHeaderDropdownAccnt',
+  data() {
+    return {
+      defaultAvatarSrc: require('@/assets/avatars/1.jpg'),
+      avatarLoadFailed: false,
+      avatarBootstrapTried: false
+    }
+  },
 
   computed: {
     isDarkTheme () {
@@ -71,12 +77,155 @@ export default {
       }
     },
 
+    researchUser () {
+      const fromStore = this.$store.getters['Authentication/currentUser']
+      if (fromStore && typeof fromStore === 'object') return fromStore
+
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        return parsed && typeof parsed === 'object' ? parsed : null
+      } catch (e) {
+        return null
+      }
+    },
+
+    legacyProfile () {
+      const profile = this.$store.getters['auth/profile']
+      return profile && typeof profile === 'object' ? profile : null
+    },
+
+    avatarHint () {
+      try {
+        const raw = localStorage.getItem('auth_avatar_hint')
+        return raw && String(raw).trim() ? String(raw).trim() : ''
+      } catch (e) {
+        return ''
+      }
+    },
+
+    rawAvatarSrc () {
+      const legacyProfileImage = this.legacyProfile && this.legacyProfile.userinfo && this.legacyProfile.userinfo.image
+      const legacyProfileImageNested = this.legacyProfile
+        && this.legacyProfile.userinfo
+        && this.legacyProfile.userinfo.imageProfile
+        && this.legacyProfile.userinfo.imageProfile.src
+
+      const candidates = [
+        this.researchUser && this.researchUser.avatarUrl,
+        this.researchUser && this.researchUser.avatar,
+        this.researchUser && this.researchUser.picture,
+        this.researchUser && this.researchUser.image,
+        this.researchUser && this.researchUser.photo,
+        this.researchUser && this.researchUser.photoURL,
+        this.researchUser && this.researchUser.profileImage,
+        this.researchUser && this.researchUser.profileImageUrl,
+        this.researchUser && this.researchUser.userinfo && this.researchUser.userinfo.image,
+        this.researchUser && this.researchUser.userinfo && this.researchUser.userinfo.imageProfile && this.researchUser.userinfo.imageProfile.src,
+        this.legacyProfile && this.legacyProfile.avatarUrl,
+        this.legacyProfile && this.legacyProfile.avatar,
+        this.legacyProfile && this.legacyProfile.picture,
+        this.legacyProfile && this.legacyProfile.photo,
+        legacyProfileImage,
+        legacyProfileImageNested,
+        this.avatarHint
+      ]
+
+      const found = candidates.find(item => typeof item === 'string' && item.trim())
+      return this.normalizeAvatarUrl(found || '')
+    },
+
+    avatarSrc () {
+      if (this.avatarLoadFailed) {
+        return this.defaultAvatarSrc
+      }
+      return this.rawAvatarSrc || this.defaultAvatarSrc
+    },
+
     showUserMenu () {
       return ['researcher', 'admin', 'chairman'].includes(this.currentRole)
     }
   },
 
+  watch: {
+    rawAvatarSrc (value) {
+      this.avatarLoadFailed = false
+      if (!value) {
+        this.tryBootstrapLegacyProfile()
+      }
+    }
+  },
+
+  mounted () {
+    this.tryBootstrapLegacyProfile()
+  },
+
   methods: {
+    getApiBaseUrl () {
+      const raw = process.env.VUE_APP_API_BASE_URL || process.env.VUE_APP_API_URL || ''
+      return String(raw || '').trim().replace(/\/+$/, '')
+    },
+
+    normalizeAvatarUrl (value) {
+      const raw = String(value || '').trim()
+      if (!raw) return ''
+
+      if (/^data:/i.test(raw) || /^blob:/i.test(raw)) {
+        return raw
+      }
+
+      if (/^https?:\/\//i.test(raw)) {
+        return raw
+      }
+
+      if (raw.startsWith('//')) {
+        const protocol = (typeof window !== 'undefined' && window.location && window.location.protocol)
+          ? window.location.protocol
+          : 'https:'
+        return `${protocol}${raw}`
+      }
+
+      const baseUrl = this.getApiBaseUrl()
+      if (!baseUrl) return raw
+
+      if (raw.startsWith('/')) {
+        return `${baseUrl}${raw}`
+      }
+
+      return `${baseUrl}/${raw.replace(/^\.?\//, '')}`
+    },
+
+    hasLegacyToken () {
+      const fromStore = this.$store && this.$store.state ? this.$store.state.XAccessToken : ''
+      if (fromStore && String(fromStore).trim()) return true
+
+      try {
+        const fromLocalStorage = localStorage.getItem('x-access-token')
+        return !!(fromLocalStorage && String(fromLocalStorage).trim())
+      } catch (e) {
+        return false
+      }
+    },
+
+    async tryBootstrapLegacyProfile () {
+      if (this.rawAvatarSrc) return
+      if (this.avatarBootstrapTried) return
+      if (!this.hasLegacyToken()) return
+      if (this.legacyProfile) return
+
+      this.avatarBootstrapTried = true
+      try {
+        await this.$store.dispatch('auth/bootstrapSession')
+      } catch (e) {
+        // Ignore avatar fallback failures to avoid blocking the UI.
+      }
+    },
+
+    onAvatarError () {
+      this.avatarLoadFailed = true
+    },
+
     isActiveRoute (targetPath) {
       return this.$route && this.$route.path === targetPath
     },
@@ -92,7 +241,7 @@ export default {
       } catch (e) {
         localStorage.removeItem('auth_token')
         localStorage.removeItem('auth_user')
-        window.location.href = '/pages/research-login'
+        window.location.href = '/pages/login'
       }
     }
   }

@@ -54,7 +54,16 @@ export default {
     const route = this.$route || {}
     const isResearchRoute = !!(route.meta && route.meta.appAuth === 'research')
     if (isResearchRoute) {
-      await this.$store.dispatch('Authentication/restoreSession')
+      this.$store.commit('auth/isSignIn', false)
+      const isAuthenticated = !!this.$store.getters['Authentication/isAuthenticated']
+      if (isAuthenticated) {
+        return
+      }
+
+      const restored = await this.$store.dispatch('Authentication/restoreSession')
+      if (!restored && this.$route && this.$route.path !== '/pages/login') {
+        this.$router.replace('/pages/login')
+      }
       return
     }
     await this.$store.dispatch('auth/bootstrapSession')

@@ -10,6 +10,8 @@ const permission = require('./service/permission');
 const assignment = require('./service/assignment');
 const account = require('../accounts/service/account');
 
+router.use(account.onCheckAuthorization);
+
 router.get('/type', type.onQuerys);
 router.post('/type', type.onCreate);
 router.put('/type', type.onUpdate);
@@ -31,7 +33,7 @@ router.put('/permission', permission.onUpdate);
 router.delete('/permission', permission.onDelete);
 router.post('/permission/create/batch', permission.onCreateeBatch);
 router.put('/permission/update/batch', permission.onUpdateBatch);
-router.get('/permission/my', account.onCheckAuthorization, permission.onMyPermissions);
+router.get('/permission/my', permission.onMyPermissions);
 
 router.get('/assignment', assignment.onQuerys);
 router.post('/assignment', assignment.onCreate);

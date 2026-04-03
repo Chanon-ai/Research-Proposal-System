@@ -223,6 +223,7 @@
 <script>
 import { instance as axios } from '@/service/api'
 import Swal from 'sweetalert2'
+import { PROPOSAL_STATUS_LABELS_TH_BADGE as STATUS_LABELS } from '@/ResearchFormRS/constants/proposalWorkflow'
 
 const NOTIFICATION_TYPES = {
   status_changed: 'สถานะโครงการเปลี่ยนแปลง',
@@ -248,25 +249,6 @@ const TYPE_BADGE_COLOR = {
   document_required: 'warning',
   committee_assigned: 'info',
   announcement: 'secondary'
-}
-
-const STATUS_LABELS = {
-  draft: 'ร่าง',
-  pending_confirm: 'รอการยืนยัน',
-  submitted: 'ยื่นแล้ว',
-  faculty_review_pending: 'รอคณะพิจารณา (คณะ)',
-  faculty_approved: 'ผ่านการพิจารณา (คณะ)',
-  office_received: 'สำนักงานรับเรื่องแล้ว',
-  document_checking: 'ตรวจเอกสาร',
-  assigned_to_committee: 'มอบหมายกรรมการแล้ว',
-  under_review: 'อยู่ระหว่างการพิจารณา',
-  meeting_completed: 'ประชุมเสร็จสิ้น',
-  revision_requested: 'ขอแก้ไขเพิ่มเติม',
-  resubmitted: 'ส่งใหม่',
-  second_round_review: 'รอบพิจารณาครั้งที่ 2',
-  approved: 'อนุมัติ',
-  rejected: 'ไม่อนุมัติ',
-  announced: 'ประกาศผลแล้ว'
 }
 
 const RECIPIENT_TYPES = {

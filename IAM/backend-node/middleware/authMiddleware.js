@@ -1,9 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../server/Project/Auth/models/User');
-
-function getJwtSecret() {
-  return process.env.JWT_SECRET || 'mfu_research_secret_key_2025_change_in_production';
-}
+const { getJwtSecret } = require('../helpers/jwtSecret');
 
 exports.authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;

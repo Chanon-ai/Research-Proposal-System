@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, requireRole } = require('../../../middleware/authMiddleware');
+const account = require('../accounts/service/account');
 
 const message = require("./service/message");
 const status = require("./service/status");
@@ -9,26 +10,26 @@ const verification = require("./service/verification");
 const authMessage = require("./service/auth_message");
 const systemSetting = require('./controller/system-setting');
 
-router.get("/message", message.onQuerys);
-router.post("/message", message.onCreate);
-router.put("/message", message.onUpdate);
-router.delete("/message", message.onDelete);
+router.get("/message", account.onCheckAuthorization, message.onQuerys);
+router.post("/message", account.onCheckAuthorization, message.onCreate);
+router.put("/message", account.onCheckAuthorization, message.onUpdate);
+router.delete("/message", account.onCheckAuthorization, message.onDelete);
 
-router.get("/status", status.onQuerys);
-router.post("/status", status.onCreate);
-router.put("/status", status.onUpdate);
-router.delete("/status", status.onDelete);
+router.get("/status", account.onCheckAuthorization, status.onQuerys);
+router.post("/status", account.onCheckAuthorization, status.onCreate);
+router.put("/status", account.onCheckAuthorization, status.onUpdate);
+router.delete("/status", account.onCheckAuthorization, status.onDelete);
 
-router.get("/groups", group.onQuerys);
-router.post("/groups", group.onCreate);
-router.put("/groups", group.onUpdate);
-router.delete("/groups", group.onDelete);
+router.get("/groups", account.onCheckAuthorization, group.onQuerys);
+router.post("/groups", account.onCheckAuthorization, group.onCreate);
+router.put("/groups", account.onCheckAuthorization, group.onUpdate);
+router.delete("/groups", account.onCheckAuthorization, group.onDelete);
 
-router.get("/verification", verification.onQuerys);
-router.post("/verification/explorers", verification.onCreate);
-router.post("/verification", verification.onCreate);
-router.put("/verification", verification.onUpdate);
-router.delete("/verification", verification.onDelete);
+router.get("/verification", account.onCheckAuthorization, verification.onQuerys);
+router.post("/verification/explorers", account.onCheckAuthorization, verification.onCreate);
+router.post("/verification", account.onCheckAuthorization, verification.onCreate);
+router.put("/verification", account.onCheckAuthorization, verification.onUpdate);
+router.delete("/verification", account.onCheckAuthorization, verification.onDelete);
 
 router.get("/", authenticate, requireRole('admin', 'chairman'), systemSetting.list);
 router.post("/", authenticate, requireRole('admin', 'chairman'), systemSetting.create);
@@ -40,9 +41,9 @@ router.post("/clear-cache", authenticate, requireRole('admin', 'chairman'), syst
 router.put("/:id", authenticate, requireRole('admin', 'chairman'), systemSetting.update);
 router.delete("/:id", authenticate, requireRole('admin', 'chairman'), systemSetting.remove);
 
-router.get("/auth/message", authMessage.onQuerys);
-router.post("/auth/message", authMessage.onCreate);
-router.put("/auth/message", authMessage.onUpdate);
-router.delete("/auth/message", authMessage.onDelete);
+router.get("/auth/message", account.onCheckAuthorization, authMessage.onQuerys);
+router.post("/auth/message", account.onCheckAuthorization, authMessage.onCreate);
+router.put("/auth/message", account.onCheckAuthorization, authMessage.onUpdate);
+router.delete("/auth/message", account.onCheckAuthorization, authMessage.onDelete);
 
 module.exports = router;

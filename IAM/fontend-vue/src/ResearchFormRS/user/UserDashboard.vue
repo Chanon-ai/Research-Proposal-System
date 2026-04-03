@@ -109,20 +109,9 @@
             >
               <CIcon name="cil-chevron-right" class="mr-1" /> ล้างตัวกรอง
             </CButton>
-            <CButton
-              class="collapse-toggle"
-              color="secondary"
-              variant="ghost"
-              size="sm"
-              :aria-label="showTable ? 'พับตาราง' : 'ขยายตาราง'"
-              @click="showTable = !showTable"
-            >
-              <CIcon :name="showTable ? 'cil-chevron-top' : 'cil-chevron-bottom'" />
-            </CButton>
           </div>
         </div>
       </CCardHeader>
-      <CCollapse :show="showTable" :duration="220">
       <CCardBody class="card-body-tight">
         <div v-if="loading" class="state-box">
           <div class="spinner"></div>
@@ -178,6 +167,7 @@
               <td class="action-body-cell" @click.stop>
                 <div class="action-cell">
                   <CButton
+                    v-if="canAccessResearchForm"
                     size="sm"
                     color="primary"
                     class="mr-2 action-btn action-btn-view"
@@ -227,63 +217,32 @@
           </div>
         </div>
       </CCardBody>
-      </CCollapse>
     </CCard>
 
-    <button class="fab" title="สร้างโครงการใหม่" @click="onAdd"><CIcon name="cil-chevron-right" class="mr-1" /> ＋</button>
+    <button v-if="canAccessResearchForm" class="fab" title="สร้างโครงการใหม่" @click="onAdd"><CIcon name="cil-chevron-right" class="mr-1" /> ＋</button>
   </div>
 </template>
 
 <script>
 import Service from '@/service/api'
 import Swal from 'sweetalert2'
-
-const PROPOSAL_STATUSES = Object.freeze([
-  'draft',
-  'pending_confirm',
-  'submitted',
-  'faculty_review_pending',
-  'faculty_approved',
-  'office_received',
-  'document_checking',
-  'assigned_to_committee',
-  'under_review',
-  'meeting_completed',
-  'revision_requested',
-  'resubmitted',
-  'second_round_review',
-  'approved',
-  'rejected',
-  'announced'
-])
-
-const IN_PROGRESS_STATUSES = Object.freeze([
-  'pending_confirm',
-  'submitted',
-  'faculty_review_pending',
-  'faculty_approved',
-  'office_received',
-  'document_checking',
-  'assigned_to_committee',
-  'under_review',
-  'meeting_completed',
-  'resubmitted',
-  'second_round_review'
-])
-
-const FILTER_IN_PROGRESS_STATUSES = Object.freeze([
-  'submitted',
-  'faculty_review_pending',
-  'faculty_approved',
-  'office_received',
-  'document_checking',
-  'assigned_to_committee',
-  'under_review',
-  'meeting_completed',
-  'revision_requested',
-  'resubmitted',
-  'second_round_review'
-])
+import {
+  APPROVED_PROPOSAL_STATUSES,
+  FILTER_IN_PROGRESS_STATUSES,
+  IN_PROGRESS_STATUSES,
+  PROPOSAL_STATUSES,
+  STATUS_COLORS,
+  STATUS_STEP_MAP,
+  normalizeProposalStatus
+} from '@/ResearchFormRS/constants/proposalWorkflow'
+import {
+  createDefaultRolePageAccessConfig,
+  isRoleAllowedForPath
+} from '@/ResearchFormRS/utils/rolePageAccessConfig'
+import {
+  loadRolePageAccessRuntimeConfig,
+  mapRoleForResearchAccess
+} from '@/ResearchFormRS/utils/rolePageAccessRuntime'
 
 const STATUS_LABEL_MAP = Object.freeze({
   draft: 'แบบร่าง',
@@ -304,44 +263,6 @@ const STATUS_LABEL_MAP = Object.freeze({
   announced: 'ประกาศผลแล้ว'
 })
 
-const STATUS_STEP_MAP = Object.freeze({
-  draft: 1,
-  pending_confirm: 2,
-  submitted: 2,
-  faculty_review_pending: 3,
-  faculty_approved: 4,
-  office_received: 5,
-  document_checking: 6,
-  assigned_to_committee: 7,
-  under_review: 8,
-  meeting_completed: 9,
-  revision_requested: 5,
-  resubmitted: 6,
-  second_round_review: 8,
-  approved: 10,
-  rejected: 10,
-  announced: 10
-})
-
-const STATUS_COLORS = Object.freeze({
-  draft: '#9CA3AF',
-  pending_confirm: '#60A5FA',
-  submitted: '#3B82F6',
-  faculty_review_pending: '#3B82F6',
-  faculty_approved: '#34D399',
-  office_received: '#38BDF8',
-  document_checking: '#FACC15',
-  assigned_to_committee: '#A78BFA',
-  under_review: '#6366F1',
-  meeting_completed: '#10B981',
-  revision_requested: '#FB923C',
-  resubmitted: '#22D3EE',
-  second_round_review: '#8B5CF6',
-  approved: '#059669',
-  rejected: '#EF4444',
-  announced: '#14B8A6'
-})
-
 export default {
   name: "UserDashboard",
   data() {
@@ -349,7 +270,6 @@ export default {
       allProjects: [],
       loading: true,
       fetchError: null,
-      showTable: true,
       searchQuery: '',
       perPage: 5,
       perPageOptions: [5, 10, 20, 50],
@@ -385,22 +305,72 @@ export default {
       activeFilter: null,
       filterGroups: {
         in_progress: [...FILTER_IN_PROGRESS_STATUSES],
-        approved: ['approved', 'announced'],
+        approved: [...APPROVED_PROPOSAL_STATUSES],
         rejected: ['rejected'],
       },
       workflowSteps: PROPOSAL_STATUSES.map((key) => ({
         key,
         label: STATUS_LABEL_MAP[key] || key,
         step: STATUS_STEP_MAP[key] || 0
+<<<<<<< HEAD
       }))
+=======
+      })),
+      chartData: {
+        all: [72, 68, 83, 77, 86, 91, 88],
+        inProgress: [35, 49, 60, 71, 80, 90, 75],
+        approved: [10, 20, 30, 25, 35, 45, 40],
+        rejected: [6, 4, 5, 3, 4, 2, 1],
+      },
+      chartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        legend: { display: false },
+        scales: {
+          xAxes: [{ display: false }],
+          yAxes: [{ display: false }]
+        },
+        elements: {
+          line: { borderWidth: 2, tension: 0.4 },
+          point: { radius: 0 }
+        }
+      },
+      rolePageAccessConfig: createDefaultRolePageAccessConfig()
+>>>>>>> 3a07565797ea7f14017f8e6957404e46ffa43cfe
     };
   },
 
   async mounted() {
-    await this.fetchResearch();
+    await Promise.all([
+      this.fetchRolePageAccessConfig(),
+      this.fetchResearch()
+    ]);
   },
 
   computed: {
+    currentResearchRole() {
+      const storeRole = this.$store && this.$store.getters
+        ? this.$store.getters['Authentication/userRole']
+        : ''
+      if (storeRole) return mapRoleForResearchAccess(storeRole)
+
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return ''
+        const parsed = JSON.parse(raw)
+        return mapRoleForResearchAccess(parsed && parsed.role ? parsed.role : '')
+      } catch (e) {
+        return ''
+      }
+    },
+    canAccessResearchForm() {
+      return isRoleAllowedForPath(
+        this.rolePageAccessConfig,
+        '/research-form',
+        this.currentResearchRole,
+        { defaultAllow: true }
+      )
+    },
     currentUserId() {
       const user = this.$store && this.$store.getters
         ? this.$store.getters['Authentication/currentUser']
@@ -418,7 +388,7 @@ export default {
       return {
         all: all.length,
         inProgress: all.filter(p => FILTER_IN_PROGRESS_STATUSES.includes(String(p.currentStatus || '').toLowerCase())).length,
-        approved: all.filter(p => ['approved', 'announced'].includes(String(p.currentStatus || '').toLowerCase())).length,
+        approved: all.filter(p => APPROVED_PROPOSAL_STATUSES.includes(String(p.currentStatus || '').toLowerCase())).length,
         rejected: all.filter(p => String(p.currentStatus || '').toLowerCase() === 'rejected').length,
       };
     },
@@ -479,6 +449,16 @@ export default {
   },
 
   methods: {
+    async fetchRolePageAccessConfig() {
+      try {
+        const config = await loadRolePageAccessRuntimeConfig()
+        if (Array.isArray(config) && config.length > 0) {
+          this.rolePageAccessConfig = config
+        }
+      } catch (error) {
+        void error
+      }
+    },
     setFilter(filterKey) {
       if (this.activeFilter === filterKey) {
         this.activeFilter = null;
@@ -611,7 +591,7 @@ export default {
         submittedAt: item.submittedAt,
         updatedAt: item.updatedAt,
         createdAt: item.createdAt,
-        currentStatus: String(item && item.currentStatus ? item.currentStatus : '').toLowerCase() || 'draft',
+        currentStatus: normalizeProposalStatus(item && item.currentStatus) || 'draft',
       };
     },
 
@@ -906,12 +886,33 @@ export default {
 }
 
 .widget-click-area .user-widget-card ::v-deep(.card-body) {
+<<<<<<< HEAD
   min-height: 140px;
   padding-top: 1.25rem;
   padding-bottom: 1.25rem;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+=======
+  padding: 1.25rem 1.3rem 0;
+}
+
+.widget-click-area .user-widget-card ::v-deep(.text-value-lg) {
+  font-size: clamp(2.5rem, 3.1vw, 3.5rem);
+  line-height: 0.9;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.34rem;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+
+.widget-click-area .user-widget-card ::v-deep(.text-value-lg + div) {
+  font-size: clamp(1.1rem, 1.2vw, 1.24rem);
+  line-height: 1.3;
+  font-weight: 700;
+  opacity: 0.96;
+>>>>>>> 3a07565797ea7f14017f8e6957404e46ffa43cfe
 }
 
 .widget-click-area .user-widget-card ::v-deep(.card-footer) {
@@ -940,6 +941,14 @@ export default {
     margin-bottom: 0.25rem;
   }
 
+  .widget-click-area .user-widget-card ::v-deep(.text-value-lg) {
+    font-size: clamp(2.2rem, 5.6vw, 2.9rem);
+  }
+
+  .widget-click-area .user-widget-card ::v-deep(.text-value-lg + div) {
+    font-size: 1.08rem;
+  }
+
   .widget-click-area .user-widget-card::before {
     background-size: 104px 104px;
     background-position: calc(100% + 4px) -8px;
@@ -954,6 +963,14 @@ export default {
 
   .widget-click-area.is-active {
     transform: scale(1.01);
+  }
+
+  .widget-click-area .user-widget-card ::v-deep(.text-value-lg) {
+    font-size: 2.25rem;
+  }
+
+  .widget-click-area .user-widget-card ::v-deep(.text-value-lg + div) {
+    font-size: 1.02rem;
   }
 }
 
@@ -1095,28 +1112,6 @@ export default {
   border-color: rgba(181, 133, 34, 0.35);
 }
 
-.collapse-toggle {
-  height: 34px;
-  min-width: 34px;
-  padding: 0 0.5rem;
-  border-radius: 10px;
-  color: #6b7280;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.collapse-toggle:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: #374151;
-}
-
-.collapse-toggle /deep/ svg,
-.collapse-toggle >>> svg,
-.collapse-toggle::v-deep svg {
-  width: 18px;
-  height: 18px;
-}
 
 .clear-filter-btn {
   background: rgba(181, 133, 34, 0.1);
@@ -1561,16 +1556,12 @@ body.c-dark-theme .state-text {
 }
 
 [data-coreui-theme='dark'] .clear-filter-btn,
-body.c-dark-theme .clear-filter-btn,
-[data-coreui-theme='dark'] .collapse-toggle,
-body.c-dark-theme .collapse-toggle {
+body.c-dark-theme .clear-filter-btn {
   background: rgba(71, 85, 105, 0.28);
   border-color: rgba(148, 163, 184, 0.45);
   color: #e5e7eb;
 }
 
-[data-coreui-theme='dark'] .collapse-toggle:hover,
-body.c-dark-theme .collapse-toggle:hover,
 [data-coreui-theme='dark'] .clear-filter-btn:hover,
 body.c-dark-theme .clear-filter-btn:hover {
   background: rgba(71, 85, 105, 0.44);

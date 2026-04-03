@@ -15,23 +15,6 @@
                 width="52px"
                 alt="Google Sign-In"
               />
-
-              <div class="divider my-4">
-                <span class="divider-text text-muted">or</span>
-              </div>
-
-              <button
-                class="btn btn-outline-primary btn-block mb-2"
-                @click="$router.push({ name: 'ResearchLogin', query: { tab: 'login' } })"
-              >
-                Login with Email / Password
-              </button>
-              <button
-                class="btn btn-outline-success btn-block"
-                @click="$router.push({ name: 'ResearchLogin', query: { tab: 'register' } })"
-              >
-                Register
-              </button>
             </CCardBody>
           </CCard>
         </CCol>
@@ -56,13 +39,37 @@ export default {
     DialogMessage
   },
   methods: {
+    extractGooglePicture(googleUser) {
+      try {
+        const profile = googleUser && typeof googleUser.getBasicProfile === 'function'
+          ? googleUser.getBasicProfile()
+          : null
+        if (profile && typeof profile.getImageUrl === 'function') {
+          const imageUrl = profile.getImageUrl()
+          return imageUrl && String(imageUrl).trim() ? String(imageUrl).trim() : ''
+        }
+      } catch (e) {
+        // Ignore profile parsing errors.
+      }
+      return ''
+    },
+    persistAvatarHint(imageUrl) {
+      const normalized = imageUrl && String(imageUrl).trim() ? String(imageUrl).trim() : ''
+      if (!normalized) return
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('auth_avatar_hint', normalized)
+      }
+    },
     async onAuthenGoogle() {
       try {
         const googleUser = await this.$gAuth.signIn();
         const id_token = googleUser.getAuthResponse().id_token;
+        const picture = this.extractGooglePicture(googleUser)
+        this.persistAvatarHint(picture)
         const body = {
           token: id_token,
-          authType: "689c06d5255db4e56aea8902"
+          authType: "689c06d5255db4e56aea8902",
+          picture
         };
         await this.$store.dispatch("auth/signIn", body)
       } catch (err) {
@@ -86,19 +93,5 @@ export default {
 }
 .google-btn:hover {
   transform: scale(1.08);
-}
-.divider {
-  display: flex;
-  align-items: center;
-}
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid #d8dbe0;
-}
-.divider-text {
-  padding: 0 12px;
-  font-size: 0.9rem;
 }
 </style>

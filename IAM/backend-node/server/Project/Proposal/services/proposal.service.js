@@ -209,6 +209,24 @@ function normalizeDraftCoreFields(target, fallback = {}) {
   return doc;
 }
 
+function getCollaborationParticipantSummary(snapshot = {}) {
+  const team = snapshot && typeof snapshot.researchTeam === 'object' && snapshot.researchTeam
+    ? snapshot.researchTeam
+    : {};
+
+  const coResearchers = Array.isArray(team.coResearchers) ? team.coResearchers : [];
+  const advisors = Array.isArray(team.advisors) ? team.advisors : [];
+
+  const coResearcherCount = coResearchers.length;
+  const advisorCount = advisors.length;
+
+  return {
+    coResearcherCount,
+    advisorCount,
+    total: coResearcherCount + advisorCount
+  };
+}
+
 function sanitizeSnapshotFileEntry(file = {}) {
   if (!file || typeof file !== 'object') return null;
   const fileId = normalizeFileId(file.fileId || file.id || file._id || '');
@@ -372,8 +390,29 @@ async function getProposalList(query = {}, user) {
   if (user && user.role === 'committee' && user._id) {
     filter.committeeIds = user._id;
   }
-  if (query.currentStatus) filter.currentStatus = query.currentStatus;
-  if (query.status) filter.currentStatus = query.status;
+  const statusTokens = [];
+  const pushStatusTokens = (raw) => {
+    if (!raw) return;
+    if (Array.isArray(raw)) {
+      raw.forEach(pushStatusTokens);
+      return;
+    }
+    const text = String(raw).trim();
+    if (!text) return;
+    text
+      .split(',')
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+      .forEach((item) => statusTokens.push(item));
+  };
+  pushStatusTokens(query.currentStatus);
+  pushStatusTokens(query.status);
+  const uniqueStatusTokens = Array.from(new Set(statusTokens));
+  if (uniqueStatusTokens.length === 1) {
+    filter.currentStatus = uniqueStatusTokens[0];
+  } else if (uniqueStatusTokens.length > 1) {
+    filter.currentStatus = { $in: uniqueStatusTokens };
+  }
   if (query.fiscalYear) filter.fiscalYear = query.fiscalYear;
   if (query.keyword) {
     const kw = query.keyword;
@@ -496,11 +535,19 @@ async function submitProposal(id, user, options = {}) {
   }
   assertFundingBudgetLimit(proposal, proposal);
   const fromStatus = proposal.currentStatus;
-  proposal.currentStatus = STATUS.PENDING_CONFIRM;
-  proposal.updatedBy = user && user._id ? user._id : proposal.updatedBy;
   const snapshot = proposal.formSnapshotJson && typeof proposal.formSnapshotJson === 'object'
     ? { ...proposal.formSnapshotJson }
     : {};
+  const participantSummary = getCollaborationParticipantSummary(snapshot);
+  const requiresCollaborationConfirmation = participantSummary.total > 0;
+  const toStatus = requiresCollaborationConfirmation ? STATUS.PENDING_CONFIRM : STATUS.SUBMITTED;
+  const now = new Date();
+
+  proposal.currentStatus = toStatus;
+  proposal.updatedBy = user && user._id ? user._id : proposal.updatedBy;
+  if (!requiresCollaborationConfirmation) {
+    proposal.submittedAt = proposal.submittedAt || now;
+  }
   snapshot.collaborationNeedsResubmission = false;
   proposal.formSnapshotJson = snapshot;
   proposal.markModified('formSnapshotJson');
@@ -509,31 +556,39 @@ async function submitProposal(id, user, options = {}) {
   await createStatusLog({
     proposalId: proposal._id,
     fromStatus,
-    toStatus: STATUS.PENDING_CONFIRM,
+    toStatus,
     actionKey: 'submit',
     remark: null,
     roundNo: null,
     changedBy: user._id
   });
 
+  const submitNotificationTitle = requiresCollaborationConfirmation
+    ? 'รอการยืนยันจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ'
+    : 'ยื่นโครงการเรียบร้อย';
+  const submitNotificationMessage = requiresCollaborationConfirmation
+    ? ("โครงการ " + (proposal.proposalCode || proposal._id) + " รอการยืนยันจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ")
+    : ("โครงการ " + (proposal.proposalCode || proposal._id) + " ยื่นสำเร็จแล้ว");
   await createNotification({
     userId: user._id,
     proposalId: proposal._id,
     channel: 'in_app',
-    eventKey: 'proposal.pending_confirm',
-    title: 'รอการยืนยันจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
-    message: `โครงการ ${proposal.proposalCode || proposal._id} รอการยืนยันจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ`,
+    eventKey: requiresCollaborationConfirmation ? 'proposal.pending_confirm' : 'proposal.submitted',
+    title: submitNotificationTitle,
+    message: submitNotificationMessage,
     payload: {}
   });
 
-  try {
-    await collaborationConfirmationService.issueCollaborationConfirmations({
-      proposalId: proposal._id,
-      invitedByUserId: user && user._id ? user._id : null,
-      requestOrigin: options && options.requestOrigin ? options.requestOrigin : ''
-    });
-  } catch (err) {
-    console.error('[Proposal.submit] Collaboration confirmation dispatch failed:', err && err.message ? err.message : err);
+  if (requiresCollaborationConfirmation) {
+    try {
+      await collaborationConfirmationService.issueCollaborationConfirmations({
+        proposalId: proposal._id,
+        invitedByUserId: user && user._id ? user._id : null,
+        requestOrigin: options && options.requestOrigin ? options.requestOrigin : ''
+      });
+    } catch (err) {
+      console.error('[Proposal.submit] Collaboration confirmation dispatch failed:', err && err.message ? err.message : err);
+    }
   }
 
   return await Proposal.findById(proposal._id);

@@ -1,10 +1,7 @@
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
+const crypto = require('crypto');
 const User = require('../models/User');
-
-function getJwtSecret() {
-  return process.env.JWT_SECRET || 'mfu_research_secret_key_2025_change_in_production';
-}
+const { getJwtSecret } = require('../../../../helpers/jwtSecret');
 
 function getJwtExpiresIn() {
   return process.env.JWT_EXPIRES_IN || '7d';
@@ -25,6 +22,71 @@ function signToken(user) {
   };
 
   return jwt.sign(payload, getJwtSecret(), { expiresIn: getJwtExpiresIn() });
+}
+
+function buildRandomPassword() {
+  return `Social-${crypto.randomBytes(20).toString('hex')}aA1!`;
+}
+
+function normalizeRole(role) {
+  const token = String(role || '').trim().toLowerCase();
+  if (token === 'admin' || token === 'chairman' || token === 'committee' || token === 'researcher') {
+    return token;
+  }
+  return 'researcher';
+}
+
+function normalizeAvatarUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return raw;
+}
+
+async function ensureUserByEmail(payload = {}) {
+  const email = String(payload.email || '').toLowerCase().trim();
+  if (!email) {
+    throw new Error('email_required');
+  }
+
+  const requestedRole = normalizeRole(payload.role || 'researcher');
+  const requestedName = String(payload.fullName || '').trim();
+  const requestedAvatarUrl = normalizeAvatarUrl(
+    payload.avatarUrl || payload.picture || payload.photo || payload.image || ''
+  );
+
+  let user = await User.findOne({ email });
+  if (!user) {
+    user = new User({
+      fullName: requestedName || email.split('@')[0],
+      email,
+      password: buildRandomPassword(),
+      role: requestedRole,
+      department: payload.department || '',
+      phone: payload.phone || '',
+      avatarUrl: requestedAvatarUrl || ''
+    });
+  } else {
+    if (!user.fullName && requestedName) {
+      user.fullName = requestedName;
+    }
+    if (!user.role) {
+      user.role = requestedRole;
+    }
+    if (user.isDeleted) {
+      user.isDeleted = false;
+    }
+    if (requestedAvatarUrl && String(user.avatarUrl || '').trim() !== requestedAvatarUrl) {
+      user.avatarUrl = requestedAvatarUrl;
+    }
+  }
+
+  user.lastLogin = new Date();
+  await user.save();
+  return user;
+}
+
+function issueToken(user) {
+  return signToken(user);
 }
 
 async function register(payload) {
@@ -54,12 +116,6 @@ async function register(payload) {
 async function login(email, password) {
   const normalizedEmail = String(email || '').toLowerCase().trim();
 
-  // DEBUG — remove after confirming Atlas connection
-  console.log('[Auth.login] mongoose.connection.name:', mongoose.connection && mongoose.connection.name);
-  console.log('[Auth.login] mongoose.connection.host:', mongoose.connection && mongoose.connection.host);
-  console.log('[Auth.login] User.collection.name:', User.collection && User.collection.name);
-  console.log('[Auth.login] queried email:', normalizedEmail);
-  // END DEBUG
 
   const user = await User.findOne({ email: normalizedEmail, isDeleted: { $ne: true } });
 
@@ -99,5 +155,8 @@ module.exports = {
   register,
   login,
   verifyToken,
-  getUserById
+  getUserById,
+  ensureUserByEmail,
+  issueToken,
+  toPublicUser
 };

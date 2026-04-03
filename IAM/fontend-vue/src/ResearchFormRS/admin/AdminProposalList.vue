@@ -208,77 +208,12 @@
 <script>
 import { instance as axios } from '@/service/api'
 import Swal from 'sweetalert2'
-
-const ALLOWED_TRANSITIONS = {
-  submitted: ['faculty_review_pending'],
-  faculty_approved: ['office_received'],
-  office_received: ['document_checking'],
-  document_checking: ['assigned_to_committee', 'revision_requested'],
-  under_review: ['meeting_completed'],
-  meeting_completed: ['approved', 'rejected', 'revision_requested'],
-  revision_requested: ['resubmitted'],
-  resubmitted: ['second_round_review'],
-  second_round_review: ['approved', 'rejected', 'revision_requested'],
-  approved: ['announced'],
-  rejected: ['announced']
-}
-
-const STATUS_LABELS = {
-  draft: 'แบบร่าง',
-  pending_confirm: 'รอการยืนยัน',
-  submitted: 'ยื่นแล้ว',
-  faculty_review_pending: 'รอประธานพิจารณา',
-  faculty_approved: 'ประธานอนุมัติ',
-  office_received: 'ส่วนบริหารรับแล้ว',
-  document_checking: 'ตรวจสอบเอกสาร',
-  assigned_to_committee: 'มอบหมายกรรมการแล้ว',
-  under_review: 'กรรมการได้ให้ความเห็นแล้ว',
-  meeting_completed: 'ประชุมเสร็จแล้ว',
-  revision_requested: 'ขอแก้ไข',
-  resubmitted: 'ส่งแก้ไขแล้ว',
-  second_round_review: 'พิจารณารอบ 2',
-  approved: 'อนุมัติ',
-  rejected: 'ปฏิเสธ',
-  announced: 'ประกาศผลแล้ว'
-}
-
-const STATUS_COLORS = {
-  draft: 'secondary',
-  pending_confirm: 'secondary',
-  submitted: 'info',
-  faculty_review_pending: 'warning',
-  faculty_approved: 'primary',
-  office_received: 'primary',
-  document_checking: 'warning',
-  assigned_to_committee: 'info',
-  under_review: 'warning',
-  meeting_completed: 'primary',
-  revision_requested: 'danger',
-  resubmitted: 'info',
-  second_round_review: 'warning',
-  approved: 'success',
-  rejected: 'danger',
-  announced: 'success'
-}
-
-const STATUS_KEYS = [
-  'draft',
-  'pending_confirm',
-  'submitted',
-  'faculty_review_pending',
-  'faculty_approved',
-  'office_received',
-  'document_checking',
-  'assigned_to_committee',
-  'under_review',
-  'meeting_completed',
-  'revision_requested',
-  'resubmitted',
-  'second_round_review',
-  'approved',
-  'rejected',
-  'announced'
-]
+import {
+  PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
+  PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_COLORS,
+  PROPOSAL_STATUS_KEYS as STATUS_KEYS,
+  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
+} from '@/ResearchFormRS/constants/proposalWorkflow'
 
 export default {
   name: 'AdminProposalList',

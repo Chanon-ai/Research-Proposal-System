@@ -8,6 +8,7 @@ const Config = require("../../../../config/config");
 const resMsg = require("../../settings/service/message");
 const Account = require('../controller/account');
 const accountAccess = require('../../security/service/account-access');
+const authService = require('../../Auth/services/auth.service');
 const Mailer = require('../../../../helpers/google/Mail');
 const { writeAudit } = require('../../../../helpers/audit.logger');
 const {
@@ -106,70 +107,171 @@ function pickLangValue(items) {
     return found ? String(found.value) : '';
 }
 
+function canAccessDuringTwoFaStep(request) {
+    var rawPath = String((request && (request.originalUrl || request.url)) || '').toLowerCase();
+    return rawPath.indexOf('/auth/2fa/request') !== -1 || rawPath.indexOf('/auth/2fa/verify') !== -1;
+}
+
+function buildLegacyAccountDisplayName(accountDoc, fallback) {
+    var doc = accountDoc && typeof accountDoc === 'object' ? accountDoc : {};
+    var prefix = pickLangValue(doc.userinfo && doc.userinfo.prefix);
+    var firstName = pickLangValue(doc.userinfo && doc.userinfo.firstName);
+    var lastName = pickLangValue(doc.userinfo && doc.userinfo.lastName);
+    var fullName = [prefix, firstName, lastName].filter(Boolean).join(' ').trim();
+    if (fullName) return fullName;
+
+    var fallbackName = fallback && String(fallback).trim() ? String(fallback).trim() : '';
+    if (fallbackName) return fallbackName;
+
+    var email = String(doc.email || '').trim();
+    if (email) {
+        return email.split('@')[0];
+    }
+    return 'Researcher';
+}
+
+function resolveLegacyAvatarUrl(accountDoc, fallback) {
+    var fallbackUrl = String(fallback || '').trim();
+    if (fallbackUrl) return fallbackUrl;
+
+    var doc = accountDoc && typeof accountDoc === 'object' ? accountDoc : {};
+    if (doc.userinfo && doc.userinfo.image) {
+        var directImage = String(doc.userinfo.image || '').trim();
+        if (directImage) return directImage;
+    }
+
+    if (doc.userinfo && doc.userinfo.imageProfile && doc.userinfo.imageProfile.src) {
+        var imageProfileSrc = String(doc.userinfo.imageProfile.src || '').trim();
+        if (imageProfileSrc) return imageProfileSrc;
+    }
+
+    return '';
+}
+
+function toResearchAuthPayload(userDoc) {
+    if (!userDoc) return null;
+    if (userDoc.isDeleted || userDoc.isActive === false) return null;
+
+    var user = userDoc.toObject ? userDoc.toObject() : Object.assign({}, userDoc);
+    delete user.password;
+    return {
+        token: authService.issueToken(userDoc),
+        user: user
+    };
+}
+
+async function ensureResearchUserFromLegacy(data) {
+    var payload = data && typeof data === 'object' ? data : {};
+    var email = payload.email ? String(payload.email).trim().toLowerCase() : '';
+    if (!email) return null;
+
+    try {
+        return await authService.ensureUserByEmail({
+            email: email,
+            fullName: payload.fullName || '',
+            role: payload.role || 'researcher',
+            avatarUrl: payload.avatarUrl || payload.picture || ''
+        });
+    } catch (err) {
+        console.warn('[auth-bridge] ensureUserByEmail failed:', err && err.message ? err.message : err);
+        return null;
+    }
+}
 
 exports.onCheckAuthorization = async function (request, response, next) {
     try {
-        var querys = {};
-        var headerToken = request.headers['x-access-token'] || '';
-        console.log('[AUTH-CHECK] x-access-token:', headerToken ? headerToken.substring(0, 20) + '...' : '(empty)');
-        console.log('[AUTH-CHECK] url:', request.originalUrl, 'method:', request.method);
-
-        querys['control.device.xAccessToken'] = headerToken;
-        // querys['control.device.expired_key'] = {$lte: new moment().unix()}
-
-        const isDoc = await Account.onQuery(querys);
-        console.log('[AUTH-CHECK] found account:', isDoc ? String(isDoc._id) : 'null');
-        if(isDoc != null){
-            if (!request.body || typeof request.body !== 'object') {
-                request.body = {};
-            }
-            request.body.accounts = new mongo.ObjectId(isDoc._id)
-            return next();
-        }else{
-            var resData = await resMsg.onMessage_Response(0,40100)
-            response.status(401).json(resData);
+        var headerToken = request.headers && request.headers['x-access-token']
+            ? String(request.headers['x-access-token']).trim()
+            : '';
+        if (!headerToken) {
+            var missingToken = await resMsg.onMessage_Response(0,40100);
+            return response.status(401).json(missingToken);
         }
 
+        var querys = {
+            'control.device.xAccessToken': headerToken
+        };
+
+        const isDoc = await Account.onQuery(querys);
+        if (!isDoc || !isDoc._id) {
+            var invalidToken = await resMsg.onMessage_Response(0,40100);
+            return response.status(401).json(invalidToken);
+        }
+
+        var sessions = isDoc && isDoc.control && Array.isArray(isDoc.control.device)
+            ? isDoc.control.device
+            : [];
+        var activeSession = sessions.find(function (item) {
+            return item && String(item.xAccessToken || '') === headerToken;
+        }) || null;
+        if (!activeSession) {
+            var noSession = await resMsg.onMessage_Response(0,40100);
+            return response.status(401).json(noSession);
+        }
+
+        var nowUnix = new moment().unix();
+        var expireUnix = Number(activeSession.expired_key || 0);
+        if (!Number.isFinite(expireUnix) || expireUnix <= nowUnix) {
+            await Account.onUpdate(
+                { _id: new mongo.ObjectId(isDoc._id) },
+                { $pull: { 'control.device': { xAccessToken: headerToken } } }
+            );
+            var expiredToken = await resMsg.onMessage_Response(0,40100);
+            return response.status(401).json(expiredToken);
+        }
+
+        var twoFactorRequired = activeSession.twoFactorRequired === true;
+        var twoFactorVerified = activeSession.twoFactorVerified !== false;
+        if (twoFactorRequired && !twoFactorVerified && !canAccessDuringTwoFaStep(request)) {
+            var twoFaRequired = await resMsg.onMessage_Response(0,40100);
+            return response.status(401).json(twoFaRequired);
+        }
+
+        if (!request.body || typeof request.body !== 'object') {
+            request.body = {};
+        }
+        request.body.accounts = new mongo.ObjectId(isDoc._id);
+        request.account = isDoc;
+        request.authSession = activeSession;
+        return next();
     } catch (err) {
-        // console.log(err)
-        var resData = await resMsg.onMessage_Response(0,40400)
-        response.status(404).json(resData);
+        var resData = await resMsg.onMessage_Response(0,40400);
+        return response.status(404).json(resData);
     }
 };
 exports.verifyIdTokenGoogle = async function (request, response, next) {
     try {
-        if (request.body && request.body.token) {
-            const token = String(request.body.token).trim();
-            if (!token) {
-                var badToken = await resMsg.onMessage_Response(0,40100);
-                return response.status(401).json(badToken);
-            }
+        if (!request.body || typeof request.body !== 'object') {
+            request.body = {};
+        }
+        const token = request.body.token ? String(request.body.token).trim() : '';
+        if (!token) {
+            var badToken = await resMsg.onMessage_Response(0,40100);
+            return response.status(401).json(badToken);
+        }
 
-            const { OAuth2Client } = require('google-auth-library');
-            const audience =
-                process.env.GOOGLE_CLIENT_ID ||
-                process.env.VUE_APP_CLIENTID ||
-                '225788483142-8pkg8on8nh60ao83ve33ff3lflv2ccvo.apps.googleusercontent.com';
-            const client = new OAuth2Client(audience || undefined);
+        const { OAuth2Client } = require('google-auth-library');
+        const audience =
+            process.env.GOOGLE_CLIENT_ID ||
+            process.env.VUE_APP_CLIENTID ||
+            '225788483142-8pkg8on8nh60ao83ve33ff3lflv2ccvo.apps.googleusercontent.com';
+        const client = new OAuth2Client(audience || undefined);
 
-            try {
-                const ticket = await client.verifyIdToken({
-                    idToken: token,
-                    audience: audience
-                });
-                const payload = ticket.getPayload() || {};
-                request.body.email = payload.email || null;
-                request.body.googleSub = payload.sub || null;
-                request.body.googleGivenName = payload.given_name || null;
-                request.body.googleFamilyName = payload.family_name || null;
-                request.body.googlePicture = payload.picture || null;
-                return next();
-            } catch (error) {
-                var invalidToken = await resMsg.onMessage_Response(0,40100);
-                return response.status(401).json(invalidToken);
-            }
-        } else {
+        try {
+            const ticket = await client.verifyIdToken({
+                idToken: token,
+                audience: audience
+            });
+            const payload = ticket.getPayload() || {};
+            request.body.email = payload.email || null;
+            request.body.googleSub = payload.sub || null;
+            request.body.googleGivenName = payload.given_name || null;
+            request.body.googleFamilyName = payload.family_name || null;
+            request.body.googlePicture = payload.picture || null;
             return next();
+        } catch (error) {
+            var invalidToken = await resMsg.onMessage_Response(0,40100);
+            return response.status(401).json(invalidToken);
         }
     } catch (err) {
         var resData = await resMsg.onMessage_Response(0,50000)
@@ -194,14 +296,9 @@ exports.SingIn = async function (request, response, next) {
                 { email: loginEmail },
                 { 'authen.email': loginEmail }
             ];
-        } else if (request.body.username && request.body.password === "********") {
-            var elemMatch = {};
-            elemMatch.type = (request.body.type == null)? new mongo.ObjectId("66a06852660ccb1debade7c5"):new mongo.ObjectId(request.body.username)
-            elemMatch.username = request.body.username;
-            query.authen = { $elemMatch : elemMatch }
         } else {
-            const resData = await resMsg.onMessage_Response(0, 40400);
-            return response.status(404).json(resData);
+            const resData = await resMsg.onMessage_Response(0, 40100);
+            return response.status(401).json(resData);
         }
 
         // console.log(query)
@@ -252,6 +349,16 @@ exports.SingIn = async function (request, response, next) {
         }
         const trustedDevice = findTrustedDevice(isDoc.control, fingerprint, networkKey);
         const require2FA = !trustedDevice;
+        const displayName = buildLegacyAccountDisplayName(
+            isDoc,
+            [request.body.googleGivenName, request.body.googleFamilyName].filter(Boolean).join(' ')
+        );
+        const researchUser = await ensureResearchUserFromLegacy({
+            email: loginEmail || isDoc.email,
+            fullName: displayName,
+            role: 'researcher',
+            avatarUrl: resolveLegacyAvatarUrl(isDoc, request.body.googlePicture)
+        });
 
         const sessionQuery = { _id: new mongo.ObjectId(isDoc._id) };
 
@@ -279,7 +386,10 @@ exports.SingIn = async function (request, response, next) {
             deviceId: deviceId,
             fingerprint: fingerprint,
             networkKey: networkKey,
-            rememberDeviceRequested: false
+            rememberDeviceRequested: false,
+            twoFactorRequired: require2FA,
+            twoFactorVerified: !require2FA,
+            twoFactorVerifiedAt: require2FA ? null : new Date()
         };
 
         await Account.onUpdate(sessionQuery, {
@@ -305,6 +415,12 @@ exports.SingIn = async function (request, response, next) {
         const resData = await resMsg.onMessage_Response(0, 20000);
         devices.require2FA = require2FA;
         devices.trustedDeviceMatched = !require2FA;
+        if (!require2FA) {
+            const researchAuth = toResearchAuthPayload(researchUser);
+            if (researchAuth) {
+                devices.researchAuth = researchAuth;
+            }
+        }
         resData.data = devices;
         return response.status(200).json(resData);
     } catch (err) {
@@ -340,8 +456,28 @@ exports.onMe = async function (request, response, next) {
             });
         }
 
+        var primaryEmail = String(doc.email || '').trim().toLowerCase();
+        if (!primaryEmail && Array.isArray(doc.authen)) {
+            var authEntry = doc.authen.find(function (item) {
+                return item && item.email;
+            });
+            if (authEntry && authEntry.email) {
+                primaryEmail = String(authEntry.email).trim().toLowerCase();
+            }
+        }
+        const researchUser = await ensureResearchUserFromLegacy({
+            email: primaryEmail,
+            fullName: buildLegacyAccountDisplayName(doc),
+            role: 'researcher',
+            avatarUrl: resolveLegacyAvatarUrl(doc)
+        });
+        const researchAuth = toResearchAuthPayload(researchUser);
+
         var resData = await resMsg.onMessage_Response(0,20000);
         resData.data = doc;
+        if (researchAuth) {
+            resData.data.researchAuth = researchAuth;
+        }
         return response.status(200).json(resData);
     } catch (err) {
         var resData = await resMsg.onMessage_Response(0,50000);
@@ -672,7 +808,7 @@ exports.onTwoFaRequest = async function (request, response, next) {
             }
         };
         await Account.onUpdate(query, updatePayload);
-        var pushResult = await Account.onUpdate(query, {
+        await Account.onUpdate(query, {
             $push: {
                 verification: {
                     src: 'signin-2fa',
@@ -682,7 +818,6 @@ exports.onTwoFaRequest = async function (request, response, next) {
                 }
             }
         });
-        console.log('[2FA-REQUEST] code:', code, 'stored verification:', JSON.stringify(pushResult && pushResult.verification));
 
         await writeAudit({
             module: 'auth',
@@ -719,9 +854,12 @@ exports.onTwoFaVerify = async function (request, response, next) {
     try {
         var accountId = request.body && request.body.accounts ? request.body.accounts : null;
         var code = request.body && request.body.code ? String(request.body.code).trim() : '';
-        if (!accountId || !mongo.ObjectId.isValid(accountId) || !code) {
-            var bad = await resMsg.onMessage_Response(0,40400);
-            return response.status(404).json(bad);
+        var accessToken = request.headers && request.headers['x-access-token']
+            ? String(request.headers['x-access-token']).trim()
+            : '';
+        if (!accountId || !mongo.ObjectId.isValid(accountId) || !code || !accessToken) {
+            var bad = await resMsg.onMessage_Response(0,40100);
+            return response.status(401).json(bad);
         }
 
         var account = await Account.onQuery({ _id: new mongo.ObjectId(accountId) });
@@ -731,9 +869,6 @@ exports.onTwoFaVerify = async function (request, response, next) {
         }
 
         var now = new Date();
-        console.log('[2FA-VERIFY] accountId:', String(accountId));
-        console.log('[2FA-VERIFY] code received:', JSON.stringify(code));
-        console.log('[2FA-VERIFY] verification entries:', JSON.stringify(account.verification));
         var matched = account.verification.find(function (item) {
             if (!item) return false;
             if (String(item.src || '') !== 'signin-2fa') return false;
@@ -741,14 +876,35 @@ exports.onTwoFaVerify = async function (request, response, next) {
             if (!item.expired) return false;
             return new Date(item.expired) >= now;
         });
-        console.log('[2FA-VERIFY] matched:', matched ? 'YES' : 'NO');
         if (!matched) {
             var denied = await resMsg.onMessage_Response(0,40100);
             return response.status(401).json(denied);
         }
 
         const accountQuery = { _id: new mongo.ObjectId(accountId) };
-        await Account.onUpdate(accountQuery, { $pull: { verification: { src: 'signin-2fa' } } });
+        var sessionUpdated = false;
+        var nextSessions = account && account.control && Array.isArray(account.control.device)
+            ? account.control.device.map(function (item) {
+                if (!item) return item;
+                if (String(item.xAccessToken || '') !== accessToken) return item;
+                sessionUpdated = true;
+                var cloned = Object.assign({}, item);
+                cloned.twoFactorRequired = false;
+                cloned.twoFactorVerified = true;
+                cloned.twoFactorVerifiedAt = new Date();
+                return cloned;
+            })
+            : [];
+
+        if (!sessionUpdated) {
+            var invalidSession = await resMsg.onMessage_Response(0,40100);
+            return response.status(401).json(invalidSession);
+        }
+
+        await Account.onUpdate(accountQuery, {
+            $pull: { verification: { src: 'signin-2fa' } },
+            $set: { 'control.device': nextSessions }
+        });
 
         await writeAudit({
             module: 'auth',
@@ -762,8 +918,28 @@ exports.onTwoFaVerify = async function (request, response, next) {
             }
         }, request);
 
+        var verifyEmail = String(account.email || '').trim().toLowerCase();
+        if (!verifyEmail && Array.isArray(account.authen)) {
+            var authEmail = account.authen.find(function (item) {
+                return item && item.email;
+            });
+            if (authEmail && authEmail.email) {
+                verifyEmail = String(authEmail.email).trim().toLowerCase();
+            }
+        }
+        const researchUser = await ensureResearchUserFromLegacy({
+            email: verifyEmail,
+            fullName: buildLegacyAccountDisplayName(account),
+            role: 'researcher',
+            avatarUrl: resolveLegacyAvatarUrl(account)
+        });
+        const researchAuth = toResearchAuthPayload(researchUser);
+
         var resData = await resMsg.onMessage_Response(0,20000);
         resData.data = { verified: true };
+        if (researchAuth) {
+            resData.data.researchAuth = researchAuth;
+        }
         return response.status(200).json(resData);
     } catch (err) {
         var fail = await resMsg.onMessage_Response(0,50000);
