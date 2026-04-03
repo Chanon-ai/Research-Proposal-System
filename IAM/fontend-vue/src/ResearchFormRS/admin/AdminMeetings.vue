@@ -145,34 +145,34 @@
                   </div>
                 </div>
                 <div class="meeting-card__meta">
-                  <div class="meeting-card__meta-item" tabindex="0"
-                    @mouseenter="maybeOpenMetaTooltip($event, `${meeting._id}-date`, formatDate(meeting.meetingDate))"
+                  <div class="meeting-card__meta-item meeting-card__meta-item--datetime" tabindex="0"
+                    @mouseenter="maybeOpenMetaTooltip($event, `${meeting._id}-datetime`, `${formatDate(meeting.meetingDate)} • ${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)"
                     @mouseleave="closeMetaTooltip()"
-                    @focus="maybeOpenMetaTooltip($event, `${meeting._id}-date`, formatDate(meeting.meetingDate))"
+                    @focus="maybeOpenMetaTooltip($event, `${meeting._id}-datetime`, `${formatDate(meeting.meetingDate)} • ${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)"
                     @blur="closeMetaTooltip()"
-                    @click.stop="toggleMetaTooltip($event, `${meeting._id}-date`, formatDate(meeting.meetingDate))">
-                    <CWidgetIcon class="meeting-card__meta-widget" :header="formatDate(meeting.meetingDate)"
-                      text="วันที่" color="gradient-primary" :icon-padding="false">
-                      <CIcon name="cil-calendar" width="24" />
-                    </CWidgetIcon>
-                    <div v-if="isMetaTooltipOpen(`${meeting._id}-date`)" class="meeting-card__meta-tooltip"
-                      role="tooltip">
-                      {{ metaTooltip.text }}
+                    @click.stop="toggleMetaTooltip($event, `${meeting._id}-datetime`, `${formatDate(meeting.meetingDate)} • ${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)">
+                    <div class="meeting-card__datetime-card">
+                      <div class="meeting-card__datetime-cell meeting-card__datetime-cell--date">
+                        <div class="meeting-card__datetime-icon-wrap">
+                          <CIcon name="cil-calendar" width="22" />
+                        </div>
+                        <div class="meeting-card__datetime-text">
+                          <div class="meeting-card__datetime-value">{{ formatDate(meeting.meetingDate) }}</div>
+                          <div class="meeting-card__datetime-label">วันที่</div>
+                        </div>
+                      </div>
+                      <div class="meeting-card__datetime-divider" aria-hidden="true"></div>
+                      <div class="meeting-card__datetime-cell meeting-card__datetime-cell--time">
+                        <div class="meeting-card__datetime-icon-wrap">
+                          <CIcon name="cil-clock" width="22" />
+                        </div>
+                        <div class="meeting-card__datetime-text">
+                          <div class="meeting-card__datetime-value">{{ `${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}` }}</div>
+                          <div class="meeting-card__datetime-label">เวลา</div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-
-                  <div class="meeting-card__meta-item" tabindex="0"
-                    @mouseenter="maybeOpenMetaTooltip($event, `${meeting._id}-time`, `${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)"
-                    @mouseleave="closeMetaTooltip()"
-                    @focus="maybeOpenMetaTooltip($event, `${meeting._id}-time`, `${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)"
-                    @blur="closeMetaTooltip()"
-                    @click.stop="toggleMetaTooltip($event, `${meeting._id}-time`, `${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)">
-                    <CWidgetIcon class="meeting-card__meta-widget"
-                      :header="`${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`" text="เวลา"
-                      color="gradient-info" :icon-padding="false">
-                      <CIcon name="cil-clock" width="24" />
-                    </CWidgetIcon>
-                    <div v-if="isMetaTooltipOpen(`${meeting._id}-time`)" class="meeting-card__meta-tooltip"
+                    <div v-if="isMetaTooltipOpen(`${meeting._id}-datetime`)" class="meeting-card__meta-tooltip"
                       role="tooltip">
                       {{ metaTooltip.text }}
                     </div>
@@ -361,7 +361,7 @@
               <label class="form-label">เวลาเริ่ม <span class="required">*</span></label>
               <div class="input-icon__wrap" data-tone="info">
                 <input ref="startTimeTrigger" class="form-control input-icon__control time-trigger" type="text"
-                  :value="meetingForm.startTime ? formatTime12h(meetingForm.startTime) : ''"
+                  :value="meetingForm.startTime ? formatTimeMeridiemDisplay(meetingForm.startTime) : ''"
                   placeholder="เลือกเวลาเริ่ม" readonly @click="toggleTimeDropdown('start')" />
                 <button type="button" class="input-icon__suffix" @mousedown.prevent
                   @click="toggleTimeDropdown('start')">
@@ -373,7 +373,7 @@
               <label class="form-label">เวลาสิ้นสุด</label>
               <div class="input-icon__wrap" data-tone="info">
                 <input ref="endTimeTrigger" class="form-control input-icon__control time-trigger" type="text"
-                  :value="meetingForm.endTime ? formatTime12h(meetingForm.endTime) : ''"
+                  :value="meetingForm.endTime ? formatTimeMeridiemDisplay(meetingForm.endTime) : ''"
                   :placeholder="meetingForm.startTime ? '-' : 'เลือกเวลาสิ้นสุด'" readonly
                   :disabled="!meetingForm.startTime" @click="toggleTimeDropdown('end')" />
                 <button type="button" class="input-icon__suffix" @mousedown.prevent :disabled="!meetingForm.startTime"
@@ -429,19 +429,48 @@
       </template>
     </CModal>
 
-    <div v-if="canCreate && timeDropdown.openFor" class="time-dropdown__backdrop" @mousedown="closeTimeDropdown"></div>
-    <div v-if="canCreate && timeDropdown.openFor" class="time-dropdown" ref="timeDropdownPanel" :style="{
-      top: timeDropdown.top + 'px',
-      left: timeDropdown.left + 'px',
-      width: timeDropdown.width + 'px',
-      maxHeight: timeDropdown.maxHeight + 'px'
-    }" @mousedown.stop>
-      <button v-for="opt in (timeDropdown.openFor === 'start' ? startTimeOptions : endTimeOptions)"
-        :key="(timeDropdown.openFor || '') + '-' + (opt.value || 'empty')" type="button" class="time-dropdown__item"
-        :class="{ 'is-selected': isTimeSelected(timeDropdown.openFor, opt.value) }"
-        @click="selectTimeOption(timeDropdown.openFor, opt.value)">
-        <CIcon name="cil-clock" class="mr-1" /> {{ opt.label }}
-      </button>
+    <div v-if="canCreate && timeDropdown.openFor" class="time-picker__backdrop" @mousedown="closeTimeDropdown"></div>
+    <div v-if="canCreate && timeDropdown.openFor" class="time-picker" ref="timeDropdownPanel" role="dialog" aria-modal="true"
+      :aria-label="timeDropdown.openFor === 'start' ? 'เลือกเวลาเริ่มประชุม' : 'เลือกเวลาสิ้นสุดประชุม'" :style="{
+        top: timeDropdown.top + 'px',
+        left: timeDropdown.left + 'px',
+        width: timeDropdown.width + 'px'
+      }" @mousedown.stop>
+      <div class="time-picker__wheels">
+        <div class="time-picker__wheel">
+          <button type="button" class="time-picker__arrow" aria-label="เพิ่มชั่วโมง" @click="stepTimePicker('hour', 1)">
+            <CIcon name="cil-chevron-top" width="18" />
+          </button>
+          <div class="time-picker__digit-window">
+            <transition :name="`digit-slide-${timeDropdown.hourAnim}`" mode="out-in">
+              <span :key="`hour-${timeDropdown.hour}`" class="time-picker__digit">{{ displayTimePickerHour }}</span>
+            </transition>
+          </div>
+          <button type="button" class="time-picker__arrow" aria-label="ลดชั่วโมง" @click="stepTimePicker('hour', -1)">
+            <CIcon name="cil-chevron-bottom" width="18" />
+          </button>
+        </div>
+        <div class="time-picker__separator" aria-hidden="true">:</div>
+        <div class="time-picker__wheel">
+          <button type="button" class="time-picker__arrow" aria-label="เพิ่มนาที" @click="stepTimePicker('minute', 1)">
+            <CIcon name="cil-chevron-top" width="18" />
+          </button>
+          <div class="time-picker__digit-window">
+            <transition :name="`digit-slide-${timeDropdown.minuteAnim}`" mode="out-in">
+              <span :key="`minute-${timeDropdown.minute}`" class="time-picker__digit">{{ displayTimePickerMinute }}</span>
+            </transition>
+          </div>
+          <button type="button" class="time-picker__arrow" aria-label="ลดนาที" @click="stepTimePicker('minute', -1)">
+            <CIcon name="cil-chevron-bottom" width="18" />
+          </button>
+        </div>
+      </div>
+      <div class="time-picker__period-row">
+        <button type="button" class="time-picker__period-btn" :class="{ 'is-active': timeDropdown.period === 'AM' }"
+          @click="setTimePickerPeriod('AM')">AM</button>
+        <button type="button" class="time-picker__period-btn" :class="{ 'is-active': timeDropdown.period === 'PM' }"
+          @click="setTimePickerPeriod('PM')">PM</button>
+      </div>
     </div>
 
     <CModal :show.sync="showMinutesModal" :close-on-backdrop="false" centered size="xl" class="minutes-modal"
@@ -572,7 +601,17 @@ export default {
       meetingForm: { title: '', meetingDate: '', startTime: '', endTime: '', meetingType: 'online', location: '', videoLink: '', agenda: '', status: 'scheduled' },
       showMinutesModal: false, minutesMeeting: null, savingMinutes: false,
       minutesForm: { minutes: '', decisions: '', actionItems: [] },
-      timeDropdown: { openFor: null, top: 0, left: 0, width: 0, maxHeight: 320 },
+      timeDropdown: {
+        openFor: null,
+        top: 0,
+        left: 0,
+        width: 160,
+        hour: '',
+        minute: '00',
+        period: 'AM',
+        hourAnim: 'up',
+        minuteAnim: 'up'
+      },
       titleTooltip: { openForId: null, closeTimer: null },
       metaTooltip: { openKey: null, text: '', closeTimer: null }
     }
@@ -644,6 +683,14 @@ export default {
         { value: 'completed', label: MEETING_STATUS.completed.label },
         { value: 'cancelled', label: MEETING_STATUS.cancelled.label }
       ]
+    },
+    displayTimePickerHour() {
+      const hour = parseInt(String(this.timeDropdown && this.timeDropdown.hour ? this.timeDropdown.hour : '').trim(), 10)
+      return Number.isFinite(hour) ? String(hour) : '--'
+    },
+    displayTimePickerMinute() {
+      const minute = parseInt(String(this.timeDropdown && this.timeDropdown.minute ? this.timeDropdown.minute : '0').trim(), 10)
+      return Number.isFinite(minute) ? String(Math.max(0, Math.min(59, minute))).padStart(2, '0') : '00'
     }
   },
   mounted() {
@@ -729,26 +776,95 @@ export default {
       this.$nextTick(() => {
         const el = this.$refs && this.$refs[refName] ? this.$refs[refName] : null
         if (!el) return
-        try { el.focus && el.focus(); el.click && el.click() } catch (err) {}
+        try { el.focus && el.focus(); el.click && el.click() } catch (err) { void err }
       })
     },
-    isTimeSelected(kind, value) {
-      if (!kind) return false
-      const v = String(value || '')
-      if (kind === 'start') return String(this.meetingForm.startTime || '') === v
-      if (kind === 'end') return String(this.meetingForm.endTime || '') === v
-      return false
+    timeToPickerParts(hhmm) {
+      const mins = this.timeToMinutes(hhmm)
+      if (!Number.isFinite(mins)) return { hour: '', minute: '00', period: 'AM' }
+      const hour24 = Math.floor(mins / 60)
+      const minute = mins % 60
+      const period = hour24 >= 12 ? 'PM' : 'AM'
+      let hour12 = hour24 % 12
+      if (hour12 === 0) hour12 = 12
+      return { hour: String(hour12).padStart(2, '0'), minute: String(minute).padStart(2, '0'), period }
     },
-    selectTimeOption(kind, value) {
-      if (kind === 'start') {
-        this.meetingForm.startTime = String(value || '')
-      } else if (kind === 'end') {
-        const nextValue = String(value || '')
-        const start = this.meetingForm && this.meetingForm.startTime ? String(this.meetingForm.startTime) : ''
-        if (nextValue && start && this.timeToMinutes(nextValue) < this.timeToMinutes(start)) return
-        this.meetingForm.endTime = nextValue
+    pickerPartsToTime(hourValue, minuteValue, periodValue) {
+      const hourRaw = String(hourValue || '').trim()
+      const minuteRaw = String(minuteValue || '').trim()
+      const period = String(periodValue || '').toUpperCase() === 'PM' ? 'PM' : 'AM'
+      let hour = parseInt(hourRaw, 10)
+      let minute = parseInt(minuteRaw, 10)
+      if (!Number.isFinite(hour)) return ''
+      if (!Number.isFinite(minute)) minute = 0
+      hour = Math.max(1, Math.min(12, hour))
+      minute = Math.max(0, Math.min(59, minute))
+      const hour24 = (hour % 12) + (period === 'PM' ? 12 : 0)
+      return `${String(hour24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+    },
+    formatTimeMeridiemDisplay(hhmm) {
+      const parts = this.timeToPickerParts(hhmm)
+      const hour = parseInt(parts.hour, 10)
+      const hourText = Number.isFinite(hour) ? String(hour) : '--'
+      return `${hourText} : ${parts.minute} ${parts.period}`
+    },
+    setTimePickerPeriod(period) {
+      const nextPeriod = String(period || '').toUpperCase() === 'PM' ? 'PM' : 'AM'
+      if (this.timeDropdown.period === nextPeriod) return
+      this.timeDropdown.period = nextPeriod
+      this.applyTimePickerValue()
+    },
+    normalizeTimePickerFields() {
+      let hour = parseInt(String(this.timeDropdown.hour || '').trim(), 10)
+      let minute = parseInt(String(this.timeDropdown.minute || '').trim(), 10)
+      if (!Number.isFinite(hour)) hour = 12
+      if (!Number.isFinite(minute)) minute = 0
+      hour = Math.max(1, Math.min(12, hour))
+      minute = Math.max(0, Math.min(59, minute))
+      this.timeDropdown.hour = String(hour).padStart(2, '0')
+      this.timeDropdown.minute = String(minute).padStart(2, '0')
+    },
+    stepTimePicker(unit, delta) {
+      if (!this.timeDropdown.openFor) return
+      const step = delta >= 0 ? 1 : -1
+      if (unit === 'hour') {
+        let hour = parseInt(String(this.timeDropdown.hour || '').trim(), 10)
+        if (!Number.isFinite(hour)) hour = 12
+        hour = ((hour - 1 + step + 12) % 12) + 1
+        this.timeDropdown.hour = String(hour).padStart(2, '0')
+        this.timeDropdown.hourAnim = step > 0 ? 'up' : 'down'
+      } else if (unit === 'minute') {
+        let minute = parseInt(String(this.timeDropdown.minute || '').trim(), 10)
+        if (!Number.isFinite(minute)) minute = 0
+        minute = (minute + step + 60) % 60
+        this.timeDropdown.minute = String(minute).padStart(2, '0')
+        this.timeDropdown.minuteAnim = step > 0 ? 'up' : 'down'
       }
-      this.closeTimeDropdown()
+      this.applyTimePickerValue()
+    },
+    applyTimePickerValue() {
+      if (!this.timeDropdown.openFor) return
+      this.normalizeTimePickerFields()
+      let nextValue = this.pickerPartsToTime(this.timeDropdown.hour, this.timeDropdown.minute, this.timeDropdown.period)
+      if (!nextValue) return
+      if (this.timeDropdown.openFor === 'start') {
+        const minStart = this.enforceMinDateTime ? this.minStartTime : BASE_MEETING_START_TIME
+        if (Number.isFinite(this.timeToMinutes(minStart)) && this.timeToMinutes(nextValue) < this.timeToMinutes(minStart)) nextValue = minStart
+        this.meetingForm.startTime = nextValue
+        if (this.meetingForm && this.meetingForm.endTime && this.timeToMinutes(this.meetingForm.endTime) < this.timeToMinutes(nextValue)) this.meetingForm.endTime = ''
+        const adjusted = this.timeToPickerParts(this.meetingForm.startTime)
+        this.timeDropdown.hour = adjusted.hour
+        this.timeDropdown.minute = adjusted.minute
+        this.timeDropdown.period = adjusted.period
+      } else if (this.timeDropdown.openFor === 'end') {
+        const minEnd = this.minEndTime
+        if (Number.isFinite(this.timeToMinutes(minEnd)) && this.timeToMinutes(nextValue) < this.timeToMinutes(minEnd)) nextValue = minEnd
+        this.meetingForm.endTime = nextValue
+        const adjusted = this.timeToPickerParts(this.meetingForm.endTime)
+        this.timeDropdown.hour = adjusted.hour
+        this.timeDropdown.minute = adjusted.minute
+        this.timeDropdown.period = adjusted.period
+      }
     },
     toggleTimeDropdown(kind) {
       if (kind === 'end' && !(this.meetingForm && this.meetingForm.startTime)) return
@@ -757,20 +873,50 @@ export default {
     },
     openTimeDropdown(kind) {
       const refName = kind === 'start' ? 'startTimeTrigger' : 'endTimeTrigger'
+      const currentValue = kind === 'start'
+        ? (this.meetingForm && this.meetingForm.startTime ? String(this.meetingForm.startTime) : '')
+        : (this.meetingForm && this.meetingForm.endTime ? String(this.meetingForm.endTime) : '')
+      const fallback = kind === 'start'
+        ? (this.enforceMinDateTime ? this.minStartTime : BASE_MEETING_START_TIME)
+        : this.minEndTime
+      const seed = currentValue || fallback || BASE_MEETING_START_TIME
+      const picker = this.timeToPickerParts(seed)
       this.$nextTick(() => {
         const el = this.$refs && this.$refs[refName] ? this.$refs[refName] : null
-        if (!el || !el.getBoundingClientRect) return
-        const rect = el.getBoundingClientRect()
-        const desiredLeft = rect.left; const desiredTop = rect.bottom + 6; const width = rect.width; const padding = 12
-        const left = Math.max(padding, Math.min(desiredLeft, window.innerWidth - width - padding))
-        const maxHeight = Math.max(160, Math.min(320, window.innerHeight - desiredTop - padding))
-        this.timeDropdown = { openFor: kind, top: desiredTop, left, width, maxHeight }
-        window.addEventListener('resize', this.closeTimeDropdown, { once: true })
+        if (!el) return
+        const rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null
+        const width = 164
+        const padding = 10
+        const top = rect ? Math.max(8, Math.min(window.innerHeight - 220, rect.bottom + 6)) : 8
+        const left = rect
+          ? Math.max(padding, Math.min(rect.left, window.innerWidth - width - padding))
+          : padding
+        this.timeDropdown = {
+          openFor: kind,
+          top,
+          left,
+          width,
+          hour: picker.hour,
+          minute: picker.minute,
+          period: picker.period,
+          hourAnim: 'up',
+          minuteAnim: 'up'
+        }
         document.addEventListener('keydown', this.onTimeDropdownKeydown)
         document.addEventListener('scroll', this.onTimeDropdownScroll, true)
+        window.addEventListener('resize', this.onTimeDropdownViewportChange, { once: true })
       })
     },
-    onTimeDropdownKeydown(e) { if (e && e.key === 'Escape') this.closeTimeDropdown() },
+    onTimeDropdownKeydown(e) {
+      if (!e) return
+      if (e.key === 'Escape') this.closeTimeDropdown()
+      if (e.key === 'ArrowUp') { e.preventDefault(); this.stepTimePicker('minute', 1) }
+      if (e.key === 'ArrowDown') { e.preventDefault(); this.stepTimePicker('minute', -1) }
+      if (e.key === 'PageUp') { e.preventDefault(); this.stepTimePicker('hour', 1) }
+      if (e.key === 'PageDown') { e.preventDefault(); this.stepTimePicker('hour', -1) }
+      if (e.key === 'Enter') this.closeTimeDropdown()
+    },
+    onTimeDropdownViewportChange() { this.closeTimeDropdown() },
     onTimeDropdownScroll(e) {
       const panel = this.$refs && this.$refs.timeDropdownPanel ? this.$refs.timeDropdownPanel : null
       const target = e && e.target ? e.target : null
@@ -779,9 +925,20 @@ export default {
     },
     closeTimeDropdown() {
       if (!this.timeDropdown.openFor) return
-      this.timeDropdown.openFor = null
+      this.timeDropdown = {
+        openFor: null,
+        top: 0,
+        left: 0,
+        width: 160,
+        hour: '',
+        minute: '00',
+        period: 'AM',
+        hourAnim: 'up',
+        minuteAnim: 'up'
+      }
       document.removeEventListener('keydown', this.onTimeDropdownKeydown)
       document.removeEventListener('scroll', this.onTimeDropdownScroll, true)
+      window.removeEventListener('resize', this.onTimeDropdownViewportChange)
     },
     isTitleTooltipOpen(meeting) {
       const id = meeting && meeting._id ? String(meeting._id) : ''
@@ -820,7 +977,7 @@ export default {
     },
     isMetaTruncated(rootEl) {
       if (!rootEl || !rootEl.querySelectorAll) return false
-      const nodes = rootEl.querySelectorAll('.text-value, .small')
+      const nodes = rootEl.querySelectorAll('.text-value, .small, .meeting-card__datetime-value, .meeting-card__datetime-label')
       if (!nodes || !nodes.length) return false
       try { return Array.from(nodes).some(el => (el.scrollWidth || 0) > ((el.clientWidth || 0) + 1)) } catch (e) { return false }
     },
@@ -1354,22 +1511,24 @@ export default {
 .meeting-card__title:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--am-accent-ring); border-radius: 10px; }
 .meeting-card__title-tooltip { position: absolute; top: calc(100% - 6px); left: 0; max-width: 420px; padding: 10px 12px; background: rgba(255,255,255,0.98); border: 1px solid rgba(148,163,184,0.36); border-radius: 12px; box-shadow: 0 14px 34px rgba(2,6,23,0.14); color: #0f172a; font-size: 0.92rem; line-height: 1.4; z-index: 10; pointer-events: none; white-space: normal; overflow-wrap: anywhere; }
 .meeting-card__title-tooltip::before { content: ""; position: absolute; top: -7px; left: 18px; width: 12px; height: 12px; background: rgba(255,255,255,0.98); border-left: 1px solid rgba(148,163,184,0.36); border-top: 1px solid rgba(148,163,184,0.36); transform: rotate(45deg); }
-.meeting-card__meta { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.1fr); gap: 12px; margin-bottom: 16px; align-items: stretch; }
+.meeting-card__meta { margin-bottom: 16px; }
 .meeting-card__meta-item { position: relative; width: 100%; min-width: 0; outline: none; }
 .meeting-card__meta-item:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--am-accent-ring); border-radius: 10px; }
 .meeting-card__meta-tooltip { position: absolute; top: calc(100% + 6px); left: 0; max-width: 440px; padding: 8px 10px; background: rgba(255,255,255,0.98); border: 1px solid rgba(148,163,184,0.34); border-radius: 12px; box-shadow: 0 14px 34px rgba(2,6,23,0.14); color: #0f172a; font-size: 0.88rem; line-height: 1.35; z-index: 12; pointer-events: none; white-space: normal; overflow-wrap: anywhere; }
-.meeting-card__meta-widget { margin-bottom: 0; width: 100%; }
-.meeting-card__meta-widget::v-deep.card { border-radius: 5px; overflow: hidden; border: 1px solid rgba(var(--am-gold-rgb),0.5); background: rgba(255,255,255,0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 8px 14px rgba(15,23,42,0.05); width: 100%; height: 64px; }
-.meeting-card__meta-widget::v-deep .card-body { padding: 0 !important; align-items: stretch !important; height: 100%; }
-.meeting-card__meta-widget::v-deep .card-body>.mr-3 { margin: 0 !important; padding: 0 !important; width: 46px; display: flex; align-items: center; justify-content: center; }
-.meeting-card__meta-widget::v-deep .card-body>div:not(.mr-3) { padding: 7px 9px !important; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-.meeting-card__meta-widget::v-deep .text-value { line-height: 1.1; margin-bottom: 2px; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.meeting-card__meta-widget::v-deep .small { line-height: 1.1; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.meeting-card__meta-item:nth-child(1) .meeting-card__meta-widget::v-deep .text-value { color: #1e1b4b; }
-.meeting-card__meta-item:nth-child(1) .meeting-card__meta-widget::v-deep .small { color: rgba(30,27,75,0.82); }
-.meeting-card__meta-item:nth-child(2) .meeting-card__meta-widget::v-deep .text-value { color: #0f172a; }
-.meeting-card__meta-item:nth-child(2) .meeting-card__meta-widget::v-deep .small { color: rgba(15,23,42,0.88); }
-.meeting-card__meta-item:nth-child(1) .meeting-card__meta-widget::v-deep.card, .meeting-card__meta-item:nth-child(2) .meeting-card__meta-widget::v-deep.card { border-color: rgba(var(--am-gold-rgb),0.84); }
+.meeting-card__meta-item--datetime { border-radius: 5px; }
+.meeting-card__datetime-card { margin-bottom: 0; width: 100%; min-height: 64px; display: flex; align-items: stretch; border-radius: 5px; overflow: hidden; border: 1px solid rgba(var(--am-gold-rgb),0.84); background: rgba(255,255,255,0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 8px 14px rgba(15,23,42,0.05); }
+.meeting-card__datetime-cell { flex: 1 1 0; min-width: 0; display: flex; align-items: stretch; }
+.meeting-card__datetime-icon-wrap { margin: 0; padding: 0; width: 46px; flex: 0 0 46px; display: flex; align-items: center; justify-content: center; color: #ffffff; }
+.meeting-card__datetime-cell--date .meeting-card__datetime-icon-wrap { background: linear-gradient(135deg, #312e81, #4338ca); }
+.meeting-card__datetime-cell--time .meeting-card__datetime-icon-wrap { background: linear-gradient(135deg, #0ea5e9, #3b82f6); }
+.meeting-card__datetime-text { padding: 7px 9px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.meeting-card__datetime-value { line-height: 1.1; margin-bottom: 2px; font-size: 0.92rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meeting-card__datetime-label { line-height: 1.1; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meeting-card__datetime-cell--date .meeting-card__datetime-value { color: #1e1b4b; }
+.meeting-card__datetime-cell--date .meeting-card__datetime-label { color: rgba(30,27,75,0.82); }
+.meeting-card__datetime-cell--time .meeting-card__datetime-value { color: #0f172a; }
+.meeting-card__datetime-cell--time .meeting-card__datetime-label { color: rgba(15,23,42,0.88); }
+.meeting-card__datetime-divider { width: 1px; flex: 0 0 1px; background: rgba(var(--am-gold-rgb),0.55); }
 
 .meeting-card__detail-list { padding: 14px 0; border-top: 1px solid var(--am-line); border-bottom: 1px solid var(--am-line); }
 .meeting-card__detail { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed var(--am-line); }
@@ -1463,15 +1622,35 @@ export default {
 .input-icon__suffix:hover { filter: brightness(1.03); }
 .input-icon__suffix:focus { outline: none; box-shadow: 0 0 0 3px var(--am-accent-ring); }
 .input-icon__ic { opacity: 0.88; }
+.meeting-modal .small-row .input-icon__wrap[data-tone="info"] { border-color: #1d4ed8; background: #f3f4f6; box-shadow: none; }
+.meeting-modal .small-row .input-icon__wrap[data-tone="info"] .input-icon__control { color: #6b7280; font-size: 1.15rem; font-weight: 500; letter-spacing: 0.02em; }
+.meeting-modal .small-row .input-icon__wrap[data-tone="info"] .input-icon__suffix { background: transparent; color: #2563eb; border-left: 1px solid rgba(148,163,184,0.45); }
+.meeting-modal .small-row .input-icon__wrap[data-tone="info"] .input-icon__suffix:hover { background: rgba(37,99,235,0.08); filter: none; }
 
 .time-trigger { cursor: pointer; }
 .time-trigger:disabled { cursor: not-allowed; }
 .time-trigger[readonly] { cursor: pointer; }
-.time-dropdown__backdrop { position: fixed; inset: 0; z-index: 20000; }
-.time-dropdown { position: fixed; z-index: 20001; background: #ffffff; border: 1px solid rgba(148,163,184,0.24); border-radius: 14px; box-shadow: 0 24px 60px rgba(2,6,23,0.2); padding: 6px; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-.time-dropdown__item { width: 100%; border: 0; background: transparent; text-align: left; padding: 10px 12px; border-radius: 10px; font-size: 1rem; line-height: 1.25; color: #0f172a; cursor: pointer; }
-.time-dropdown__item:hover { background: rgba(15,23,42,0.06); }
-.time-dropdown__item.is-selected { background: linear-gradient(135deg, rgba(139,18,18,0.14), rgba(197,155,58,0.14)); color: var(--am-accent); font-weight: 800; }
+.time-picker__backdrop { position: fixed; inset: 0; z-index: 20000; background: transparent; }
+.time-picker { position: fixed; z-index: 20001; background: #f3f4f6; border: 1px solid rgba(148,163,184,0.38); border-radius: 10px; box-shadow: 0 16px 34px rgba(2,6,23,0.16); padding: 10px 10px 8px; }
+.time-picker__wheels { display: grid; grid-template-columns: minmax(0,1fr) 16px minmax(0,1fr); align-items: center; gap: 8px; }
+.time-picker__wheel { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.time-picker__arrow { width: 100%; height: 24px; border: 0; background: transparent; color: #334155; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 6px; transition: background-color 0.12s ease, color 0.12s ease; }
+.time-picker__arrow:hover { background: rgba(148,163,184,0.18); color: #0f172a; }
+.time-picker__arrow:focus { outline: none; }
+.time-picker__arrow:focus-visible { box-shadow: 0 0 0 3px rgba(59,130,246,0.28); }
+.time-picker__digit-window { width: 52px; height: 40px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; }
+.time-picker__digit { display: inline-block; min-width: 34px; text-align: center; color: #111827; font-size: 2.15rem; line-height: 1; font-weight: 500; }
+.time-picker__separator { text-align: center; color: #111827; font-size: 2.05rem; line-height: 1; font-weight: 700; transform: translateY(1px); }
+.time-picker__period-row { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgba(100,116,139,0.5); border-radius: 7px; overflow: hidden; background: #ffffff; }
+.time-picker__period-btn { height: 28px; border: 0; background: #ffffff; color: #1e40af; font-size: 0.8rem; line-height: 1; font-weight: 700; cursor: pointer; transition: background-color 0.12s ease, color 0.12s ease; }
+.time-picker__period-btn + .time-picker__period-btn { border-left: 1px solid rgba(100,116,139,0.38); }
+.time-picker__period-btn.is-active { background: #dbeafe; color: #1e3a8a; }
+.time-picker__period-btn:focus { outline: none; }
+.time-picker__period-btn:focus-visible { box-shadow: inset 0 0 0 2px rgba(30,64,175,0.35); }
+
+.digit-slide-up-enter-active, .digit-slide-up-leave-active, .digit-slide-down-enter-active, .digit-slide-down-leave-active { transition: transform 0.18s ease, opacity 0.18s ease; }
+.digit-slide-up-enter, .digit-slide-down-leave-to { transform: translateY(18px); opacity: 0; }
+.digit-slide-up-leave-to, .digit-slide-down-enter { transform: translateY(-18px); opacity: 0; }
 
 .meeting-modal .meeting-form, .minutes-modal .minutes-form { max-width: 100%; margin: 0; width: 100%; padding-left: 12px; padding-right: 12px; box-sizing: border-box; }
 .meeting-modal .modal-body { padding: 18px 22px !important; }
@@ -1493,9 +1672,18 @@ export default {
 [data-coreui-theme='dark'] .meeting-card__agenda-body, body.c-dark-theme .meeting-card__agenda-body { background: rgba(15,23,42,0.6); border-color: rgba(58,75,103,0.65); }
 [data-coreui-theme='dark'] .empty-state, body.c-dark-theme .empty-state { border-color: #3a4b67; background: #162235; color: #b9c7dd; }
 [data-coreui-theme='dark'] .empty-state__title, body.c-dark-theme .empty-state__title { color: #edf3ff; }
-[data-coreui-theme='dark'] .input-icon__wrap, body.c-dark-theme .input-icon__wrap, [data-coreui-theme='dark'] .time-dropdown, body.c-dark-theme .time-dropdown { background: #121c2a; border-color: #3a4b67; }
-[data-coreui-theme='dark'] .time-dropdown__item, body.c-dark-theme .time-dropdown__item { color: #e8eef7; }
-[data-coreui-theme='dark'] .time-dropdown__item:hover, body.c-dark-theme .time-dropdown__item:hover { background: rgba(118,164,255,0.16); }
+[data-coreui-theme='dark'] .input-icon__wrap, body.c-dark-theme .input-icon__wrap, [data-coreui-theme='dark'] .time-picker, body.c-dark-theme .time-picker { background: #111827; border-color: #334155; }
+[data-coreui-theme='dark'] .meeting-modal .small-row .input-icon__wrap[data-tone="info"], body.c-dark-theme .meeting-modal .small-row .input-icon__wrap[data-tone="info"] { border-color: #3b82f6; background: #0f172a; }
+[data-coreui-theme='dark'] .meeting-modal .small-row .input-icon__wrap[data-tone="info"] .input-icon__control, body.c-dark-theme .meeting-modal .small-row .input-icon__wrap[data-tone="info"] .input-icon__control { color: #cbd5e1; }
+[data-coreui-theme='dark'] .meeting-modal .small-row .input-icon__wrap[data-tone="info"] .input-icon__suffix, body.c-dark-theme .meeting-modal .small-row .input-icon__wrap[data-tone="info"] .input-icon__suffix { color: #93c5fd; border-left-color: #334155; }
+[data-coreui-theme='dark'] .meeting-modal .small-row .input-icon__wrap[data-tone="info"] .input-icon__suffix:hover, body.c-dark-theme .meeting-modal .small-row .input-icon__wrap[data-tone="info"] .input-icon__suffix:hover { background: rgba(59,130,246,0.16); }
+[data-coreui-theme='dark'] .time-picker__arrow, body.c-dark-theme .time-picker__arrow { color: #cbd5e1; }
+[data-coreui-theme='dark'] .time-picker__arrow:hover, body.c-dark-theme .time-picker__arrow:hover { background: rgba(148,163,184,0.22); color: #f1f5f9; }
+[data-coreui-theme='dark'] .time-picker__digit, body.c-dark-theme .time-picker__digit, [data-coreui-theme='dark'] .time-picker__separator, body.c-dark-theme .time-picker__separator { color: #f1f5f9; }
+[data-coreui-theme='dark'] .time-picker__period-row, body.c-dark-theme .time-picker__period-row { border-color: #475569; background: #0f172a; }
+[data-coreui-theme='dark'] .time-picker__period-btn, body.c-dark-theme .time-picker__period-btn { background: #0f172a; color: #93c5fd; }
+[data-coreui-theme='dark'] .time-picker__period-btn + .time-picker__period-btn, body.c-dark-theme .time-picker__period-btn + .time-picker__period-btn { border-left-color: #475569; }
+[data-coreui-theme='dark'] .time-picker__period-btn.is-active, body.c-dark-theme .time-picker__period-btn.is-active { background: #1e3a8a; color: #dbeafe; }
 </style>
 
 <style>
