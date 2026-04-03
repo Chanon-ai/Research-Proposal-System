@@ -12,6 +12,11 @@
           }"
         >
           <CWidgetDropdown class="user-widget-card" color="gradient-primary" :header="String(stats.all || 0)" text="ทั้งหมด">
+            <template #footer>
+              <div class="widget-footer-chart">
+                <CChartLine :datasets="[{ data: chartData.all, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+              </div>
+            </template>
           </CWidgetDropdown>
         </div>
       </CCol>
@@ -26,6 +31,11 @@
           }"
         >
           <CWidgetDropdown class="user-widget-card" color="gradient-info" :header="String(stats.inProgress || 0)" text="กำลังดำเนินการ">
+            <template #footer>
+              <div class="widget-footer-chart">
+                <CChartLine :datasets="[{ data: chartData.inProgress, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+              </div>
+            </template>
           </CWidgetDropdown>
         </div>
       </CCol>
@@ -40,6 +50,11 @@
           }"
         >
           <CWidgetDropdown class="user-widget-card" color="gradient-success" :header="String(stats.approved || 0)" text="อนุมัติ">
+            <template #footer>
+              <div class="widget-footer-chart">
+                <CChartBar :datasets="[{ data: chartData.approved, backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'transparent' }]" :options="chartOptions"/>
+              </div>
+            </template>
           </CWidgetDropdown>
         </div>
       </CCol>
@@ -54,6 +69,11 @@
           }"
         >
           <CWidgetDropdown class="user-widget-card" color="gradient-danger" :header="String(stats.rejected || 0)" text="ไม่อนุมัติ">
+            <template #footer>
+              <div class="widget-footer-chart">
+                <CChartLine :datasets="[{ data: chartData.rejected, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.6)' }]" :options="chartOptions"/>
+              </div>
+            </template>
           </CWidgetDropdown>
         </div>
       </CCol>
@@ -225,6 +245,7 @@
 
 <script>
 import Service from '@/service/api'
+import { CChartLine, CChartBar } from '@coreui/vue-chartjs'
 import Swal from 'sweetalert2'
 import {
   APPROVED_PROPOSAL_STATUSES,
@@ -265,6 +286,10 @@ const STATUS_LABEL_MAP = Object.freeze({
 
 export default {
   name: "UserDashboard",
+  components: {
+    CChartLine,
+    CChartBar,
+  },
   data() {
     return {
       allProjects: [],
@@ -312,9 +337,6 @@ export default {
         key,
         label: STATUS_LABEL_MAP[key] || key,
         step: STATUS_STEP_MAP[key] || 0
-<<<<<<< HEAD
-      }))
-=======
       })),
       chartData: {
         all: [72, 68, 83, 77, 86, 91, 88],
@@ -336,7 +358,6 @@ export default {
         }
       },
       rolePageAccessConfig: createDefaultRolePageAccessConfig()
->>>>>>> 3a07565797ea7f14017f8e6957404e46ffa43cfe
     };
   },
 
@@ -863,7 +884,6 @@ export default {
   margin-bottom: 0;
   position: relative;
   isolation: isolate;
-  min-height: 140px;
 }
 
 .widget-click-area .user-widget-card::before {
@@ -886,14 +906,6 @@ export default {
 }
 
 .widget-click-area .user-widget-card ::v-deep(.card-body) {
-<<<<<<< HEAD
-  min-height: 140px;
-  padding-top: 1.25rem;
-  padding-bottom: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-=======
   padding: 1.25rem 1.3rem 0;
 }
 
@@ -912,7 +924,6 @@ export default {
   line-height: 1.3;
   font-weight: 700;
   opacity: 0.96;
->>>>>>> 3a07565797ea7f14017f8e6957404e46ffa43cfe
 }
 
 .widget-click-area .user-widget-card ::v-deep(.card-footer) {
@@ -934,6 +945,25 @@ export default {
 
 .widget-rejected .user-widget-card::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='36' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 46l28 28M74 46L46 74' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-opacity='0.24'/%3E%3Ccircle cx='60' cy='60' r='46' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
+}
+
+.widget-footer-chart {
+  position: relative;
+  z-index: 2;
+  height: 70px;
+  width: 100%;
+  max-width: 100%;
+  padding-right: 8px;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.widget-footer-chart ::v-deep(canvas),
+.widget-footer-chart ::v-deep(svg) {
+  display: block;
+  width: 100% !important;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 @media (max-width: 991.98px) {
@@ -1618,5 +1648,4 @@ body.c-dark-theme .clear-filter-btn:hover {
 }
 
 </style>
-
 
