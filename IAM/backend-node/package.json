@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node scripts/start-backend.js",
+    "start": "node -r dotenv/config server.js",
+    "start:managed": "node scripts/start-backend.js",
     "serve:test": "node -r dotenv/config server.js dotenv_config_path=.env.test",
     "serve:prod": "node -r dotenv/config server.js dotenv_config_path=.env.prod"
   },

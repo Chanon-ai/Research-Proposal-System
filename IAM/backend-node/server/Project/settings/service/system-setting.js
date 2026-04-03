@@ -662,9 +662,7 @@ async function testEmail({ recipientEmail, smtp = {}, templateKey = '', senderNa
 
 async function clearCache() {
   try {
-    if (redisClient && redisClient.client && redisClient.client.isOpen) {
-      await redisClient.client.flushAll();
-    }
+    await redisClient.flushAll();
   } catch (err) {
     console.error('[SystemSetting.clearCache] Redis flush failed:', err && err.message ? err.message : err);
   }

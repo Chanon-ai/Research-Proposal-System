@@ -2,21 +2,56 @@ const winston = require('winston');
 require('winston-mongodb');  // ต้อง require winston-mongodb
 const mongoose = require('mongoose');
 
-const mongoUrl = process.env.MONGODB || 'mongodb://localhost:27017/logs';
+function parseBooleanEnv(value, defaultValue) {
+    if (typeof value !== 'string') return defaultValue;
+    var normalized = value.trim().toLowerCase();
+    if (['1', 'true', 'yes', 'on'].indexOf(normalized) !== -1) return true;
+    if (['0', 'false', 'no', 'off'].indexOf(normalized) !== -1) return false;
+    return defaultValue;
+}
 
-// สร้าง Logger สำหรับบันทึก log ลง MongoDB
-const mongoTransport = new winston.transports.MongoDB({
-    db: mongoUrl,
-    collection: 'logs',
-    level: 'info',
-    storeHost: true,
-    tryReconnect: true,
-});
+var mongoLoggingEnabled = parseBooleanEnv(process.env.MONGO_LOG_ENABLED, true);
+var mongoTransport = null;
 
-// Prevent unhandled 'error' event from crashing the process
-mongoTransport.on('error', function (err) {
-    console.error('[winston-mongodb] transport error:', err.message || err);
-});
+function resolveMongooseClient() {
+    var connection = mongoose && mongoose.connection;
+    if (!connection || connection.readyState !== 1) return null;
+    if (typeof connection.getClient === 'function') {
+        try {
+            return connection.getClient();
+        } catch (err) {
+            return null;
+        }
+    }
+    return connection.client || null;
+}
+
+function ensureMongoTransport(logger) {
+    if (!mongoLoggingEnabled || mongoTransport) return;
+
+    var client = resolveMongooseClient();
+    if (!client) return;
+
+    try {
+        // Reuse mongoose connection to avoid a second MongoDB/SRV connection from winston.
+        mongoTransport = new winston.transports.MongoDB({
+            db: Promise.resolve(client),
+            collection: 'logs',
+            level: 'info',
+            storeHost: true,
+            tryReconnect: false,
+            leaveConnectionOpen: true
+        });
+
+        mongoTransport.on('error', function (err) {
+            console.error('[winston-mongodb] transport error:', err.message || err);
+        });
+
+        logger.add(mongoTransport);
+    } catch (err) {
+        console.error('[winston-mongodb] transport init failed:', err.message || err);
+    }
+}
 
 const logger = winston.createLogger({
     level: 'info',  // กำหนดระดับความรุนแรงของ log
@@ -24,13 +59,22 @@ const logger = winston.createLogger({
         winston.format.timestamp(),  // เก็บเวลาของ log
         winston.format.json()  // บันทึก log ในรูปแบบ JSON
     ),
-    transports: [mongoTransport]
+    transports: [
+        new winston.transports.Console({ level: 'error' })
+    ]
 });
 
 // Prevent unhandled 'error' on logger itself
 logger.on('error', function (err) {
     console.error('[winston] logger error:', err.message || err);
 });
+
+if (mongoLoggingEnabled) {
+    mongoose.connection.on('connected', function () {
+        ensureMongoTransport(logger);
+    });
+    ensureMongoTransport(logger);
+}
 
 // Truncate large data to prevent BSON overflow
 function safeForLog(data) {
@@ -96,6 +140,7 @@ function safeForLog(data) {
 
 // ฟังก์ชันสำหรับบันทึกข้อมูลที่เกี่ยวข้องกับ success
 function logSuccessData(req, res, body) {
+    ensureMongoTransport(logger);
     const logData = {
         level: 'info',
         method: req.method,
@@ -114,6 +159,7 @@ function logSuccessData(req, res, body) {
 
 // ฟังก์ชันสำหรับบันทึกข้อมูลที่เกี่ยวข้องกับ error
 function logErrorData(req, res, body) {
+    ensureMongoTransport(logger);
     const logData = {
         level: 'error',
         method: req.method,
@@ -132,6 +178,10 @@ function logErrorData(req, res, body) {
 
 // ฟังก์ชันสำหรับลบ log เก่ากว่า 120 วัน (background)
 async function deleteOldLogs() {
+    if (!mongoose.connection || !mongoose.connection.db) {
+        return;
+    }
+
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - 120);  // ลบ log ที่เก่ากว่า 120 วัน
 

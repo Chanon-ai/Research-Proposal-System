@@ -28,4 +28,4 @@ RUN npm install
 COPY . .
 
 EXPOSE 8081
-CMD ["node", "-r", "dotenv/config", "server.js"]
+CMD ["npm", "start"]

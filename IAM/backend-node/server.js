@@ -135,4 +135,8 @@ function onListening() {
     var bind = typeof addr === 'string'
         ? 'pipe ' + addr
         : 'port ' + addr.port;
+    console.log('Server is listening on ' + bind);
+    if (typeof addr !== 'string') {
+        console.log('Health check: http://127.0.0.1:' + addr.port + '/healthz');
+    }
 }
