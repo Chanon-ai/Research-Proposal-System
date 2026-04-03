@@ -302,7 +302,7 @@
               title="Saving"
               aria-label="Saving"
             >
-              <CSpinner size="sm" />
+              <CIcon :content="$options.icons.cilHistory" class="save-indicator-icon save-indicator-icon--spin" />
             </span>
             <span
               v-else-if="isDraftSaved"
@@ -310,7 +310,7 @@
               title="Saved"
               aria-label="Saved"
             >
-              <i class="cil-check-circle"></i>
+              <CIcon :content="$options.icons.cilCheck" class="save-indicator-icon" />
             </span>
             <span
               v-if="isAutoSaving || isDraftSaving"
@@ -335,13 +335,13 @@
               style="background-color: #dc2626; border-color: #dc2626;"
               @click="deleteDraftProposal"
             >
-              <i class="cil-trash me-2"></i>
+              <CIcon :content="$options.icons.cilTrash" class="me-2" />
               ลบโครงการ
             </button>
 
             <button v-if="showDraftActions" type="button" class="btn btn-lg text-white"
               style="background-color: #8b1212; border-color: #8b1212;" @click="submitProject">
-              <i class="cil-send me-2"></i>
+              <CIcon :content="$options.icons.cilPaperPlane" class="me-2" />
               ยื่นโครงการ
             </button>
 
@@ -352,7 +352,7 @@
               style="background-color: #dc2626; border-color: #dc2626;"
               @click="deleteDraftProposal"
             >
-              <i class="cil-trash me-2"></i>
+              <CIcon :content="$options.icons.cilTrash" class="me-2" />
               ลบโครงการ
             </button>
 
@@ -758,6 +758,7 @@ import {
   PROPOSAL_STATUS_COLORS_COREUI_RESEARCH_FORM as ADMIN_STATUS_COLORS,
   PROPOSAL_STATUS_LABELS_TH_RESEARCHER as ADMIN_STATUS_LABELS
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { cilHistory, cilCheck, cilTrash, cilPaperPlane } from '@coreui/icons'
 
 const ACTIVE_DRAFT_STORAGE_KEY = 'research_form_active_draft_id'
 const FEEDBACK_SECTION_PROGRESS_STORAGE_PREFIX = 'research_form_feedback_section_progress'
@@ -767,6 +768,12 @@ const BASE_MEETING_START_TIME = '06:00'
 
 export default {
   name: 'ResearchForm',
+  icons: {
+    cilHistory,
+    cilCheck,
+    cilTrash,
+    cilPaperPlane
+  },
   props: {
     prefill: {
       type: Object,
@@ -6169,10 +6176,13 @@ export default {
   color: #8b1212;
 }
 
-.footer-fixed .save-indicator .spinner-border {
+.footer-fixed .save-indicator .save-indicator-icon {
   width: 14px;
   height: 14px;
-  border-width: 0.14em;
+}
+
+.footer-fixed .save-indicator .save-indicator-icon--spin {
+  animation: exportPdfSpin 0.9s linear infinite;
 }
 
 .footer-fixed .save-indicator--saved {
