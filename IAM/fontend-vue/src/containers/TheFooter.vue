@@ -1,5 +1,5 @@
 <template>
-  <CFooter :fixed="false">
+  <CFooter v-if="!hideForResearchModule" :fixed="false">
     <div>
       <a href="https://coreui.io" target="_blank">CoreUI</a>
       <span class="ml-1">&copy; {{new Date().getFullYear()}} creativeLabs.</span>
@@ -13,6 +13,15 @@
 
 <script>
 export default {
-  name: 'TheFooter'
+  name: 'TheFooter',
+  computed: {
+    hideForResearchModule () {
+      const route = this.$route || {}
+      const directMeta = route.meta && route.meta.appAuth === 'research'
+      const matched = Array.isArray(route.matched) ? route.matched : []
+      const matchedMeta = matched.some(record => record && record.meta && record.meta.appAuth === 'research')
+      return directMeta || matchedMeta
+    }
+  }
 }
 </script>
