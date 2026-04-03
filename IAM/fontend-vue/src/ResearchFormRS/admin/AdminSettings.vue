@@ -31,7 +31,7 @@
               <CCol md="4"><CInput type="date" label="วันสิ้นสุดรับโครงการ" v-model="generalForm.submissionDeadline" /></CCol>
               <CCol md="4"><CInput type="number" label="จำนวนโครงการสูงสุดต่อนักวิจัย" v-model.number="generalForm.maxProposalsPerResearcher" /></CCol>
             </CRow>
-            <CButton color="primary" @click="saveGeneralSettings"><CIcon name="cil-chevron-right" class="mr-1" /> บันทึกการตั้งค่า</CButton>
+            <CButton color="primary" @click="saveGeneralSettings"><CIcon name="cil-save" class="mr-1" /> บันทึกการตั้งค่า</CButton>
           </CCardBody>
         </CCard>
 
@@ -75,7 +75,7 @@
               </CCol>
               <CCol md="3"><CInput type="number" label="จำนวนรายการต่อหน้า" v-model.number="generalForm.itemsPerPage" /></CCol>
             </CRow>
-            <CButton color="primary" @click="saveGeneralSettings"><CIcon name="cil-chevron-right" class="mr-1" /> บันทึก</CButton>
+            <CButton color="primary" @click="saveGeneralSettings"><CIcon name="cil-save" class="mr-1" /> บันทึก</CButton>
           </CCardBody>
         </CCard>
 
@@ -143,7 +143,7 @@
                     <td>{{ step.title }}</td>
                     <td>{{ step.description }}</td>
                     <td><CInput type="number" v-model.number="workflowForm.stepDeadlines[step.key]" /></td>
-                    <td><CButton size="sm" color="primary" @click="saveWorkflowSettings"><CIcon name="cil-chevron-right" class="mr-1" /> บันทึก</CButton></td>
+                    <td><CButton size="sm" color="primary" @click="saveWorkflowSettings"><CIcon name="cil-save" class="mr-1" /> บันทึก</CButton></td>
                   </tr>
                 </tbody>
               </table>
@@ -163,7 +163,7 @@
                 <CSwitch color="success" :checked.sync="workflowForm.allowRevisionAfterMeeting" />
               </CCol>
             </CRow>
-            <CButton color="primary" @click="saveWorkflowSettings"><CIcon name="cil-chevron-right" class="mr-1" /> บันทึกการตั้งค่า Workflow</CButton>
+            <CButton color="primary" @click="saveWorkflowSettings"><CIcon name="cil-save" class="mr-1" /> บันทึกการตั้งค่า Workflow</CButton>
           </CCardBody>
         </CCard>
 
@@ -222,7 +222,7 @@
 
             <small class="text-muted d-block mb-3">ระบบยังคงจัดการค่าขั้นสูงภายในให้อัตโนมัติ เพื่อคงความเข้ากันได้กับการตั้งค่าเดิม</small>
 
-            <CButton color="primary" @click="saveEmailPolicySettings"><CIcon name="cil-chevron-right" class="mr-1" /> บันทึกการตั้งค่าอีเมล</CButton>
+            <CButton color="primary" @click="saveEmailPolicySettings"><CIcon name="cil-save" class="mr-1" /> บันทึกการตั้งค่าอีเมล</CButton>
           </CCardBody>
         </CCard>
 
@@ -241,7 +241,7 @@
                 <textarea class="form-control mb-2" rows="6" v-model="emailTemplates[key].body" />
                 <small class="text-muted d-block mb-2">ตัวแปรที่ใช้ได้: {{recipientName}} {{proposalCode}} {{projectTitle}} {{remarks}} {{meetingTitle}} {{meetingDate}} {{meetingTime}}</small>
                 <div class="d-flex" style="gap: 8px;">
-                  <CButton size="sm" color="primary" @click="saveTemplate(key)"><CIcon name="cil-chevron-right" class="mr-1" /> บันทึก Templates ทั้งหมด</CButton>
+                  <CButton size="sm" color="primary" @click="saveTemplate(key)"><CIcon name="cil-save" class="mr-1" /> บันทึก Templates ทั้งหมด</CButton>
                   <CButton size="sm" color="secondary" variant="outline" @click="resetTemplate(key)"><CIcon name="cil-chevron-right" class="mr-1" /> รีเซ็ตค่าเริ่มต้น</CButton>
                 </div>
               </div>

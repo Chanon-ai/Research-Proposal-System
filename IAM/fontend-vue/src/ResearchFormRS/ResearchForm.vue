@@ -376,11 +376,11 @@
           </div>
 
           <div class="d-flex justify-content-end flex-wrap" style="gap: 10px;">
-            <CButton color="warning" size="sm" @click="openAdminStatusModal"><CIcon name="cil-chevron-right" class="mr-1" /> เปลี่ยนสถานะ</CButton>
+            <CButton color="warning" size="sm" @click="openAdminStatusModal"><CIcon name="cil-loop-circular" class="mr-1" /> เปลี่ยนสถานะ</CButton>
             <CButton color="success" size="sm" @click="openAdminCommitteeModal">
-              <CIcon name="cil-chevron-right" class="mr-1" /> {{ adminHasAssignedCommittee ? 'เปลี่ยนคณะกรรมการ' : 'มอบหมายคณะกรรมการ' }}
+              <CIcon name="cil-user-follow" class="mr-1" /> {{ adminHasAssignedCommittee ? 'เปลี่ยนคณะกรรมการ' : 'มอบหมายคณะกรรมการ' }}
             </CButton>
-            <CButton size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage"><CIcon name="cil-chevron-right" class="mr-1" /> จัดการประชุม</CButton>
+            <CButton size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage"><CIcon name="cil-group" :content="$options.icons.cilPeople" class="mr-1" /> จัดการประชุม</CButton>
           </div>
         </div>
       </div>
@@ -758,7 +758,7 @@ import {
   PROPOSAL_STATUS_COLORS_COREUI_RESEARCH_FORM as ADMIN_STATUS_COLORS,
   PROPOSAL_STATUS_LABELS_TH_RESEARCHER as ADMIN_STATUS_LABELS
 } from '@/ResearchFormRS/constants/proposalWorkflow'
-import { cilHistory, cilCheck, cilTrash, cilPaperPlane } from '@coreui/icons'
+import { cilHistory, cilCheck, cilTrash, cilPaperPlane, cilPeople } from '@coreui/icons'
 
 const ACTIVE_DRAFT_STORAGE_KEY = 'research_form_active_draft_id'
 const FEEDBACK_SECTION_PROGRESS_STORAGE_PREFIX = 'research_form_feedback_section_progress'
@@ -772,7 +772,8 @@ export default {
     cilHistory,
     cilCheck,
     cilTrash,
-    cilPaperPlane
+    cilPaperPlane,
+    cilPeople
   },
   props: {
     prefill: {
