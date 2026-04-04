@@ -443,7 +443,9 @@ export default {
       return [{ value: '', label: 'เลือกสถานะ' }]
         .concat(this.nextStatuses.map(status => ({
           value: status,
-          label: this.getStatusLabel(status, this.proposal, { nextRoundForSecondRoundReview: true })
+          label: status === 'second_round_review'
+            ? 'ส่งให้คณะกรรมการพิจารณา'
+            : this.getStatusLabel(status, this.proposal, { nextRoundForSecondRoundReview: true })
         })))
     },
     budgetRows () {

@@ -725,13 +725,8 @@ async function changeProposalStatus(id, toStatus, remark, user) {
     throw new Error('Revision after meeting is disabled by workflow policy');
   }
 
-  if (toStatus === STATUS.REVISION_REQUESTED && currentRound >= workflowPolicy.maxRounds) {
-    throw new Error(`Cannot request revision: maximum review rounds (${workflowPolicy.maxRounds}) reached`);
-  }
-
-  if (toStatus === STATUS.SECOND_ROUND_REVIEW && currentRound >= workflowPolicy.maxRounds) {
-    throw new Error(`Cannot move to next round: maximum review rounds (${workflowPolicy.maxRounds}) reached`);
-  }
+  // Allow review/revision loop to continue until admin finalizes with approved/rejected/announced.
+  // Do not hard-stop by maxRounds here.
 
   if (toStatus === STATUS.APPROVED) {
     const submittedRoundReviews = await getSubmittedReviewsForRound(proposal._id, currentRound);

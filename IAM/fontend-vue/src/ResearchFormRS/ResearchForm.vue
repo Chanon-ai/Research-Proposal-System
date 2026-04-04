@@ -1108,7 +1108,13 @@ export default {
       const current = String(this.currentStatus || '').trim()
       const statuses = ADMIN_ALLOWED_TRANSITIONS[current] || []
       if (!statuses.length) return [{ value: '', label: 'ไม่มีสถานะถัดไปที่อนุญาต' }]
-      return [{ value: '', label: 'เลือกสถานะ' }, ...statuses.map(s => ({ value: s, label: this.adminGetStatusLabel(s) }))]
+      return [{
+        value: '',
+        label: 'เลือกสถานะ'
+      }, ...statuses.map(s => ({
+        value: s,
+        label: s === 'second_round_review' ? 'ส่งให้คณะกรรมการพิจารณา' : this.adminGetStatusLabel(s)
+      }))]
     },
     adminFilteredCommitteeUsers () {
       const scopedUsers = this.adminCommitteeUsers || []

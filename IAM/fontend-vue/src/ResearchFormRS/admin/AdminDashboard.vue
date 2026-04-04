@@ -491,7 +491,9 @@ export default {
         label: 'เลือกสถานะ'
       }, ...statuses.map(s => ({
         value: s,
-        label: this.getStatusLabel(s, this.selectedProposal, { nextRoundForSecondRoundReview: true })
+        label: s === 'second_round_review'
+          ? 'ส่งให้คณะกรรมการพิจารณา'
+          : this.getStatusLabel(s, this.selectedProposal, { nextRoundForSecondRoundReview: true })
       }))]
     },
     filteredCommitteeUsers () {

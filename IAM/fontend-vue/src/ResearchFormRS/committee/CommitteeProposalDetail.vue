@@ -271,10 +271,11 @@ export default {
       return id ? String(id) : ''
     },
     activeRoundNo() {
-      const status = String(this.proposal && this.proposal.currentStatus ? this.proposal.currentStatus : '').toLowerCase()
-      if (status === 'second_round_review') return 2
       const round = Number(this.proposal && this.proposal.currentRound)
-      return round === 2 ? 2 : 1
+      if (Number.isFinite(round) && round > 0) return Math.floor(round)
+      const status = String(this.proposal && this.proposal.currentStatus ? this.proposal.currentStatus : '').toLowerCase()
+      if (status === 'second_round_review' || status.includes('second_round')) return 2
+      return 1
     },
     attachments() {
       const snapshot = this.proposal && this.proposal.formSnapshotJson ? this.proposal.formSnapshotJson : {}
