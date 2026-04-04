@@ -783,8 +783,7 @@ export default {
   --committee-gold: #fec260;
   --committee-gold-soft: rgba(254, 194, 96, 0.22);
   --kpi-accent-soft: var(--committee-gold-soft);
-  max-width: 1240px;
-  margin: 0 auto;
+  width: 100%;
   padding: 16px;
   box-sizing: border-box;
 }
