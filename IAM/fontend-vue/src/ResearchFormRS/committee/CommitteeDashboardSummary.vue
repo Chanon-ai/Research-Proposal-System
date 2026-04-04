@@ -78,17 +78,17 @@
         </div>
       </CCol>
       <CCol sm="6" lg="3" class="mb-2">
-        <div class="kpi-card kpi-card--revision">
-          <small class="kpi-label">ขอแก้ไขเพิ่มเติม</small>
-          <div class="kpi-number">{{ proposalKpis.revision }}</div>
-          <div class="kpi-note">สถานะต้องแก้ไข</div>
+        <div class="kpi-card kpi-card--announced">
+          <small class="kpi-label">ประกาศผล</small>
+          <div class="kpi-number">{{ proposalKpis.announced }}</div>
+          <div class="kpi-note">เอกสารที่ประกาศผลแล้ว</div>
         </div>
       </CCol>
       <CCol sm="6" lg="3" class="mb-2">
         <div class="kpi-card kpi-card--reviewed">
-          <small class="kpi-label">ประเมินแล้ว</small>
+          <small class="kpi-label">ส่งผลการประเมินแล้ว</small>
           <div class="kpi-number">{{ proposalKpis.reviewed }}</div>
-          <div class="kpi-note">ส่งผลประเมินแล้ว</div>
+          <div class="kpi-note">สถานะที่ผ่านการให้ความเห็นแล้ว</div>
         </div>
       </CCol>
     </CRow>
@@ -249,7 +249,6 @@
 import Service, { instance as axios } from '@/service/api'
 import { CChartBar, CChartDoughnut } from '@coreui/vue-chartjs'
 import {
-  PROPOSAL_STATUS_LABELS_TH_BADGE,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import vSelect from 'vue-select'
@@ -262,32 +261,38 @@ const COMMITTEE_STATUS_FLOW = Object.freeze([
   'revision_requested',
   'resubmitted',
   'second_round_review',
-  'approved',
-  'rejected',
   'announced'
+])
+
+const COMMITTEE_PENDING_STATUSES = Object.freeze([
+  'assigned_to_committee',
+  'under_review',
+  'second_round_review'
+])
+
+const COMMITTEE_REVIEWED_STATUSES = Object.freeze([
+  'meeting_completed',
+  'approved',
+  'rejected'
 ])
 
 const COMMITTEE_STATUS_COLORS = Object.freeze({
   assigned_to_committee: 'rgba(59, 130, 246, 0.45)',
   under_review: 'rgba(124, 58, 237, 0.45)',
-  meeting_completed: 'rgba(14, 165, 233, 0.45)',
+  meeting_completed: 'rgba(22, 163, 74, 0.45)',
   revision_requested: 'rgba(249, 115, 22, 0.45)',
   resubmitted: 'rgba(6, 182, 212, 0.45)',
   second_round_review: 'rgba(168, 85, 247, 0.45)',
-  approved: 'rgba(22, 163, 74, 0.45)',
-  rejected: 'rgba(239, 68, 68, 0.45)',
   announced: 'rgba(17, 24, 39, 0.38)'
 })
 
 const COMMITTEE_STATUS_BORDER_COLORS = Object.freeze({
   assigned_to_committee: 'rgba(59, 130, 246, 1)',
   under_review: 'rgba(124, 58, 237, 1)',
-  meeting_completed: 'rgba(14, 165, 233, 1)',
+  meeting_completed: 'rgba(22, 163, 74, 1)',
   revision_requested: 'rgba(249, 115, 22, 1)',
   resubmitted: 'rgba(6, 182, 212, 1)',
   second_round_review: 'rgba(168, 85, 247, 1)',
-  approved: 'rgba(22, 163, 74, 1)',
-  rejected: 'rgba(239, 68, 68, 1)',
   announced: 'rgba(17, 24, 39, 1)'
 })
 
@@ -391,12 +396,12 @@ export default {
       }, {})
 
       rows.forEach(p => {
-        const key = normalizeProposalStatus(p && p.currentStatus)
+        const key = this.getCommitteeFlowStatusKey(p)
         if (!key || !Object.prototype.hasOwnProperty.call(counts, key)) return
         counts[key] += 1
       })
 
-      const labels = COMMITTEE_STATUS_FLOW.map(key => this.committeeStatusLabel(key))
+      const labels = COMMITTEE_STATUS_FLOW.map(key => this.committeeStatusLabelByKey(key, null, false))
       const backgroundColor = COMMITTEE_STATUS_FLOW.map(key => COMMITTEE_STATUS_COLORS[key])
       const borderColor = COMMITTEE_STATUS_FLOW.map(key => COMMITTEE_STATUS_BORDER_COLORS[key])
       const data = COMMITTEE_STATUS_FLOW.map(key => counts[key] || 0)
@@ -416,23 +421,14 @@ export default {
       }
     },
     bucketCounts() {
-      const counts = { pending: 0, reviewed: 0, revision: 0, total: 0 }
+      const counts = { pending: 0, reviewed: 0, announced: 0, total: 0 }
       const rows = this.filteredAssignedProposals || []
       counts.total = rows.length
 
       rows.forEach(p => {
-        const proposalId = p && p._id ? String(p._id) : ''
-        const review = proposalId ? this.reviewMap[proposalId] : null
-        const isReviewed = Boolean(review && review.reviewStatus === 'submitted')
-        if (isReviewed) {
-          counts.reviewed += 1
-          return
-        }
-        if (p && p.currentStatus === 'revision_requested') {
-          counts.revision += 1
-          return
-        }
-        counts.pending += 1
+        const statusKey = this.getCommitteeStatusKey(p)
+        if (!Object.prototype.hasOwnProperty.call(counts, statusKey)) return
+        counts[statusKey] += 1
       })
 
       return counts
@@ -441,7 +437,7 @@ export default {
       return {
         total: this.bucketCounts.total,
         pending: this.bucketCounts.pending,
-        revision: this.bucketCounts.revision,
+        announced: this.bucketCounts.announced,
         reviewed: this.bucketCounts.reviewed
       }
     },
@@ -496,13 +492,11 @@ export default {
     },
     roundFilterOptions() {
       const rows = this.assignedProposalsRaw || []
-      const hasRound2 = rows.some(p => Number(this.deriveRoundNo(p)) === 2)
-      const base = [
-        { value: 'all', label: 'ทุกรอบ' },
-        { value: 1, label: 'รอบ 1' }
-      ]
-      if (hasRound2) base.push({ value: 2, label: 'รอบ 2' })
-      return base
+      const rounds = Array.from(new Set(
+        rows.map(p => Number(this.deriveRoundNo(p))).filter(n => Number.isFinite(n) && n > 0)
+      )).sort((a, b) => a - b)
+      const options = rounds.length > 0 ? rounds : [1]
+      return [{ value: 'all', label: 'ทุกรอบ' }].concat(options.map(r => ({ value: r, label: `รอบ ${r}` })))
     },
     fundTypeFilterOptions() {
       const rows = this.assignedProposalsRaw || []
@@ -588,11 +582,7 @@ export default {
     },
     staleStats() {
       const rows = this.filteredAssignedProposals || []
-      const pending = rows.filter(p => {
-        const pid = p && p._id ? String(p._id) : ''
-        const review = pid ? this.reviewMap[pid] : null
-        return !(review && review.reviewStatus === 'submitted')
-      })
+      const pending = rows.filter(p => this.getCommitteeStatusKey(p) === 'pending')
       const daysSince = (dateStr) => {
         const d = new Date(dateStr || 0)
         if (Number.isNaN(d.getTime())) return null
@@ -652,9 +642,58 @@ export default {
     },
     deriveRoundNo(proposal) {
       const status = String(proposal && proposal.currentStatus ? proposal.currentStatus : '').toLowerCase()
+      const round = Number(proposal && (proposal.roundNo || proposal.currentRound || proposal.round)
+        ? (proposal.roundNo || proposal.currentRound || proposal.round)
+        : 0)
+      if (Number.isFinite(round) && round > 0) return round
       if (status === 'second_round_review' || status.includes('second_round')) return 2
-      const round = Number(proposal && proposal.currentRound ? proposal.currentRound : 0)
-      return round === 2 ? 2 : 1
+      return 1
+    },
+    getReviewStatusForProposal(proposal) {
+      const pid = proposal && proposal._id ? String(proposal._id) : ''
+      const review = pid ? this.reviewMap[pid] : null
+      return review && review.reviewStatus ? String(review.reviewStatus).toLowerCase() : ''
+    },
+    isCommitteeReviewSubmitted(reviewStatus) {
+      return String(reviewStatus || '').toLowerCase() === 'submitted'
+    },
+    getCommitteeStatusKey(statusOrProposal, explicitReviewStatus = null) {
+      const proposal = statusOrProposal && typeof statusOrProposal === 'object' ? statusOrProposal : null
+      const status = proposal ? proposal.currentStatus : statusOrProposal
+      const reviewStatus = explicitReviewStatus || (proposal ? this.getReviewStatusForProposal(proposal) : '')
+      const key = normalizeProposalStatus(status)
+      if (key === 'announced') return 'announced'
+      if (this.isCommitteeReviewSubmitted(reviewStatus)) return 'reviewed'
+      if (COMMITTEE_PENDING_STATUSES.includes(key)) return 'pending'
+      if (COMMITTEE_REVIEWED_STATUSES.includes(key)) return 'reviewed'
+      return 'pending'
+    },
+    getCommitteeFlowStatusKey(statusOrProposal, explicitReviewStatus = null) {
+      const proposal = statusOrProposal && typeof statusOrProposal === 'object' ? statusOrProposal : null
+      const status = proposal ? proposal.currentStatus : statusOrProposal
+      const reviewStatus = explicitReviewStatus || (proposal ? this.getReviewStatusForProposal(proposal) : '')
+      const key = normalizeProposalStatus(status)
+      if (this.isCommitteeReviewSubmitted(reviewStatus) && key !== 'announced' && key !== 'revision_requested' && key !== 'resubmitted') {
+        return 'meeting_completed'
+      }
+      if (key === 'approved' || key === 'rejected') return 'meeting_completed'
+      if (COMMITTEE_STATUS_FLOW.includes(key)) return key
+      return 'assigned_to_committee'
+    },
+    committeeStatusLabelByKey(statusKey, roundNo, includeRound = true) {
+      const safeRound = Number(roundNo) > 0 ? Number(roundNo) : 1
+      if (statusKey === 'assigned_to_committee') return 'รอการประเมิน'
+      if (statusKey === 'under_review') {
+        return `พิจารณารอบ ${safeRound}`
+      }
+      if (statusKey === 'meeting_completed') return 'ส่งผลการประเมินแล้ว'
+      if (statusKey === 'revision_requested') return 'ขอแก้ไข'
+      if (statusKey === 'resubmitted') return 'ส่งแก้ไขแล้ว'
+      if (statusKey === 'second_round_review') {
+        return `พิจารณารอบ ${includeRound ? safeRound : (safeRound + 1)}`
+      }
+      if (statusKey === 'announced') return 'ประกาศผล'
+      return statusKey || '-'
     },
     fundTypeLabel(proposal) {
       const ft = proposal && proposal.fundingType ? String(proposal.fundingType) : ''
@@ -666,9 +705,9 @@ export default {
       if (k === 'industry-extension' || k.includes('extension') || k.includes('industry')) return 'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
       return ft
     },
-    committeeStatusLabel(status) {
-      const key = normalizeProposalStatus(status)
-      return PROPOSAL_STATUS_LABELS_TH_BADGE[key] || key || '-'
+    committeeStatusLabel(status, roundNo, includeRound = true, reviewStatus = null) {
+      const statusKey = this.getCommitteeFlowStatusKey(status, reviewStatus)
+      return this.committeeStatusLabelByKey(statusKey, roundNo, includeRound)
     },
     async fetchAssignedProposals() {
       this.loading = true
@@ -730,7 +769,11 @@ export default {
         return ''
       }
       const statusLabel = (p) => {
-        return this.committeeStatusLabel(p && p.currentStatus)
+        const roundNo = this.deriveRoundNo(p)
+        const pid = p && p._id ? String(p._id) : ''
+        const review = pid ? this.reviewMap[pid] : null
+        const reviewStatus = review && review.reviewStatus ? String(review.reviewStatus).toLowerCase() : ''
+        return this.committeeStatusLabel(p && p.currentStatus, roundNo, true, reviewStatus)
       }
       const rowFor = (p) => {
         const pid = p && p._id ? String(p._id) : ''
@@ -1235,10 +1278,10 @@ export default {
   --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M60 42v18l14 10' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
 }
 
-.kpi-card--revision {
-  --summary-start: #ef4444;
-  --summary-end: #dc2626;
-  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='20' width='72' height='80' rx='12' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M72 34l12 12M61 45l23-23 12 12-23 23H61z' fill='%23000000' fill-opacity='0.2'/%3E%3Cpath d='M40 82h40' stroke='%23000000' stroke-width='6' stroke-linecap='round' stroke-opacity='0.18'/%3E%3C/svg%3E");
+.kpi-card--announced {
+  --summary-start: #1f2937;
+  --summary-end: #111827;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='58' cy='60' r='28' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M44 60h28M72 60c7 0 12-5 12-12M72 60c7 0 12 5 12 12' stroke='%23000000' stroke-width='6' stroke-linecap='round' stroke-opacity='0.2' fill='none'/%3E%3Cpath d='M38 60l8 8M38 60l8-8' stroke='%23000000' stroke-width='6' stroke-linecap='round' stroke-opacity='0.2'/%3E%3C/svg%3E");
 }
 
 .kpi-card--reviewed {

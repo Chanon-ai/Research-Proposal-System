@@ -66,8 +66,8 @@
                 </template>
                 <template #statusDisplay="{item}">
                   <td class="current-status-cell">
-                    <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.status)">
-                      {{ statusLabel(item.status) }}
+                    <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.status, item.reviewStatus)">
+                      {{ statusLabel(item.status, item.roundNo, item.reviewStatus) }}
                     </CBadge>
                     <div class="status-progress-label">
                       {{ getProgressLabel(item) }}
@@ -186,6 +186,18 @@ import {
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 
+const COMMITTEE_PENDING_STATUSES = Object.freeze([
+  'assigned_to_committee',
+  'under_review',
+  'second_round_review'
+])
+
+const COMMITTEE_REVIEWED_STATUSES = Object.freeze([
+  'meeting_completed',
+  'approved',
+  'rejected'
+])
+
 export default {
   name: 'CommitteeProjectProposal',
   data () {
@@ -300,14 +312,19 @@ export default {
         const currentStatus = resolveStatus(p.currentStatus)
         const proposalId = p._id ? String(p._id) : null
         const review = proposalId ? this.reviewMap[proposalId] : null
-        const isReviewed = review && review.reviewStatus === 'submitted'
+        const reviewStatus = review && review.reviewStatus ? String(review.reviewStatus).toLowerCase() : ''
+        const isReviewed = reviewStatus === 'submitted'
         const decisionCode = review && review.decision ? String(review.decision).toLowerCase() : ''
         const decisionTone = isReviewed
           ? (decisionCode === 'approve' || decisionCode === 'revise' || decisionCode === 'reject' ? decisionCode : 'unknown')
           : 'none'
         const decisionDisplay = this.decisionLabel(decisionCode, isReviewed)
-        const committeeProgress = isReviewed ? 'review_submitted' : 'waiting_for_review'
-        const committeeProgressDisplay = isReviewed ? 'ประเมินแล้ว' : 'รอการประเมิน'
+        const roundNo = this.deriveRoundNo(p)
+        const committeeStatusKey = this.getCommitteeStatusKey(currentStatus, reviewStatus)
+        const committeeProgressDisplay = this.statusLabel(currentStatus, roundNo, reviewStatus)
+        const committeeProgress = committeeStatusKey === 'reviewed'
+          ? 'review_submitted'
+          : (committeeStatusKey === 'announced' ? 'announced' : 'waiting_for_review')
         const latestTs = this.getLatestUpdatedAt(proposalId || p.proposalCode || p._id || '-', review && (review.updatedAt || review.submittedAt || p.updatedAt || p.createdAt))
 
         return {
@@ -318,9 +335,11 @@ export default {
           faculty: resolveAffiliation(p, snapshot),
           submissionDate: p.submittedAt || p.createdAt,
           status: currentStatus,
+          roundNo,
+          committeeStatusKey,
           committeeProgress,
           committeeProgressDisplay,
-          reviewStatus: review && review.reviewStatus ? review.reviewStatus : null,
+          reviewStatus: reviewStatus || null,
           reviewDecision: review && review.decision ? review.decision : null,
           decisionTone,
           decisionDisplay,
@@ -333,7 +352,7 @@ export default {
             mime: f.mime || 'application/octet-stream',
             content: f.content || ''
           })),
-          statusDisplay: this.statusLabel(currentStatus)
+          statusDisplay: this.statusLabel(currentStatus, roundNo, reviewStatus)
         }
       })
     },
@@ -350,11 +369,7 @@ export default {
       })
     },
     summaryTiles () {
-      const bucketStatus = (item) => {
-        if (item.committeeProgress === 'review_submitted') return 'Reviewed'
-        if (item.status === 'revision_requested') return 'Revision Requested'
-        return 'Pending Review'
-      }
+      const bucketStatus = (item) => item.committeeStatusKey || this.getCommitteeStatusKey(item.status, item.reviewStatus)
       const base = this.assignedProposals.map(p => ({
         ...p,
         lastUpdatedAt: p.lastUpdatedAt,
@@ -363,21 +378,17 @@ export default {
       const countBy = status => base.filter(p => p.bucketStatus === status).length
       return [
         { key: 'ALL', label: 'ทั้งหมด', icon: 'cil-list', filter: 'all', count: base.length },
-        { key: 'PENDING', label: 'รอการประเมิน', icon: 'cil-clock', filter: 'Pending Review', count: countBy('Pending Review') },
-        { key: 'REVISION', label: 'ขอแก้ไขเพิ่มเติม', icon: 'cil-loop', filter: 'Revision Requested', count: countBy('Revision Requested') },
-        { key: 'REVIEWED', label: 'ประเมินแล้ว', icon: 'cil-check-circle', filter: 'Reviewed', count: countBy('Reviewed') }
+        { key: 'PENDING', label: 'รอการประเมิน', icon: 'cil-clock', filter: 'pending', count: countBy('pending') },
+        { key: 'REVIEWED', label: 'ส่งผลการประเมินแล้ว', icon: 'cil-check-circle', filter: 'reviewed', count: countBy('reviewed') },
+        { key: 'ANNOUNCED', label: 'ประกาศผล', icon: 'cil-bullhorn', filter: 'announced', count: countBy('announced') }
       ]
     },
     tableItems () {
       const items = this.assignedProposals.map(p => ({
         ...p,
         lastUpdatedAt: p.lastUpdatedAt,
-        statusDisplay: this.statusLabel(p.status),
-        bucketStatus: (p.committeeProgress === 'review_submitted')
-          ? 'Reviewed'
-          : (p.status === 'revision_requested')
-          ? 'Revision Requested'
-          : 'Pending Review'
+        statusDisplay: this.statusLabel(p.status, p.roundNo, p.reviewStatus),
+        bucketStatus: p.committeeStatusKey || this.getCommitteeStatusKey(p.status, p.reviewStatus)
       }))
       if (this.filterStatus === 'all') return items
       return items.filter(p => p.bucketStatus === this.filterStatus)
@@ -602,18 +613,21 @@ export default {
         this.proposalsRaw = proposals
 
         // Optional enrichment via existing endpoint: /api/v1/proposals/:id/reviews/me
-        const assignedIds = (proposals || [])
+        const assignedTargets = (proposals || [])
           .filter(p => {
             if (!(this.currentUser && this.currentUser.role === 'committee' && this.currentUserId)) return true
             const ids = Array.isArray(p && p.committeeIds) ? p.committeeIds.map(x => String(x)) : []
             return ids.includes(this.currentUserId)
           })
-          .map(p => p && p._id ? String(p._id) : '')
-          .filter(Boolean)
+          .map(p => ({
+            id: p && p._id ? String(p._id) : '',
+            roundNo: this.deriveRoundNo(p)
+          }))
+          .filter(x => x && x.id)
 
-        if (assignedIds.length > 0) {
+        if (assignedTargets.length > 0) {
           const settled = await Promise.allSettled(
-            assignedIds.map(id => Service.proposal.getMyReview(encodeURIComponent(id), { roundNo: 1 }))
+            assignedTargets.map(t => Service.proposal.getMyReview(encodeURIComponent(t.id), { roundNo: t.roundNo }))
           )
 
           const reviews = []
@@ -673,6 +687,33 @@ export default {
       })
       return newest || fallback || ''
     },
+    deriveRoundNo (proposal) {
+      const status = String(proposal && proposal.currentStatus ? proposal.currentStatus : '').toLowerCase()
+      const directRound = Number(proposal && (proposal.roundNo || proposal.currentRound || proposal.round)
+        ? (proposal.roundNo || proposal.currentRound || proposal.round)
+        : 0)
+      if (Number.isFinite(directRound) && directRound > 0) return directRound
+      if (status === 'second_round_review' || status.includes('second_round')) return 2
+      return 1
+    },
+    isCommitteeReviewSubmitted (reviewStatus) {
+      return String(reviewStatus || '').toLowerCase() === 'submitted'
+    },
+    getCommitteeStatusKey (status, reviewStatus = null) {
+      const key = normalizeProposalStatus(status)
+      if (key === 'announced') return 'announced'
+      if (this.isCommitteeReviewSubmitted(reviewStatus)) return 'reviewed'
+      if (COMMITTEE_PENDING_STATUSES.includes(key)) return 'pending'
+      if (COMMITTEE_REVIEWED_STATUSES.includes(key)) return 'reviewed'
+      return 'pending'
+    },
+    getCommitteeDisplayStatus (status, reviewStatus = null) {
+      const key = normalizeProposalStatus(status)
+      if (key === 'announced' || key === 'revision_requested' || key === 'resubmitted') return key
+      if (this.isCommitteeReviewSubmitted(reviewStatus)) return 'meeting_completed'
+      if (key === 'approved' || key === 'rejected') return 'meeting_completed'
+      return key
+    },
     statusLabelClass (status) {
       switch (status) {
         case 'review_submitted': return 'status-label--success'
@@ -686,37 +727,33 @@ export default {
         default: return 'status-label--secondary'
       }
     },
-    statusLabel (status) {
-      switch (status) {
-        case 'draft': return 'ร่าง'
-        case 'submitted': return 'ยื่นแล้ว'
-        case 'faculty_review_pending': return 'รอการพิจารณาคณะ'
-        case 'faculty_approved': return 'คณะอนุมัติ'
-        case 'office_received': return 'สำนักงานรับแล้ว'
-        case 'document_checking': return 'ตรวจสอบเอกสาร'
-        case 'assigned_to_committee': return 'มอบหมายกรรมการแล้ว'
-        case 'under_review': return 'กำลังพิจารณา'
-        case 'meeting_completed': return 'ประชุมเสร็จแล้ว'
-        case 'revision_requested': return 'ขอแก้ไขเพิ่มเติม'
-        case 'resubmitted': return 'ส่งใหม่แล้ว'
-        case 'second_round_review': return 'พิจารณารอบ 2'
-        case 'approved': return 'อนุมัติ'
-        case 'rejected': return 'ไม่ผ่าน'
-        case 'announced': return 'ประกาศผลแล้ว'
-        default: return status
+    statusLabel (status, roundNo, reviewStatus = null) {
+      const resolvedRound = Number(roundNo) > 0
+        ? Number(roundNo)
+        : (String(status || '').toLowerCase() === 'second_round_review' ? 2 : 1)
+      const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)
+
+      if (displayStatus === 'assigned_to_committee') return 'รอการประเมิน'
+      if (displayStatus === 'under_review' || displayStatus === 'second_round_review') {
+        return `พิจารณารอบ ${resolvedRound}`
       }
+      if (displayStatus === 'meeting_completed') return 'ส่งผลการประเมินแล้ว'
+      if (displayStatus === 'revision_requested') return 'ขอแก้ไข'
+      if (displayStatus === 'resubmitted') return 'ส่งแก้ไขแล้ว'
+      if (displayStatus === 'announced') return 'ประกาศผล'
+
+      return status || '-'
     },
-    statusColor (status) {
-      switch (status) {
-        case 'Pending Review': return 'warning'
-        case 'Reviewed': return 'success'
-        case 'Revision Requested': return 'info'
-        default: return 'secondary'
-      }
+    statusColor (status, reviewStatus = null) {
+      const key = this.getCommitteeStatusKey(status, reviewStatus)
+      if (key === 'pending') return 'warning'
+      if (key === 'reviewed') return 'success'
+      if (key === 'announced') return 'dark'
+      return 'secondary'
     },
-    getStatusHexColor (status) {
-      const key = normalizeProposalStatus(status)
-      return STATUS_HEX_COLORS[key] || STATUS_HEX_COLORS.submitted || '#3B82F6'
+    getStatusHexColor (status, reviewStatus = null) {
+      const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)
+      return STATUS_HEX_COLORS[displayStatus] || STATUS_HEX_COLORS.submitted || '#3B82F6'
     },
     getReadableTextColor (hexColor) {
       const raw = String(hexColor || '').replace('#', '').trim()
@@ -728,8 +765,8 @@ export default {
       const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
       return yiq >= 160 ? '#111827' : '#ffffff'
     },
-    getStatusBadgeStyle (status) {
-      const color = this.getStatusHexColor(status)
+    getStatusBadgeStyle (status, reviewStatus = null) {
+      const color = this.getStatusHexColor(status, reviewStatus)
       return {
         fontSize: '11px',
         backgroundColor: color,
@@ -739,28 +776,22 @@ export default {
     },
     getProgressLabel (itemOrStatus) {
       const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
-      const key = normalizeProposalStatus(item ? item.status : itemOrStatus)
-      const researcherName = item && item.researcherName ? String(item.researcherName).trim() : ''
-      const ownerName = researcherName || 'นักวิจัย'
-      const statusOwnerMap = {
-        draft: `${ownerName} : กำลังกรอกข้อมูล`,
-        pending_confirm: 'คณะวิจัย : รอการยินยอมจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
-        submitted: 'ส่วนบริหารโครงการ : กำลังพิจารณา',
-        faculty_review_pending: 'ประธานคณะ : กำลังพิจารณา',
-        faculty_approved: 'ส่วนบริหารโครงการ : รอรับเรื่อง',
-        office_received: 'ส่วนบริหารโครงการ : รับเรื่องแล้ว กำลังดำเนินการ',
-        document_checking: 'ส่วนบริหารโครงการ : กำลังตรวจสอบเอกสาร',
-        assigned_to_committee: 'ส่วนบริหารโครงการ : กำลังมอบหมายคณะผู้ทรงคุณวุฒิ',
-        under_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณา',
-        meeting_completed: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
-        revision_requested: `${ownerName} : รอแก้ไขเอกสารตามข้อเสนอแนะ`,
-        resubmitted: 'ส่วนบริหารโครงการ : ได้รับเอกสารแก้ไข กำลังส่งพิจารณาต่อ',
-        second_round_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ 2',
-        approved: 'ส่วนบริหารโครงการ : อนุมัติโครงการแล้ว',
-        rejected: 'ส่วนบริหารโครงการ : ไม่อนุมัติโครงการ',
-        announced: 'ส่วนบริหารโครงการ : ประกาศผลแล้ว'
+      const status = item ? item.status : itemOrStatus
+      const reviewStatus = item ? item.reviewStatus : null
+      const roundNo = item && item.roundNo ? item.roundNo : this.deriveRoundNo({ currentStatus: status })
+      const safeRound = Number(roundNo) > 0 ? Number(roundNo) : 1
+      const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)
+
+      if (displayStatus === 'assigned_to_committee') return 'คณะกรรมการ : รอการประเมิน'
+      if (displayStatus === 'under_review' || displayStatus === 'second_round_review') {
+        return `คณะกรรมการ : พิจารณารอบ ${safeRound}`
       }
-      return statusOwnerMap[key] || 'ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ'
+      if (displayStatus === 'meeting_completed') return 'คณะกรรมการ : ส่งผลการประเมินแล้ว'
+      if (displayStatus === 'revision_requested') return 'นักวิจัย : ขอแก้ไข'
+      if (displayStatus === 'resubmitted') return 'นักวิจัย : ส่งแก้ไขแล้ว'
+      if (displayStatus === 'announced') return 'สำนักงานบริหารโครงการ : ประกาศผล'
+
+      return 'ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ'
     },
     getLastActionElapsedLabel (value) {
       const elapsed = this.formatLatest(value)
@@ -889,10 +920,10 @@ export default {
   --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M60 42v18l14 10' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
 }
 
-.strip-card.strip-REVISION {
-  --summary-start: #ef4444;
-  --summary-end: #dc2626;
-  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='20' width='72' height='80' rx='12' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M72 34l12 12M61 45l23-23 12 12-23 23H61z' fill='%23000000' fill-opacity='0.2'/%3E%3Cpath d='M40 82h40' stroke='%23000000' stroke-width='6' stroke-linecap='round' stroke-opacity='0.18'/%3E%3C/svg%3E");
+.strip-card.strip-ANNOUNCED {
+  --summary-start: #1f2937;
+  --summary-end: #111827;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='58' cy='60' r='28' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M44 60h28M72 60c7 0 12-5 12-12M72 60c7 0 12 5 12 12' stroke='%23000000' stroke-width='6' stroke-linecap='round' stroke-opacity='0.2' fill='none'/%3E%3Cpath d='M38 60l8 8M38 60l8-8' stroke='%23000000' stroke-width='6' stroke-linecap='round' stroke-opacity='0.2'/%3E%3C/svg%3E");
 }
 
 .strip-card.strip-REVIEWED {

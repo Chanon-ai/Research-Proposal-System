@@ -110,14 +110,14 @@ export const PROPOSAL_STATUS_LABELS_TH_ADMIN = Object.freeze({
   office_received: 'ส่วนบริหารรับแล้ว',
   document_checking: 'ตรวจสอบเอกสาร',
   assigned_to_committee: 'มอบหมายกรรมการแล้ว',
-  under_review: 'กรรมการได้ให้ความเห็นแล้ว',
-  meeting_completed: 'ประชุมเสร็จแล้ว',
+  under_review: 'พิจารณารอบ 1',
+  meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
   revision_requested: 'ขอแก้ไข',
   resubmitted: 'ส่งแก้ไขแล้ว',
   second_round_review: 'พิจารณารอบ 2',
   approved: 'อนุมัติ',
   rejected: 'ปฏิเสธ',
-  announced: 'ประกาศผลแล้ว'
+  announced: 'ประกาศผล'
 })
 
 export const PROPOSAL_STATUS_LABELS_TH_RESEARCHER = Object.freeze({
@@ -129,14 +129,14 @@ export const PROPOSAL_STATUS_LABELS_TH_RESEARCHER = Object.freeze({
   office_received: 'ส่วนบริหารรับแล้ว',
   document_checking: 'ตรวจสอบเอกสาร',
   assigned_to_committee: 'มอบหมายกรรมการแล้ว',
-  under_review: 'กำลังพิจารณา',
-  meeting_completed: 'ประชุมเสร็จแล้ว',
+  under_review: 'พิจารณารอบ 1',
+  meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
   revision_requested: 'ขอแก้ไข',
   resubmitted: 'ส่งแก้ไขแล้ว',
   second_round_review: 'พิจารณารอบ 2',
   approved: 'อนุมัติ',
   rejected: 'ปฏิเสธ',
-  announced: 'ประกาศผลแล้ว'
+  announced: 'ประกาศผล'
 })
 
 export const PROPOSAL_STATUS_LABELS_TH_BADGE = Object.freeze({
@@ -148,14 +148,14 @@ export const PROPOSAL_STATUS_LABELS_TH_BADGE = Object.freeze({
   office_received: 'สำนักงานรับเรื่องแล้ว',
   document_checking: 'ตรวจเอกสาร',
   assigned_to_committee: 'มอบหมายกรรมการแล้ว',
-  under_review: 'อยู่ระหว่างการพิจารณา',
-  meeting_completed: 'ประชุมเสร็จสิ้น',
-  revision_requested: 'ขอแก้ไขเพิ่มเติม',
-  resubmitted: 'ส่งใหม่',
-  second_round_review: 'รอบพิจารณาครั้งที่ 2',
+  under_review: 'พิจารณารอบ 1',
+  meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
+  revision_requested: 'ขอแก้ไข',
+  resubmitted: 'ส่งแก้ไขแล้ว',
+  second_round_review: 'พิจารณารอบ 2',
   approved: 'อนุมัติ',
   rejected: 'ไม่อนุมัติ',
-  announced: 'ประกาศผลแล้ว'
+  announced: 'ประกาศผล'
 })
 
 export const PROPOSAL_STATUS_COLORS_HEX = Object.freeze({

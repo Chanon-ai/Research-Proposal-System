@@ -172,7 +172,7 @@
             <template #currentStatus="{ item }">
               <td class="current-status-cell">
                 <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.currentStatus)">
-                  {{ getStatusLabel(item.currentStatus) }}
+                  {{ getStatusLabel(item) }}
                 </CBadge>
                 <div class="status-progress-label">
                   {{ getProgressLabel(item) }}
@@ -274,14 +274,14 @@ const STATUS_LABEL_MAP = Object.freeze({
   office_received: 'ส่วนบริหารรับแล้ว',
   document_checking: 'ตรวจสอบเอกสาร',
   assigned_to_committee: 'มอบหมายกรรมการแล้ว',
-  under_review: 'กำลังพิจารณา',
-  meeting_completed: 'ประชุมเสร็จแล้ว',
+  under_review: 'พิจารณารอบ 1',
+  meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
   revision_requested: 'ขอแก้ไข',
   resubmitted: 'ส่งแก้ไขแล้ว',
   second_round_review: 'พิจารณารอบ 2',
   approved: 'อนุมัติ',
   rejected: 'ปฏิเสธ',
-  announced: 'ประกาศผลแล้ว'
+  announced: 'ประกาศผล'
 })
 
 export default {
@@ -443,7 +443,7 @@ export default {
           item.proposalCode,
           item.projectLeaderName,
           this.formatBudgetAmount(item.budgetUsedAmount),
-          this.getStatusLabel(item.currentStatus),
+          this.getStatusLabel(item),
           this.getProgressLabel(item.currentStatus),
         ].filter(Boolean).join(' ').toLowerCase();
         return haystack.includes(q);
@@ -613,6 +613,7 @@ export default {
         updatedAt: item.updatedAt,
         createdAt: item.createdAt,
         currentStatus: normalizeProposalStatus(item && item.currentStatus) || 'draft',
+        roundNo: Number(item && (item.currentRound || item.roundNo || item.round) ? (item.currentRound || item.roundNo || item.round) : 0) || null
       };
     },
 
@@ -626,8 +627,25 @@ export default {
       return 'IN_REVIEW';
     },
 
-    getStatusLabel(status) {
-      const key = String(status || '').toLowerCase();
+    deriveRoundNo(itemOrStatus) {
+      const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
+      const status = String(item ? item.currentStatus : itemOrStatus || '').toLowerCase()
+      const directRound = Number(item && (item.roundNo || item.currentRound || item.round)
+        ? (item.roundNo || item.currentRound || item.round)
+        : 0)
+      if (Number.isFinite(directRound) && directRound > 0) return directRound
+      if (status === 'second_round_review' || status.includes('second_round')) return 2
+      return 1
+    },
+
+    getStatusLabel(itemOrStatus) {
+      const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
+      const key = String(item ? item.currentStatus : itemOrStatus || '').toLowerCase()
+      const roundNo = this.deriveRoundNo(itemOrStatus)
+
+      if (key === 'under_review' || key === 'second_round_review') {
+        return `พิจารณารอบ ${roundNo}`
+      }
       return STATUS_LABEL_MAP[key] || key || this.$t('status.inProgress');
     },
 
@@ -681,6 +699,7 @@ export default {
     getProgressLabel(itemOrStatus) {
       const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null;
       const key = String(item ? item.currentStatus : itemOrStatus || '').toLowerCase();
+      const roundNo = this.deriveRoundNo(itemOrStatus)
       const researcherName = item && item.projectLeaderName ? String(item.projectLeaderName).trim() : '';
       const ownerName = researcherName || 'ชื่อนักวิจัย';
       const statusOwnerMap = {
@@ -692,11 +711,11 @@ export default {
         office_received: 'ส่วนบริหารโครงการ : รับเรื่องแล้ว กำลังดำเนินการ',
         document_checking: 'ส่วนบริหารโครงการ : กำลังตรวจสอบเอกสาร',
         assigned_to_committee: 'ส่วนบริหารโครงการ : กำลังมอบหมายคณะผู้ทรงคุณวุฒิ',
-        under_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณา',
+        under_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,
         meeting_completed: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
         revision_requested: `${ownerName} : รอแก้ไขเอกสารตามข้อเสนอแนะ`,
         resubmitted: 'ส่วนบริหารโครงการ : ได้รับเอกสารแก้ไข กำลังส่งพิจารณาต่อ',
-        second_round_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ 2',
+        second_round_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,
         approved: 'ส่วนบริหารโครงการ : อนุมัติโครงการแล้ว',
         rejected: 'ส่วนบริหารโครงการ : ไม่อนุมัติโครงการ',
         announced: 'ส่วนบริหารโครงการ : ประกาศผลแล้ว'

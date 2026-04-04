@@ -551,7 +551,7 @@ export default {
         { key: 'step2', title: '2. ตรวจสอบเอกสาร', description: 'มอบหมายกรรมการ' },
         { key: 'step3', title: '3. กรรมการพิจารณา', description: 'ประชุม' },
         { key: 'step4', title: '4. ขอแก้ไข', description: 'นักวิจัยส่งกลับ' },
-        { key: 'step5', title: '5. ส่งแก้ไข', description: 'พิจารณารอบ 2' }
+        { key: 'step5', title: '5. ส่งแก้ไข', description: 'พิจารณารอบ n+1' }
       ]
     }
   },
@@ -846,7 +846,7 @@ export default {
           { key: 'workflow_step2_days', value: d.step2, valueType: 'number', label: 'ตรวจสอบเอกสาร -> มอบหมายกรรมการ' },
           { key: 'workflow_step3_days', value: d.step3, valueType: 'number', label: 'กรรมการพิจารณา -> ประชุม' },
           { key: 'workflow_step4_days', value: d.step4, valueType: 'number', label: 'ขอแก้ไข -> นักวิจัยส่งกลับ' },
-          { key: 'workflow_step5_days', value: d.step5, valueType: 'number', label: 'ส่งแก้ไข -> พิจารณารอบ 2' }
+          { key: 'workflow_step5_days', value: d.step5, valueType: 'number', label: 'ส่งแก้ไข -> พิจารณารอบ n+1' }
         ]
       }
     },
