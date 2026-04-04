@@ -180,7 +180,7 @@
               </ul>
             </CAlert>
 
-            <div class="card mb-3">
+            <div v-if="!isAnnouncedStatus" class="card mb-3">
               <div class="card-body">
                 <h6 class="mb-3">Admin Final Decision</h6>
                 <CSelect
@@ -377,11 +377,25 @@
           </div>
 
           <div class="d-flex justify-content-end flex-wrap" style="gap: 10px;">
-            <CButton color="warning" size="sm" @click="openAdminStatusModal"><CIcon name="cil-loop-circular" class="mr-1" /> เปลี่ยนสถานะ</CButton>
-            <CButton color="success" size="sm" @click="openAdminCommitteeModal">
-              <CIcon name="cil-user-follow" class="mr-1" /> {{ adminHasAssignedCommittee ? 'เปลี่ยนคณะกรรมการ' : 'มอบหมายคณะกรรมการ' }}
-            </CButton>
-            <CButton size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage"><CIcon name="cil-group" :content="$options.icons.cilPeople" class="mr-1" /> จัดการประชุม</CButton>
+            <template v-if="!isAnnouncedStatus">
+              <CButton color="warning" size="sm" @click="openAdminStatusModal"><CIcon name="cil-loop-circular" class="mr-1" /> เปลี่ยนสถานะ</CButton>
+              <CButton color="success" size="sm" @click="openAdminCommitteeModal">
+                <CIcon name="cil-user-follow" class="mr-1" /> {{ adminHasAssignedCommittee ? 'เปลี่ยนคณะกรรมการ' : 'มอบหมายคณะกรรมการ' }}
+              </CButton>
+              <CButton size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage"><CIcon name="cil-group" :content="$options.icons.cilPeople" class="mr-1" /> จัดการประชุม</CButton>
+            </template>
+            <button
+              v-else
+              type="button"
+              class="btn btn-sm text-white"
+              style="background-color: #b58522; border-color: #b58522;"
+              :disabled="isExportingPdf"
+              @click="exportProposalPdf"
+            >
+              <i v-if="isExportingPdf" class="cil-loop export-pdf-icon--spin mr-1" aria-hidden="true"></i>
+              <i v-else class="cil-cloud-download mr-1" aria-hidden="true"></i>
+              {{ isExportingPdf ? 'กำลังสร้าง PDF...' : 'Export PDF' }}
+            </button>
           </div>
         </div>
       </div>
@@ -1365,6 +1379,9 @@ export default {
     },
     isApprovedStatus () {
       return String(this.currentStatus || '').toLowerCase() === 'approved'
+    },
+    isAnnouncedStatus () {
+      return String(this.currentStatus || '').toLowerCase() === 'announced'
     },
     isDraftStatus () {
       return String(this.currentStatus || '').toLowerCase() === 'draft'
