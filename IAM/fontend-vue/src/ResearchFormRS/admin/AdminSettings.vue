@@ -426,7 +426,7 @@ const STATUS_FLOW_ALLOWED_TRANSITIONS = Object.freeze({
   meeting_completed: ['revision_requested', 'approved', 'rejected'],
   revision_requested: ['resubmitted'],
   resubmitted: ['second_round_review'],
-  second_round_review: ['approved', 'rejected', 'revision_requested'],
+  second_round_review: ['meeting_completed', 'approved', 'rejected', 'revision_requested'],
   approved: ['announced'],
   rejected: ['announced', 'revision_requested']
 })

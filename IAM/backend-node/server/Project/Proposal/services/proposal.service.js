@@ -31,7 +31,7 @@ const ALLOWED_TRANSITIONS = {
   [STATUS.MEETING_COMPLETED]: [STATUS.REVISION_REQUESTED, STATUS.APPROVED, STATUS.REJECTED],
   [STATUS.REVISION_REQUESTED]: [STATUS.RESUBMITTED],
   [STATUS.RESUBMITTED]: [STATUS.SECOND_ROUND_REVIEW],
-  [STATUS.SECOND_ROUND_REVIEW]: [STATUS.APPROVED, STATUS.REJECTED, STATUS.REVISION_REQUESTED],
+  [STATUS.SECOND_ROUND_REVIEW]: [STATUS.MEETING_COMPLETED, STATUS.APPROVED, STATUS.REJECTED, STATUS.REVISION_REQUESTED],
   [STATUS.APPROVED]: [STATUS.ANNOUNCED],
   [STATUS.REJECTED]: [STATUS.ANNOUNCED, STATUS.REVISION_REQUESTED]
 };
@@ -334,6 +334,109 @@ async function getSubmittedReviewsForRound(proposalId, roundNo) {
   })
     .select('totalScore reviewerUserId roundNo reviewStatus')
     .lean();
+}
+
+function getRequiredCommitteeReviewCount(workflowPolicy = {}, committeeIds = []) {
+  const minCommittee = Math.max(1, Math.floor(Number(workflowPolicy && workflowPolicy.minCommittee) || 1));
+  const assignedCount = Array.isArray(committeeIds) ? committeeIds.length : 0;
+  if (assignedCount <= 0) return minCommittee;
+  return Math.max(1, Math.min(minCommittee, assignedCount));
+}
+
+async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user) {
+  if (!proposalId || !user || !user._id) return null;
+
+  const proposal = await Proposal.findById(proposalId).select('_id proposalCode applicantUserId committeeIds currentStatus currentRound');
+  if (!proposal) return null;
+
+  const fromStatus = String(proposal.currentStatus || '').trim();
+  const activeRound = normalizeRoundNo(roundNo, normalizeRoundNo(proposal.currentRound, 1));
+  const reviewStatuses = [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.SECOND_ROUND_REVIEW];
+  if (!reviewStatuses.includes(fromStatus)) return proposal;
+
+  const submittedReviews = await getSubmittedReviewsForRound(proposal._id, activeRound);
+  const submittedCount = submittedReviews.length;
+  if (submittedCount <= 0) return proposal;
+
+  const workflowPolicy = await systemSettingService.getWorkflowApprovalPolicy();
+  const requiredCount = getRequiredCommitteeReviewCount(workflowPolicy, proposal.committeeIds);
+
+  let toStatus = null;
+  if (submittedCount >= requiredCount) {
+    toStatus = STATUS.MEETING_COMPLETED;
+  } else if (fromStatus === STATUS.ASSIGNED_TO_COMMITTEE) {
+    toStatus = STATUS.UNDER_REVIEW;
+  }
+
+  if (!toStatus || toStatus === fromStatus) return proposal;
+
+  const updatedProposal = await Proposal.findOneAndUpdate(
+    { _id: proposal._id, currentStatus: fromStatus },
+    { $set: { currentStatus: toStatus, updatedBy: user._id } },
+    { new: true }
+  );
+
+  if (!updatedProposal) {
+    return Proposal.findById(proposal._id);
+  }
+
+  await createStatusLog({
+    proposalId: updatedProposal._id,
+    fromStatus,
+    toStatus,
+    actionKey: 'status_change',
+    remark: null,
+    roundNo: activeRound,
+    changedBy: user._id
+  });
+
+  const recipientIds = new Set();
+  if (updatedProposal.applicantUserId) {
+    recipientIds.add(String(updatedProposal.applicantUserId));
+  }
+  if (
+    [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.MEETING_COMPLETED].includes(toStatus) &&
+    Array.isArray(updatedProposal.committeeIds)
+  ) {
+    updatedProposal.committeeIds.forEach((committeeId) => recipientIds.add(String(committeeId)));
+  }
+
+  if (recipientIds.size > 0) {
+    const notificationTitleMap = {
+      [STATUS.UNDER_REVIEW]: 'โครงการเข้าสู่ขั้นตอนการพิจารณา',
+      [STATUS.MEETING_COMPLETED]: 'กรรมการได้ให้ความเห็นแล้ว'
+    };
+    const notificationTitle = notificationTitleMap[toStatus] || 'สถานะโครงการมีการเปลี่ยนแปลง';
+    const notificationMessage = `โครงการ ${updatedProposal.proposalCode || updatedProposal._id} เปลี่ยนสถานะเป็น ${toStatus}`;
+
+    try {
+      await Notification.insertMany(
+        Array.from(recipientIds).map((userId) => ({
+          userId,
+          proposalId: updatedProposal._id,
+          channel: 'in_app',
+          eventKey: toStatus === STATUS.MEETING_COMPLETED ? 'meeting_completed' : 'status_changed',
+          title: notificationTitle,
+          message: notificationMessage,
+          payload: {
+            toStatus,
+            fromStatus,
+            roundNo: activeRound
+          },
+          isRead: false,
+          sentAt: new Date()
+        }))
+      );
+    } catch (err) {
+      console.warn('[Proposal.saveReview] Failed to create status-sync notifications:', {
+        proposalId: String(updatedProposal._id),
+        toStatus,
+        error: err && err.message ? err.message : err
+      });
+    }
+  }
+
+  return updatedProposal;
 }
 
 async function generateProposalCode() {
@@ -929,6 +1032,19 @@ async function saveReview(proposalId, payload, user) {
   }
 
   const review = await ProposalReview.findOneAndUpdate(filter, update, { upsert: true, new: true });
+
+  if (nextStatus === 'submitted') {
+    try {
+      await syncProposalStatusWithSubmittedReviews(proposalId, round, user);
+    } catch (err) {
+      console.warn('[Proposal.saveReview] Failed to sync proposal.currentStatus after review submission:', {
+        proposalId: String(proposalId),
+        roundNo: round,
+        error: err && err.message ? err.message : err
+      });
+    }
+  }
+
   return review;
 }
 
