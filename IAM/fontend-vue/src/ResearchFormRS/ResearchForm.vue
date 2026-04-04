@@ -32,6 +32,7 @@
       <ProjectDetailsForm
         ref="projectDetailsForm"
         :is-read-only="mainFormReadOnly"
+        :current-status="currentStatus"
         :proposal-id="viewProposalId"
         :disable-project-title-section="shouldDisableProjectTitleSection"
         :revision-highlight-sections="adminRevisionProjectSectionKeys"
@@ -50,7 +51,7 @@
       />
 
       <BudgetStickyOverlay
-        :visible="stickyOverlaySummaryModel.visible"
+        :visible="shouldEnableBudgetStickyOverlay && stickyOverlaySummaryModel.visible"
         :summary="stickyOverlaySummaryModel"
         :is-dark="isDarkTheme"
         @jump-to-error="jumpToBudgetStickyIssue"
@@ -1060,9 +1061,18 @@ export default {
         : {}
       return {
         ...base,
-        visible: Boolean(base.visible),
+        visible: this.shouldEnableBudgetStickyOverlay && Boolean(base.visible),
         checklistItems: this.stickyOverlayChecklistItems
       }
+    },
+    isBudgetReportMode () {
+      const path = String((this.$route && this.$route.path) || '').trim().toLowerCase()
+      const isCommitteeRoute = path.indexOf('/committee/') !== -1 || path.indexOf('/review/proposals') !== -1
+      const status = String(this.currentStatus || '').trim().toLowerCase()
+      return isCommitteeRoute && this.mainFormReadOnly && status !== '' && status !== 'draft'
+    },
+    shouldEnableBudgetStickyOverlay () {
+      return this.isDraftStatus && !this.isBudgetReportMode
     },
     currentUserRole () {
       const storeRole = this.$store && this.$store.getters ? this.$store.getters['Authentication/userRole'] : null
@@ -1519,6 +1529,11 @@ export default {
             }
           }
         }
+      }
+    },
+    currentStatus () {
+      if (!this.shouldEnableBudgetStickyOverlay) {
+        this.budgetStickySummary = null
       }
     }
   },
@@ -4481,6 +4496,10 @@ export default {
       this.markAsEdited()
     },
     handleBudgetStickySummaryUpdate (summary) {
+      if (!this.shouldEnableBudgetStickyOverlay) {
+        this.budgetStickySummary = null
+        return
+      }
       this.budgetStickySummary = (summary && typeof summary === 'object')
         ? (this.cloneSerializable(summary) || summary)
         : null

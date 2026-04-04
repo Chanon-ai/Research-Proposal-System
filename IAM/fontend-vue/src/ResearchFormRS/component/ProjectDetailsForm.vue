@@ -253,7 +253,14 @@
 
         <div ref="budget" :class="sectionClass('budget')">
           <h6 class="section-title">17. งบประมาณโครงการ <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <BudgetReport
+            v-if="shouldUseBudgetReport"
+            :model-value="form.budget"
+            :is-read-only="isReadOnly"
+            :current-status="currentStatus"
+          />
           <BudgetSectionDemo
+            v-else
             ref="budgetSection"
             v-model="form.budget"
             :is-read-only="isReadOnly"
@@ -289,6 +296,7 @@
 <script>
 import TextEditor from './TextEditor.vue'
 import Section12 from './TestComponent/Section12.vue'
+import BudgetReport from './BudgetReport.vue'
 import BudgetSectionDemo from './BudgetSectionDemo.vue'
 import ResearchStandardSection from './ResearchStandardSection.vue'
 import ProjectFundingTypeSection from './ProjectFundingTypeSection.vue'
@@ -503,6 +511,7 @@ export default {
   components: {
     TextEditor,
     Section12,
+    BudgetReport,
     BudgetSectionDemo,
     ResearchStandardSection,
     ProjectFundingTypeSection,
@@ -516,6 +525,10 @@ export default {
     isReadOnly: {
       type: Boolean,
       default: false
+    },
+    currentStatus: {
+      type: String,
+      default: ''
     },
     proposalId: {
       type: [String, Number],
@@ -541,6 +554,21 @@ export default {
   computed: {
     isDarkTheme() {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+    normalizedCurrentStatus() {
+      return String(this.currentStatus || '').trim().toLowerCase()
+    },
+    isCommitteeReviewRoute() {
+      const path = String((this.$route && this.$route.path) || '').trim().toLowerCase()
+      return path.indexOf('/committee/') !== -1 || path.indexOf('/review/proposals') !== -1
+    },
+    shouldUseBudgetReport() {
+      return (
+        this.isCommitteeReviewRoute &&
+        this.isReadOnly &&
+        this.normalizedCurrentStatus !== '' &&
+        this.normalizedCurrentStatus !== 'draft'
+      )
     },
 
     isProjectTitleDisabled() {
