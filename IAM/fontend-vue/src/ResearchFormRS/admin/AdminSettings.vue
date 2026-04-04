@@ -363,7 +363,6 @@ import AdminFundingBudgetSettings from '@/ResearchFormRS/admin/AdminFundingBudge
 import AdminRolePageAccessSettings from '@/ResearchFormRS/admin/AdminRolePageAccessSettings.vue'
 import Swal from 'sweetalert2'
 import {
-  PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 
@@ -414,7 +413,27 @@ const DEFAULT_TEMPLATES = {
 }
 
 // flat SVG icon paths — keyed by status
+const STATUS_FLOW_ALLOWED_TRANSITIONS = Object.freeze({
+  draft: ['pending_confirm'],
+  pending_confirm: ['submitted'],
+  submitted: ['faculty_review_pending'],
+  faculty_review_pending: ['faculty_approved', 'revision_requested'],
+  faculty_approved: ['office_received'],
+  office_received: ['document_checking'],
+  document_checking: ['assigned_to_committee', 'revision_requested'],
+  assigned_to_committee: ['under_review', 'revision_requested', 'approved', 'rejected'],
+  under_review: ['meeting_completed'],
+  meeting_completed: ['revision_requested', 'approved', 'rejected'],
+  revision_requested: ['resubmitted'],
+  resubmitted: ['second_round_review'],
+  second_round_review: ['approved', 'rejected', 'revision_requested'],
+  approved: ['announced'],
+  rejected: ['announced', 'revision_requested']
+})
+
 const STATUS_ICONS = {
+  draft:                  '<path d="M11 3l2 2-7 7H4v-2L11 3z"/>',
+  pending_confirm:        '<circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/>',
   submitted:              '<path d="M8 2v8M5 7l3 3 3-3"/><rect x="2" y="11" width="12" height="2" rx="1"/>',
   faculty_review_pending: '<circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/>',
   faculty_approved:       '<path d="M3 8l4 4 6-6"/>',
@@ -526,7 +545,7 @@ export default {
       editingSettingDescription: '',
       editingSettingIsSecret: false,
 
-      allowedTransitions: ALLOWED_TRANSITIONS,
+      allowedTransitions: STATUS_FLOW_ALLOWED_TRANSITIONS,
       workflowSteps: [
         { key: 'step1', title: '1. ยื่นโครงการ', description: 'รับโดยส่วนบริหาร' },
         { key: 'step2', title: '2. ตรวจสอบเอกสาร', description: 'มอบหมายกรรมการ' },
