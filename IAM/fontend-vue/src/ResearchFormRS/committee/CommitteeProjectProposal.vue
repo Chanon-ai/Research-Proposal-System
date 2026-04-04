@@ -65,25 +65,18 @@
                   </td>
                 </template>
                 <template #statusDisplay="{item}">
-                  <td>
-                    <div class="status-block">
-                      <div class="status-line status-line--status">
-                        <span class="status-dot" :class="statusLabelClass(item.committeeProgress || item.status)" aria-hidden="true"></span>
-                        <span class="status-text">
-                          {{ item.statusDisplay }}<template v-if="item.committeeProgress === 'review_submitted' && item.decisionDisplay && item.decisionDisplay !== 'ไม่ระบุ'">({{ item.decisionDisplay }})</template>
-                        </span>
-                      </div>
-                      <div class="status-line">
-                        <span class="reviewer-label">โดย:</span>
-                        <span class="reviewer-value">{{ item.reviewer || '-' }}</span>
-                      </div>
-                        <div class="status-line">
-                          <span class="time-label">เวลาล่าสุด:</span>
-                          <span class="time-value">{{ formatLatest(item.lastUpdatedAt) }}</span>
-                        </div>
-                      </div>
-                    </td>
-                  </template>
+                  <td class="current-status-cell">
+                    <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.status)">
+                      {{ statusLabel(item.status) }}
+                    </CBadge>
+                    <div class="status-progress-label">
+                      {{ getProgressLabel(item) }}
+                    </div>
+                    <div class="status-last-action-time">
+                      {{ getLastActionElapsedLabel(item.lastUpdatedAt) }}
+                    </div>
+                  </td>
+                </template>
                   <template #action="{item}">
                     <td>
                       <CButton v-if="canAccessCommitteeProposalDetail" size="sm" color="primary" variant="outline" @click="view(item)">
@@ -188,6 +181,10 @@ import {
   loadRolePageAccessRuntimeConfig,
   mapRoleForResearchAccess
 } from '@/ResearchFormRS/utils/rolePageAccessRuntime'
+import {
+  PROPOSAL_STATUS_COLORS_HEX as STATUS_HEX_COLORS,
+  normalizeProposalStatus
+} from '@/ResearchFormRS/constants/proposalWorkflow'
 
 export default {
   name: 'CommitteeProjectProposal',
@@ -210,7 +207,7 @@ export default {
         { key: 'researcherName', label: 'หัวหน้าโครงการ' },
         { key: 'faculty', label: 'สังกัด' },
         { key: 'submissionDate', label: 'วันที่ส่ง' },
-        { key: 'statusDisplay', label: 'สถานะ' },
+        { key: 'statusDisplay', label: 'สถานะ', _style: 'width:360px; text-align:center;' },
         { key: 'action', label: '', sorter: false, filter: false }
       ],
       rolePageAccessConfig: createDefaultRolePageAccessConfig()
@@ -336,7 +333,7 @@ export default {
             mime: f.mime || 'application/octet-stream',
             content: f.content || ''
           })),
-          statusDisplay: committeeProgressDisplay
+          statusDisplay: this.statusLabel(currentStatus)
         }
       })
     },
@@ -375,7 +372,7 @@ export default {
       const items = this.assignedProposals.map(p => ({
         ...p,
         lastUpdatedAt: p.lastUpdatedAt,
-        statusDisplay: p.committeeProgressDisplay || this.statusLabel(p.status),
+        statusDisplay: this.statusLabel(p.status),
         bucketStatus: (p.committeeProgress === 'review_submitted')
           ? 'Reviewed'
           : (p.status === 'revision_requested')
@@ -716,6 +713,59 @@ export default {
         case 'Revision Requested': return 'info'
         default: return 'secondary'
       }
+    },
+    getStatusHexColor (status) {
+      const key = normalizeProposalStatus(status)
+      return STATUS_HEX_COLORS[key] || STATUS_HEX_COLORS.submitted || '#3B82F6'
+    },
+    getReadableTextColor (hexColor) {
+      const raw = String(hexColor || '').replace('#', '').trim()
+      if (raw.length !== 6) return '#ffffff'
+      const r = parseInt(raw.slice(0, 2), 16)
+      const g = parseInt(raw.slice(2, 4), 16)
+      const b = parseInt(raw.slice(4, 6), 16)
+      if ([r, g, b].some((v) => Number.isNaN(v))) return '#ffffff'
+      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
+      return yiq >= 160 ? '#111827' : '#ffffff'
+    },
+    getStatusBadgeStyle (status) {
+      const color = this.getStatusHexColor(status)
+      return {
+        fontSize: '11px',
+        backgroundColor: color,
+        borderColor: color,
+        color: this.getReadableTextColor(color)
+      }
+    },
+    getProgressLabel (itemOrStatus) {
+      const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
+      const key = normalizeProposalStatus(item ? item.status : itemOrStatus)
+      const researcherName = item && item.researcherName ? String(item.researcherName).trim() : ''
+      const ownerName = researcherName || 'นักวิจัย'
+      const statusOwnerMap = {
+        draft: `${ownerName} : กำลังกรอกข้อมูล`,
+        pending_confirm: 'คณะวิจัย : รอการยินยอมจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
+        submitted: 'ส่วนบริหารโครงการ : กำลังพิจารณา',
+        faculty_review_pending: 'ประธานคณะ : กำลังพิจารณา',
+        faculty_approved: 'ส่วนบริหารโครงการ : รอรับเรื่อง',
+        office_received: 'ส่วนบริหารโครงการ : รับเรื่องแล้ว กำลังดำเนินการ',
+        document_checking: 'ส่วนบริหารโครงการ : กำลังตรวจสอบเอกสาร',
+        assigned_to_committee: 'ส่วนบริหารโครงการ : กำลังมอบหมายคณะผู้ทรงคุณวุฒิ',
+        under_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณา',
+        meeting_completed: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
+        revision_requested: `${ownerName} : รอแก้ไขเอกสารตามข้อเสนอแนะ`,
+        resubmitted: 'ส่วนบริหารโครงการ : ได้รับเอกสารแก้ไข กำลังส่งพิจารณาต่อ',
+        second_round_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ 2',
+        approved: 'ส่วนบริหารโครงการ : อนุมัติโครงการแล้ว',
+        rejected: 'ส่วนบริหารโครงการ : ไม่อนุมัติโครงการ',
+        announced: 'ส่วนบริหารโครงการ : ประกาศผลแล้ว'
+      }
+      return statusOwnerMap[key] || 'ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ'
+    },
+    getLastActionElapsedLabel (value) {
+      const elapsed = this.formatLatest(value)
+      if (!elapsed || elapsed === '-') return 'เวลาล่าสุด: ไม่พบข้อมูลเวลา'
+      return `เวลาล่าสุด: ${elapsed}`
     },
     formatLatest (value) {
       if (!value) return '-'
@@ -1257,6 +1307,33 @@ export default {
   background: #8c1515;
   border-color: #8c1515;
   color: #ffffff;
+}
+
+.current-status-cell {
+  text-align: center;
+  vertical-align: middle;
+  min-width: 360px;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.status-badge {
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+.status-progress-label {
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+}
+
+.status-last-action-time {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: center;
 }
 
 .status-block {

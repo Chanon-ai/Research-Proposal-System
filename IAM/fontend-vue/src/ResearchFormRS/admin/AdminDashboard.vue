@@ -77,15 +77,17 @@
                   </td>
                 </template>
 
-                <template #fundingType="{ item }">
-                  <td>{{ item.fundingType || '-' }}</td>
-                </template>
-
                 <template #currentStatus="{ item }">
-                  <td>
-                    <CBadge :color="getStatusBadgeColor(item.currentStatus)">
+                  <td class="current-status-cell">
+                    <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.currentStatus)">
                       {{ getStatusLabel(item.currentStatus) }}
                     </CBadge>
+                    <div class="status-progress-label">
+                      {{ getProgressLabel(item) }}
+                    </div>
+                    <div class="status-last-action-time" :title="formatAbsoluteDate(getLastActionAt(item))">
+                      {{ getLastActionElapsedLabel(item) }}
+                    </div>
                   </td>
                 </template>
 
@@ -319,8 +321,10 @@ import Swal from 'sweetalert2'
 import {
   PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
+  PROPOSAL_STATUS_COLORS_HEX as STATUS_HEX_COLORS,
   PROPOSAL_STATUS_KEYS as STATUS_KEYS,
-  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
+  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
+  normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import {
   createDefaultRolePageAccessConfig,
@@ -444,8 +448,7 @@ export default {
       return [
         { key: 'proposalCode', label: this.$t('admin.table.proposalCode') },
         { key: 'projectTitleTh', label: this.$t('admin.table.projectTitleTh') },
-        { key: 'fundingType', label: this.$t('admin.table.fundingType') },
-        { key: 'currentStatus', label: this.$t('admin.table.currentStatus') },
+        { key: 'currentStatus', label: this.$t('admin.table.currentStatus'), _style: 'width:360px; text-align:center;' },
         { key: 'currentRound', label: this.$t('admin.table.currentRound') },
         { key: 'updatedAt', label: this.$t('admin.table.updatedAt') },
         { key: 'actions', label: this.$t('admin.table.actions'), _classes: 'text-center text-nowrap', sorter: false }
@@ -676,6 +679,54 @@ export default {
     getStatusBadgeColor (status) {
       return STATUS_COLORS[status] || 'secondary'
     },
+    getStatusHexColor (status) {
+      const key = normalizeProposalStatus(status)
+      return STATUS_HEX_COLORS[key] || STATUS_HEX_COLORS.submitted || '#3B82F6'
+    },
+    getReadableTextColor (hexColor) {
+      const raw = String(hexColor || '').replace('#', '').trim()
+      if (raw.length !== 6) return '#ffffff'
+      const r = parseInt(raw.slice(0, 2), 16)
+      const g = parseInt(raw.slice(2, 4), 16)
+      const b = parseInt(raw.slice(4, 6), 16)
+      if ([r, g, b].some((v) => Number.isNaN(v))) return '#ffffff'
+      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
+      return yiq >= 160 ? '#111827' : '#ffffff'
+    },
+    getStatusBadgeStyle (status) {
+      const color = this.getStatusHexColor(status)
+      return {
+        fontSize: '11px',
+        backgroundColor: color,
+        borderColor: color,
+        color: this.getReadableTextColor(color)
+      }
+    },
+    getProgressLabel (itemOrStatus) {
+      const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
+      const key = normalizeProposalStatus(item ? item.currentStatus : itemOrStatus)
+      const researcherName = item && item.projectLeaderName ? String(item.projectLeaderName).trim() : ''
+      const ownerName = researcherName || 'นักวิจัย'
+      const statusOwnerMap = {
+        draft: `${ownerName} : กำลังกรอกข้อมูล`,
+        pending_confirm: 'คณะวิจัย : รอการยินยอมจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
+        submitted: 'ส่วนบริหารโครงการ : กำลังพิจารณา',
+        faculty_review_pending: 'ประธานคณะ : กำลังพิจารณา',
+        faculty_approved: 'ส่วนบริหารโครงการ : รอรับเรื่อง',
+        office_received: 'ส่วนบริหารโครงการ : รับเรื่องแล้ว กำลังดำเนินการ',
+        document_checking: 'ส่วนบริหารโครงการ : กำลังตรวจสอบเอกสาร',
+        assigned_to_committee: 'ส่วนบริหารโครงการ : กำลังมอบหมายคณะผู้ทรงคุณวุฒิ',
+        under_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณา',
+        meeting_completed: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
+        revision_requested: `${ownerName} : รอแก้ไขเอกสารตามข้อเสนอแนะ`,
+        resubmitted: 'ส่วนบริหารโครงการ : ได้รับเอกสารแก้ไข กำลังส่งพิจารณาต่อ',
+        second_round_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ 2',
+        approved: 'ส่วนบริหารโครงการ : อนุมัติโครงการแล้ว',
+        rejected: 'ส่วนบริหารโครงการ : ไม่อนุมัติโครงการ',
+        announced: 'ส่วนบริหารโครงการ : ประกาศผลแล้ว'
+      }
+      return statusOwnerMap[key] || 'ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ'
+    },
     getNextStatuses (currentStatus) {
       return ALLOWED_TRANSITIONS[currentStatus] || []
     },
@@ -755,6 +806,11 @@ export default {
 
       const diffYears = Math.floor(diffDays / 365)
       return `${diffYears} ปีที่แล้ว`
+    },
+    getLastActionElapsedLabel (proposal) {
+      const elapsed = this.formatElapsedFromLastAction(proposal)
+      if (!elapsed || elapsed === '-') return 'เวลาล่าสุด: ไม่พบข้อมูลเวลา'
+      return `เวลาล่าสุด: ${elapsed}`
     },
     async fetchSummary () {
       this.loadingSummary = true
@@ -1351,6 +1407,33 @@ export default {
 .mfu-table-surface >>> .table tbody td:last-child,
 .mfu-table-surface::v-deep .table tbody td:last-child {
   border-right: 0;
+}
+
+.current-status-cell {
+  text-align: center;
+  vertical-align: middle;
+  min-width: 360px;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.status-badge {
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+.status-progress-label {
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+}
+
+.status-last-action-time {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: center;
 }
 
 .mfu-table-surface /deep/ .table tbody tr:hover,

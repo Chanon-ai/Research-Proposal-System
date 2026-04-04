@@ -138,7 +138,7 @@
         </CCard>
 
         <CCard class="mt-1">
-          <CCardHeader class="font-weight-bold">สัดส่วนสถานะงานที่ได้รับมอบหมาย</CCardHeader>
+          <CCardHeader class="font-weight-bold">สถานะเอกสารตั้งแต่มอบหมายงานจนประกาศผล</CCardHeader>
           <CCardBody>
             <div v-if="loading" class="text-center py-4">
               <CSpinner color="primary" size="sm" />
@@ -155,6 +155,17 @@
                   :labels="proposalDoughnut.labels"
                   :options="doughnutOptions"
                 />
+              </div>
+              <div class="status-breakdown-list mt-3">
+                <div
+                  v-for="item in committeeStatusBreakdown.items"
+                  :key="item.key"
+                  class="status-breakdown-item"
+                >
+                  <span class="status-breakdown-dot" :style="{ backgroundColor: item.color }" />
+                  <span class="status-breakdown-label">{{ item.label }}</span>
+                  <span class="status-breakdown-count">{{ item.count }}</span>
+                </div>
               </div>
             </div>
           </CCardBody>
@@ -237,8 +248,48 @@
 <script>
 import Service, { instance as axios } from '@/service/api'
 import { CChartBar, CChartDoughnut } from '@coreui/vue-chartjs'
+import {
+  PROPOSAL_STATUS_LABELS_TH_BADGE,
+  normalizeProposalStatus
+} from '@/ResearchFormRS/constants/proposalWorkflow'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
+
+const COMMITTEE_STATUS_FLOW = Object.freeze([
+  'assigned_to_committee',
+  'under_review',
+  'meeting_completed',
+  'revision_requested',
+  'resubmitted',
+  'second_round_review',
+  'approved',
+  'rejected',
+  'announced'
+])
+
+const COMMITTEE_STATUS_COLORS = Object.freeze({
+  assigned_to_committee: 'rgba(59, 130, 246, 0.45)',
+  under_review: 'rgba(124, 58, 237, 0.45)',
+  meeting_completed: 'rgba(14, 165, 233, 0.45)',
+  revision_requested: 'rgba(249, 115, 22, 0.45)',
+  resubmitted: 'rgba(6, 182, 212, 0.45)',
+  second_round_review: 'rgba(168, 85, 247, 0.45)',
+  approved: 'rgba(22, 163, 74, 0.45)',
+  rejected: 'rgba(239, 68, 68, 0.45)',
+  announced: 'rgba(17, 24, 39, 0.38)'
+})
+
+const COMMITTEE_STATUS_BORDER_COLORS = Object.freeze({
+  assigned_to_committee: 'rgba(59, 130, 246, 1)',
+  under_review: 'rgba(124, 58, 237, 1)',
+  meeting_completed: 'rgba(14, 165, 233, 1)',
+  revision_requested: 'rgba(249, 115, 22, 1)',
+  resubmitted: 'rgba(6, 182, 212, 1)',
+  second_round_review: 'rgba(168, 85, 247, 1)',
+  approved: 'rgba(22, 163, 74, 1)',
+  rejected: 'rgba(239, 68, 68, 1)',
+  announced: 'rgba(17, 24, 39, 1)'
+})
 
 export default {
   name: 'CommitteeDashboardSummary',
@@ -332,6 +383,38 @@ export default {
         return true
       })
     },
+    committeeStatusBreakdown() {
+      const rows = this.filteredAssignedProposals || []
+      const counts = COMMITTEE_STATUS_FLOW.reduce((acc, key) => {
+        acc[key] = 0
+        return acc
+      }, {})
+
+      rows.forEach(p => {
+        const key = normalizeProposalStatus(p && p.currentStatus)
+        if (!key || !Object.prototype.hasOwnProperty.call(counts, key)) return
+        counts[key] += 1
+      })
+
+      const labels = COMMITTEE_STATUS_FLOW.map(key => this.committeeStatusLabel(key))
+      const backgroundColor = COMMITTEE_STATUS_FLOW.map(key => COMMITTEE_STATUS_COLORS[key])
+      const borderColor = COMMITTEE_STATUS_FLOW.map(key => COMMITTEE_STATUS_BORDER_COLORS[key])
+      const data = COMMITTEE_STATUS_FLOW.map(key => counts[key] || 0)
+      const items = COMMITTEE_STATUS_FLOW.map((key, index) => ({
+        key,
+        label: labels[index],
+        color: borderColor[index],
+        count: data[index]
+      }))
+
+      return {
+        labels,
+        backgroundColor,
+        borderColor,
+        data,
+        items
+      }
+    },
     bucketCounts() {
       const counts = { pending: 0, reviewed: 0, revision: 0, total: 0 }
       const rows = this.filteredAssignedProposals || []
@@ -364,13 +447,13 @@ export default {
     },
     proposalDoughnut() {
       return {
-        labels: ['รอการประเมิน', 'ขอแก้ไขเพิ่มเติม', 'ประเมินแล้ว'],
+        labels: this.committeeStatusBreakdown.labels,
         datasets: [
           {
-            backgroundColor: ['rgba(197, 155, 58, 0.5)', 'rgba(139, 26, 26, 0.45)', 'rgba(22, 163, 74, 0.45)'],
-            borderColor: ['rgba(197, 155, 58, 1)', 'rgba(139, 26, 26, 1)', 'rgba(22, 163, 74, 1)'],
+            backgroundColor: this.committeeStatusBreakdown.backgroundColor,
+            borderColor: this.committeeStatusBreakdown.borderColor,
             borderWidth: 1,
-            data: [this.proposalKpis.pending, this.proposalKpis.revision, this.proposalKpis.reviewed]
+            data: this.committeeStatusBreakdown.data
           }
         ]
       }
@@ -583,6 +666,10 @@ export default {
       if (k === 'industry-extension' || k.includes('extension') || k.includes('industry')) return 'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
       return ft
     },
+    committeeStatusLabel(status) {
+      const key = normalizeProposalStatus(status)
+      return PROPOSAL_STATUS_LABELS_TH_BADGE[key] || key || '-'
+    },
     async fetchAssignedProposals() {
       this.loading = true
       this.fetchError = null
@@ -643,11 +730,7 @@ export default {
         return ''
       }
       const statusLabel = (p) => {
-        const pid = p && p._id ? String(p._id) : ''
-        const review = pid ? this.reviewMap[pid] : null
-        if (review && review.reviewStatus === 'submitted') return 'ส่งผลประเมินแล้ว'
-        if (p && p.currentStatus === 'revision_requested') return 'ขอแก้ไขเพิ่มเติม'
-        return 'รอการประเมิน'
+        return this.committeeStatusLabel(p && p.currentStatus)
       }
       const rowFor = (p) => {
         const pid = p && p._id ? String(p._id) : ''
@@ -1068,6 +1151,10 @@ export default {
   .score-row {
     grid-template-columns: 1fr;
   }
+
+  .status-breakdown-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 600px) {
@@ -1158,6 +1245,44 @@ export default {
   --summary-start: #16a34a;
   --summary-end: #15803d;
   --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
+}
+
+.status-breakdown-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.status-breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(181, 133, 34, 0.2);
+  border-radius: 10px;
+  padding: 6px 8px;
+  background: rgba(255, 250, 240, 0.6);
+}
+
+.status-breakdown-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: 0 0 10px;
+}
+
+.status-breakdown-label {
+  flex: 1 1 auto;
+  font-size: 0.84rem;
+  color: #374151;
+  line-height: 1.25;
+}
+
+.status-breakdown-count {
+  flex: 0 0 auto;
+  font-weight: 800;
+  color: #111827;
+  min-width: 18px;
+  text-align: right;
 }
 
 .meeting-kpi {
