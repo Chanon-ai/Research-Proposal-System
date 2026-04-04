@@ -80,7 +80,7 @@
                 <template #currentStatus="{ item }">
                   <td class="current-status-cell">
                     <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.currentStatus)">
-                      {{ getStatusLabel(item.currentStatus) }}
+                      {{ getStatusLabel(item.currentStatus, item) }}
                     </CBadge>
                     <div class="status-progress-label">
                       {{ getProgressLabel(item) }}
@@ -153,7 +153,7 @@
           <div class="status-modal-current">
             <strong>{{ $t('admin.changeStatus.currentStatus') }}</strong>
             <CBadge :color="getStatusBadgeColor(selectedProposal.currentStatus)" class="ml-1">
-              {{ getStatusLabel(selectedProposal.currentStatus) }}
+              {{ getStatusLabel(selectedProposal.currentStatus, selectedProposal) }}
             </CBadge>
           </div>
 
@@ -324,6 +324,8 @@ import {
   PROPOSAL_STATUS_COLORS_HEX as STATUS_HEX_COLORS,
   PROPOSAL_STATUS_KEYS as STATUS_KEYS,
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
+  deriveProposalRoundNo,
+  getProposalStatusLabel,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import {
@@ -484,7 +486,13 @@ export default {
     nextStatusOptions () {
       const statuses = this.selectedProposal ? this.getNextStatuses(this.selectedProposal.currentStatus) : []
       if (!statuses.length) return [{ value: '', label: 'ไม่มีสถานะถัดไปที่อนุญาต' }]
-      return [{ value: '', label: 'เลือกสถานะ' }, ...statuses.map(s => ({ value: s, label: this.getStatusLabel(s) }))]
+      return [{
+        value: '',
+        label: 'เลือกสถานะ'
+      }, ...statuses.map(s => ({
+        value: s,
+        label: this.getStatusLabel(s, this.selectedProposal, { nextRoundForSecondRoundReview: true })
+      }))]
     },
     filteredCommitteeUsers () {
       let scopedUsers = this.committeeUsers || []
@@ -666,15 +674,19 @@ export default {
       const card = SUMMARY_FILTER_CARDS.find(item => item.key === this.selectedSummaryFilter)
       return card && Array.isArray(card.statuses) ? card.statuses : []
     },
-    getStatusLabel (status) {
-      try {
-        const key = `status.${status}`
-        const translated = this.$t(key)
-        if (translated && translated !== key) return translated
-      } catch (e) {
-        // Fallback to static label map when i18n lookup fails.
+    getStatusLabel (status, roundSource = null, options = {}) {
+      const key = normalizeProposalStatus(status)
+      const useDynamicReviewLabel = key === 'under_review' || key === 'second_round_review'
+      if (!useDynamicReviewLabel) {
+        try {
+          const i18nKey = `status.${key}`
+          const translated = this.$t(i18nKey)
+          if (translated && translated !== i18nKey) return translated
+        } catch (e) {
+          // Fallback to static label map when i18n lookup fails.
+        }
       }
-      return STATUS_LABELS[status] || status || '-'
+      return getProposalStatusLabel(key, STATUS_LABELS, roundSource, options)
     },
     getStatusBadgeColor (status) {
       return STATUS_COLORS[status] || 'secondary'
@@ -705,6 +717,7 @@ export default {
     getProgressLabel (itemOrStatus) {
       const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
       const key = normalizeProposalStatus(item ? item.currentStatus : itemOrStatus)
+      const roundNo = deriveProposalRoundNo(item, key)
       const researcherName = item && item.projectLeaderName ? String(item.projectLeaderName).trim() : ''
       const ownerName = researcherName || 'นักวิจัย'
       const statusOwnerMap = {
@@ -716,11 +729,11 @@ export default {
         office_received: 'ส่วนบริหารโครงการ : รับเรื่องแล้ว กำลังดำเนินการ',
         document_checking: 'ส่วนบริหารโครงการ : กำลังตรวจสอบเอกสาร',
         assigned_to_committee: 'ส่วนบริหารโครงการ : กำลังมอบหมายคณะผู้ทรงคุณวุฒิ',
-        under_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณา',
+        under_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,
         meeting_completed: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
         revision_requested: `${ownerName} : รอแก้ไขเอกสารตามข้อเสนอแนะ`,
         resubmitted: 'ส่วนบริหารโครงการ : ได้รับเอกสารแก้ไข กำลังส่งพิจารณาต่อ',
-        second_round_review: 'คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ 2',
+        second_round_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,
         approved: 'ส่วนบริหารโครงการ : อนุมัติโครงการแล้ว',
         rejected: 'ส่วนบริหารโครงการ : ไม่อนุมัติโครงการ',
         announced: 'ส่วนบริหารโครงการ : ประกาศผลแล้ว'

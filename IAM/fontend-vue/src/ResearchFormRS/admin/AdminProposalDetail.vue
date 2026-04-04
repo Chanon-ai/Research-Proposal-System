@@ -40,7 +40,7 @@
             <CCol md="6" class="mb-2">
               <strong>สถานะ:</strong>
               <CBadge :color="getBadgeColor(proposal.currentStatus)" class="ml-1">
-                {{ getStatusLabel(proposal.currentStatus) }}
+                {{ getStatusLabel(proposal.currentStatus, proposal) }}
               </CBadge>
             </CCol>
             <CCol md="6" class="mb-2"><strong>ปีงบประมาณ:</strong> {{ proposal.fiscalYear || '-' }}</CCol>
@@ -293,7 +293,7 @@
     >
       <template #body-wrapper>
         <div v-if="proposal">
-          <div class="mb-2"><strong>สถานะปัจจุบัน:</strong> {{ getStatusLabel(proposal.currentStatus) }}</div>
+          <div class="mb-2"><strong>สถานะปัจจุบัน:</strong> {{ getStatusLabel(proposal.currentStatus, proposal) }}</div>
 
           <CSelect
             label="สถานะถัดไป"
@@ -331,7 +331,8 @@ import ResearchStandardSection from '@/ResearchFormRS/component/ResearchStandard
 import {
   PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
-  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
+  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
+  getProposalStatusLabel
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 
 const RESEARCH_STANDARD_ATTACHMENT_KEYS = [
@@ -440,7 +441,10 @@ export default {
         return [{ value: '', label: 'ไม่มีสถานะถัดไปที่อนุญาต' }]
       }
       return [{ value: '', label: 'เลือกสถานะ' }]
-        .concat(this.nextStatuses.map(status => ({ value: status, label: this.getStatusLabel(status) })))
+        .concat(this.nextStatuses.map(status => ({
+          value: status,
+          label: this.getStatusLabel(status, this.proposal, { nextRoundForSecondRoundReview: true })
+        })))
     },
     budgetRows () {
       const rows = []
@@ -569,8 +573,8 @@ export default {
     getNextStatuses (status) {
       return ALLOWED_TRANSITIONS[status] || []
     },
-    getStatusLabel (status) {
-      return STATUS_LABELS[status] || status || '-'
+    getStatusLabel (status, roundSource = null, options = {}) {
+      return getProposalStatusLabel(status, STATUS_LABELS, roundSource, options)
     },
     getBadgeColor (status) {
       return STATUS_COLORS[status] || 'secondary'

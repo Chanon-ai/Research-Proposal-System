@@ -417,18 +417,18 @@ const STATUS_FLOW_ALLOWED_TRANSITIONS = Object.freeze({
   draft: ['pending_confirm'],
   pending_confirm: ['submitted'],
   submitted: ['faculty_review_pending'],
-  faculty_review_pending: ['faculty_approved', 'revision_requested'],
+  faculty_review_pending: ['faculty_approved'],
   faculty_approved: ['office_received'],
   office_received: ['document_checking'],
-  document_checking: ['assigned_to_committee', 'revision_requested'],
-  assigned_to_committee: ['under_review', 'revision_requested', 'approved', 'rejected'],
+  document_checking: ['assigned_to_committee'],
+  assigned_to_committee: ['under_review'],
   under_review: ['meeting_completed'],
   meeting_completed: ['revision_requested', 'approved', 'rejected'],
   revision_requested: ['resubmitted'],
   resubmitted: ['second_round_review'],
-  second_round_review: ['meeting_completed', 'approved', 'rejected', 'revision_requested'],
+  second_round_review: ['meeting_completed'],
   approved: ['announced'],
-  rejected: ['announced', 'revision_requested']
+  rejected: ['announced']
 })
 
 const STATUS_ICONS = {

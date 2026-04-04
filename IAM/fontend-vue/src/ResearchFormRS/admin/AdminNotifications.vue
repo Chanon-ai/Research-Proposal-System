@@ -230,7 +230,7 @@ const NOTIFICATION_TYPES = {
   revision_requested: 'ขอแก้ไขเอกสาร',
   approved: 'โครงการได้รับการอนุมัติ',
   rejected: 'โครงการถูกปฏิเสธ',
-  meeting_completed: 'ประชุมเสร็จสิ้น',
+  meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
   collaboration_confirmation: 'ยืนยันความร่วมมือ',
   meeting_scheduled: 'กำหนดการประชุม',
   document_required: 'ขอเอกสารเพิ่มเติม',

@@ -73,7 +73,7 @@
               <template #currentStatus="{ item }">
                 <td>
                   <CBadge :color="getStatusColor(item.currentStatus)">
-                    {{ getStatusLabel(item.currentStatus) }}
+                    {{ getStatusLabel(item.currentStatus, item) }}
                   </CBadge>
                 </td>
               </template>
@@ -135,7 +135,7 @@
           <div class="mb-3">
             <strong>สถานะปัจจุบัน:</strong>
             <CBadge :color="getStatusColor(selectedProposal.currentStatus)" class="ml-1">
-              {{ getStatusLabel(selectedProposal.currentStatus) }}
+              {{ getStatusLabel(selectedProposal.currentStatus, selectedProposal) }}
             </CBadge>
           </div>
 
@@ -212,7 +212,8 @@ import {
   PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_COLORS,
   PROPOSAL_STATUS_KEYS as STATUS_KEYS,
-  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
+  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
+  getProposalStatusLabel
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 
 export default {
@@ -295,7 +296,13 @@ export default {
       if (nextStatuses.length === 0) {
         return [{ value: '', label: 'ไม่มีสถานะถัดไปที่อนุญาต' }]
       }
-      return [{ value: '', label: 'เลือกสถานะ' }, ...nextStatuses.map(s => ({ value: s, label: this.getStatusLabel(s) }))]
+      return [{
+        value: '',
+        label: 'เลือกสถานะ'
+      }, ...nextStatuses.map(s => ({
+        value: s,
+        label: this.getStatusLabel(s, this.selectedProposal, { nextRoundForSecondRoundReview: true })
+      }))]
     }
   },
   watch: {
@@ -379,8 +386,8 @@ export default {
       this.page = nextPage
       this.fetchProposals()
     },
-    getStatusLabel (status) {
-      return STATUS_LABELS[status] || status || '-'
+    getStatusLabel (status, roundSource = null, options = {}) {
+      return getProposalStatusLabel(status, STATUS_LABELS, roundSource, options)
     },
     getStatusColor (status) {
       return STATUS_COLORS[status] || 'secondary'

@@ -69,15 +69,19 @@ export const READ_ONLY_PROPOSAL_STATUSES = Object.freeze([
 ])
 
 export const PROPOSAL_ALLOWED_TRANSITIONS = Object.freeze({
+  draft: ['pending_confirm'],
+  pending_confirm: ['submitted'],
   submitted: ['faculty_review_pending'],
+  faculty_review_pending: ['faculty_approved'],
   faculty_approved: ['office_received'],
   office_received: ['document_checking'],
-  document_checking: ['assigned_to_committee', 'revision_requested'],
+  document_checking: ['assigned_to_committee'],
+  assigned_to_committee: ['under_review'],
   under_review: ['meeting_completed'],
   meeting_completed: ['approved', 'rejected', 'revision_requested'],
   revision_requested: ['resubmitted'],
   resubmitted: ['second_round_review'],
-  second_round_review: ['meeting_completed', 'approved', 'rejected', 'revision_requested'],
+  second_round_review: ['meeting_completed'],
   approved: ['announced'],
   rejected: ['announced']
 })
@@ -269,7 +273,29 @@ export function isProposalReadOnlyStatus(status) {
   return READ_ONLY_PROPOSAL_STATUSES.includes(normalizeProposalStatus(status))
 }
 
-export function getProposalStatusLabel(status, labelMap = PROPOSAL_STATUS_LABELS_TH_ADMIN) {
+export function deriveProposalRoundNo(roundSource, status) {
   const key = normalizeProposalStatus(status)
+  const candidate = roundSource && typeof roundSource === 'object'
+    ? (roundSource.roundNo || roundSource.currentRound || roundSource.round)
+    : roundSource
+  const parsed = Number(candidate)
+  if (Number.isFinite(parsed) && parsed > 0) return Math.floor(parsed)
+  if (key === 'second_round_review' || key.includes('second_round')) return 2
+  return 1
+}
+
+export function getProposalStatusLabel(
+  status,
+  labelMap = PROPOSAL_STATUS_LABELS_TH_ADMIN,
+  roundSource = null,
+  options = {}
+) {
+  const key = normalizeProposalStatus(status)
+  if (key === 'under_review' || key === 'second_round_review') {
+    const baseRoundNo = deriveProposalRoundNo(roundSource, key)
+    const shouldAdvanceRound = key === 'second_round_review' && Boolean(options && options.nextRoundForSecondRoundReview)
+    const roundNo = shouldAdvanceRound ? Math.max(baseRoundNo + 1, 2) : baseRoundNo
+    return `พิจารณารอบ ${roundNo}`
+  }
   return labelMap[key] || key || '-'
 }
