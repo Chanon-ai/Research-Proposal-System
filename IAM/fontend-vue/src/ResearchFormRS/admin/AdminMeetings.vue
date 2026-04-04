@@ -62,23 +62,9 @@
           </div>
         </div>
         <CRow class="align-items-end">
-          <CCol :md="canEditDelete ? 11 : 12" class="mb-2 mb-md-0">
+          <CCol md="12" class="mb-2 mb-md-0">
             <CInput v-model="searchKeyword" label="ค้นหา" placeholder="เช่น ชื่อการประชุม, สถานที่, ลิงก์..."
               @input="onSearchKeywordInput" />
-          </CCol>
-          <CCol v-if="canEditDelete" md="1" class="mb-2 mb-md-0">
-            <div class="filter-card__icon-action">
-              <button
-                type="button"
-                class="filter-card__edit-toggle"
-                :class="{ 'filter-card__edit-toggle--active': selectionMode }"
-                :aria-label="selectedMeetingForActions ? 'แก้ไขการประชุมที่เลือก' : 'เลือกการประชุมเพื่อแก้ไข'"
-                :title="selectedMeetingForActions ? 'แก้ไขการประชุมที่เลือก' : 'เลือกการประชุมเพื่อแก้ไข'"
-                @click="handleSearchEditAction"
-              >
-                <CIcon name="cil-pencil" width="18" aria-hidden="true" />
-              </button>
-            </div>
           </CCol>
         </CRow>
       </CCardBody>

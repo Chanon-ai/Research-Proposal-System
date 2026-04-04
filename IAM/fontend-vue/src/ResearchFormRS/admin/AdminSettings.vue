@@ -239,7 +239,7 @@
                 <CInput label="หัวเรื่อง" v-model="emailTemplates[key].subject" />
                 <label>เนื้อหา</label>
                 <textarea class="form-control mb-2" rows="6" v-model="emailTemplates[key].body" />
-                <small class="text-muted d-block mb-2">ตัวแปรที่ใช้ได้: {{recipientName}} {{proposalCode}} {{projectTitle}} {{remarks}} {{meetingTitle}} {{meetingDate}} {{meetingTime}}</small>
+                <small v-pre class="text-muted d-block mb-2">ตัวแปรที่ใช้ได้: {{recipientName}} {{proposalCode}} {{projectTitle}} {{remarks}} {{meetingTitle}} {{meetingDate}} {{meetingTime}} {{participantRole}} {{consentViewUrl}} {{consentAcceptUrl}} {{consentRejectUrl}}</small>
                 <div class="d-flex" style="gap: 8px;">
                   <CButton size="sm" color="primary" @click="saveTemplate(key)"><CIcon name="cil-save" class="mr-1" /> บันทึก Templates ทั้งหมด</CButton>
                   <CButton size="sm" color="secondary" variant="outline" @click="resetTemplate(key)"><CIcon name="cil-chevron-right" class="mr-1" /> รีเซ็ตค่าเริ่มต้น</CButton>
@@ -382,7 +382,8 @@ const EMAIL_TEMPLATE_LABELS = {
   approved: 'อนุมัติโครงการ',
   rejected: 'ไม่อนุมัติโครงการ',
   meeting_scheduled: 'นัดประชุม',
-  committee_assigned: 'มอบหมายกรรมการ'
+  committee_assigned: 'มอบหมายกรรมการ',
+  collaboration_confirmation: 'ขอความยินยอมเข้าร่วมโครงการ (ผู้ร่วมโครงการ/ที่ปรึกษา)'
 }
 
 const DEFAULT_TEMPLATES = {
@@ -405,6 +406,10 @@ const DEFAULT_TEMPLATES = {
   committee_assigned: {
     subject: 'แจ้งการมอบหมายพิจารณาโครงการวิจัย - {{proposalCode}}',
     body: 'เรียน {{recipientName}}\n\nท่านได้รับมอบหมายให้พิจารณาโครงการ "{{projectTitle}}"\n\nกรุณาเข้าสู่ระบบเพื่อดูเอกสารและดำเนินการพิจารณาภายในกำหนด\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+  },
+  collaboration_confirmation: {
+    subject: 'ขอความยินยอมเข้าร่วมโครงการวิจัย - {{proposalCode}}',
+    body: 'เรียน {{recipientName}}\n\nขอเรียนเชิญท่านพิจารณาการเข้าร่วมโครงการ "{{projectTitle}}"\nรหัสโครงการ: {{proposalCode}}\nบทบาทในโครงการ: {{participantRole}}\n\nรายละเอียดเพิ่มเติม: {{remarks}}\n\nดูรายละเอียด: {{consentViewUrl}}\nยินยอมเข้าร่วมโครงการ: {{consentAcceptUrl}}\nไม่ยินยอมเข้าร่วมโครงการ: {{consentRejectUrl}}\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
   }
 }
 
@@ -751,7 +756,7 @@ export default {
         if (parsed.generalForm) this.generalForm = { ...this.generalForm, ...parsed.generalForm }
         if (parsed.workflowForm) this.workflowForm = { ...this.workflowForm, ...parsed.workflowForm, stepDeadlines: { ...this.workflowForm.stepDeadlines, ...(parsed.workflowForm.stepDeadlines || {}) } }
         if (parsed.smtpForm) this.smtpForm = this.normalizeSmtpForm(parsed.smtpForm)
-        if (parsed.emailTemplates) this.emailTemplates = parsed.emailTemplates
+        if (parsed.emailTemplates) this.emailTemplates = { ...this.emailTemplates, ...parsed.emailTemplates }
         if (Array.isArray(parsed.settings)) this.settings = parsed.settings
         const workflowMeta = parsed && parsed.__meta && parsed.__meta.workflow
         if (workflowMeta && workflowMeta.status === 'local_fallback') {

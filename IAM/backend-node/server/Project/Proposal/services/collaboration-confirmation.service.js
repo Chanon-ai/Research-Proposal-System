@@ -11,6 +11,11 @@ const systemSettingService = require('../../settings/service/system-setting');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DEFAULT_TOKEN_TTL_HOURS = 24 * 7;
+const COLLABORATION_TEMPLATE_KEY = 'collaboration_confirmation';
+const DEFAULT_COLLABORATION_CONFIRMATION_TEMPLATE = {
+  subject: 'ขอความยินยอมเข้าร่วมโครงการวิจัย - {{proposalCode}}',
+  body: 'เรียน {{recipientName}}\n\nขอเรียนเชิญท่านพิจารณาการเข้าร่วมโครงการ "{{projectTitle}}"\nรหัสโครงการ: {{proposalCode}}\nบทบาทในโครงการ: {{participantRole}}\n\nรายละเอียดเพิ่มเติม: {{remarks}}\n\nดูรายละเอียด: {{consentViewUrl}}\nยินยอมเข้าร่วมโครงการ: {{consentAcceptUrl}}\nไม่ยินยอมเข้าร่วมโครงการ: {{consentRejectUrl}}\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+};
 
 function asString(value, fallback = '') {
   if (value === undefined || value === null) return fallback;
@@ -25,6 +30,49 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function renderTemplate(template = '', vars = {}) {
+  return String(template || '').replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key) => {
+    const value = vars[key];
+    return value === undefined || value === null ? '' : String(value);
+  });
+}
+
+function resolveCollaborationTemplate(rawTemplates) {
+  if (!rawTemplates) return { ...DEFAULT_COLLABORATION_CONFIRMATION_TEMPLATE };
+
+  try {
+    const parsed = typeof rawTemplates === 'string' ? JSON.parse(rawTemplates) : rawTemplates;
+    const template = parsed && typeof parsed === 'object'
+      ? parsed[COLLABORATION_TEMPLATE_KEY]
+      : null;
+
+    if (!template || typeof template !== 'object') {
+      return { ...DEFAULT_COLLABORATION_CONFIRMATION_TEMPLATE };
+    }
+
+    const subject = asString(template.subject, DEFAULT_COLLABORATION_CONFIRMATION_TEMPLATE.subject);
+    const body = asString(template.body, DEFAULT_COLLABORATION_CONFIRMATION_TEMPLATE.body);
+    return { subject, body };
+  } catch (err) {
+    return { ...DEFAULT_COLLABORATION_CONFIRMATION_TEMPLATE };
+  }
+}
+
+function textToHtml(text = '') {
+  const normalized = String(text || '').replace(/\r\n/g, '\n');
+  const blocks = normalized.split('\n\n').map(block => block.trim()).filter(Boolean);
+  if (!blocks.length) return `<p>${escapeHtml(normalized).replace(/\n/g, '<br/>')}</p>`;
+  return blocks
+    .map(block => `<p>${escapeHtml(block).replace(/\n/g, '<br/>')}</p>`)
+    .join('\n');
+}
+
+function getParticipantRoleLabel(participantType) {
+  if (participantType === 'advisor') return 'ที่ปรึกษาโครงการ';
+  if (participantType === 'co_researcher') return 'ผู้ร่วมโครงการ';
+  return 'ผู้ร่วมโครงการ';
 }
 
 function normalizeEmail(email) {
@@ -237,35 +285,24 @@ async function sendConsentRequestEmail({ recipient, proposalPreview, viewUrl, ac
   const fromAddress = asString(settings.smtp_from_email || settings.smtp_username);
   const fromName = asString(settings.smtp_from_name, 'ส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง');
   const recipientName = asString(recipient.participantName, recipient.participantEmail);
-  const detailText = `โครงการ ${asString(proposalPreview.projectTitle, '-')} (รหัส ${asString(proposalPreview.proposalCode, '-')})`;
+  const template = resolveCollaborationTemplate(settings && settings.email_templates_json);
+  const templateVars = {
+    recipientName,
+    proposalCode: asString(proposalPreview.proposalCode, '-'),
+    projectTitle: asString(proposalPreview.projectTitle, '-'),
+    projectTitleEn: asString(proposalPreview.projectTitleEn, ''),
+    participantRole: getParticipantRoleLabel(recipient.participantType),
+    remarks: `โครงการ ${asString(proposalPreview.projectTitle, '-')} (รหัส ${asString(proposalPreview.proposalCode, '-')})`,
+    consentViewUrl: viewUrl,
+    consentAcceptUrl: acceptUrl,
+    consentRejectUrl: rejectUrl
+  };
 
-  const subject = `ขอแจ้งพิจารณาเข้าร่วมโครงการวิจัย - ${asString(proposalPreview.proposalCode, '-')}`;
-  const text = [
-    `เรียน ${recipientName}`,
-    '',
-    'ขอแจ้งพิจารณาเข้าร่วมโครงการวิจัย',
-    '',
-    `รายละเอียด: ${detailText}`,
-    '',
-    `ดูเอกสาร: ${viewUrl}`,
-    `ยินยอม: ${acceptUrl}`,
-    `ไม่ยินยอม: ${rejectUrl}`,
-    '',
-    'ขอแสดงความนับถือ',
-    'ส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
-  ].join('\n');
-
+  const subject = renderTemplate(template.subject, templateVars);
+  const text = renderTemplate(template.body, templateVars);
   const html = `
 <div style="font-family:Tahoma,Arial,sans-serif;font-size:15px;line-height:1.7;color:#1f2937">
-  <p>เรียน ${escapeHtml(recipientName)}</p>
-  <p>ขอแจ้งพิจารณาเข้าร่วมโครงการวิจัย</p>
-  <p>รายละเอียด: ${escapeHtml(detailText)}</p>
-  <p>
-    <a href="${escapeHtml(viewUrl)}" style="display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;margin-right:6px">ดูเอกสาร</a>
-    <a href="${escapeHtml(acceptUrl)}" style="display:inline-block;background:#047857;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;margin-right:6px">ยินยอม</a>
-    <a href="${escapeHtml(rejectUrl)}" style="display:inline-block;background:#b91c1c;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px">ไม่ยินยอม</a>
-  </p>
-  <p>ขอแสดงความนับถือ<br/>ส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง</p>
+  ${textToHtml(text)}
 </div>`;
 
   await transporter.sendMail({
