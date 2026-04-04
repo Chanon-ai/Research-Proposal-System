@@ -182,10 +182,10 @@
                 <div class="evaluation-actions">
                   <div class="form-actions">
                     <CButton color="secondary" variant="outline" :disabled="isEvaluationLocked" @click="saveDraft">
-                      <CIcon name="cil-chevron-right" class="mr-1" /> บันทึกฉบับร่าง
+                      <CIcon name="cil-save" class="mr-1" /> บันทึกฉบับร่าง
                     </CButton>
                     <CButton color="primary" class="ml-2" :disabled="!canSubmit || isSubmitting" @click="submitEvaluation">
-                      <CIcon name="cil-chevron-right" class="mr-1" /> ส่งผลการประเมิน
+                      <CIcon name="cil-paper-plane" class="mr-1" /> ส่งผลการประเมิน
                     </CButton>
                   </div>
                 </div>

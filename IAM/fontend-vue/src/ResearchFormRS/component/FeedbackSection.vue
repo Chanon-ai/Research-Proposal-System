@@ -633,7 +633,7 @@
                         :disabled="isSubmittingFeedbackSection(section.sectionKey)"
                         @click="submitFeedbackSection(section)"
                       >
-                        <CIcon name="cil-chevron-left" class="mr-1" /> {{ isSubmittingFeedbackSection(section.sectionKey) ? 'กำลังส่งแก้ไข...' : 'ส่งแก้ไข' }}
+                        <CIcon name="cil-paper-plane" class="mr-1" /> {{ isSubmittingFeedbackSection(section.sectionKey) ? 'กำลังส่งแก้ไข...' : 'ส่งแก้ไข' }}
                       </CButton>
                       <CButton
                         v-else

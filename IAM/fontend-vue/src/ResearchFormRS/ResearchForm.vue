@@ -285,7 +285,7 @@
               :disabled="submittingRevision || !canResubmitRevision"
               @click="resubmitRevision"
             >
-              <CIcon name="cil-pencil" class="mr-1" /> {{ submittingRevision ? 'กำลังส่ง...' : 'ส่งแก้ไขอีกครั้ง' }}
+              <CIcon name="cil-paper-plane" class="mr-1" /> {{ submittingRevision ? 'กำลังส่ง...' : 'ส่งแก้ไขอีกครั้ง' }}
             </CButton>
           </div>
         </div>
