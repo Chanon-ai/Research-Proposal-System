@@ -1,7 +1,22 @@
 <template>
-  <div class="text-editor-shell" :class="{ 'is-dark': isDarkTheme }" :data-editor-key="fieldKey || null">
+  <div class="text-editor-shell" :class="shellClasses" :data-editor-key="fieldKey || null">
     <small v-if="helperText" class="text-editor-helper">{{ helperText }}</small>
-    <div class="quill-wrapper" :class="{ 'is-readonly': isReadOnly }" :style="editorWrapperStyle">
+    <div v-if="isNonResearcherReadOnlyTheme" class="text-editor-readonly" :style="editorWrapperStyle">
+      <div
+        v-if="hasReadableContent"
+        class="text-editor-readonly__content ql-editor"
+        :aria-label="fieldLabel || fieldKey || 'text-editor-readonly'"
+        v-html="readOnlyHtml"
+      />
+      <div
+        v-else
+        class="text-editor-readonly__placeholder"
+        :aria-label="fieldLabel || fieldKey || 'text-editor-readonly-empty'"
+      >
+        -
+      </div>
+    </div>
+    <div v-else class="quill-wrapper" :class="{ 'is-readonly': isReadOnly }" :style="editorWrapperStyle">
       <quill-editor
         v-model="localContent"
         :options="editorOptions"
@@ -100,6 +115,10 @@ export default {
       type: [String, Array],
       default: 'legacy'
     },
+    viewerRole: {
+      type: String,
+      default: ''
+    },
     isDarkTheme: {
       type: Boolean,
       default: false
@@ -111,6 +130,48 @@ export default {
     }
   },
   computed: {
+    shellClasses () {
+      return {
+        'is-dark': this.isDarkTheme,
+        'is-readonly-viewer': this.isNonResearcherReadOnlyTheme
+      }
+    },
+    resolvedViewerRole () {
+      const fromProp = String(this.viewerRole || '').trim()
+      if (fromProp) return fromProp
+
+      const fromStore = this.$store && this.$store.getters
+        ? this.$store.getters['Authentication/userRole']
+        : ''
+      const storeRole = String(fromStore || '').trim()
+      if (storeRole) return storeRole
+
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return ''
+        const parsed = JSON.parse(raw)
+        return parsed && parsed.role ? String(parsed.role).trim() : ''
+      } catch (_) {
+        return ''
+      }
+    },
+    isNonResearcherReadOnlyTheme () {
+      const role = String(this.resolvedViewerRole || '').trim().toLowerCase()
+      return this.isReadOnly && Boolean(role) && role !== 'researcher'
+    },
+    readOnlyHtml () {
+      return String(this.localContent || this.modelValue || '').trim()
+    },
+    hasReadableContent () {
+      const html = this.readOnlyHtml
+      if (!html) return false
+      const plain = html
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+      return plain.length > 0
+    },
     normalizedMinHeight () {
       if (typeof this.minHeight === 'number' && Number.isFinite(this.minHeight)) {
         return `${Math.max(this.minHeight, 90)}px`
@@ -179,6 +240,32 @@ export default {
   background: #ffffff;
 }
 
+.text-editor-readonly {
+  min-height: var(--editor-min-height, 140px);
+  border: 1px solid #d3c3a7;
+  border-radius: 14px;
+  background: #e2e8f0;
+  padding: 10px 12px;
+  overflow: hidden;
+}
+
+.text-editor-readonly__content {
+  min-height: calc(var(--editor-min-height, 140px) - 20px);
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+  color: #172033;
+  background: transparent;
+}
+
+.text-editor-readonly__placeholder {
+  min-height: calc(var(--editor-min-height, 140px) - 20px);
+  color: #64748b;
+  line-height: 1.6;
+  display: flex;
+  align-items: flex-start;
+}
+
 .quill-wrapper::v-deep .ql-toolbar {
   border: none;
   border-bottom: 1px solid #dee2e6;
@@ -220,6 +307,30 @@ export default {
   display: none !important;
 }
 
+.text-editor-readonly__content ol,
+.text-editor-readonly__content ul {
+  padding-left: 1.5rem !important;
+}
+
+.text-editor-readonly__content li[data-list='ordered'],
+.text-editor-readonly__content ol > li:not([data-list]) {
+  list-style-type: decimal !important;
+  list-style-position: outside !important;
+  padding-left: 0 !important;
+}
+
+.text-editor-readonly__content li[data-list='bullet'],
+.text-editor-readonly__content ul > li:not([data-list]) {
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  padding-left: 0 !important;
+}
+
+.text-editor-readonly__content li[data-list='ordered'] > .ql-ui,
+.text-editor-readonly__content li[data-list='bullet'] > .ql-ui {
+  display: none !important;
+}
+
 .is-readonly {
   background: #f3f4f6;
 }
@@ -248,6 +359,19 @@ export default {
 }
 
 .text-editor-shell.is-dark .quill-wrapper::v-deep .ql-editor.ql-blank::before {
+  color: #9caec2;
+}
+
+.text-editor-shell.is-dark .text-editor-readonly {
+  background: #223142;
+  border-color: #3c4e63;
+}
+
+.text-editor-shell.is-dark .text-editor-readonly__content {
+  color: #e6edf7;
+}
+
+.text-editor-shell.is-dark .text-editor-readonly__placeholder {
   color: #9caec2;
 }
 </style>
