@@ -296,7 +296,7 @@
 
           <div class="d-flex align-items-center" style="gap: 12px;">
             <span class="me-2 fw-bold text-muted">สถานะ:</span>
-            <StatusBadge :status="currentStatus" role="researcher" />
+            <StatusBadge :status="currentStatus" role="researcher" :round-source="loadedProposal" />
             <span
               v-if="isAutoSaving || isDraftSaving"
               class="save-indicator save-indicator--saving"
@@ -373,7 +373,7 @@
         <div class="d-flex justify-content-between align-items-center w-100 px-2 flex-wrap" style="gap: 12px;">
           <div class="d-flex align-items-center" style="gap: 12px;">
             <span class="fw-bold text-muted">การดำเนินการ:</span>
-            <StatusBadge :status="currentStatus" role="admin" />
+            <StatusBadge :status="currentStatus" role="admin" :round-source="loadedProposal" />
           </div>
 
           <div class="d-flex justify-content-end flex-wrap" style="gap: 10px;">

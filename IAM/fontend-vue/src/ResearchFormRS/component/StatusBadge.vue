@@ -9,6 +9,7 @@ import {
   PROPOSAL_STATUS_ALIASES,
   PROPOSAL_STATUS_COLORS_COREUI_BADGE,
   PROPOSAL_STATUS_LABELS_TH_BADGE,
+  getProposalStatusLabel,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 
@@ -23,6 +24,10 @@ export default {
     role: {
       type: String,
       default: "researcher"
+    },
+    roundSource: {
+      type: [Number, String, Object],
+      default: null
     }
   },
 
@@ -35,7 +40,11 @@ export default {
     statusLabel() {
       // Currently all roles share the same human-friendly labels.
       // Keep `role` prop for compatibility with existing callers.
-      return PROPOSAL_STATUS_LABELS_TH_BADGE[this.normalizedStatus] || this.normalizedStatus || '-'
+      return getProposalStatusLabel(
+        this.normalizedStatus,
+        PROPOSAL_STATUS_LABELS_TH_BADGE,
+        this.roundSource
+      )
     },
 
     badgeClass() {
