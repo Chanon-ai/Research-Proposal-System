@@ -37,21 +37,10 @@
                   aria-label="ค้นหาในตาราง"
                   :value.sync="searchQuery"
                 />
-                <CButton
-                  class="collapse-toggle"
-                  color="secondary"
-                  variant="ghost"
-                  size="sm"
-                  :aria-label="showTable ? 'พับตาราง' : 'ขยายตาราง'"
-                  @click="showTable = !showTable"
-                >
-                  <CIcon :name="showTable ? 'cil-chevron-top' : 'cil-chevron-bottom'" />
-                </CButton>
               </div>
             </div>
           </CCardHeader>
-          <CCollapse :show="showTable" :duration="220">
-            <CCardBody class="card-body-tight">
+          <CCardBody class="card-body-tight">
               <div v-if="loading" class="text-center py-4">
                 <CSpinner color="primary" size="sm" />
                 <span class="text-muted ml-2">กำลังโหลดข้อมูลโครงการ...</span>
@@ -126,8 +115,7 @@
                   </div>
                 </div>
               </div>
-            </CCardBody>
-          </CCollapse>
+          </CCardBody>
         </CCard>
       </CCol>
     </CRow>
@@ -214,7 +202,6 @@ export default {
       activePage: 1,
       perPage: 5,
       perPageOptions: [5, 10, 20, 50],
-      showTable: true,
       nextMeetings: [],
       latestNotifs: [],
       fields: [
@@ -1080,23 +1067,6 @@ export default {
   gap: 12px;
 }
 
-.collapse-toggle {
-  padding: 0.25rem 0.5rem;
-  border-radius: 10px;
-  color: #6b7280;
-}
-
-.collapse-toggle:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: #374151;
-}
-
-.collapse-toggle /deep/ svg,
-.collapse-toggle >>> svg,
-.collapse-toggle::v-deep svg {
-  width: 18px;
-  height: 18px;
-}
 
 .header-tools /deep/ .form-group,
 .header-tools >>> .form-group,
