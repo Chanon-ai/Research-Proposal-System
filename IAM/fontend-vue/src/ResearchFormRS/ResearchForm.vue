@@ -877,6 +877,8 @@ export default {
       budgetAutoSaveTimerId: null,
       isAutoSaving: false,
       isExportingPdf: false,
+      submittingProject: false,
+      deletingDraftProposal: false,
       autoSavePending: false,
       lastAutoSavedAt: null,
       lastSavedDraftFingerprint: null,
@@ -1002,6 +1004,7 @@ export default {
   beforeDestroy () {
     this.clearAutoSaveTimer()
     this.clearBudgetAutoSaveTimer()
+    this.setCenterLoading(false)
     if (typeof window !== 'undefined' && window.removeEventListener && this._rfResizeHandler) {
       window.removeEventListener('resize', this._rfResizeHandler)
       this._rfResizeHandler = null
@@ -1419,6 +1422,21 @@ export default {
         formatLabel: (value) => this.formatTime12h(value)
       })
     },
+    isButtonActionLoading () {
+      return Boolean(
+        this.submittingProject ||
+        this.deletingDraftProposal ||
+        this.isDraftSaving ||
+        this.isExportingPdf ||
+        this.adminSubmittingStatus ||
+        this.adminSubmittingCommittee ||
+        this.adminMeetingSubmitting ||
+        this.savingAdminDecision ||
+        this.reopeningRejected ||
+        this.savingRevision ||
+        this.submittingRevision
+      )
+    },
     endTimeOptions() {
       const start = this.adminMeetingForm && this.adminMeetingForm.startTime ? String(this.adminMeetingForm.startTime) : ''
       return this.buildTimeOptions({
@@ -1437,6 +1455,12 @@ export default {
     }
   },
   watch: {
+    isButtonActionLoading: {
+      immediate: true,
+      handler (next) {
+        this.setCenterLoading(next)
+      }
+    },
     'adminMeetingForm.meetingType'(next) {
       if (!this.adminMeetingForm) return
       if (next === 'online') {
@@ -1499,6 +1523,10 @@ export default {
     }
   },
   methods: {
+    setCenterLoading (enabled) {
+      if (!this.$store || typeof this.$store.commit !== 'function') return
+      this.$store.commit('dialog/loading', Boolean(enabled))
+    },
     getStoredDraftId () {
       if (typeof window === 'undefined' || !window.sessionStorage) return ''
       try {
@@ -4216,6 +4244,7 @@ export default {
 
     async deleteDraftProposal () {
       if (!this.viewProposalId || !this.isDraftStatus) return
+      if (this.deletingDraftProposal) return
 
       const result = await this.showAlert({
         icon: 'warning',
@@ -4227,6 +4256,7 @@ export default {
       })
       if (!result || !result.isConfirmed) return
 
+      this.deletingDraftProposal = true
       try {
         await Service.proposal.deleteDraft(this.viewProposalId)
         this.setStoredDraftId('')
@@ -4243,6 +4273,8 @@ export default {
           text: (err && err.response && err.response.data && err.response.data.message) || 'กรุณาลองใหม่อีกครั้ง',
           confirmButtonText: 'ตกลง'
         })
+      } finally {
+        this.deletingDraftProposal = false
       }
     },
     syncResearchTeamData(data) {
@@ -4601,6 +4633,7 @@ export default {
     },
 
     async submitProject() {
+      if (this.submittingProject) return
       this.clearAutoSaveTimer()
       this.clearBudgetAutoSaveTimer()
 
@@ -4623,6 +4656,7 @@ export default {
       const requiresCollaborationConfirmation = Boolean(participantSummary.requiresCollaborationConfirmation)
       const optimisticStatus = requiresCollaborationConfirmation ? 'pending_confirm' : 'submitted'
 
+      this.submittingProject = true
       this.showSubmitButton = true
       this.currentStatus = optimisticStatus
       this.isReadOnly = true
@@ -4688,6 +4722,8 @@ export default {
           icon: 'error',
           confirmButtonText: 'ตกลง'
         })
+      } finally {
+        this.submittingProject = false
       }
     },
 

@@ -242,6 +242,7 @@
                       แก้ไข
                     </CButton>
                     <CButton size="sm" color="danger" class="meeting-card__side-btn meeting-card__side-btn--delete"
+                      :disabled="deletingMeeting"
                       @click.stop="deleteMeeting(meeting)">
                       <CIcon name="cil-trash" width="16" class="meeting-card__side-ic" aria-hidden="true" />
                       ลบ
@@ -555,6 +556,9 @@
         </div>
       </template>
     </CModal>
+    <div class="admin-meetings-loading-layer">
+      <CenterLoading />
+    </div>
   </div>
 </template>
 
@@ -564,6 +568,7 @@ import Swal from 'sweetalert2'
 import Multiselect from 'vue-multiselect'
 import { DatePicker } from 'v-calendar'
 import 'vue-multiselect/dist/vue-multiselect.min.css'
+import CenterLoading from '@/projects/components/dialog/CenterLoading.vue'
 
 const MEETING_STATUS = {
   scheduled: { label: 'กำหนดการแล้ว', color: 'info' },
@@ -583,7 +588,7 @@ export default {
     heroTitle: { type: String, default: 'จัดการการประชุม พร้อมติดตามผลได้ทันที' },
     heroSubtitle: { type: String, default: 'รวมกำหนดการ ผู้เข้าร่วม สถานะ และบันทึกผลไว้ในหน้าเดียว' }
   },
-  components: { Multiselect, 'v-date-picker': DatePicker },
+  components: { Multiselect, 'v-date-picker': DatePicker, CenterLoading },
   data() {
     return {
       meetings: [], total: 0, page: 1, totalPages: 1, limit: 9,
@@ -598,6 +603,7 @@ export default {
       participantOptions: [], participantOptionsLoading: false, participantOptionsError: null,
       pendingParticipantIds: [], selectedParticipantOptions: [],
       savingMeeting: false,
+      deletingMeeting: false,
       meetingForm: { title: '', meetingDate: '', startTime: '', endTime: '', meetingType: 'online', location: '', videoLink: '', agenda: '', status: 'scheduled' },
       showMinutesModal: false, minutesMeeting: null, savingMinutes: false,
       minutesForm: { minutes: '', decisions: '', actionItems: [] },
@@ -691,6 +697,13 @@ export default {
     displayTimePickerMinute() {
       const minute = parseInt(String(this.timeDropdown && this.timeDropdown.minute ? this.timeDropdown.minute : '0').trim(), 10)
       return Number.isFinite(minute) ? String(Math.max(0, Math.min(59, minute))).padStart(2, '0') : '00'
+    },
+    isButtonActionLoading() {
+      return Boolean(
+        this.savingMeeting ||
+        this.savingMinutes ||
+        this.deletingMeeting
+      )
     }
   },
   mounted() {
@@ -706,9 +719,16 @@ export default {
     this.closeTimeDropdown()
     this.closeTitleTooltip()
     this.closeMetaTooltip()
+    this.setCenterLoading(false)
     if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer)
   },
   watch: {
+    isButtonActionLoading: {
+      immediate: true,
+      handler(next) {
+        this.setCenterLoading(next)
+      }
+    },
     '$route.query'() { if (!this.readOnly) this.consumeProposalContext() },
     'meetingForm.meetingType'(next) { if (next === 'online') this.meetingForm.location = '' },
     'meetingForm.meetingDate'() {
@@ -723,6 +743,10 @@ export default {
     }
   },
   methods: {
+    setCenterLoading(enabled) {
+      if (!this.$store || typeof this.$store.commit !== 'function') return
+      this.$store.commit('dialog/loading', Boolean(enabled))
+    },
     normalizeText(value) { return String(value || '').trim().toLowerCase() },
     meetingHasCurrentUser(meeting) {
       if (!meeting) return false
@@ -1338,14 +1362,18 @@ export default {
     },
     async deleteMeeting(meeting) {
       if (this.readOnly) return; if (!meeting || !meeting._id) return
+      if (this.deletingMeeting) return
       const result = await Swal.fire({ icon: 'warning', title: 'ยืนยันการลบ', text: `ลบการประชุม '${meeting.title || ''}'? ไม่สามารถกู้คืนได้`, showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#e55353' })
       if (!result.isConfirmed) return
+      this.deletingMeeting = true
       try {
         await axios.delete(`/api/v1/meetings/${meeting._id}`); await this.fetchMeetings(); await this.fetchMeetingSummary()
         await Swal.fire({ icon: 'success', title: 'ลบการประชุมสำเร็จ', timer: 1300, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminMeetings] Error deleting meeting:', error)
         await Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: 'API การประชุมยังไม่พร้อมใช้งาน' })
+      } finally {
+        this.deletingMeeting = false
       }
     },
     openMinutesModal(meeting) {
@@ -1406,6 +1434,14 @@ export default {
   --am-section-gap: 24px;
   width: 100%;
   padding: 22px 22px 28px;
+}
+
+.admin-meetings-loading-layer ::v-deep .modal.overflow-auto.fade.show.d-block {
+  z-index: 30002 !important;
+}
+
+.admin-meetings-loading-layer ::v-deep .modal-backdrop.fade.show {
+  z-index: 30001 !important;
 }
 
 .meetings-hero {
