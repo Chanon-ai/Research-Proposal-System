@@ -157,12 +157,15 @@
             <CRow>
               <CCol md="3"><CInput type="number" label="ต้องมีคะแนนขั้นต่ำ (%)" v-model.number="workflowForm.minScore" /></CCol>
               <CCol md="3"><CInput type="number" label="จำนวนกรรมการขั้นต่ำต่อโครงการ" v-model.number="workflowForm.minCommittee" /></CCol>
-              <CCol md="3"><CInput type="number" label="รอบการพิจารณาสูงสุด" v-model.number="workflowForm.maxRounds" /></CCol>
+              <CCol md="3"><CInput type="number" label="รอบพิจารณาอ้างอิง (ไม่หยุดอัตโนมัติ)" v-model.number="workflowForm.maxRounds" /></CCol>
               <CCol md="3">
                 <label class="d-block mb-1">เปิดให้แก้ไขหลังประชุม</label>
                 <CSwitch color="success" :checked.sync="workflowForm.allowRevisionAfterMeeting" />
               </CCol>
             </CRow>
+            <small class="text-muted d-block mb-3">
+              หมายเหตุ: Workflow ปัจจุบันจะวนรอบพิจารณา/ขอแก้ไขได้ต่อเนื่อง จนกว่าแอดมินจะสรุปผลและประกาศผล
+            </small>
             <CButton color="primary" @click="saveWorkflowSettings"><CIcon name="cil-save" class="mr-1" /> บันทึกการตั้งค่า Workflow</CButton>
           </CCardBody>
         </CCard>
@@ -171,6 +174,9 @@
         <CCard>
           <CCardHeader>สถานะที่อนุญาต (Read-only)</CCardHeader>
           <CCardBody>
+            <small class="text-muted d-block mb-3">
+              แผนภาพนี้อ้างอิงพฤติกรรม backend ปัจจุบัน โดยสถานะรอบถัดไปสามารถวนซ้ำได้จนกว่าจะมีการประกาศผล
+            </small>
             <div class="status-flow-list">
               <div
                 v-for="(toStatuses, fromStatus, index) in allowedTransitions"
@@ -551,7 +557,7 @@ export default {
         { key: 'step2', title: '2. ตรวจสอบเอกสาร', description: 'มอบหมายกรรมการ' },
         { key: 'step3', title: '3. กรรมการพิจารณา', description: 'ประชุม' },
         { key: 'step4', title: '4. ขอแก้ไข', description: 'นักวิจัยส่งกลับ' },
-        { key: 'step5', title: '5. ส่งแก้ไข', description: 'พิจารณารอบ n+1' }
+        { key: 'step5', title: '5. ส่งแก้ไข', description: 'เข้าสู่รอบพิจารณาถัดไป (วนซ้ำ)' }
       ]
     }
   },
@@ -571,6 +577,7 @@ export default {
   methods: {
     // ─── Status flow helpers ───────────────────────────────────────────────
     getStatusLabel (status) {
+      if (status === 'second_round_review') return 'พิจารณารอบถัดไป'
       return STATUS_LABELS[status] || status
     },
     getStatusIcon (status) {
@@ -840,13 +847,13 @@ export default {
         settings: [
           { key: 'workflow_min_score', value: this.workflowForm.minScore, valueType: 'number', label: 'คะแนนขั้นต่ำ' },
           { key: 'workflow_min_committee', value: this.workflowForm.minCommittee, valueType: 'number', label: 'จำนวนกรรมการขั้นต่ำ' },
-          { key: 'workflow_max_rounds', value: this.workflowForm.maxRounds, valueType: 'number', label: 'รอบพิจารณาสูงสุด' },
+          { key: 'workflow_max_rounds', value: this.workflowForm.maxRounds, valueType: 'number', label: 'รอบพิจารณาอ้างอิง (ไม่หยุดอัตโนมัติ)' },
           { key: 'workflow_allow_revision_after_meeting', value: this.workflowForm.allowRevisionAfterMeeting, valueType: 'boolean', label: 'เปิดให้แก้ไขหลังประชุม' },
           { key: 'workflow_step1_days', value: d.step1, valueType: 'number', label: 'ยื่นโครงการ -> รับโดยส่วนบริหาร' },
           { key: 'workflow_step2_days', value: d.step2, valueType: 'number', label: 'ตรวจสอบเอกสาร -> มอบหมายกรรมการ' },
           { key: 'workflow_step3_days', value: d.step3, valueType: 'number', label: 'กรรมการพิจารณา -> ประชุม' },
           { key: 'workflow_step4_days', value: d.step4, valueType: 'number', label: 'ขอแก้ไข -> นักวิจัยส่งกลับ' },
-          { key: 'workflow_step5_days', value: d.step5, valueType: 'number', label: 'ส่งแก้ไข -> พิจารณารอบ n+1' }
+          { key: 'workflow_step5_days', value: d.step5, valueType: 'number', label: 'ส่งแก้ไข -> เข้ารอบพิจารณาถัดไป (วนซ้ำ)' }
         ]
       }
     },
