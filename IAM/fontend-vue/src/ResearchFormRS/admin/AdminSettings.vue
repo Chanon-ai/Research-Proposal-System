@@ -242,7 +242,7 @@
                 <small v-pre class="text-muted d-block mb-2">ตัวแปรที่ใช้ได้: {{recipientName}} {{proposalCode}} {{projectTitle}} {{remarks}} {{meetingTitle}} {{meetingDate}} {{meetingTime}} {{participantRole}} {{consentViewUrl}} {{consentAcceptUrl}} {{consentRejectUrl}}</small>
                 <div class="d-flex" style="gap: 8px;">
                   <CButton size="sm" color="primary" @click="saveTemplate(key)"><CIcon name="cil-save" class="mr-1" /> บันทึก Templates ทั้งหมด</CButton>
-                  <CButton size="sm" color="secondary" variant="outline" @click="resetTemplate(key)"><CIcon name="cil-chevron-right" class="mr-1" /> รีเซ็ตค่าเริ่มต้น</CButton>
+                  <CButton size="sm" color="secondary" variant="outline" @click="resetTemplate(key)"><CIcon name="cil-reload" class="mr-1" /> รีเซ็ตค่าเริ่มต้น</CButton>
                 </div>
               </div>
             </details>
@@ -265,7 +265,7 @@
                 @change="onEmailLogFilterChange"
               />
               <CButton size="sm" color="secondary" variant="outline" @click="fetchEmailLogs" :disabled="emailLogLoading">
-                <CIcon name="cil-chevron-right" class="mr-1" /> {{ emailLogLoading ? 'โหลด...' : 'รีเฟรช' }}
+                <CIcon name="cil-reload" class="mr-1" /> {{ emailLogLoading ? 'โหลด...' : 'รีเฟรช' }}
               </CButton>
             </div>
           </CCardHeader>
