@@ -6721,10 +6721,6 @@ export default {
   box-shadow: 0 10px 18px rgba(2, 6, 23, 0.14) !important;
 }
 
-.research-form ::v-deep .badge-primary {
-  background-color: var(--rf-accent) !important;
-}
-
 .research-form ::v-deep .spinner-border,
 .research-form ::v-deep .c-spinner {
   color: var(--rf-accent) !important;
