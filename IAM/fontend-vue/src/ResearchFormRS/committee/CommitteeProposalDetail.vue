@@ -207,6 +207,7 @@ import {
   buildCommitteeSectionComment,
   getCommitteeFeedbackMeta
 } from '@/ResearchFormRS/constants/committeeFeedback'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
 export default {
   name: 'CommitteeProposalDetail',
@@ -354,6 +355,8 @@ export default {
       this.selectedFundType = derived || this.selectedFundType || 'new'
     },
     async load() {
+      await loadResearchFormRuntimeConfigs()
+      this.$forceUpdate()
       const id = decodeURIComponent(this.$route.params.id || '')
       this.proposal = null
       this.error = null

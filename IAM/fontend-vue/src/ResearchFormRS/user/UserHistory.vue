@@ -43,6 +43,7 @@
 <script>
 import Service from '@/service/api'
 import { isProposalReadOnlyStatus, normalizeProposalStatus } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
 export default {
   name: 'UserHistoryPage',
@@ -65,6 +66,7 @@ export default {
     }
   },
   async mounted () {
+    await loadResearchFormRuntimeConfigs()
     await this.fetchHistory()
   },
   computed: {

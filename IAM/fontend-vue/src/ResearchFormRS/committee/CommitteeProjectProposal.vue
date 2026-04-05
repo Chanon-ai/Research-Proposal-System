@@ -185,6 +185,7 @@ import {
   PROPOSAL_STATUS_COLORS_HEX as STATUS_HEX_COLORS,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
 const COMMITTEE_PENDING_STATUSES = Object.freeze([
   'assigned_to_committee',
@@ -225,7 +226,9 @@ export default {
       rolePageAccessConfig: createDefaultRolePageAccessConfig()
     }
   },
-  mounted () {
+  async mounted () {
+    await loadResearchFormRuntimeConfigs()
+    this.$forceUpdate()
     this.fetchRolePageAccessConfig()
     this.loadLatestNotifsCache()
     this.fetchAssignedProposals()

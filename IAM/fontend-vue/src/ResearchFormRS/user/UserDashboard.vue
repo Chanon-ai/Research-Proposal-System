@@ -252,10 +252,12 @@ import {
   FILTER_IN_PROGRESS_STATUSES,
   IN_PROGRESS_STATUSES,
   PROPOSAL_STATUSES,
+  PROPOSAL_STATUS_LABELS_TH_RESEARCHER as STATUS_LABEL_MAP,
   STATUS_COLORS,
   STATUS_STEP_MAP,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 import {
   createDefaultRolePageAccessConfig,
   isRoleAllowedForPath
@@ -264,25 +266,6 @@ import {
   loadRolePageAccessRuntimeConfig,
   mapRoleForResearchAccess
 } from '@/ResearchFormRS/utils/rolePageAccessRuntime'
-
-const STATUS_LABEL_MAP = Object.freeze({
-  draft: 'แบบร่าง',
-  pending_confirm: 'รอยืนยันผู้ร่วมโครงการ',
-  submitted: 'ยื่นโครงการแล้ว',
-  faculty_review_pending: 'รอประธานพิจารณา',
-  faculty_approved: 'ประธานอนุมัติ',
-  office_received: 'ส่วนบริหารรับแล้ว',
-  document_checking: 'ตรวจสอบเอกสาร',
-  assigned_to_committee: 'มอบหมายกรรมการแล้ว',
-  under_review: 'พิจารณารอบ 1',
-  meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
-  revision_requested: 'ขอแก้ไข',
-  resubmitted: 'ส่งแก้ไขแล้ว',
-  second_round_review: 'พิจารณารอบ 2',
-  approved: 'อนุมัติ',
-  rejected: 'ปฏิเสธ',
-  announced: 'ประกาศผล'
-})
 
 export default {
   name: "UserDashboard",
@@ -333,11 +316,7 @@ export default {
         approved: [...APPROVED_PROPOSAL_STATUSES],
         rejected: ['rejected'],
       },
-      workflowSteps: PROPOSAL_STATUSES.map((key) => ({
-        key,
-        label: STATUS_LABEL_MAP[key] || key,
-        step: STATUS_STEP_MAP[key] || 0
-      })),
+      workflowSteps: [],
       chartData: {
         all: [72, 68, 83, 77, 86, 91, 88],
         inProgress: [35, 49, 60, 71, 80, 90, 75],
@@ -362,6 +341,9 @@ export default {
   },
 
   async mounted() {
+    await loadResearchFormRuntimeConfigs()
+    this.workflowSteps = this.buildWorkflowSteps()
+    this.$forceUpdate()
     await Promise.all([
       this.fetchRolePageAccessConfig(),
       this.fetchResearch()
@@ -470,6 +452,13 @@ export default {
   },
 
   methods: {
+    buildWorkflowSteps() {
+      return PROPOSAL_STATUSES.map((key) => ({
+        key,
+        label: STATUS_LABEL_MAP[key] || key,
+        step: STATUS_STEP_MAP[key] || 0
+      }))
+    },
     async fetchRolePageAccessConfig() {
       try {
         const config = await loadRolePageAccessRuntimeConfig()
@@ -646,7 +635,7 @@ export default {
       if (key === 'under_review' || key === 'second_round_review') {
         return `พิจารณารอบ ${roundNo}`
       }
-      return STATUS_LABEL_MAP[key] || key || this.$t('status.inProgress');
+      return STATUS_LABEL_MAP[key] || key || this.$t('status.inProgress')
     },
 
     getStatusHexColor(status) {

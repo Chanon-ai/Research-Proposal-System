@@ -773,6 +773,7 @@ import {
   PROPOSAL_STATUS_COLORS_COREUI_RESEARCH_FORM as ADMIN_STATUS_COLORS,
   PROPOSAL_STATUS_LABELS_TH_RESEARCHER as ADMIN_STATUS_LABELS
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 import { cilHistory, cilCheck, cilTrash, cilPaperPlane, cilPeople } from '@coreui/icons'
 
 const ACTIVE_DRAFT_STORAGE_KEY = 'research_form_active_draft_id'
@@ -966,9 +967,11 @@ export default {
     }
 
     await Promise.all([
+      loadResearchFormRuntimeConfigs(),
       this.fetchFundingBudgetConfig(),
       this.fetchBudgetMultiplierConfig()
     ])
+    this.$forceUpdate()
 
     // Sync research team data when component is mounted
     this.syncResearchTeamData();

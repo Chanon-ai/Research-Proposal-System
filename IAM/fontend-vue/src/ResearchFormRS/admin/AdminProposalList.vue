@@ -215,6 +215,7 @@ import {
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
   getProposalStatusLabel
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
 export default {
   name: 'AdminProposalList',
@@ -318,7 +319,9 @@ export default {
       }, 500)
     }
   },
-  mounted () {
+  async mounted () {
+    await loadResearchFormRuntimeConfigs()
+    this.$forceUpdate()
     this.fetchProposals()
   },
   beforeDestroy () {

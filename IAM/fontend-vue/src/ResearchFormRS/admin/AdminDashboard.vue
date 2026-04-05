@@ -328,6 +328,7 @@ import {
   getProposalStatusLabel,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 import {
   createDefaultRolePageAccessConfig,
   isRoleAllowedForPath
@@ -339,11 +340,11 @@ import {
 
 const SUMMARY_ALL_EXCLUDED_STATUSES = ['draft', 'pending_confirm']
 
-const SUMMARY_ALL_STATUSES = STATUS_KEYS.filter(status => (
+const getSummaryAllStatuses = () => STATUS_KEYS.filter(status => (
   !SUMMARY_ALL_EXCLUDED_STATUSES.includes(status)
 ))
 
-const SUMMARY_IN_PROGRESS = SUMMARY_ALL_STATUSES.filter(status => (
+const getSummaryInProgressStatuses = () => getSummaryAllStatuses().filter(status => (
   !['approved', 'rejected', 'announced'].includes(status)
 ))
 
@@ -352,13 +353,13 @@ const SUMMARY_FILTER_CARDS = [
     key: 'all',
     label: 'ทั้งหมด',
     toneClass: 'summary-tone-submitted',
-    statuses: SUMMARY_ALL_STATUSES
+    statuses: getSummaryAllStatuses()
   },
   {
     key: 'in_progress',
     label: 'กำลังดำเนินการ',
     toneClass: 'summary-tone-checking',
-    statuses: SUMMARY_IN_PROGRESS
+    statuses: getSummaryInProgressStatuses()
   },
   {
     key: 'approved',
@@ -537,10 +538,14 @@ export default {
       return Math.floor(n)
     }
   },
-  mounted () {
+  async mounted () {
     this.startElapsedTicker()
-    this.fetchRolePageAccessConfig()
-    this.fetchWorkflowApprovalPolicy()
+    await Promise.all([
+      loadResearchFormRuntimeConfigs(),
+      this.fetchRolePageAccessConfig(),
+      this.fetchWorkflowApprovalPolicy()
+    ])
+    this.$forceUpdate()
     this.fetchSummary()
     this.fetchProposals()
   },
@@ -671,7 +676,7 @@ export default {
           !SUMMARY_ALL_EXCLUDED_STATUSES.includes(String(status || '').trim())
         ))
         if (dynamicStatuses.length > 0) return dynamicStatuses
-        return SUMMARY_ALL_STATUSES
+        return getSummaryAllStatuses()
       }
       const card = SUMMARY_FILTER_CARDS.find(item => item.key === this.selectedSummaryFilter)
       return card && Array.isArray(card.statuses) ? card.statuses : []

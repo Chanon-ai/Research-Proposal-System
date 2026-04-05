@@ -224,6 +224,7 @@
 import { instance as axios } from '@/service/api'
 import Swal from 'sweetalert2'
 import { PROPOSAL_STATUS_LABELS_TH_BADGE as STATUS_LABELS } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
 const NOTIFICATION_TYPES = {
   status_changed: 'สถานะโครงการเปลี่ยนแปลง',
@@ -340,7 +341,11 @@ export default {
       return this.users.length
     }
   },
-  mounted () { this.fetchNotifications() },
+  async mounted () {
+    await loadResearchFormRuntimeConfigs()
+    this.$forceUpdate()
+    this.fetchNotifications()
+  },
   methods: {
     getSelectValue (val) { return val && val.target ? val.target.value : val },
     humanizeKey (value) {

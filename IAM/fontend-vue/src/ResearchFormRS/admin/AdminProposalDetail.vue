@@ -334,6 +334,7 @@ import {
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
   getProposalStatusLabel
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
 const RESEARCH_STANDARD_ATTACHMENT_KEYS = [
   'plantApproved',
@@ -493,7 +494,9 @@ export default {
       return this.budgetRows.reduce((sum, row) => sum + this.toNumber(row.total), 0)
     }
   },
-  mounted () {
+  async mounted () {
+    await loadResearchFormRuntimeConfigs()
+    this.$forceUpdate()
     this.fetchProposal()
   },
   methods: {

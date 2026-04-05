@@ -313,6 +313,7 @@ import {
   PROPOSAL_STATUS_KEYS_REPORT as STATUS_KEYS,
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
 export default {
   name: 'AdminReports',
@@ -462,7 +463,9 @@ export default {
       }))
     }
   },
-  mounted () {
+  async mounted () {
+    await loadResearchFormRuntimeConfigs()
+    this.$forceUpdate()
     this.fetchData()
   },
   methods: {
