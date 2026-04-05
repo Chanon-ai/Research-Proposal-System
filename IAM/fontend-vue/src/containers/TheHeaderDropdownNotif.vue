@@ -425,10 +425,11 @@ export default {
   color: var(--notif-title, #1f2937);
   line-height: 1.25;
   margin-bottom: 2px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  display: block;
+  width: 100%;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .notification-title.is-unread {
@@ -440,10 +441,11 @@ export default {
   font-size: 0.76rem;
   color: var(--notif-muted, #6b7280);
   line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  display: block;
+  width: 100%;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .notification-empty {
