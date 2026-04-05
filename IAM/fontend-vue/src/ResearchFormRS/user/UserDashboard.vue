@@ -164,6 +164,7 @@
                 <div class="project-meta">
                   <div class="project-title">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
                   <div class="project-owner">{{ item.projectLeaderName || '-' }}</div>
+                  <div v-if="getFundingTypeDisplay(item)" class="project-funding-type">{{ getFundingTypeDisplay(item) }}</div>
                   <div class="project-budget-line">งบโครงการที่เสนอ: {{ formatBudgetAmount(item.budgetUsedAmount) }}</div>
                 </div>
               </td>
@@ -259,6 +260,12 @@ import {
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 import {
+  createDefaultFundingBudgetConfig,
+  findFundingSubTypeConfig,
+  getFundingTypeLabel,
+  readFundingBudgetConfigFromFallbackStorage
+} from '@/ResearchFormRS/utils/fundingBudgetConfig'
+import {
   createDefaultRolePageAccessConfig,
   isRoleAllowedForPath
 } from '@/ResearchFormRS/utils/rolePageAccessConfig'
@@ -336,12 +343,14 @@ export default {
           point: { radius: 0 }
         }
       },
+      fundingBudgetConfig: createDefaultFundingBudgetConfig(),
       rolePageAccessConfig: createDefaultRolePageAccessConfig()
     };
   },
 
   async mounted() {
     await loadResearchFormRuntimeConfigs()
+    this.loadFundingBudgetConfig()
     this.workflowSteps = this.buildWorkflowSteps()
     this.$forceUpdate()
     await Promise.all([
@@ -458,6 +467,12 @@ export default {
         label: STATUS_LABEL_MAP[key] || key,
         step: STATUS_STEP_MAP[key] || 0
       }))
+    },
+    loadFundingBudgetConfig() {
+      const fallbackConfig = readFundingBudgetConfigFromFallbackStorage()
+      this.fundingBudgetConfig = Array.isArray(fallbackConfig) && fallbackConfig.length > 0
+        ? fallbackConfig
+        : createDefaultFundingBudgetConfig()
     },
     async fetchRolePageAccessConfig() {
       try {
@@ -587,6 +602,35 @@ export default {
       return amount.toLocaleString('th-TH', { maximumFractionDigits: 2 });
     },
 
+    resolveFundingTypeValue(item) {
+      const source = item && typeof item === 'object' ? item : {}
+      const snapshot = source.formSnapshotJson && typeof source.formSnapshotJson === 'object'
+        ? source.formSnapshotJson
+        : {}
+      return String(source.fundingType || snapshot.fundingType || '').trim()
+    },
+
+    resolveFundingSubTypeValue(item) {
+      const source = item && typeof item === 'object' ? item : {}
+      const snapshot = source.formSnapshotJson && typeof source.formSnapshotJson === 'object'
+        ? source.formSnapshotJson
+        : {}
+      return String(source.fundingSubType || snapshot.fundingSubType || '').trim()
+    },
+
+    getFundingTypeDisplay(item) {
+      const fundingType = this.resolveFundingTypeValue(item)
+      if (!fundingType) return ''
+
+      const fundingTypeLabel = getFundingTypeLabel(this.fundingBudgetConfig, fundingType, fundingType)
+      const fundingSubType = this.resolveFundingSubTypeValue(item)
+      if (!fundingSubType) return `ประเภททุน: ${fundingTypeLabel}`
+
+      const subType = findFundingSubTypeConfig(this.fundingBudgetConfig, fundingType, fundingSubType)
+      const fundingSubTypeLabel = String(subType && subType.label ? subType.label : fundingSubType).trim()
+      return `ประเภททุน: ${fundingTypeLabel} / ${fundingSubTypeLabel}`
+    },
+
     mapItem(item) {
       const applicant = item && item.applicantUserId && typeof item.applicantUserId === 'object'
         ? item.applicantUserId
@@ -597,6 +641,8 @@ export default {
         projectTitleTh: item.projectTitleTh || '',
         projectTitleEn: item.projectTitleEn || '',
         projectLeaderName: item.projectLeaderName || (applicant && applicant.fullName ? applicant.fullName : '-'),
+        fundingType: this.resolveFundingTypeValue(item),
+        fundingSubType: this.resolveFundingSubTypeValue(item),
         budgetUsedAmount: this.resolveBudgetUsedAmount(item),
         lastStatusActionAt: item.lastStatusActionAt || null,
         latestStatusUpdatedAt: item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt || null,
@@ -1333,6 +1379,12 @@ export default {
   color: #111827;
 }
 
+.project-funding-type {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
 .project-owner {
   font-size: 12px;
 }
@@ -1491,6 +1543,8 @@ body.c-dark-theme .project-title {
   color: #f3f4f6;
 }
 
+[data-coreui-theme='dark'] .project-funding-type,
+body.c-dark-theme .project-funding-type,
 [data-coreui-theme='dark'] .project-code,
 body.c-dark-theme .project-code,
 [data-coreui-theme='dark'] .proposal-code-cell,
