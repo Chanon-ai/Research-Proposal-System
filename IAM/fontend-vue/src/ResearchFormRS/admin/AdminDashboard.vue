@@ -319,6 +319,8 @@
 import Service, { instance as axios } from '@/service/api'
 import Swal from 'sweetalert2'
 import {
+  APPROVED_PROPOSAL_STATUSES,
+  FILTER_IN_PROGRESS_STATUSES,
   PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
   PROPOSAL_STATUS_KEYS as STATUS_KEYS,
@@ -339,18 +341,40 @@ import {
 
 const SUMMARY_ALL_EXCLUDED_STATUSES = ['draft', 'pending_confirm']
 const DEFAULT_SUMMARY_FILTER_KEY = 'all'
+const QUERY_STATUS_ALIASES = Object.freeze({
+  committee_valuated: ['meeting_completed']
+})
 
 const isVisibleInAllFilter = (status) => !SUMMARY_ALL_EXCLUDED_STATUSES.includes(String(status || '').trim())
+
+const expandStatusesForQuery = (statuses = []) => {
+  const expanded = []
+  ;(statuses || []).forEach((status) => {
+    const normalizedStatus = normalizeProposalStatus(status)
+    if (!normalizedStatus || !isVisibleInAllFilter(normalizedStatus)) return
+    expanded.push(normalizedStatus)
+    const aliases = QUERY_STATUS_ALIASES[normalizedStatus] || []
+    aliases.forEach((alias) => {
+      const aliasKey = String(alias || '').trim()
+      if (aliasKey) expanded.push(aliasKey)
+    })
+  })
+  return Array.from(new Set(expanded))
+}
 
 const getSummaryAllStatuses = () => STATUS_KEYS.filter(status => (
   isVisibleInAllFilter(status)
 ))
 
-const getSummaryInProgressStatuses = () => getSummaryAllStatuses().filter(status => (
-  !['approved', 'rejected', 'announced'].includes(status)
+const getSummaryInProgressStatuses = () => FILTER_IN_PROGRESS_STATUSES.filter(status => (
+  isVisibleInAllFilter(status)
 ))
 
-const SUMMARY_FILTER_CARDS = [
+const getSummaryApprovedStatuses = () => APPROVED_PROPOSAL_STATUSES.filter(status => (
+  isVisibleInAllFilter(status)
+))
+
+const buildSummaryFilterCards = () => [
   {
     key: 'all',
     label: 'ทั้งหมด',
@@ -367,7 +391,7 @@ const SUMMARY_FILTER_CARDS = [
     key: 'approved',
     label: 'อนุมัติ',
     toneClass: 'summary-tone-approved',
-    statuses: ['approved']
+    statuses: getSummaryApprovedStatuses()
   },
   {
     key: 'rejected',
@@ -460,7 +484,7 @@ export default {
       ]
     },
     summaryCards () {
-      return SUMMARY_FILTER_CARDS.map(card => {
+      return buildSummaryFilterCards().map(card => {
         const isAllCard = card.key === 'all'
         return {
           ...card,
@@ -471,8 +495,7 @@ export default {
     statusFilterOptions () {
       return [
         { value: '', label: 'ทั้งหมด' },
-        ...STATUS_KEYS
-          .filter(status => isVisibleInAllFilter(status))
+        ...getSummaryAllStatuses()
           .map(status => ({ value: status, label: this.getStatusLabel(status) }))
       ]
     },
@@ -675,18 +698,19 @@ export default {
     },
     resolveActiveStatuses () {
       if (this.selectedStatus) return [this.selectedStatus]
+      const summaryCards = buildSummaryFilterCards()
       if (this.selectedSummaryFilter === DEFAULT_SUMMARY_FILTER_KEY) {
         const dynamicStatuses = Object.keys(this.summary || {}).filter(status => isVisibleInAllFilter(status))
         if (dynamicStatuses.length > 0) {
           return dynamicStatuses
         }
-        const defaultCard = SUMMARY_FILTER_CARDS.find(item => item.key === DEFAULT_SUMMARY_FILTER_KEY)
+        const defaultCard = summaryCards.find(item => item.key === DEFAULT_SUMMARY_FILTER_KEY)
         if (defaultCard && Array.isArray(defaultCard.statuses) && defaultCard.statuses.length > 0) {
           return defaultCard.statuses.filter(status => isVisibleInAllFilter(status))
         }
         return getSummaryAllStatuses()
       }
-      const card = SUMMARY_FILTER_CARDS.find(item => item.key === this.selectedSummaryFilter)
+      const card = summaryCards.find(item => item.key === this.selectedSummaryFilter)
       return card && Array.isArray(card.statuses) ? card.statuses : []
     },
     getStatusLabel (status, roundSource = null, options = {}) {
@@ -837,7 +861,7 @@ export default {
           page: this.page,
           limit: this.limit
         }
-        const activeStatuses = this.resolveActiveStatuses()
+        const activeStatuses = expandStatusesForQuery(this.resolveActiveStatuses())
         if (activeStatuses.length === 1) {
           params.status = activeStatuses[0]
         } else if (activeStatuses.length > 1) {
