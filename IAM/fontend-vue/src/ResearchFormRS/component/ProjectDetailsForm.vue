@@ -886,6 +886,7 @@ export default {
         const fallbackType = fallbackMap.get(typeKey) || {}
         const fallbackValue = normalizeFundingBudgetKey(fallbackType && fallbackType.value)
         const value = typeKey || fallbackValue || `funding-type-${typeIndex + 1}`
+        const budgetLimit = Number(fundingType && fundingType.budgetLimit)
         const shortName = String(
           (fundingType && fundingType.label) ||
           fallbackType.shortName ||
@@ -910,6 +911,7 @@ export default {
         return {
           ...fallbackType,
           value,
+          budgetLimit: Number.isFinite(budgetLimit) && budgetLimit > 0 ? budgetLimit : 0,
           shortName,
           shortDescription,
           officialText,
