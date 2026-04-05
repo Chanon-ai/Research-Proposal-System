@@ -9,7 +9,7 @@ function handleError(res, err, fallbackStatus = 400) {
 
 exports.list = async (req, res) => {
   try {
-    const result = await service.listSettings(req.query || {});
+    const result = await service.listSettings(req.query || {}, req.user || null);
     return res.json({ success: true, data: result.settings });
   } catch (err) {
     return handleError(res, err, 500);

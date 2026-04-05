@@ -31,10 +31,10 @@ router.post("/verification", account.onCheckAuthorization, verification.onCreate
 router.put("/verification", account.onCheckAuthorization, verification.onUpdate);
 router.delete("/verification", account.onCheckAuthorization, verification.onDelete);
 
-router.get("/", authenticate, requireRole('admin', 'chairman'), systemSetting.list);
+router.get("/", authenticate, systemSetting.list);
 router.post("/", authenticate, requireRole('admin', 'chairman'), systemSetting.create);
 router.put("/bulk", authenticate, requireRole('admin', 'chairman'), systemSetting.bulkUpdate);
-router.get("/workflow-policy", authenticate, requireRole('admin', 'chairman'), systemSetting.workflowPolicy);
+router.get("/workflow-policy", authenticate, systemSetting.workflowPolicy);
 router.get("/email-logs", authenticate, requireRole('admin', 'chairman'), systemSetting.listEmailLogs);
 router.post("/test-email", authenticate, requireRole('admin', 'chairman'), systemSetting.testEmail);
 router.post("/clear-cache", authenticate, requireRole('admin', 'chairman'), systemSetting.clearCache);

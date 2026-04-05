@@ -3,6 +3,11 @@ const SystemSetting = require('../models/system-setting.model');
 const User = require('../../Auth/models/User');
 const Notification = require('../../Proposal/models/Notification');
 const redisClient = require('../../../../helpers/redis');
+const {
+  getManagedDefaultEntries,
+  normalizeManagedSettingInput,
+  isPublicSettingKey
+} = require('./research-form-config');
 
 const SECRET_MASK = '••••••••';
 const SECRET_KEY_PATTERNS = [
@@ -37,6 +42,11 @@ let workflowPolicyCache = {
   value: null,
   expiresAt: 0
 };
+
+function isPrivilegedViewer(user = null) {
+  const role = String(user && user.role ? user.role : '').trim().toLowerCase();
+  return role === 'admin' || role === 'chairman';
+}
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -227,12 +237,44 @@ function toSettingDto(doc) {
   };
 }
 
-async function listSettings(query = {}) {
+function buildVisibleSettingDtos(rows, query = {}, user = null) {
+  const requestedGroup = String(query.group || '').trim();
+  const privileged = isPrivilegedViewer(user);
+  const filteredRows = privileged
+    ? rows
+    : rows.filter((row) => isPublicSettingKey(row && row.key));
+  const settings = filteredRows.map(toSettingDto);
+  const existingKeySet = new Set(settings.map((item) => item.key));
+
+  const virtualDefaults = getManagedDefaultEntries({
+    group: requestedGroup,
+    publicOnly: !privileged
+  }).filter((item) => !existingKeySet.has(item.key)).map((item) => ({
+    _id: null,
+    key: item.key,
+    value: item.value,
+    isSecret: false,
+    isConfigured: true,
+    description: item.description,
+    group: item.group,
+    createdAt: null,
+    updatedAt: null
+  }));
+
+  return settings.concat(virtualDefaults).sort((left, right) => {
+    const leftGroup = String(left && left.group ? left.group : '');
+    const rightGroup = String(right && right.group ? right.group : '');
+    if (leftGroup !== rightGroup) return leftGroup.localeCompare(rightGroup);
+    return String(left && left.key ? left.key : '').localeCompare(String(right && right.key ? right.key : ''));
+  });
+}
+
+async function listSettings(query = {}, user = null) {
   const filter = { isDeleted: { $ne: true } };
   if (query.group) filter.group = String(query.group).trim();
 
   const rows = await SystemSetting.find(filter).sort({ group: 1, key: 1, _id: 1 });
-  const settings = (rows || []).map(toSettingDto);
+  const settings = buildVisibleSettingDtos(rows || [], query, user);
 
   return {
     settings,
@@ -241,7 +283,8 @@ async function listSettings(query = {}) {
 }
 
 async function createSetting(payload = {}, user = null) {
-  const key = String(payload.key || '').trim();
+  const normalizedPayload = normalizeManagedSettingInput(payload);
+  const key = String(normalizedPayload.key || '').trim();
   if (!key) throw new Error('Setting key is required');
 
   const exists = await SystemSetting.findOne({ key, isDeleted: { $ne: true } });
@@ -251,9 +294,9 @@ async function createSetting(payload = {}, user = null) {
 
   const deleted = await SystemSetting.findOne({ key, isDeleted: true });
   if (deleted) {
-    deleted.value = payload.value;
-    deleted.description = payload.description || '';
-    deleted.group = payload.group || 'general';
+    deleted.value = normalizedPayload.value;
+    deleted.description = normalizedPayload.description || '';
+    deleted.group = normalizedPayload.group || 'general';
     deleted.isDeleted = false;
     deleted.updatedBy = user && user._id ? user._id : null;
     await deleted.save();
@@ -262,9 +305,9 @@ async function createSetting(payload = {}, user = null) {
 
   const row = new SystemSetting({
     key,
-    value: payload.value,
-    description: payload.description || '',
-    group: payload.group || 'general',
+    value: normalizedPayload.value,
+    description: normalizedPayload.description || '',
+    group: normalizedPayload.group || 'general',
     createdBy: user && user._id ? user._id : null,
     updatedBy: user && user._id ? user._id : null
   });
@@ -277,19 +320,26 @@ async function updateSetting(id, payload = {}, user = null) {
   const row = await SystemSetting.findOne({ _id: id, isDeleted: { $ne: true } });
   if (!row) throw new Error('Setting not found');
 
+  const normalizedPayload = normalizeManagedSettingInput({
+    key: row.key,
+    value: payload.value,
+    description: payload.description,
+    group: payload.group !== undefined ? payload.group : row.group
+  });
+
   const isSecret = isSecretKey(row.key);
 
   if (payload.value !== undefined) {
     if (isSecret) {
       if (!shouldKeepExistingSecret(payload.value)) {
-        row.value = payload.value;
+        row.value = normalizedPayload.value;
       }
     } else {
-      row.value = payload.value;
+      row.value = normalizedPayload.value;
     }
   }
-  if (payload.description !== undefined) row.description = payload.description;
-  if (payload.group !== undefined) row.group = payload.group;
+  if (payload.description !== undefined) row.description = normalizedPayload.description;
+  if (payload.group !== undefined || isPublicSettingKey(row.key)) row.group = normalizedPayload.group;
   row.updatedBy = user && user._id ? user._id : row.updatedBy;
 
   await row.save();
@@ -332,15 +382,16 @@ async function getWorkflowApprovalPolicy(options = {}) {
 }
 
 function normalizeBulkSettingItem(item = {}) {
+  const normalizedManaged = normalizeManagedSettingInput(item);
   const key = String(item.key || '').trim();
   const valueType = String(item.valueType || '').trim();
-  const description = item.description !== undefined
-    ? String(item.description)
-    : String(item.label || '');
+  const description = normalizedManaged.description !== undefined
+    ? String(normalizedManaged.description)
+    : (item.description !== undefined ? String(item.description) : String(item.label || ''));
 
   return {
     key,
-    value: item.value,
+    value: normalizedManaged.value,
     valueType,
     description
   };
