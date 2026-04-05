@@ -650,13 +650,18 @@ export default {
 .notif-hero__btn {
   min-width: 240px;
   border-radius: 14px;
+  font-weight: 800;
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
-  background: linear-gradient(135deg, rgba(197, 155, 58, 0.98), rgba(139, 18, 18, 0.98)) !important;
-  border-color: rgba(255, 255, 255, 0.22) !important;
-  color: #ffffff !important;
+  background: #ffffff !important;
+  border-color: #8c1515 !important;
+  color: #8c1515 !important;
 }
 
-.notif-hero__btn:hover { filter: brightness(1.03); }
+.notif-hero__btn:hover {
+  background: #fff7f7 !important;
+  border-color: #6b0f0f !important;
+  color: #6b0f0f !important;
+}
 
 /* Summary cards (match AdminDashboard look) */
 .notif-summary-card {
