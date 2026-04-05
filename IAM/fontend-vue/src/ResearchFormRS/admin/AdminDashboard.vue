@@ -338,9 +338,12 @@ import {
 } from '@/ResearchFormRS/utils/rolePageAccessRuntime'
 
 const SUMMARY_ALL_EXCLUDED_STATUSES = ['draft', 'pending_confirm']
+const DEFAULT_SUMMARY_FILTER_KEY = 'all'
+
+const isVisibleInAllFilter = (status) => !SUMMARY_ALL_EXCLUDED_STATUSES.includes(String(status || '').trim())
 
 const getSummaryAllStatuses = () => STATUS_KEYS.filter(status => (
-  !SUMMARY_ALL_EXCLUDED_STATUSES.includes(status)
+  isVisibleInAllFilter(status)
 ))
 
 const getSummaryInProgressStatuses = () => getSummaryAllStatuses().filter(status => (
@@ -386,7 +389,7 @@ export default {
       loadingSummary: false,
       loadingTable: false,
       selectedStatus: '',
-      selectedSummaryFilter: 'all',
+      selectedSummaryFilter: DEFAULT_SUMMARY_FILTER_KEY,
       selectedYear: '',
       sorterValue: { column: 'updatedAt', asc: false },
       limit: 10,
@@ -468,7 +471,9 @@ export default {
     statusFilterOptions () {
       return [
         { value: '', label: 'ทั้งหมด' },
-        ...STATUS_KEYS.map(status => ({ value: status, label: this.getStatusLabel(status) }))
+        ...STATUS_KEYS
+          .filter(status => isVisibleInAllFilter(status))
+          .map(status => ({ value: status, label: this.getStatusLabel(status) }))
       ]
     },
     yearFilterOptions () {
@@ -664,17 +669,21 @@ export default {
     getSummaryAllCount () {
       const summary = this.summary || {}
       return Object.keys(summary).reduce((sum, status) => {
-        if (SUMMARY_ALL_EXCLUDED_STATUSES.includes(String(status || '').trim())) return sum
+        if (!isVisibleInAllFilter(status)) return sum
         return sum + (Number(summary[status]) || 0)
       }, 0)
     },
     resolveActiveStatuses () {
       if (this.selectedStatus) return [this.selectedStatus]
-      if (this.selectedSummaryFilter === 'all') {
-        const dynamicStatuses = Object.keys(this.summary || {}).filter(status => (
-          !SUMMARY_ALL_EXCLUDED_STATUSES.includes(String(status || '').trim())
-        ))
-        if (dynamicStatuses.length > 0) return dynamicStatuses
+      if (this.selectedSummaryFilter === DEFAULT_SUMMARY_FILTER_KEY) {
+        const dynamicStatuses = Object.keys(this.summary || {}).filter(status => isVisibleInAllFilter(status))
+        if (dynamicStatuses.length > 0) {
+          return dynamicStatuses
+        }
+        const defaultCard = SUMMARY_FILTER_CARDS.find(item => item.key === DEFAULT_SUMMARY_FILTER_KEY)
+        if (defaultCard && Array.isArray(defaultCard.statuses) && defaultCard.statuses.length > 0) {
+          return defaultCard.statuses.filter(status => isVisibleInAllFilter(status))
+        }
         return getSummaryAllStatuses()
       }
       const card = SUMMARY_FILTER_CARDS.find(item => item.key === this.selectedSummaryFilter)
@@ -870,7 +879,7 @@ export default {
     },
     onStatusChange (val) {
       this.selectedStatus = this.getSelectValue(val)
-      this.selectedSummaryFilter = this.selectedStatus ? '' : 'all'
+      this.selectedSummaryFilter = this.selectedStatus ? '' : DEFAULT_SUMMARY_FILTER_KEY
       this.page = 1
       this.fetchProposals()
     },
