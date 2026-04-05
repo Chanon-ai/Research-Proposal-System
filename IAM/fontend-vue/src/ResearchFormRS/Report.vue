@@ -4,16 +4,6 @@
     <div id="report-area" ref="reportContainer" class="report-container">
 
       <div class="first-page">
-        <!-- รหัสเอกสาร -->
-        <div class="doc-code">RS-01</div>
-
-        <!-- หัวกระดาษ -->
-
-        <div class="head-title">
-          แบบเสนอโครงการวิจัย <br>ประกอบการของบประมาณงานวิจัยของมหาวิทยาลัยแม่ฟ้าหลวงประจำปีงบประมาณ พ.ศ.2569
-        </div>
-
-
         <!-- ประเภททุน -->
         <div class="checkbox-line">
 
@@ -483,10 +473,14 @@
           </template>
         </div>
 
-
-        <!-- 19 -->
         <div class="section">
-          <div class="sub-title">19. การลงนามยืนยันข้อมูลและคำรับรอง</div>
+          <div class="sub-title">19. หมายเหตุ</div>
+          <div class="field-line" v-html="form.remark || '-'"></div>
+        </div>
+
+        <!-- 20 -->
+        <div class="section">
+          <div class="sub-title">การลงนามยืนยันข้อมูลและคำรับรอง</div>
           <div class="signature-page-in-section">
             <div class="signature-row">
               <div class="signature-box">
@@ -523,11 +517,6 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="section">
-          <div class="sub-title">20. หมายเหตุ</div>
-          <div class="field-line" v-html="form.remark || '-'"></div>
         </div>
       </div>
 
@@ -1144,15 +1133,6 @@ export default {
     page-break-after: always;
     /* บังคับให้ PDF ตัดขึ้นหน้าใหม่ทันทีที่จบ Class นี้ */
     break-after: page;
-  }
-
-  .report-container::after {
-    counter-increment: page;
-    content: "หน้า " counter(page);
-    position: fixed;
-    bottom: 4mm;
-    right: 2mm;
-    font-size: 14px;
   }
 
   .landscape-container .rotated-content {
