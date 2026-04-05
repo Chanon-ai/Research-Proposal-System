@@ -186,10 +186,11 @@
                 <table class="table table-bordered table-striped mb-0">
                   <thead>
                     <tr>
-                      <th style="width: 38%;">ชื่อตัวคูณ</th>
-                      <th style="width: 20%;">ค่าเริ่มต้น</th>
-                      <th style="width: 22%;">ค่าสูงสุดที่กรอกได้</th>
-                      <th style="width: 20%;">จัดการ</th>
+                      <th style="width: 32%;">ชื่อตัวคูณ</th>
+                      <th style="width: 17%;">ค่าเริ่มต้น</th>
+                      <th style="width: 19%;">ค่าสูงสุดที่กรอกได้</th>
+                      <th style="width: 16%;">อนุญาตให้ผู้ใช้กรอก</th>
+                      <th style="width: 16%;">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -227,6 +228,19 @@
                           @input="updateBudgetMultiplierMaxValue(categoryIndex, multiplierIndex, $event.target.value)"
                         />
                       </td>
+                      <td class="text-center align-middle">
+                        <div class="d-flex flex-column align-items-center">
+                          <CSwitch
+                            class="mx-1"
+                            color="success"
+                            :checked="!multiplier.isAdmin"
+                            @update:checked="(checked) => updateBudgetMultiplierUserInputAllowed(categoryIndex, multiplierIndex, checked)"
+                          />
+                          <small :class="multiplier.isAdmin ? 'text-muted' : 'text-success'">
+                            {{ multiplier.isAdmin ? 'ปิด' : 'เปิด' }}
+                          </small>
+                        </div>
+                      </td>
                       <td class="text-center">
                         <CButton
                           color="danger"
@@ -240,7 +254,7 @@
                       </td>
                     </tr>
                     <tr v-if="!category.multipliers || category.multipliers.length === 0">
-                      <td colspan="4" class="text-center text-muted">ยังไม่มีตัวคูณในหมวดนี้</td>
+                      <td colspan="5" class="text-center text-muted">ยังไม่มีตัวคูณในหมวดนี้</td>
                     </tr>
                   </tbody>
                 </table>
@@ -282,10 +296,11 @@
                   <table class="table table-bordered table-striped mb-0">
                     <thead>
                       <tr>
-                        <th style="width: 38%;">ชื่อตัวคูณ</th>
-                        <th style="width: 20%;">ค่าเริ่มต้น</th>
-                        <th style="width: 22%;">ค่าสูงสุดที่กรอกได้</th>
-                        <th style="width: 20%;">จัดการ</th>
+                        <th style="width: 32%;">ชื่อตัวคูณ</th>
+                        <th style="width: 17%;">ค่าเริ่มต้น</th>
+                        <th style="width: 19%;">ค่าสูงสุดที่กรอกได้</th>
+                        <th style="width: 16%;">อนุญาตให้ผู้ใช้กรอก</th>
+                        <th style="width: 16%;">จัดการ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -322,6 +337,19 @@
                             placeholder="ไม่จำกัด"
                             @input="updateBudgetItemOverrideMultiplierMaxValue(categoryIndex, overrideIndex, overrideMultiplierIndex, $event.target.value)"
                           />
+                        </td>
+                        <td class="text-center align-middle">
+                          <div class="d-flex flex-column align-items-center">
+                            <CSwitch
+                              class="mx-1"
+                              color="success"
+                              :checked="!overrideMultiplier.isAdmin"
+                              @update:checked="(checked) => updateBudgetItemOverrideMultiplierUserInputAllowed(categoryIndex, overrideIndex, overrideMultiplierIndex, checked)"
+                            />
+                            <small :class="overrideMultiplier.isAdmin ? 'text-muted' : 'text-success'">
+                              {{ overrideMultiplier.isAdmin ? 'ปิด' : 'เปิด' }}
+                            </small>
+                          </div>
                         </td>
                         <td class="text-center">
                           <CButton
@@ -755,6 +783,14 @@ export default {
       if (!multiplier) return
       this.$set(multiplier, 'maxValue', this.toMultiplierMaxNumber(value, null))
     },
+    updateBudgetMultiplierUserInputAllowed (categoryIndex, multiplierIndex, checked) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const multiplier = category && Array.isArray(category.multipliers)
+        ? category.multipliers[multiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'isAdmin', !checked)
+    },
     addBudgetItemOverride (categoryIndex) {
       const category = this.budgetMultiplierConfig[categoryIndex]
       if (!category) return
@@ -827,6 +863,17 @@ export default {
         : null
       if (!multiplier) return
       this.$set(multiplier, 'maxValue', this.toMultiplierMaxNumber(value, null))
+    },
+    updateBudgetItemOverrideMultiplierUserInputAllowed (categoryIndex, overrideIndex, overrideMultiplierIndex, checked) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      const multiplier = itemOverride && Array.isArray(itemOverride.multipliers)
+        ? itemOverride.multipliers[overrideMultiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'isAdmin', !checked)
     },
     async resetBudgetMultipliersToDefault () {
       const result = await Swal.fire({

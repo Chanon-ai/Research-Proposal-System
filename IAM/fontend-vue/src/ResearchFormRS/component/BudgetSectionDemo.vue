@@ -203,7 +203,7 @@
                                @keypress="isNumber"
                              @input="handleManualMultiplierInput(item, mult)"
                                @blur="handleManualMultiplierBlur(item, mult)"
-                               :readonly="isReadOnly">
+                               :readonly="isReadOnly || Boolean(mult.isAdmin)">
                       </div>
                       <span
                         v-if="mIndex < item.multipliers.length - 1"
@@ -232,7 +232,7 @@
                             placeholder=" "
                             v-model="item.inputs[field.key]"
                             :max="getHtmlInputMax(field.maxValue)"
-                            :readonly="isReadOnly"
+                            :readonly="isReadOnly || Boolean(field.isAdmin)"
                             @keypress="isNumber"
                             @input="handleCalcInputChange(catIndex, item, field.key)"
                             @blur="handleCalcInputBlur(catIndex, item, field.key)"
@@ -1826,16 +1826,18 @@ export default {
       const schema = this.getSchemaByCalcType(row && row.calcType)
       const baseFields = Array.isArray(schema.fields) ? schema.fields : []
       const overrides = Array.isArray(row && row.multiplierFieldOverrides) ? row.multiplierFieldOverrides : []
-      if (!overrides.length) return baseFields
-
       return baseFields.map((field, index) => {
-        const override = overrides[index]
-        const hasOverrideValue = Number.isFinite(Number(override && override.value))
+        const sourceMultiplier = overrides.length
+          ? overrides[index]
+          : (Array.isArray(row && row.multipliers) ? row.multipliers[index] : null)
+        const hasOverrideValue = Number.isFinite(Number(sourceMultiplier && sourceMultiplier.value))
         return {
           ...field,
-          label: String(override && override.label ? override.label : field.label || '').trim() || field.label,
-          defaultValue: hasOverrideValue ? Number(override.value) : field.defaultValue,
-          maxValue: toOptionalMaxValue(override && override.maxValue)
+          label: String(sourceMultiplier && sourceMultiplier.label ? sourceMultiplier.label : field.label || '').trim() || field.label,
+          defaultValue: hasOverrideValue ? Number(sourceMultiplier.value) : field.defaultValue,
+          maxValue: toOptionalMaxValue(sourceMultiplier && sourceMultiplier.maxValue),
+          isAdmin: Boolean(sourceMultiplier && sourceMultiplier.isAdmin),
+          fieldKey: String(sourceMultiplier && sourceMultiplier.fieldKey ? sourceMultiplier.fieldKey : field.key || '')
         }
       })
     },
@@ -1973,7 +1975,11 @@ export default {
       return ''
     },
     normalizeCalcInputs(calcType, existingInputs = {}, legacyMultipliers = [], row = null) {
-      const fields = this.getFieldsForRow({ calcType, multiplierFieldOverrides: row && row.multiplierFieldOverrides })
+      const fields = this.getFieldsForRow({
+        calcType,
+        multiplierFieldOverrides: row && row.multiplierFieldOverrides,
+        multipliers: row && row.multipliers
+      })
       const safeInputs = existingInputs && typeof existingInputs === 'object' ? existingInputs : {}
       const normalized = {}
 
@@ -2023,7 +2029,7 @@ export default {
         label: field.label,
         value: this.formatNumberInputValue(row.inputs && row.inputs[field.key]),
         maxValue: this.normalizeOptionalMaxValue(field.maxValue),
-        isAdmin: false,
+        isAdmin: Boolean(field.isAdmin),
         fieldKey: field.key
       }))
       this.setRowProp(row, 'multipliers', multipliers)
