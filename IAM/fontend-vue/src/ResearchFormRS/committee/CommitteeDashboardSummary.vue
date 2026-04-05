@@ -758,7 +758,6 @@ export default {
           totalScore,
           maxScore,
           percent,
-          p.submittedAt || p.createdAt || '',
           (review && (review.updatedAt || review.submittedAt)) || p.updatedAt || ''
         ]
       }
@@ -774,7 +773,6 @@ export default {
         'คะแนนรวม',
         'คะแนนเต็ม',
         'คิดเป็น %',
-        'วันที่ส่ง',
         'อัปเดตล่าสุด'
       ]
       const rows = items.map(rowFor)

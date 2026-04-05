@@ -59,9 +59,9 @@
                   :active-page="activePage"
                   sorter
                 >
-                <template #submissionDate="{ item }">
-                  <td>
-                    {{ formatThaiDateTime(item.submissionDate) }}
+                <template #decisionDisplay="{ item }">
+                  <td class="text-center">
+                    {{ item.decisionDisplay || '-' }}
                   </td>
                 </template>
                 <template #statusDisplay="{item}">
@@ -219,7 +219,7 @@ export default {
         { key: 'title', label: 'ชื่อโครงการ' },
         { key: 'researcherName', label: 'หัวหน้าโครงการ' },
         { key: 'faculty', label: 'สังกัด' },
-        { key: 'submissionDate', label: 'วันที่ส่ง' },
+        { key: 'decisionDisplay', label: 'ผลประเมิน', _style: 'text-align:center; min-width:140px;' },
         { key: 'statusDisplay', label: 'สถานะ', _style: 'width:360px; text-align:center;' },
         { key: 'action', label: '', sorter: false, filter: false }
       ],
@@ -318,9 +318,6 @@ export default {
         const reviewStatus = review && review.reviewStatus ? String(review.reviewStatus).toLowerCase() : ''
         const isReviewed = reviewStatus === 'submitted'
         const decisionCode = review && review.decision ? String(review.decision).toLowerCase() : ''
-        const decisionTone = isReviewed
-          ? (decisionCode === 'approve' || decisionCode === 'revise' || decisionCode === 'reject' ? decisionCode : 'unknown')
-          : 'none'
         const decisionDisplay = this.decisionLabel(decisionCode, isReviewed)
         const roundNo = this.deriveRoundNo(p)
         const committeeStatusKey = this.getCommitteeStatusKey(currentStatus, reviewStatus)
@@ -336,7 +333,6 @@ export default {
           title: p.projectTitleTh || p.projectTitleEn || '(ไม่มีชื่อโครงการ)',
           researcherName: p.projectLeaderName || leader.name || '-',
           faculty: resolveAffiliation(p, snapshot),
-          submissionDate: p.submittedAt || p.createdAt,
           status: currentStatus,
           roundNo,
           committeeStatusKey,
@@ -344,7 +340,6 @@ export default {
           committeeProgressDisplay,
           reviewStatus: reviewStatus || null,
           reviewDecision: review && review.decision ? review.decision : null,
-          decisionTone,
           decisionDisplay,
           reviewUpdatedAt: review && (review.updatedAt || review.submittedAt) ? (review.updatedAt || review.submittedAt) : null,
           reviewer: reviewerName,
