@@ -199,8 +199,9 @@
                                v-model="mult.label" placeholder="ชื่อหน่วย" :readonly="isReadOnly">
                         <input type="text" inputmode="numeric" class="form-control text-center" 
                                v-model="mult.value" placeholder="ตัวเลข" 
+                             :max="getHtmlInputMax(mult.maxValue)"
                                @keypress="isNumber"
-                               @input="cleanNumber(mult, 'value'); calculateItemTotal(item)"
+                             @input="handleManualMultiplierInput(item, mult)"
                                :readonly="isReadOnly">
                       </div>
                       <span
@@ -229,6 +230,7 @@
                             class="input-floating-outline text-center"
                             placeholder=" "
                             v-model="item.inputs[field.key]"
+                            :max="getHtmlInputMax(field.maxValue)"
                             :readonly="isReadOnly"
                             @keypress="isNumber"
                             @input="handleCalcInputChange(catIndex, item, field.key)"
@@ -537,6 +539,7 @@ const cloneMultiplierList = (multipliers = []) => (
   (Array.isArray(multipliers) ? multipliers : []).map(multiplier => ({
     label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
     value: Number.isFinite(Number(multiplier && multiplier.value)) ? Math.max(0, Number(multiplier.value)) : 0,
+    maxValue: Number.isFinite(Number(multiplier && multiplier.maxValue)) ? Math.max(0, Number(multiplier.maxValue)) : null,
     isAdmin: Boolean(multiplier && multiplier.isAdmin)
   }))
 )
@@ -1679,15 +1682,16 @@ export default {
       if (!item || typeof item !== 'object') return
 
       if (item.inputs && typeof item.inputs === 'object') {
+        const fieldMaxByKey = new Map(this.getFieldsForRow(item).map(field => [field.key, field.maxValue]))
         Object.keys(item.inputs).forEach((key) => {
-          item.inputs[key] = this.formatNumberInputValue(item.inputs[key])
+          item.inputs[key] = this.clampFormattedInputValue(item.inputs[key], fieldMaxByKey.get(key))
         })
       }
 
       if (Array.isArray(item.multipliers)) {
         item.multipliers.forEach((multiplier) => {
           if (!multiplier || typeof multiplier !== 'object') return
-          multiplier.value = this.formatNumberInputValue(multiplier.value)
+          multiplier.value = this.clampFormattedInputValue(multiplier.value, multiplier.maxValue)
         })
       }
 
@@ -1821,7 +1825,8 @@ export default {
         return {
           ...field,
           label: String(override && override.label ? override.label : field.label || '').trim() || field.label,
-          defaultValue: hasOverrideValue ? Number(override.value) : field.defaultValue
+          defaultValue: hasOverrideValue ? Number(override.value) : field.defaultValue,
+          maxValue: Number.isFinite(Number(override && override.maxValue)) ? Math.max(0, Number(override.maxValue)) : null
         }
       })
     },
@@ -1971,7 +1976,7 @@ export default {
         if (!this.hasUsableValue(value)) {
           value = field.defaultValue
         }
-        normalized[field.key] = this.formatNumberInputValue(value)
+        normalized[field.key] = this.clampFormattedInputValue(value, field.maxValue)
       })
 
       return normalized
@@ -2008,6 +2013,7 @@ export default {
       const multipliers = fields.map(field => ({
         label: field.label,
         value: this.formatNumberInputValue(row.inputs && row.inputs[field.key]),
+        maxValue: this.normalizeOptionalMaxValue(field.maxValue),
         isAdmin: false,
         fieldKey: field.key
       }))
@@ -2151,9 +2157,15 @@ export default {
         this.setRowProp(item, 'inputs', {})
       }
 
-      this.cleanNumber(item.inputs, fieldKey)
+      const field = this.getFieldsForRow(item).find(currentField => currentField.key === fieldKey)
+      this.cleanNumber(item.inputs, fieldKey, field && field.maxValue)
       this.syncRowMultipliersWithInputs(item, category)
       this.calculateRowTotal(item)
+    },
+    handleManualMultiplierInput(item, multiplier) {
+      if (!multiplier || typeof multiplier !== 'object') return
+      this.cleanNumber(multiplier, 'value', multiplier.maxValue)
+      this.calculateItemTotal(item)
     },
     resizeTextarea(event) {
       if (!event || !event.target) return
@@ -2168,10 +2180,29 @@ export default {
         event.preventDefault();
       }
     },
-    cleanNumber(obj, key) {
+    cleanNumber(obj, key, maxValue = null) {
       if (obj[key] !== null && obj[key] !== undefined) {
-        obj[key] = this.formatNumberInputValue(obj[key]);
+        obj[key] = this.clampFormattedInputValue(obj[key], maxValue);
       }
+    },
+    normalizeOptionalMaxValue(value) {
+      if (value === '' || value === undefined || value === null) return null
+      const numeric = Number(value)
+      if (!Number.isFinite(numeric)) return null
+      return Math.max(0, numeric)
+    },
+    clampFormattedInputValue(value, maxValue = null) {
+      const rawValue = this.toRawNumberString(value)
+      if (!rawValue) return ''
+
+      const normalizedMax = this.normalizeOptionalMaxValue(maxValue)
+      const numericValue = Number(rawValue)
+      const clampedValue = normalizedMax === null ? numericValue : Math.min(numericValue, normalizedMax)
+      return this.formatNumberInputValue(clampedValue)
+    },
+    getHtmlInputMax(value) {
+      const normalizedMax = this.normalizeOptionalMaxValue(value)
+      return normalizedMax === null ? null : normalizedMax
     },
     cleanArrayNumber(arr, index) {
       if (arr[index] !== null && arr[index] !== undefined) {
@@ -2241,6 +2272,7 @@ export default {
       item.multipliers.push({
         label: String(lastTemplate && lastTemplate.label ? lastTemplate.label : 'ตัวคูณใหม่'),
         value: Number.isFinite(Number(lastTemplate && lastTemplate.value)) ? Number(lastTemplate.value) : 1,
+        maxValue: Number.isFinite(Number(lastTemplate && lastTemplate.maxValue)) ? Math.max(0, Number(lastTemplate.maxValue)) : null,
         isAdmin: Boolean(lastTemplate && lastTemplate.isAdmin)
       });
       this.formatItemNumericInputs(item);
@@ -2257,6 +2289,12 @@ export default {
       if (!item || typeof item !== 'object') return 0;
 
       if (item.isManualMultiplier) {
+        if (Array.isArray(item.multipliers)) {
+          item.multipliers.forEach((multiplier) => {
+            if (!multiplier || typeof multiplier !== 'object') return
+            multiplier.value = this.clampFormattedInputValue(multiplier.value, multiplier.maxValue)
+          })
+        }
         if (!Array.isArray(item.multipliers) || item.multipliers.length === 0) {
           item.total = 0;
         } else {
@@ -2266,6 +2304,11 @@ export default {
           }, 1);
         }
       } else {
+        const fields = this.getFieldsForRow(item)
+        fields.forEach((field) => {
+          if (!item.inputs || typeof item.inputs !== 'object') return
+          item.inputs[field.key] = this.clampFormattedInputValue(item.inputs[field.key], field.maxValue)
+        })
         item.total = this.getCalculatedTotalByCalcType(item.calcType, item.inputs);
       }
 

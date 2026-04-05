@@ -465,6 +465,13 @@ function toNumber(value, fallback) {
   return Number.isFinite(numeric) ? numeric : fallback;
 }
 
+function toOptionalNonNegativeNumber(value, fallback = null) {
+  if (value === undefined || value === null || value === '') return fallback;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.max(0, numeric);
+}
+
 function normalizeFundingBudgetConfig(rawValue) {
   const parsed = parseJsonish(rawValue);
   if (!Array.isArray(parsed)) return clone(FUNDING_BUDGET_DEFAULT);
@@ -494,6 +501,7 @@ function normalizeBudgetMultiplierConfig(rawValue) {
       multipliers: (Array.isArray(category && category.multipliers) ? category.multipliers : []).map((multiplier) => ({
         label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
         value: Math.max(0, toNumber(multiplier && multiplier.value, 0)),
+        maxValue: toOptionalNonNegativeNumber(multiplier && multiplier.maxValue, null),
         isAdmin: Boolean(multiplier && multiplier.isAdmin)
       })).filter((multiplier) => multiplier.label),
       itemOverrides: (Array.isArray(category && category.itemOverrides) ? category.itemOverrides : []).map((itemOverride) => ({
@@ -501,6 +509,7 @@ function normalizeBudgetMultiplierConfig(rawValue) {
         multipliers: (Array.isArray(itemOverride && itemOverride.multipliers) ? itemOverride.multipliers : []).map((multiplier) => ({
           label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
           value: Math.max(0, toNumber(multiplier && multiplier.value, 0)),
+          maxValue: toOptionalNonNegativeNumber(multiplier && multiplier.maxValue, null),
           isAdmin: Boolean(multiplier && multiplier.isAdmin)
         })).filter((multiplier) => multiplier.label)
       })).filter((itemOverride) => itemOverride.matchText && itemOverride.multipliers.length > 0)

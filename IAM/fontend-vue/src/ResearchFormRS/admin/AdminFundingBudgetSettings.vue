@@ -150,7 +150,7 @@
           <div>
             <div class="font-weight-bold">ตั้งค่ารูปแบบตัวคูณงบประมาณ</div>
             <small class="text-muted">
-              เพิ่ม/ลด/ปรับชื่อและค่าเริ่มต้นของตัวคูณในแต่ละหมวด เพื่อใช้ในหน้า BudgetSectionDemo
+              เพิ่ม/ลด/ปรับชื่อ ค่าเริ่มต้น และค่าสูงสุดของตัวคูณในแต่ละหมวด เพื่อใช้ในหน้า BudgetSectionDemo
             </small>
           </div>
           <div class="funding-budget-summary">
@@ -186,8 +186,9 @@
                 <table class="table table-bordered table-striped mb-0">
                   <thead>
                     <tr>
-                      <th style="width: 52%;">ชื่อตัวคูณ</th>
-                      <th style="width: 28%;">ค่าเริ่มต้น</th>
+                      <th style="width: 38%;">ชื่อตัวคูณ</th>
+                      <th style="width: 20%;">ค่าเริ่มต้น</th>
+                      <th style="width: 22%;">ค่าสูงสุดที่กรอกได้</th>
                       <th style="width: 20%;">จัดการ</th>
                     </tr>
                   </thead>
@@ -215,6 +216,17 @@
                           @input="updateBudgetMultiplierValue(categoryIndex, multiplierIndex, $event.target.value)"
                         />
                       </td>
+                      <td>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          class="form-control"
+                          :value="multiplier.maxValue"
+                          placeholder="ไม่จำกัด"
+                          @input="updateBudgetMultiplierMaxValue(categoryIndex, multiplierIndex, $event.target.value)"
+                        />
+                      </td>
                       <td class="text-center">
                         <CButton
                           color="danger"
@@ -228,7 +240,7 @@
                       </td>
                     </tr>
                     <tr v-if="!category.multipliers || category.multipliers.length === 0">
-                      <td colspan="3" class="text-center text-muted">ยังไม่มีตัวคูณในหมวดนี้</td>
+                      <td colspan="4" class="text-center text-muted">ยังไม่มีตัวคูณในหมวดนี้</td>
                     </tr>
                   </tbody>
                 </table>
@@ -270,8 +282,9 @@
                   <table class="table table-bordered table-striped mb-0">
                     <thead>
                       <tr>
-                        <th style="width: 52%;">ชื่อตัวคูณ</th>
-                        <th style="width: 28%;">ค่าเริ่มต้น</th>
+                        <th style="width: 38%;">ชื่อตัวคูณ</th>
+                        <th style="width: 20%;">ค่าเริ่มต้น</th>
+                        <th style="width: 22%;">ค่าสูงสุดที่กรอกได้</th>
                         <th style="width: 20%;">จัดการ</th>
                       </tr>
                     </thead>
@@ -297,6 +310,17 @@
                             :value="overrideMultiplier.value"
                             placeholder="0"
                             @input="updateBudgetItemOverrideMultiplierValue(categoryIndex, overrideIndex, overrideMultiplierIndex, $event.target.value)"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            class="form-control"
+                            :value="overrideMultiplier.maxValue"
+                            placeholder="ไม่จำกัด"
+                            @input="updateBudgetItemOverrideMultiplierMaxValue(categoryIndex, overrideIndex, overrideMultiplierIndex, $event.target.value)"
                           />
                         </td>
                         <td class="text-center">
@@ -369,12 +393,13 @@ import {
   parseBudgetMultiplierSettingValue,
   normalizeBudgetMultiplierConfig as normalizeBudgetMultiplierConfigUtil,
   sanitizeBudgetMultiplierConfigForSave as sanitizeBudgetMultiplierConfigForSaveUtil,
-  toMultiplierNumber as toMultiplierNumberUtil
+  toMultiplierNumber as toMultiplierNumberUtil,
+  toMultiplierMaxNumber as toMultiplierMaxNumberUtil
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
 
 const createFundingTypeTemplate = () => ({ key: '', label: '', budgetLimit: 0, subOptions: [] })
 const createFundingSubOptionTemplate = () => ({ key: '', label: '' })
-const createBudgetMultiplierTemplate = () => ({ label: '', value: 1, isAdmin: false })
+const createBudgetMultiplierTemplate = () => ({ label: '', value: 1, maxValue: null, isAdmin: false })
 const createBudgetItemOverrideTemplate = () => ({
   matchText: '',
   multipliers: [createBudgetMultiplierTemplate()]
@@ -437,6 +462,9 @@ export default {
     },
     toMultiplierNumber (value, fallback = 0) {
       return toMultiplierNumberUtil(value, fallback)
+    },
+    toMultiplierMaxNumber (value, fallback = null) {
+      return toMultiplierMaxNumberUtil(value, fallback)
     },
     normalizeBudgetMultiplierConfig (rawConfig) {
       return normalizeBudgetMultiplierConfigUtil(rawConfig, { fallbackToDefault: true })
@@ -503,6 +531,10 @@ export default {
           if (!Number.isFinite(numeric) || numeric < 0) {
             return `${categoryLabel}: ตัวคูณลำดับที่ ${no} มีค่าเริ่มต้นไม่ถูกต้อง`
           }
+          const maxValue = this.toMultiplierMaxNumber(multiplier && multiplier.maxValue, null)
+          if (maxValue !== null && numeric > maxValue) {
+            return `${categoryLabel}: ตัวคูณลำดับที่ ${no} ต้องมีค่าสูงสุดมากกว่าหรือเท่ากับค่าเริ่มต้น`
+          }
         }
 
         const itemOverrides = Array.isArray(category && category.itemOverrides) ? category.itemOverrides : []
@@ -528,6 +560,10 @@ export default {
             const overrideNumeric = Number(overrideMultiplier && overrideMultiplier.value)
             if (!Number.isFinite(overrideNumeric) || overrideNumeric < 0) {
               return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ตัวคูณลำดับที่ ${overrideMultiplierNo} มีค่าเริ่มต้นไม่ถูกต้อง`
+            }
+            const overrideMaxValue = this.toMultiplierMaxNumber(overrideMultiplier && overrideMultiplier.maxValue, null)
+            if (overrideMaxValue !== null && overrideNumeric > overrideMaxValue) {
+              return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ตัวคูณลำดับที่ ${overrideMultiplierNo} ต้องมีค่าสูงสุดมากกว่าหรือเท่ากับค่าเริ่มต้น`
             }
           }
         }
@@ -681,7 +717,7 @@ export default {
       if (!Array.isArray(category.multipliers)) {
         this.$set(category, 'multipliers', [])
       }
-      category.multipliers.push({ label: 'ตัวคูณใหม่', value: 1, isAdmin: false })
+      category.multipliers.push({ ...createBudgetMultiplierTemplate(), label: 'ตัวคูณใหม่' })
     },
     removeBudgetMultiplier (categoryIndex, multiplierIndex) {
       const category = this.budgetMultiplierConfig[categoryIndex]
@@ -703,6 +739,14 @@ export default {
         : null
       if (!multiplier) return
       this.$set(multiplier, 'value', this.toMultiplierNumber(value, 0))
+    },
+    updateBudgetMultiplierMaxValue (categoryIndex, multiplierIndex, value) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const multiplier = category && Array.isArray(category.multipliers)
+        ? category.multipliers[multiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'maxValue', this.toMultiplierMaxNumber(value, null))
     },
     addBudgetItemOverride (categoryIndex) {
       const category = this.budgetMultiplierConfig[categoryIndex]
@@ -765,6 +809,17 @@ export default {
         : null
       if (!multiplier) return
       this.$set(multiplier, 'value', this.toMultiplierNumber(value, 0))
+    },
+    updateBudgetItemOverrideMultiplierMaxValue (categoryIndex, overrideIndex, overrideMultiplierIndex, value) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      const multiplier = itemOverride && Array.isArray(itemOverride.multipliers)
+        ? itemOverride.multipliers[overrideMultiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'maxValue', this.toMultiplierMaxNumber(value, null))
     },
     async resetBudgetMultipliersToDefault () {
       const result = await Swal.fire({

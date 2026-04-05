@@ -100,6 +100,13 @@ export const toMultiplierNumber = (value, fallback = 0) => {
   return Math.max(0, numeric)
 }
 
+export const toMultiplierMaxNumber = (value, fallback = null) => {
+  if (value === '' || value === undefined || value === null) return fallback
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return fallback
+  return Math.max(0, numeric)
+}
+
 const normalizeCategoryKey = (value) => {
   const normalized = String(value || '')
     .trim()
@@ -112,6 +119,7 @@ const normalizeCategoryKey = (value) => {
 const normalizeMultiplierEntry = (entry) => ({
   label: String(entry && entry.label !== undefined ? entry.label : '').trim(),
   value: toMultiplierNumber(entry && entry.value, 0),
+  maxValue: toMultiplierMaxNumber(entry && entry.maxValue, null),
   isAdmin: Boolean(entry && entry.isAdmin)
 })
 
@@ -121,6 +129,7 @@ const cloneMultipliers = (multipliers) => (
   (Array.isArray(multipliers) ? multipliers : []).map(multiplier => ({
     label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
     value: toMultiplierNumber(multiplier && multiplier.value, 0),
+    maxValue: toMultiplierMaxNumber(multiplier && multiplier.maxValue, null),
     isAdmin: Boolean(multiplier && multiplier.isAdmin)
   }))
 )
