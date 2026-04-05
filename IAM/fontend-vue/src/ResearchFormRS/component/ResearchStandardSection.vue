@@ -1,6 +1,6 @@
 <template>
   <section class="section mb-4 research-standard-section research-standard" :class="{ 'is-dark': isDarkTheme }">
-    <h6 class="section-title">18. มาตรฐานการวิจัย</h6>
+    <h6 class="section-title">{{ sectionText.sectionTitle }}</h6>
 
     <div class="research-standard__card">
       <input
@@ -11,10 +11,10 @@
         @change="handleFileSelected"
       >
 
-      <p class="research-standard__hint">เลือกเฉพาะกรณีที่เกี่ยวข้อง หากไม่เลือกข้อใด ระบบจะถือว่าไม่มี</p>
+      <p class="research-standard__hint">{{ sectionText.hint }}</p>
 
       <div v-if="isNoneSelected" class="research-standard__none-message">
-        ไม่มีการวิจัยในมนุษย์ / ไม่มีการใช้สัตว์ทดลอง / ไม่เกี่ยวข้องกับพันธุ์พืช
+        {{ sectionText.noneMessage }}
       </div>
 
       <article
@@ -42,7 +42,7 @@
             class="standard-card__reset"
             @click="resetGroup(group.key)"
           >
-            ล้างข้อมูลหัวข้อนี้
+            {{ sectionText.resetGroup }}
           </button>
         </header>
 
@@ -77,7 +77,7 @@
                 @click="triggerAttach(group.key, groupStatus(group.key))"
               >
                 <CIcon name="cil-library-add" class="mr-1" />
-                แนบเอกสาร
+                {{ sectionText.attachDocument }}
               </CButton>
 
               <CButton
@@ -86,22 +86,22 @@
                 @click="openExampleDoc(group.exampleDocKey)"
               >
                 <CIcon name="cil-clipboard" class="mr-1" />
-                ตัวอย่างเอกสาร
+                {{ sectionText.exampleDocument }}
               </CButton>
             </div>
 
-            <p v-if="!groupStatus(group.key)" class="standard-subpanel__action-note">โปรดเลือกสถานะก่อนแนบเอกสาร</p>
+            <p v-if="!groupStatus(group.key)" class="standard-subpanel__action-note">{{ sectionText.selectStatusNote }}</p>
 
             <div v-if="activeAttachmentForGroup(group.key)" class="standard-attachment">
               <div class="standard-attachment__name">{{ attachmentDisplayName(activeAttachmentForGroup(group.key)) }}</div>
               <div class="standard-attachment__actions">
                 <CButton size="sm" class="standard-action standard-action--secondary mr-2" @click="openActiveAttachment(group.key)">
                   <CIcon name="cil-folder-open" class="mr-1" />
-                  เปิดดู
+                  {{ sectionText.openAttachment }}
                 </CButton>
                 <CButton v-if="!isReadOnly" size="sm" class="standard-action standard-action--danger" @click="removeActiveAttachment(group.key)">
                   <CIcon name="cil-trash" class="mr-1" />
-                  ลบ
+                  {{ sectionText.removeAttachment }}
                 </CButton>
               </div>
             </div>
@@ -119,9 +119,15 @@
 </template>
 
 <script>
-const STATUS_APPROVED = 'approved'
-const STATUS_PENDING = 'pending'
-const VALID_STATUSES = [STATUS_APPROVED, STATUS_PENDING]
+import {
+  RESEARCH_STANDARD_STATUSES,
+  RESEARCH_STANDARD_TEXT,
+  getResearchStandardExampleDocUrl,
+  getResearchStandardGroupList,
+  getResearchStandardGroupMeta,
+  normalizeResearchStandardStatus
+} from '@/ResearchFormRS/constants/researchStandard'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
 const DEFAULT_ATTACHMENTS = {
   plantApproved: null,
@@ -132,53 +138,6 @@ const DEFAULT_ATTACHMENTS = {
   animalPending: null
 }
 
-const GROUP_META = {
-  human: {
-    key: 'human',
-    title: 'มีการทำวิจัยในมนุษย์',
-    pendingNeedsDate: false,
-    exampleDocKey: 'humanEthicsCertificate',
-    options: [
-      { value: STATUS_APPROVED, label: 'มีหนังสือรับรองจริยธรรมการวิจัยในมนุษย์ (แนบสำเนา 1 ชุด)' },
-      { value: STATUS_PENDING, label: 'ไม่มีหนังสือรับรองจริยธรรมการวิจัยในมนุษย์ อยู่ระหว่างเสนอคณะกรรมการวิจัยจริยธรรมการวิจัยในมนุษย์พิจารณา' }
-    ],
-    legacy: { enabledKey: 'isHuman', statusKey: 'humanSubType', submittedDateKey: 'humanSubmittedDate' },
-    slots: { approved: 'humanApproved', pending: 'humanPending' }
-  },
-  animal: {
-    key: 'animal',
-    title: 'มีการใช้สัตว์ทดลอง',
-    pendingNeedsDate: false,
-    exampleDocKey: 'animalEthicsCertificate',
-    options: [
-      { value: STATUS_APPROVED, label: 'มีหนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์ (แนบสำเนา 1 ชุด)' },
-      { value: STATUS_PENDING, label: 'ไม่มีหนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์ อยู่ระหว่างเสนอคณะกรรมการจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์' }
-    ],
-    legacy: { enabledKey: 'isAnimal', statusKey: 'animalSubType', submittedDateKey: 'animalSubmittedDate' },
-    slots: { approved: 'animalApproved', pending: 'animalPending' }
-  },
-  plant: {
-    key: 'plant',
-    title: 'มีการเก็บ จัดหา หรือรวบรวมพันธุ์พืชพื้นเมืองทั่วไปและพันธุ์พืชป่าหรือส่วนหนึ่งส่วนใดของพันธุ์พืช เพื่อการศึกษา ทดลอง หรือวิจัย ตามมาตรา 53 แห่งพระราชบัญญัติคุ้มครองพันธุ์พืช พ.ศ. 2542',
-    pendingNeedsDate: false,
-    exampleDocKey: 'section53Notification',
-    options: [
-      { value: STATUS_APPROVED, label: 'มีหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ ตามมาตรา 53 แห่งพระราชบัญญัติคุ้มครองพันธุ์พืช พ.ศ. 2542 (แนบสำเนา 1 ชุด)' },
-      { value: STATUS_PENDING, label: 'ไม่มีหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ อยู่ระหว่างดำเนินการ' }
-    ],
-    legacy: { enabledKey: 'isPlant', statusKey: 'plantSubType', submittedDateKey: 'plantSubmittedDate' },
-    slots: { approved: 'plantApproved', pending: 'plantPending' }
-  }
-}
-
-const GROUP_KEYS = Object.keys(GROUP_META)
-
-const SAMPLE_DOC_URLS = {
-  section53Notification: 'https://research.mfu.ac.th/rs-variousresearch/rs-plant-species.html',
-  section53FormsPage: 'https://www.doa.go.th/pvp/?page_id=13853',
-  humanEthicsCertificate: 'https://ec.mfu.ac.th/ec-index.html',
-  animalEthicsCertificate: 'https://research.mfu.ac.th/rs-variousresearch/rs-manual-animal.html'
-}
 const EXAMPLE_DOC_WINDOW_NAME = 'research-standard-example-doc'
 
 const createEmptyGroupState = () => ({ enabled: false, status: '', submittedDate: '', attachments: [] })
@@ -208,17 +167,29 @@ export default {
       activeAttachmentKey: '',
       exampleDocPopup: null,
       lastExampleDocOpenAt: 0,
-      isSyncingModel: false
+      isSyncingModel: false,
+      runtimeConfigVersion: 0
     }
+  },
+  async created () {
+    await loadResearchFormRuntimeConfigs()
+    this.runtimeConfigVersion += 1
+    this.ensureCanonicalStructure(this.value)
   },
   computed: {
     isDarkTheme () {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
     },
     groupList () {
-      return GROUP_KEYS.map((key) => GROUP_META[key])
+      this.runtimeConfigVersion
+      return getResearchStandardGroupList()
+    },
+    sectionText () {
+      this.runtimeConfigVersion
+      return RESEARCH_STANDARD_TEXT
     },
     normalizedValue () {
+      this.runtimeConfigVersion
       return this.normalizeIncomingValue(this.value)
     },
     section18 () {
@@ -247,17 +218,19 @@ export default {
       }
     },
     normalizeStatus (status) {
-      const value = String(status || '').trim()
-      return VALID_STATUSES.includes(value) ? value : ''
+      return normalizeResearchStandardStatus(status)
     },
     normalizeDate (value) {
       const raw = String(value || '').trim()
       if (!raw) return ''
       return raw.length >= 10 ? raw.slice(0, 10) : raw
     },
+    groupMeta (type) {
+      return getResearchStandardGroupMeta(type)
+    },
     cloneSection18 (section18Value) {
       const base = createDefaultSection18()
-      GROUP_KEYS.forEach((type) => {
+      this.groupList.forEach(({ key: type }) => {
         const source = section18Value && section18Value[type] && typeof section18Value[type] === 'object'
           ? section18Value[type]
           : {}
@@ -271,7 +244,6 @@ export default {
       return base
     },
     deriveMainType (section18State) {
-      // Backward compatibility with existing parent validation/reporting fields.
       if (section18State && (section18State.human.enabled || section18State.animal.enabled)) return 'human_animal'
       return 'none'
     },
@@ -281,8 +253,8 @@ export default {
       const nextAttachments = this.withDefaultAttachments(attachmentsState)
       const nextSection18 = this.cloneSection18(section18State)
 
-      GROUP_KEYS.forEach((type) => {
-        const group = GROUP_META[type]
+      this.groupList.forEach(({ key: type }) => {
+        const group = this.groupMeta(type)
         const approvedSlot = group.slots.approved
         const pendingSlot = group.slots.pending
         const current = nextSection18[type] || createEmptyGroupState()
@@ -294,9 +266,9 @@ export default {
           if (!enabled) {
             nextAttachments[approvedSlot] = null
             nextAttachments[pendingSlot] = null
-          } else if (status === STATUS_APPROVED) {
+          } else if (status === RESEARCH_STANDARD_STATUSES.approved) {
             nextAttachments[pendingSlot] = null
-          } else if (status === STATUS_PENDING) {
+          } else if (status === RESEARCH_STANDARD_STATUSES.pending) {
             nextAttachments[approvedSlot] = null
           }
         }
@@ -341,8 +313,8 @@ export default {
       const attachments = this.withDefaultAttachments(source.attachments)
       const nextSection18 = createDefaultSection18()
 
-      GROUP_KEYS.forEach((type) => {
-        const group = GROUP_META[type]
+      this.groupList.forEach(({ key: type }) => {
+        const group = this.groupMeta(type)
         const sectionValue = sourceSection18[type] && typeof sourceSection18[type] === 'object'
           ? sourceSection18[type]
           : {}
@@ -355,8 +327,8 @@ export default {
         if (!status) {
           const hasApprovedAttachment = Boolean(attachments[group.slots.approved])
           const hasPendingAttachment = Boolean(attachments[group.slots.pending])
-          if (hasApprovedAttachment && !hasPendingAttachment) status = STATUS_APPROVED
-          if (hasPendingAttachment && !hasApprovedAttachment) status = STATUS_PENDING
+          if (hasApprovedAttachment && !hasPendingAttachment) status = RESEARCH_STANDARD_STATUSES.approved
+          if (hasPendingAttachment && !hasApprovedAttachment) status = RESEARCH_STANDARD_STATUSES.pending
         }
 
         nextSection18[type] = {
@@ -410,7 +382,7 @@ export default {
       this.emitModel(next)
     },
     slotKeyFor (type, status) {
-      const group = GROUP_META[type]
+      const group = this.groupMeta(type)
       if (!group) return ''
       const normalizedStatus = this.normalizeStatus(status)
       return normalizedStatus ? group.slots[normalizedStatus] : ''
@@ -421,7 +393,7 @@ export default {
     },
     attachmentDisplayName (file) {
       if (!file) return ''
-      return file.name || file.originalName || file.fileName || 'เอกสารแนบ'
+      return file.name || file.originalName || file.fileName || this.sectionText.attachmentFallbackName
     },
     groupState (type) {
       return this.section18[type] || createEmptyGroupState()
@@ -436,17 +408,17 @@ export default {
       return this.normalizeDate(this.groupState(type).submittedDate)
     },
     groupNeedsPendingDate (type) {
-      const group = GROUP_META[type]
+      const group = this.groupMeta(type)
       return Boolean(group && group.pendingNeedsDate)
     },
     shouldShowPendingDate (type) {
-      return this.isGroupEnabled(type) && this.groupStatus(type) === STATUS_PENDING && this.groupNeedsPendingDate(type)
+      return this.isGroupEnabled(type) && this.groupStatus(type) === RESEARCH_STANDARD_STATUSES.pending && this.groupNeedsPendingDate(type)
     },
     groupValidationMessages (type) {
       const messages = []
       if (!this.isGroupEnabled(type)) return messages
-      if (!this.groupStatus(type)) messages.push('โปรดเลือกสถานะของหัวข้อนี้')
-      if (this.shouldShowPendingDate(type) && !this.groupSubmittedDate(type)) messages.push('โปรดระบุวันที่ยื่นโครงการ')
+      if (!this.groupStatus(type)) messages.push(this.sectionText.validationStatus)
+      if (this.shouldShowPendingDate(type) && !this.groupSubmittedDate(type)) messages.push(this.sectionText.validationSubmittedDate)
       return messages
     },
     groupHasError (type) {
@@ -467,7 +439,7 @@ export default {
       attachments[slotKey] = null
     },
     resetGroupState (type, section18, attachments, removalKeys) {
-      const group = GROUP_META[type]
+      const group = this.groupMeta(type)
       if (!group) return
       section18[type] = createEmptyGroupState()
       this.clearAttachmentSlot(group.slots.approved, attachments, removalKeys)
@@ -475,7 +447,7 @@ export default {
     },
     toggleGroup (type, forcedEnabled = null) {
       this.applyMutation((section18, attachments, removalKeys) => {
-        if (!GROUP_META[type]) return
+        if (!this.groupMeta(type)) return
         const currentEnabled = Boolean(section18[type] && section18[type].enabled)
         const nextEnabled = typeof forcedEnabled === 'boolean' ? forcedEnabled : !currentEnabled
         if (nextEnabled) {
@@ -492,16 +464,16 @@ export default {
     },
     updateGroupStatus (type, status) {
       this.applyMutation((section18, attachments, removalKeys) => {
-        const group = GROUP_META[type]
+        const group = this.groupMeta(type)
         if (!group) return
         const normalizedStatus = this.normalizeStatus(status)
         section18[type].enabled = true
         section18[type].status = normalizedStatus
 
-        if (normalizedStatus === STATUS_APPROVED) {
+        if (normalizedStatus === RESEARCH_STANDARD_STATUSES.approved) {
           this.clearAttachmentSlot(group.slots.pending, attachments, removalKeys)
           section18[type].submittedDate = ''
-        } else if (normalizedStatus === STATUS_PENDING) {
+        } else if (normalizedStatus === RESEARCH_STANDARD_STATUSES.pending) {
           this.clearAttachmentSlot(group.slots.approved, attachments, removalKeys)
           if (!group.pendingNeedsDate) section18[type].submittedDate = ''
         } else {
@@ -513,7 +485,7 @@ export default {
     },
     onSubmittedDateInput (type, value) {
       this.applyMutation((section18) => {
-        if (!GROUP_META[type]) return
+        if (!this.groupMeta(type)) return
         section18[type].submittedDate = this.normalizeDate(value)
       })
     },
@@ -549,7 +521,7 @@ export default {
       this.activeAttachmentKey = ''
     },
     openExampleDoc (docKey = 'section53Notification') {
-      const url = SAMPLE_DOC_URLS[docKey] || SAMPLE_DOC_URLS.section53Notification
+      const url = getResearchStandardExampleDocUrl(docKey) || getResearchStandardExampleDocUrl('section53Notification')
       if (!url || typeof window === 'undefined') return
       const now = Date.now()
       if (now - this.lastExampleDocOpenAt < 500) return

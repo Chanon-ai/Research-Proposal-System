@@ -218,6 +218,56 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
         second_round_review: 'warning', approved: 'success', rejected: 'danger', announced: 'primary'
       }
     }
+  },
+  committeeDashboard: {
+    flowStatuses: [
+      'assigned_to_committee',
+      'under_review',
+      'meeting_completed',
+      'revision_requested',
+      'resubmitted',
+      'second_round_review',
+      'announced'
+    ],
+    pendingStatuses: [
+      'assigned_to_committee',
+      'under_review',
+      'second_round_review'
+    ],
+    reviewedStatuses: [
+      'meeting_completed',
+      'approved',
+      'rejected'
+    ],
+    labels: {
+      assigned_to_committee: 'รอการประเมิน',
+      under_review: 'พิจารณารอบ {roundNo}',
+      meeting_completed: 'ส่งผลการประเมินแล้ว',
+      revision_requested: 'ขอแก้ไข',
+      resubmitted: 'ส่งแก้ไขแล้ว',
+      second_round_review: 'พิจารณารอบ {roundNo}',
+      announced: 'ประกาศผล'
+    },
+    colors: {
+      background: {
+        assigned_to_committee: 'rgba(59, 130, 246, 0.45)',
+        under_review: 'rgba(124, 58, 237, 0.45)',
+        meeting_completed: 'rgba(22, 163, 74, 0.45)',
+        revision_requested: 'rgba(249, 115, 22, 0.45)',
+        resubmitted: 'rgba(6, 182, 212, 0.45)',
+        second_round_review: 'rgba(168, 85, 247, 0.45)',
+        announced: 'rgba(17, 24, 39, 0.38)'
+      },
+      border: {
+        assigned_to_committee: 'rgba(59, 130, 246, 1)',
+        under_review: 'rgba(124, 58, 237, 1)',
+        meeting_completed: 'rgba(22, 163, 74, 1)',
+        revision_requested: 'rgba(249, 115, 22, 1)',
+        resubmitted: 'rgba(6, 182, 212, 1)',
+        second_round_review: 'rgba(168, 85, 247, 1)',
+        announced: 'rgba(17, 24, 39, 1)'
+      }
+    }
   }
 });
 

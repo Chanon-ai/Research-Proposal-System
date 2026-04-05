@@ -249,52 +249,18 @@
 import Service, { instance as axios } from '@/service/api'
 import { CChartBar, CChartDoughnut } from '@coreui/vue-chartjs'
 import {
+  COMMITTEE_DASHBOARD_BACKGROUND_COLORS,
+  COMMITTEE_DASHBOARD_BORDER_COLORS,
+  COMMITTEE_DASHBOARD_FLOW_STATUSES,
+  COMMITTEE_PENDING_STATUSES,
+  COMMITTEE_REVIEWED_STATUSES,
+  deriveProposalRoundNo,
+  getCommitteeDashboardStatusLabel,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
-
-const COMMITTEE_STATUS_FLOW = Object.freeze([
-  'assigned_to_committee',
-  'under_review',
-  'meeting_completed',
-  'revision_requested',
-  'resubmitted',
-  'second_round_review',
-  'announced'
-])
-
-const COMMITTEE_PENDING_STATUSES = Object.freeze([
-  'assigned_to_committee',
-  'under_review',
-  'second_round_review'
-])
-
-const COMMITTEE_REVIEWED_STATUSES = Object.freeze([
-  'meeting_completed',
-  'approved',
-  'rejected'
-])
-
-const COMMITTEE_STATUS_COLORS = Object.freeze({
-  assigned_to_committee: 'rgba(59, 130, 246, 0.45)',
-  under_review: 'rgba(124, 58, 237, 0.45)',
-  meeting_completed: 'rgba(22, 163, 74, 0.45)',
-  revision_requested: 'rgba(249, 115, 22, 0.45)',
-  resubmitted: 'rgba(6, 182, 212, 0.45)',
-  second_round_review: 'rgba(168, 85, 247, 0.45)',
-  announced: 'rgba(17, 24, 39, 0.38)'
-})
-
-const COMMITTEE_STATUS_BORDER_COLORS = Object.freeze({
-  assigned_to_committee: 'rgba(59, 130, 246, 1)',
-  under_review: 'rgba(124, 58, 237, 1)',
-  meeting_completed: 'rgba(22, 163, 74, 1)',
-  revision_requested: 'rgba(249, 115, 22, 1)',
-  resubmitted: 'rgba(6, 182, 212, 1)',
-  second_round_review: 'rgba(168, 85, 247, 1)',
-  announced: 'rgba(17, 24, 39, 1)'
-})
 
 export default {
   name: 'CommitteeDashboardSummary',
@@ -308,6 +274,7 @@ export default {
       filterRound: 'all',
       filterFundType: 'all',
       filterDecision: 'all',
+      runtimeConfigVersion: 0,
       meetingSummaryLoading: false,
       meetingSummary: {
         scheduled: 0,
@@ -317,9 +284,13 @@ export default {
       }
     }
   },
-  mounted() {
-    this.fetchAssignedProposals()
-    this.fetchMeetingSummary()
+  async mounted() {
+    await loadResearchFormRuntimeConfigs()
+    this.runtimeConfigVersion += 1
+    await Promise.all([
+      this.fetchAssignedProposals(),
+      this.fetchMeetingSummary()
+    ])
   },
   computed: {
     currentUser() {
@@ -389,8 +360,9 @@ export default {
       })
     },
     committeeStatusBreakdown() {
+      this.runtimeConfigVersion
       const rows = this.filteredAssignedProposals || []
-      const counts = COMMITTEE_STATUS_FLOW.reduce((acc, key) => {
+      const counts = COMMITTEE_DASHBOARD_FLOW_STATUSES.reduce((acc, key) => {
         acc[key] = 0
         return acc
       }, {})
@@ -401,11 +373,11 @@ export default {
         counts[key] += 1
       })
 
-      const labels = COMMITTEE_STATUS_FLOW.map(key => this.committeeStatusLabelByKey(key, null, false))
-      const backgroundColor = COMMITTEE_STATUS_FLOW.map(key => COMMITTEE_STATUS_COLORS[key])
-      const borderColor = COMMITTEE_STATUS_FLOW.map(key => COMMITTEE_STATUS_BORDER_COLORS[key])
-      const data = COMMITTEE_STATUS_FLOW.map(key => counts[key] || 0)
-      const items = COMMITTEE_STATUS_FLOW.map((key, index) => ({
+      const labels = COMMITTEE_DASHBOARD_FLOW_STATUSES.map(key => this.committeeStatusLabelByKey(key, null, false))
+      const backgroundColor = COMMITTEE_DASHBOARD_FLOW_STATUSES.map(key => COMMITTEE_DASHBOARD_BACKGROUND_COLORS[key])
+      const borderColor = COMMITTEE_DASHBOARD_FLOW_STATUSES.map(key => COMMITTEE_DASHBOARD_BORDER_COLORS[key])
+      const data = COMMITTEE_DASHBOARD_FLOW_STATUSES.map(key => counts[key] || 0)
+      const items = COMMITTEE_DASHBOARD_FLOW_STATUSES.map((key, index) => ({
         key,
         label: labels[index],
         color: borderColor[index],
@@ -641,13 +613,7 @@ export default {
       this.filterDecision = 'all'
     },
     deriveRoundNo(proposal) {
-      const status = String(proposal && proposal.currentStatus ? proposal.currentStatus : '').toLowerCase()
-      const round = Number(proposal && (proposal.roundNo || proposal.currentRound || proposal.round)
-        ? (proposal.roundNo || proposal.currentRound || proposal.round)
-        : 0)
-      if (Number.isFinite(round) && round > 0) return round
-      if (status === 'second_round_review' || status.includes('second_round')) return 2
-      return 1
+      return deriveProposalRoundNo(proposal, proposal && proposal.currentStatus)
     },
     getReviewStatusForProposal(proposal) {
       const pid = proposal && proposal._id ? String(proposal._id) : ''
@@ -677,23 +643,13 @@ export default {
         return 'meeting_completed'
       }
       if (key === 'approved' || key === 'rejected') return 'meeting_completed'
-      if (COMMITTEE_STATUS_FLOW.includes(key)) return key
+      if (COMMITTEE_DASHBOARD_FLOW_STATUSES.includes(key)) return key
       return 'assigned_to_committee'
     },
     committeeStatusLabelByKey(statusKey, roundNo, includeRound = true) {
-      const safeRound = Number(roundNo) > 0 ? Number(roundNo) : 1
-      if (statusKey === 'assigned_to_committee') return 'รอการประเมิน'
-      if (statusKey === 'under_review') {
-        return `พิจารณารอบ ${safeRound}`
-      }
-      if (statusKey === 'meeting_completed') return 'ส่งผลการประเมินแล้ว'
-      if (statusKey === 'revision_requested') return 'ขอแก้ไข'
-      if (statusKey === 'resubmitted') return 'ส่งแก้ไขแล้ว'
-      if (statusKey === 'second_round_review') {
-        return `พิจารณารอบ ${includeRound ? safeRound : (safeRound + 1)}`
-      }
-      if (statusKey === 'announced') return 'ประกาศผล'
-      return statusKey || '-'
+      return getCommitteeDashboardStatusLabel(statusKey, roundNo, {
+        nextRoundForSecondRoundReview: !includeRound
+      })
     },
     fundTypeLabel(proposal) {
       const ft = proposal && proposal.fundingType ? String(proposal.fundingType) : ''

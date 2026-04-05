@@ -241,6 +241,56 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
         announced: 'primary'
       }
     }
+  },
+  committeeDashboard: {
+    flowStatuses: [
+      'assigned_to_committee',
+      'under_review',
+      'meeting_completed',
+      'revision_requested',
+      'resubmitted',
+      'second_round_review',
+      'announced'
+    ],
+    pendingStatuses: [
+      'assigned_to_committee',
+      'under_review',
+      'second_round_review'
+    ],
+    reviewedStatuses: [
+      'meeting_completed',
+      'approved',
+      'rejected'
+    ],
+    labels: {
+      assigned_to_committee: 'รอการประเมิน',
+      under_review: 'พิจารณารอบ {roundNo}',
+      meeting_completed: 'ส่งผลการประเมินแล้ว',
+      revision_requested: 'ขอแก้ไข',
+      resubmitted: 'ส่งแก้ไขแล้ว',
+      second_round_review: 'พิจารณารอบ {roundNo}',
+      announced: 'ประกาศผล'
+    },
+    colors: {
+      background: {
+        assigned_to_committee: 'rgba(59, 130, 246, 0.45)',
+        under_review: 'rgba(124, 58, 237, 0.45)',
+        meeting_completed: 'rgba(22, 163, 74, 0.45)',
+        revision_requested: 'rgba(249, 115, 22, 0.45)',
+        resubmitted: 'rgba(6, 182, 212, 0.45)',
+        second_round_review: 'rgba(168, 85, 247, 0.45)',
+        announced: 'rgba(17, 24, 39, 0.38)'
+      },
+      border: {
+        assigned_to_committee: 'rgba(59, 130, 246, 1)',
+        under_review: 'rgba(124, 58, 237, 1)',
+        meeting_completed: 'rgba(22, 163, 74, 1)',
+        revision_requested: 'rgba(249, 115, 22, 1)',
+        resubmitted: 'rgba(6, 182, 212, 1)',
+        second_round_review: 'rgba(168, 85, 247, 1)',
+        announced: 'rgba(17, 24, 39, 1)'
+      }
+    }
   }
 })
 
@@ -280,6 +330,8 @@ function buildNormalizedWorkflowConfig(rawConfig = {}) {
   const source = toObject(rawConfig, {})
   const labels = toObject(source.labels, {})
   const colors = toObject(source.colors, {})
+  const committeeDashboard = toObject(source.committeeDashboard, {})
+  const committeeDashboardColors = toObject(committeeDashboard.colors, {})
 
   return {
     statuses: toStringList(source.statuses, defaults.statuses),
@@ -301,6 +353,16 @@ function buildNormalizedWorkflowConfig(rawConfig = {}) {
         admin: normalizeColorMap(colors.coreui && colors.coreui.admin, defaults.colors.coreui.admin),
         badge: normalizeColorMap(colors.coreui && colors.coreui.badge, defaults.colors.coreui.badge),
         researchForm: normalizeColorMap(colors.coreui && colors.coreui.researchForm, defaults.colors.coreui.researchForm)
+      }
+    },
+    committeeDashboard: {
+      flowStatuses: toStringList(committeeDashboard.flowStatuses, defaults.committeeDashboard.flowStatuses),
+      pendingStatuses: toStringList(committeeDashboard.pendingStatuses, defaults.committeeDashboard.pendingStatuses),
+      reviewedStatuses: toStringList(committeeDashboard.reviewedStatuses, defaults.committeeDashboard.reviewedStatuses),
+      labels: normalizeLabels(committeeDashboard.labels, defaults.committeeDashboard.labels),
+      colors: {
+        background: normalizeColorMap(committeeDashboardColors.background, defaults.committeeDashboard.colors.background),
+        border: normalizeColorMap(committeeDashboardColors.border, defaults.committeeDashboard.colors.border)
       }
     }
   }
@@ -325,6 +387,12 @@ function applyWorkflowConfig(config) {
   PROPOSAL_STATUS_COLORS_COREUI_ADMIN = config.colors.coreui.admin
   PROPOSAL_STATUS_COLORS_COREUI_BADGE = config.colors.coreui.badge
   PROPOSAL_STATUS_COLORS_COREUI_RESEARCH_FORM = config.colors.coreui.researchForm
+  COMMITTEE_DASHBOARD_FLOW_STATUSES = config.committeeDashboard.flowStatuses
+  COMMITTEE_PENDING_STATUSES = config.committeeDashboard.pendingStatuses
+  COMMITTEE_REVIEWED_STATUSES = config.committeeDashboard.reviewedStatuses
+  COMMITTEE_DASHBOARD_LABELS = config.committeeDashboard.labels
+  COMMITTEE_DASHBOARD_BACKGROUND_COLORS = config.committeeDashboard.colors.background
+  COMMITTEE_DASHBOARD_BORDER_COLORS = config.committeeDashboard.colors.border
 }
 
 export let PROPOSAL_STATUSES = clone(DEFAULT_PROPOSAL_WORKFLOW.statuses)
@@ -345,6 +413,12 @@ export let PROPOSAL_STATUS_COLORS_HEX_REPORT = clone(DEFAULT_PROPOSAL_WORKFLOW.c
 export let PROPOSAL_STATUS_COLORS_COREUI_ADMIN = clone(DEFAULT_PROPOSAL_WORKFLOW.colors.coreui.admin)
 export let PROPOSAL_STATUS_COLORS_COREUI_BADGE = clone(DEFAULT_PROPOSAL_WORKFLOW.colors.coreui.badge)
 export let PROPOSAL_STATUS_COLORS_COREUI_RESEARCH_FORM = clone(DEFAULT_PROPOSAL_WORKFLOW.colors.coreui.researchForm)
+export let COMMITTEE_DASHBOARD_FLOW_STATUSES = clone(DEFAULT_PROPOSAL_WORKFLOW.committeeDashboard.flowStatuses)
+export let COMMITTEE_PENDING_STATUSES = clone(DEFAULT_PROPOSAL_WORKFLOW.committeeDashboard.pendingStatuses)
+export let COMMITTEE_REVIEWED_STATUSES = clone(DEFAULT_PROPOSAL_WORKFLOW.committeeDashboard.reviewedStatuses)
+export let COMMITTEE_DASHBOARD_LABELS = clone(DEFAULT_PROPOSAL_WORKFLOW.committeeDashboard.labels)
+export let COMMITTEE_DASHBOARD_BACKGROUND_COLORS = clone(DEFAULT_PROPOSAL_WORKFLOW.committeeDashboard.colors.background)
+export let COMMITTEE_DASHBOARD_BORDER_COLORS = clone(DEFAULT_PROPOSAL_WORKFLOW.committeeDashboard.colors.border)
 
 export const PROPOSAL_STATUS_ALIASES = Object.freeze({
   admin_review: 'document_checking',
@@ -391,4 +465,17 @@ export function getProposalStatusLabel(
     return `พิจารณารอบ ${roundNo}`
   }
   return labelMap[key] || key || '-'
+}
+
+export function getCommitteeDashboardStatusLabel(status, roundSource = null, options = {}) {
+  const key = normalizeProposalStatus(status)
+  const template = COMMITTEE_DASHBOARD_LABELS[key]
+  if (key === 'under_review' || key === 'second_round_review') {
+    const baseRoundNo = deriveProposalRoundNo(roundSource, key)
+    const roundNo = key === 'second_round_review' && options && options.nextRoundForSecondRoundReview
+      ? Math.max(baseRoundNo + 1, 2)
+      : baseRoundNo
+    return String(template || 'พิจารณารอบ {roundNo}').replace('{roundNo}', roundNo)
+  }
+  return template || getProposalStatusLabel(key, PROPOSAL_STATUS_LABELS_TH_ADMIN, roundSource, options)
 }
