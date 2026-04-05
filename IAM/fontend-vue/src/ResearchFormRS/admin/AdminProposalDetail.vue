@@ -49,7 +49,7 @@
             <CCol md="6" class="mb-2"><strong>ประเภทงานวิจัย:</strong> {{ proposal.researchType || '-' }}</CCol>
             <CCol md="6" class="mb-2"><strong>งบประมาณรวม:</strong> {{ formatCurrency(proposal.budgetTotal) }}</CCol>
             <CCol md="6" class="mb-2"><strong>วันที่ยื่น:</strong> {{ formatDate(proposal.submittedAt) }}</CCol>
-            <CCol md="6" class="mb-2"><strong>วันที่อัปเดต:</strong> {{ formatDate(proposal.updatedAt) }}</CCol>
+            <CCol md="6" class="mb-2"><strong>วันที่อัปเดต:</strong> {{ formatDate(proposal.lastStatusActionAt || proposal.currentStatusUpdatedAt || proposal.statusUpdatedAt || proposal.updatedAt || proposal.createdAt) }}</CCol>
           </CRow>
         </CCardBody>
       </CCard>

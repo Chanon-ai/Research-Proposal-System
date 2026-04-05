@@ -536,10 +536,56 @@ async function getProposalList(query = {}, user) {
     Proposal.countDocuments(filter)
   ]);
 
+  const proposalIds = data
+    .map((proposal) => (proposal && proposal._id ? proposal._id : null))
+    .filter(Boolean);
+
+  let latestStatusActionAtByProposalId = new Map();
+  if (proposalIds.length > 0) {
+    const latestStatusRows = await ProposalStatusLog.aggregate([
+      {
+        $match: {
+          proposalId: { $in: proposalIds }
+        }
+      },
+      {
+        $sort: {
+          updatedAt: -1,
+          createdAt: -1
+        }
+      },
+      {
+        $group: {
+          _id: '$proposalId',
+          updatedAt: { $first: '$updatedAt' },
+          createdAt: { $first: '$createdAt' }
+        }
+      }
+    ]);
+
+    latestStatusActionAtByProposalId = new Map(
+      latestStatusRows.map((row) => {
+        const proposalId = String(row && row._id ? row._id : '');
+        const updatedAtTs = row && row.updatedAt ? new Date(row.updatedAt).getTime() : 0;
+        const createdAtTs = row && row.createdAt ? new Date(row.createdAt).getTime() : 0;
+        const latestTs = Math.max(updatedAtTs || 0, createdAtTs || 0);
+        return [proposalId, latestTs ? new Date(latestTs) : null];
+      })
+    );
+  }
+
+  const enrichedData = data.map((proposal) => {
+    const plain = proposal && typeof proposal.toObject === 'function'
+      ? proposal.toObject()
+      : { ...proposal };
+    plain.lastStatusActionAt = latestStatusActionAtByProposalId.get(String(plain && plain._id ? plain._id : '')) || null;
+    return plain;
+  });
+
   return {
-    proposals: data,
-    data,
-    items: data,
+    proposals: enrichedData,
+    data: enrichedData,
+    items: enrichedData,
     total,
     page,
     limit,
@@ -552,7 +598,26 @@ async function getProposalById(id, user) {
   const proposal = await Proposal.findById(id);
   // .populate('applicantUserId')
   // .populate('committeeIds');
-  return proposal;
+  if (!proposal) return proposal;
+
+  const latestStatusLog = await ProposalStatusLog.findOne({ proposalId: proposal._id })
+    .sort({ updatedAt: -1, createdAt: -1 })
+    .select('updatedAt createdAt');
+
+  const plain = typeof proposal.toObject === 'function'
+    ? proposal.toObject()
+    : { ...proposal };
+
+  if (latestStatusLog) {
+    const updatedAtTs = latestStatusLog.updatedAt ? new Date(latestStatusLog.updatedAt).getTime() : 0;
+    const createdAtTs = latestStatusLog.createdAt ? new Date(latestStatusLog.createdAt).getTime() : 0;
+    const latestTs = Math.max(updatedAtTs || 0, createdAtTs || 0);
+    plain.lastStatusActionAt = latestTs ? new Date(latestTs) : null;
+  } else {
+    plain.lastStatusActionAt = null;
+  }
+
+  return plain;
 }
 
 async function updateDraftProposal(id, payload, user) {

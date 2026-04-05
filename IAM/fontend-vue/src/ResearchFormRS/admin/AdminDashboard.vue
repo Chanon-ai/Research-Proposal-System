@@ -95,7 +95,7 @@
                   <td>{{ item.currentRound ? $t('admin.table.roundLabel', { n: item.currentRound }) : '-' }}</td>
                 </template>
 
-                <template #updatedAt="{ item }">
+                <template #latestStatusUpdatedAt="{ item }">
                   <td :title="formatAbsoluteDate(getLastActionAt(item))">
                     {{ formatElapsedFromLastAction(item) }}
                   </td>
@@ -415,7 +415,7 @@ export default {
       selectedStatus: '',
       selectedSummaryFilter: DEFAULT_SUMMARY_FILTER_KEY,
       selectedYear: '',
-      sorterValue: { column: 'updatedAt', asc: false },
+      sorterValue: { column: 'latestStatusUpdatedAt', asc: false },
       limit: 10,
       perPageOptions: [5, 10, 20, 50],
       nowTs: Date.now(),
@@ -479,7 +479,7 @@ export default {
         { key: 'projectTitleTh', label: this.$t('admin.table.projectTitleTh') },
         { key: 'currentStatus', label: this.$t('admin.table.currentStatus'), _style: 'width:360px; text-align:center;' },
         { key: 'currentRound', label: this.$t('admin.table.currentRound') },
-        { key: 'updatedAt', label: this.$t('admin.table.updatedAt') },
+        { key: 'latestStatusUpdatedAt', label: this.$t('admin.table.updatedAt') },
         { key: 'actions', label: this.$t('admin.table.actions'), _classes: 'text-center text-nowrap', sorter: false }
       ]
     },
@@ -797,6 +797,8 @@ export default {
       }, 0)
 
       const directTimestamp = Math.max(
+        this.toTimestamp(proposal.latestStatusUpdatedAt),
+        this.toTimestamp(proposal.lastStatusActionAt),
         this.toTimestamp(proposal.lastActionAt),
         this.toTimestamp(proposal.statusUpdatedAt),
         this.toTimestamp(proposal.currentStatusUpdatedAt),
@@ -876,7 +878,12 @@ export default {
           ? payload.proposals
           : (Array.isArray(payload.data) ? payload.data : [])
 
-        this.proposals = list
+        this.proposals = list.map((item) => ({
+          ...item,
+          latestStatusUpdatedAt: item && (item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt)
+            ? (item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt)
+            : null
+        }))
         this.total = Number(payload.total) || list.length
         this.page = Number(payload.page) || this.page
         this.totalPages = Number(payload.totalPages) || Math.max(1, Math.ceil(this.total / this.limit))

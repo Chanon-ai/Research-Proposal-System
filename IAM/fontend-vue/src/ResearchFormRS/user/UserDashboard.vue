@@ -598,6 +598,8 @@ export default {
         projectTitleEn: item.projectTitleEn || '',
         projectLeaderName: item.projectLeaderName || (applicant && applicant.fullName ? applicant.fullName : '-'),
         budgetUsedAmount: this.resolveBudgetUsedAmount(item),
+        lastStatusActionAt: item.lastStatusActionAt || null,
+        latestStatusUpdatedAt: item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt || null,
         submittedAt: item.submittedAt,
         updatedAt: item.updatedAt,
         createdAt: item.createdAt,
@@ -710,6 +712,10 @@ export default {
     getLatestActionDate(item) {
       if (!item || typeof item !== 'object') return null;
       const candidates = [
+        item.latestStatusUpdatedAt,
+        item.lastStatusActionAt,
+        item.currentStatusUpdatedAt,
+        item.statusUpdatedAt,
         item.updatedAt,
         item.submittedAt,
         item.createdAt

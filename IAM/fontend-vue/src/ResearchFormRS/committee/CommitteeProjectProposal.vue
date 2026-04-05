@@ -328,7 +328,7 @@ export default {
         const committeeProgress = committeeStatusKey === 'reviewed'
           ? 'review_submitted'
           : (committeeStatusKey === 'announced' ? 'announced' : 'waiting_for_review')
-        const latestTs = this.getLatestUpdatedAt(proposalId || p.proposalCode || p._id || '-', review && (review.updatedAt || review.submittedAt || p.updatedAt || p.createdAt))
+        const latestTs = this.getLatestStatusUpdatedAt(p)
 
         return {
           id: p.proposalCode || p._id || '-',
@@ -663,32 +663,9 @@ export default {
       this.filterStatus = status
       this.activePage = 1
     },
-    getLatestUpdatedAt (id, fallback) {
-      const times = []
-      if (fallback) times.push(fallback)
-      try {
-        const draftRaw = localStorage.getItem(`reviewDraft:${id}`)
-        if (draftRaw) {
-          const draft = JSON.parse(draftRaw)
-          if (draft && typeof draft === 'object' && draft.savedAt) times.push(draft.savedAt)
-        }
-      } catch (e) { void e }
-      try {
-        const subRaw = localStorage.getItem(`reviewSubmission:${id}`)
-        if (subRaw) {
-          const sub = JSON.parse(subRaw)
-          if (sub && typeof sub === 'object' && sub.submittedAt) times.push(sub.submittedAt)
-        }
-      } catch (e) { void e }
-
-      let newest = ''
-      times.forEach(t => {
-        const d = new Date(t)
-        if (Number.isNaN(d.getTime())) return
-        if (!newest) newest = t
-        else if (d.getTime() > new Date(newest).getTime()) newest = t
-      })
-      return newest || fallback || ''
+    getLatestStatusUpdatedAt (proposal) {
+      if (!proposal || typeof proposal !== 'object') return ''
+      return proposal.lastStatusActionAt || proposal.currentStatusUpdatedAt || proposal.statusUpdatedAt || proposal.updatedAt || proposal.createdAt || ''
     },
     deriveRoundNo (proposal) {
       const status = String(proposal && proposal.currentStatus ? proposal.currentStatus : '').toLowerCase()

@@ -83,7 +83,7 @@
               </template>
 
               <template #updatedAt="{ item }">
-                <td>{{ formatDate(item.updatedAt) }}</td>
+                <td>{{ formatDate(getLatestStatusUpdatedAt(item)) }}</td>
               </template>
 
               <template #actions="{ item }">
@@ -403,6 +403,10 @@ export default {
       const date = new Date(value)
       if (Number.isNaN(date.getTime())) return '-'
       return date.toLocaleString('th-TH')
+    },
+    getLatestStatusUpdatedAt (item) {
+      if (!item || typeof item !== 'object') return null
+      return item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt || null
     },
     onView (item) {
       this.$router.push({

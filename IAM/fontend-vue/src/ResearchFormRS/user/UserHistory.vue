@@ -157,7 +157,7 @@ export default {
         _id: item && item._id,
         code: item && item.proposalCode ? item.proposalCode : '-',
         title: (item && (item.projectTitleTh || item.projectTitleEn)) || '(ไม่มีชื่อโครงการ)',
-        date: this.formatDate(item && (item.submittedAt || item.updatedAt || item.createdAt)),
+        date: this.formatDate(item && (item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt || item.submittedAt)),
         status: this.statusLabel(status),
         currentStatus: status,
         currentRound: item && item.currentRound ? item.currentRound : 1,
