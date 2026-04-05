@@ -66,7 +66,7 @@
                 </template>
                 <template #statusDisplay="{item}">
                   <td class="current-status-cell">
-                    <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.status, item.reviewStatus)">
+                    <CBadge class="mb-2 status-badge" :color="statusColor(item.status, item.reviewStatus)">
                       {{ statusLabel(item.status, item.roundNo, item.reviewStatus) }}
                     </CBadge>
                     <div class="status-progress-label">
@@ -182,7 +182,7 @@ import {
   mapRoleForResearchAccess
 } from '@/ResearchFormRS/utils/rolePageAccessRuntime'
 import {
-  PROPOSAL_STATUS_COLORS_HEX as STATUS_HEX_COLORS,
+  PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_COLORS,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
@@ -194,7 +194,7 @@ const COMMITTEE_PENDING_STATUSES = Object.freeze([
 ])
 
 const COMMITTEE_REVIEWED_STATUSES = Object.freeze([
-  'meeting_completed',
+  'committee_valuated',
   'approved',
   'rejected'
 ])
@@ -713,8 +713,8 @@ export default {
     getCommitteeDisplayStatus (status, reviewStatus = null) {
       const key = normalizeProposalStatus(status)
       if (key === 'announced' || key === 'revision_requested' || key === 'resubmitted') return key
-      if (this.isCommitteeReviewSubmitted(reviewStatus)) return 'meeting_completed'
-      if (key === 'approved' || key === 'rejected') return 'meeting_completed'
+      if (this.isCommitteeReviewSubmitted(reviewStatus)) return 'committee_valuated'
+      if (key === 'approved' || key === 'rejected') return 'committee_valuated'
       return key
     },
     statusLabelClass (status) {
@@ -740,7 +740,7 @@ export default {
       if (displayStatus === 'under_review' || displayStatus === 'second_round_review') {
         return `พิจารณารอบ ${resolvedRound}`
       }
-      if (displayStatus === 'meeting_completed') return 'ส่งผลการประเมินแล้ว'
+      if (displayStatus === 'committee_valuated') return 'ส่งผลการประเมินแล้ว'
       if (displayStatus === 'revision_requested') return 'ขอแก้ไข'
       if (displayStatus === 'resubmitted') return 'ส่งแก้ไขแล้ว'
       if (displayStatus === 'announced') return 'ประกาศผล'
@@ -748,34 +748,8 @@ export default {
       return status || '-'
     },
     statusColor (status, reviewStatus = null) {
-      const key = this.getCommitteeStatusKey(status, reviewStatus)
-      if (key === 'pending') return 'warning'
-      if (key === 'reviewed') return 'success'
-      if (key === 'announced') return 'dark'
-      return 'secondary'
-    },
-    getStatusHexColor (status, reviewStatus = null) {
       const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)
-      return STATUS_HEX_COLORS[displayStatus] || STATUS_HEX_COLORS.submitted || '#3B82F6'
-    },
-    getReadableTextColor (hexColor) {
-      const raw = String(hexColor || '').replace('#', '').trim()
-      if (raw.length !== 6) return '#ffffff'
-      const r = parseInt(raw.slice(0, 2), 16)
-      const g = parseInt(raw.slice(2, 4), 16)
-      const b = parseInt(raw.slice(4, 6), 16)
-      if ([r, g, b].some((v) => Number.isNaN(v))) return '#ffffff'
-      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
-      return yiq >= 160 ? '#111827' : '#ffffff'
-    },
-    getStatusBadgeStyle (status, reviewStatus = null) {
-      const color = this.getStatusHexColor(status, reviewStatus)
-      return {
-        fontSize: '11px',
-        backgroundColor: color,
-        borderColor: color,
-        color: this.getReadableTextColor(color)
-      }
+      return STATUS_COLORS[normalizeProposalStatus(displayStatus)] || 'secondary'
     },
     getProgressLabel (itemOrStatus) {
       const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
@@ -789,7 +763,7 @@ export default {
       if (displayStatus === 'under_review' || displayStatus === 'second_round_review') {
         return `คณะกรรมการ : พิจารณารอบ ${safeRound}`
       }
-      if (displayStatus === 'meeting_completed') return 'คณะกรรมการ : ส่งผลการประเมินแล้ว'
+      if (displayStatus === 'committee_valuated') return 'คณะกรรมการ : ส่งผลการประเมินแล้ว'
       if (displayStatus === 'revision_requested') return 'นักวิจัย : ขอแก้ไข'
       if (displayStatus === 'resubmitted') return 'นักวิจัย : ส่งแก้ไขแล้ว'
       if (displayStatus === 'announced') return 'สำนักงานบริหารโครงการ : ประกาศผล'

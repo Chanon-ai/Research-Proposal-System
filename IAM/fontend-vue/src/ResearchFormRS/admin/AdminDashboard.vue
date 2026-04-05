@@ -79,7 +79,7 @@
 
                 <template #currentStatus="{ item }">
                   <td class="current-status-cell">
-                    <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.currentStatus)">
+                    <CBadge class="mb-2 status-badge" :color="getStatusBadgeColor(item.currentStatus)">
                       {{ getStatusLabel(item.currentStatus, item) }}
                     </CBadge>
                     <div class="status-progress-label">
@@ -321,7 +321,6 @@ import Swal from 'sweetalert2'
 import {
   PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
-  PROPOSAL_STATUS_COLORS_HEX as STATUS_HEX_COLORS,
   PROPOSAL_STATUS_KEYS as STATUS_KEYS,
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
   deriveProposalRoundNo,
@@ -696,30 +695,7 @@ export default {
       return getProposalStatusLabel(key, STATUS_LABELS, roundSource, options)
     },
     getStatusBadgeColor (status) {
-      return STATUS_COLORS[status] || 'secondary'
-    },
-    getStatusHexColor (status) {
-      const key = normalizeProposalStatus(status)
-      return STATUS_HEX_COLORS[key] || STATUS_HEX_COLORS.submitted || '#3B82F6'
-    },
-    getReadableTextColor (hexColor) {
-      const raw = String(hexColor || '').replace('#', '').trim()
-      if (raw.length !== 6) return '#ffffff'
-      const r = parseInt(raw.slice(0, 2), 16)
-      const g = parseInt(raw.slice(2, 4), 16)
-      const b = parseInt(raw.slice(4, 6), 16)
-      if ([r, g, b].some((v) => Number.isNaN(v))) return '#ffffff'
-      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
-      return yiq >= 160 ? '#111827' : '#ffffff'
-    },
-    getStatusBadgeStyle (status) {
-      const color = this.getStatusHexColor(status)
-      return {
-        fontSize: '11px',
-        backgroundColor: color,
-        borderColor: color,
-        color: this.getReadableTextColor(color)
-      }
+      return STATUS_COLORS[normalizeProposalStatus(status)] || 'secondary'
     },
     getProgressLabel (itemOrStatus) {
       const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
@@ -737,7 +713,7 @@ export default {
         document_checking: 'ส่วนบริหารโครงการ : กำลังตรวจสอบเอกสาร',
         assigned_to_committee: 'ส่วนบริหารโครงการ : กำลังมอบหมายคณะผู้ทรงคุณวุฒิ',
         under_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,
-        meeting_completed: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
+        committee_valuated: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
         revision_requested: `${ownerName} : รอแก้ไขเอกสารตามข้อเสนอแนะ`,
         resubmitted: 'ส่วนบริหารโครงการ : ได้รับเอกสารแก้ไข กำลังส่งพิจารณาต่อ',
         second_round_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,
@@ -748,7 +724,7 @@ export default {
       return statusOwnerMap[key] || 'ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ'
     },
     getNextStatuses (currentStatus) {
-      return ALLOWED_TRANSITIONS[currentStatus] || []
+      return ALLOWED_TRANSITIONS[normalizeProposalStatus(currentStatus)] || []
     },
     getSelectValue (val) {
       return val && val.target ? val.target.value : val

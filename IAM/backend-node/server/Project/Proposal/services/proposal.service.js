@@ -345,7 +345,8 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
   const proposal = await Proposal.findById(proposalId).select('_id proposalCode applicantUserId committeeIds currentStatus currentRound');
   if (!proposal) return null;
 
-  const fromStatus = String(proposal.currentStatus || '').trim();
+  const fromStatusRaw = String(proposal.currentStatus || '').trim();
+  const fromStatus = STATUS.normalizeStatus(fromStatusRaw);
   const activeRound = normalizeRoundNo(roundNo, normalizeRoundNo(proposal.currentRound, 1));
   const reviewStatuses = [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.SECOND_ROUND_REVIEW];
   if (!reviewStatuses.includes(fromStatus)) return proposal;
@@ -367,7 +368,7 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
   if (!toStatus || toStatus === fromStatus) return proposal;
 
   const updatedProposal = await Proposal.findOneAndUpdate(
-    { _id: proposal._id, currentStatus: fromStatus },
+    { _id: proposal._id, currentStatus: fromStatusRaw },
     { $set: { currentStatus: toStatus, updatedBy: user._id } },
     { new: true }
   );
@@ -411,7 +412,7 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
           userId,
           proposalId: updatedProposal._id,
           channel: 'in_app',
-          eventKey: toStatus === STATUS.MEETING_COMPLETED ? 'meeting_completed' : 'status_changed',
+          eventKey: toStatus === STATUS.MEETING_COMPLETED ? 'committee_valuated' : 'status_changed',
           title: notificationTitle,
           message: notificationMessage,
           payload: {
@@ -698,7 +699,8 @@ async function changeProposalStatus(id, toStatus, remark, user) {
 
   const workflowPolicy = await systemSettingService.getWorkflowApprovalPolicy();
   const currentRound = normalizeRoundNo(proposal.currentRound, 1);
-  const fromStatus = proposal.currentStatus;
+  const fromStatus = STATUS.normalizeStatus(proposal.currentStatus);
+  toStatus = STATUS.normalizeStatus(toStatus);
 
   let allowed = ALLOWED_TRANSITIONS[fromStatus] || [];
   const submittedReviewCount = await ProposalReview.countDocuments({
@@ -818,7 +820,7 @@ async function changeProposalStatus(id, toStatus, remark, user) {
     [STATUS.ANNOUNCED]: 'มีการประกาศผลโครงการ',
     [STATUS.ASSIGNED_TO_COMMITTEE]: 'มีการมอบหมายคณะกรรมการ',
     [STATUS.UNDER_REVIEW]: 'โครงการเข้าสู่ขั้นตอนการพิจารณา',
-    [STATUS.MEETING_COMPLETED]: 'การประชุมพิจารณาเสร็จสิ้น'
+    [STATUS.MEETING_COMPLETED]: 'กรรมการได้ให้ความเห็นแล้ว'
   };
 
   const notificationTitle = notificationTitleMap[toStatus] || 'สถานะโครงการมีการเปลี่ยนแปลง';
@@ -833,7 +835,11 @@ async function changeProposalStatus(id, toStatus, remark, user) {
           channel: 'in_app',
           eventKey: toStatus === STATUS.REVISION_REQUESTED
             ? 'revision_requested'
-            : (toStatus === STATUS.APPROVED ? 'approved' : (toStatus === STATUS.REJECTED ? 'rejected' : 'status_changed')),
+            : (toStatus === STATUS.APPROVED
+              ? 'approved'
+              : (toStatus === STATUS.REJECTED
+                ? 'rejected'
+                : (toStatus === STATUS.MEETING_COMPLETED ? 'committee_valuated' : 'status_changed'))),
           title: notificationTitle,
           message: notificationMessage,
           payload: {

@@ -171,7 +171,7 @@
 
             <template #currentStatus="{ item }">
               <td class="current-status-cell">
-                <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.currentStatus)">
+                <CBadge class="mb-2 status-badge" :color="getStatusBadgeColor(item.currentStatus)">
                   {{ getStatusLabel(item) }}
                 </CBadge>
                 <div class="status-progress-label">
@@ -252,8 +252,8 @@ import {
   FILTER_IN_PROGRESS_STATUSES,
   IN_PROGRESS_STATUSES,
   PROPOSAL_STATUSES,
+  PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_BADGE_COLORS,
   PROPOSAL_STATUS_LABELS_TH_RESEARCHER as STATUS_LABEL_MAP,
-  STATUS_COLORS,
   STATUS_STEP_MAP,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
@@ -638,38 +638,9 @@ export default {
       return STATUS_LABEL_MAP[key] || key || this.$t('status.inProgress')
     },
 
-    getStatusHexColor(status) {
-      const key = String(status || '').toLowerCase();
-      return STATUS_COLORS[key] || STATUS_COLORS.submitted;
-    },
-
-    getReadableTextColor(hexColor) {
-      const raw = String(hexColor || '').replace('#', '').trim();
-      if (raw.length !== 6) return '#ffffff';
-      const r = parseInt(raw.slice(0, 2), 16);
-      const g = parseInt(raw.slice(2, 4), 16);
-      const b = parseInt(raw.slice(4, 6), 16);
-      if ([r, g, b].some((v) => Number.isNaN(v))) return '#ffffff';
-      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-      return yiq >= 160 ? '#111827' : '#ffffff';
-    },
-
-    getStatusBadgeStyle(status) {
-      const color = this.getStatusHexColor(status);
-      return {
-        fontSize: '11px',
-        backgroundColor: color,
-        borderColor: color,
-        color: this.getReadableTextColor(color)
-      };
-    },
-
-    getStatusProgressStyle(status) {
-      const color = this.getStatusHexColor(status);
-      return {
-        '--status-progress-color': color,
-        '--status-progress-text-color': this.getReadableTextColor(color)
-      };
+    getStatusBadgeColor(status) {
+      const key = normalizeProposalStatus(status)
+      return STATUS_BADGE_COLORS[key] || STATUS_BADGE_COLORS.submitted || 'primary'
     },
 
     getProgressPercent(status) {
@@ -701,7 +672,7 @@ export default {
         document_checking: 'ส่วนบริหารโครงการ : กำลังตรวจสอบเอกสาร',
         assigned_to_committee: 'ส่วนบริหารโครงการ : กำลังมอบหมายคณะผู้ทรงคุณวุฒิ',
         under_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,
-        meeting_completed: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
+        committee_valuated: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
         revision_requested: `${ownerName} : รอแก้ไขเอกสารตามข้อเสนอแนะ`,
         resubmitted: 'ส่วนบริหารโครงการ : ได้รับเอกสารแก้ไข กำลังส่งพิจารณาต่อ',
         second_round_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,

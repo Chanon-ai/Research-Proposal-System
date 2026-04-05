@@ -62,7 +62,8 @@ const proposalSchema = new mongoose.Schema(
       type: String,
       required: true,
       default: ProposalStatus.DRAFT,
-      enum: Object.values(ProposalStatus),
+      enum: ProposalStatus.WORKFLOW_STATUS_VALUES,
+      set: ProposalStatus.normalizeStatus,
       index: true
     },
     currentRound: {

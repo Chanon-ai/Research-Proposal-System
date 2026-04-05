@@ -771,7 +771,8 @@ import Service, { instance as axios } from '@/service/api'
 import {
   PROPOSAL_ALLOWED_TRANSITIONS as ADMIN_ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_COLORS_COREUI_RESEARCH_FORM as ADMIN_STATUS_COLORS,
-  PROPOSAL_STATUS_LABELS_TH_RESEARCHER as ADMIN_STATUS_LABELS
+  PROPOSAL_STATUS_LABELS_TH_RESEARCHER as ADMIN_STATUS_LABELS,
+  normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { RESEARCH_STANDARD_TEXT } from '@/ResearchFormRS/constants/researchStandard'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
@@ -2135,7 +2136,7 @@ export default {
       return ADMIN_STATUS_LABELS[status] || status || '-'
     },
     adminGetStatusBadgeColor (status) {
-      return ADMIN_STATUS_COLORS[status] || 'secondary'
+      return ADMIN_STATUS_COLORS[normalizeProposalStatus(status)] || 'secondary'
     },
     adminGetSelectValue (val) {
       return val && val.target ? val.target.value : val
@@ -4463,7 +4464,7 @@ export default {
         const nonEditableStatuses = [
           'pending_confirm', 'submitted', 'faculty_review_pending', 'faculty_approved',
           'office_received', 'document_checking', 'assigned_to_committee',
-          'under_review', 'meeting_completed', 'resubmitted', 'second_round_review',
+          'under_review', 'committee_valuated', 'resubmitted', 'second_round_review',
           'approved', 'rejected', 'announced'
         ]
 

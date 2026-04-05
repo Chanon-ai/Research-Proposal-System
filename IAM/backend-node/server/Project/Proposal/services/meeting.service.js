@@ -554,7 +554,7 @@ async function syncProposalStatusFromMeeting(meeting, user) {
       proposalId: proposal._id,
       fromStatus,
       toStatus: STATUS.MEETING_COMPLETED,
-      actionKey: 'meeting_completed',
+      actionKey: 'committee_valuated',
       remark: `Meeting: ${meeting.title}`,
       roundNo: proposal.currentRound || 1,
       changedBy: user._id
@@ -581,7 +581,7 @@ async function updateMeetingStatus(id, status, user) {
     await createMeetingNotifications({
       recipientIds,
       proposalIds: meeting.proposalIds,
-      eventKey: 'meeting_completed',
+      eventKey: 'committee_valuated',
       title: 'การประชุมเสร็จสิ้น',
       message: `การประชุม ${meeting.title} บันทึกผลเรียบร้อยแล้ว`
     });

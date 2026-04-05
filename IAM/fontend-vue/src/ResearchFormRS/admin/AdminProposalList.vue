@@ -213,7 +213,8 @@ import {
   PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_COLORS,
   PROPOSAL_STATUS_KEYS as STATUS_KEYS,
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
-  getProposalStatusLabel
+  getProposalStatusLabel,
+  normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
@@ -395,7 +396,7 @@ export default {
       return getProposalStatusLabel(status, STATUS_LABELS, roundSource, options)
     },
     getStatusColor (status) {
-      return STATUS_COLORS[status] || 'secondary'
+      return STATUS_COLORS[normalizeProposalStatus(status)] || 'secondary'
     },
     formatDate (value) {
       if (!value) return '-'

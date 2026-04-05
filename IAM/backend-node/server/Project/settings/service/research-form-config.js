@@ -22,7 +22,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'revision_requested',
     'resubmitted',
     'second_round_review',
@@ -39,7 +39,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'resubmitted',
     'second_round_review'
   ],
@@ -51,7 +51,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'revision_requested',
     'resubmitted',
     'second_round_review'
@@ -66,7 +66,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'approved',
     'rejected',
     'announced'
@@ -80,11 +80,11 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     office_received: ['document_checking'],
     document_checking: ['assigned_to_committee'],
     assigned_to_committee: ['under_review'],
-    under_review: ['meeting_completed'],
-    meeting_completed: ['approved', 'rejected', 'revision_requested'],
+    under_review: ['committee_valuated'],
+    committee_valuated: ['approved', 'rejected', 'revision_requested'],
     revision_requested: ['resubmitted'],
     resubmitted: ['second_round_review'],
-    second_round_review: ['meeting_completed'],
+    second_round_review: ['committee_valuated'],
     approved: ['announced'],
     rejected: ['announced']
   },
@@ -98,7 +98,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     document_checking: 6,
     assigned_to_committee: 7,
     under_review: 8,
-    meeting_completed: 9,
+    committee_valuated: 9,
     revision_requested: 5,
     resubmitted: 6,
     second_round_review: 8,
@@ -117,7 +117,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       document_checking: 'ตรวจสอบเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
       under_review: 'พิจารณารอบ 1',
-      meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
+      committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ 2',
@@ -135,7 +135,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       document_checking: 'ตรวจสอบเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
       under_review: 'พิจารณารอบ 1',
-      meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
+      committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ 2',
@@ -153,7 +153,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       document_checking: 'ตรวจเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
       under_review: 'พิจารณารอบ 1',
-      meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
+      committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ 2',
@@ -173,7 +173,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       document_checking: '#FACC15',
       assigned_to_committee: '#A78BFA',
       under_review: '#6366F1',
-      meeting_completed: '#10B981',
+        committee_valuated: '#EF4444',
       revision_requested: '#FB923C',
       resubmitted: '#22D3EE',
       second_round_review: '#8B5CF6',
@@ -190,7 +190,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       document_checking: '#fd7e14',
       assigned_to_committee: '#007bff',
       under_review: '#e83e8c',
-      meeting_completed: '#6f42c1',
+        committee_valuated: '#dc3545',
       revision_requested: '#dc3545',
       resubmitted: '#20c997',
       second_round_review: '#fd7e14',
@@ -202,19 +202,19 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       admin: {
         draft: 'secondary', pending_confirm: 'secondary', submitted: 'info', faculty_review_pending: 'warning',
         faculty_approved: 'primary', office_received: 'primary', document_checking: 'warning', assigned_to_committee: 'info',
-        under_review: 'danger', meeting_completed: 'primary', revision_requested: 'danger', resubmitted: 'info',
+          under_review: 'danger', committee_valuated: 'danger', revision_requested: 'danger', resubmitted: 'info',
         second_round_review: 'warning', approved: 'success', rejected: 'danger', announced: 'primary'
       },
       badge: {
         draft: 'secondary', pending_confirm: 'secondary', submitted: 'info', faculty_review_pending: 'warning',
         faculty_approved: 'primary', office_received: 'primary', document_checking: 'warning', assigned_to_committee: 'info',
-        under_review: 'warning', meeting_completed: 'primary', revision_requested: 'danger', resubmitted: 'info',
+          under_review: 'warning', committee_valuated: 'danger', revision_requested: 'danger', resubmitted: 'info',
         second_round_review: 'warning', approved: 'success', rejected: 'danger', announced: 'success'
       },
       researchForm: {
         draft: 'secondary', pending_confirm: 'warning', submitted: 'info', faculty_review_pending: 'warning',
         faculty_approved: 'primary', office_received: 'primary', document_checking: 'warning', assigned_to_committee: 'info',
-        under_review: 'danger', meeting_completed: 'primary', revision_requested: 'danger', resubmitted: 'info',
+          under_review: 'danger', committee_valuated: 'danger', revision_requested: 'danger', resubmitted: 'info',
         second_round_review: 'warning', approved: 'success', rejected: 'danger', announced: 'primary'
       }
     }
@@ -223,7 +223,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     flowStatuses: [
       'assigned_to_committee',
       'under_review',
-      'meeting_completed',
+      'committee_valuated',
       'revision_requested',
       'resubmitted',
       'second_round_review',
@@ -235,14 +235,14 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       'second_round_review'
     ],
     reviewedStatuses: [
-      'meeting_completed',
+      'committee_valuated',
       'approved',
       'rejected'
     ],
     labels: {
       assigned_to_committee: 'รอการประเมิน',
       under_review: 'พิจารณารอบ {roundNo}',
-      meeting_completed: 'ส่งผลการประเมินแล้ว',
+      committee_valuated: 'ส่งผลการประเมินแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ {roundNo}',
@@ -252,7 +252,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       background: {
         assigned_to_committee: 'rgba(59, 130, 246, 0.45)',
         under_review: 'rgba(124, 58, 237, 0.45)',
-        meeting_completed: 'rgba(22, 163, 74, 0.45)',
+          committee_valuated: 'rgba(220, 53, 69, 0.45)',
         revision_requested: 'rgba(249, 115, 22, 0.45)',
         resubmitted: 'rgba(6, 182, 212, 0.45)',
         second_round_review: 'rgba(168, 85, 247, 0.45)',
@@ -261,7 +261,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       border: {
         assigned_to_committee: 'rgba(59, 130, 246, 1)',
         under_review: 'rgba(124, 58, 237, 1)',
-        meeting_completed: 'rgba(22, 163, 74, 1)',
+          committee_valuated: 'rgba(220, 53, 69, 1)',
         revision_requested: 'rgba(249, 115, 22, 1)',
         resubmitted: 'rgba(6, 182, 212, 1)',
         second_round_review: 'rgba(168, 85, 247, 1)',

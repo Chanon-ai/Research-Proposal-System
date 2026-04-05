@@ -81,6 +81,7 @@ const STATUS_LABELS = {
   document_checking: 'ตรวจเอกสาร',
   assigned_to_committee: 'มอบหมายกรรมการแล้ว',
   under_review: 'พิจารณารอบ 1',
+  committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
   meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
   revision_requested: 'ขอแก้ไข',
   resubmitted: 'ส่งแก้ไขแล้ว',

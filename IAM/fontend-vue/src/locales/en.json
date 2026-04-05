@@ -45,6 +45,7 @@
     "document_checking": "Document Checking",
     "assigned_to_committee": "Assigned to Committee",
     "under_review": "Under Review",
+    "committee_valuated": "Committee Evaluated",
     "meeting_completed": "Meeting Completed",
     "revision_requested": "Revision Requested",
     "resubmitted": "Resubmitted",
