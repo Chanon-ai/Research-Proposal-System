@@ -763,6 +763,7 @@ import {
   BUDGET_MULTIPLIER_SETTING_KEY,
   createDefaultBudgetMultiplierConfig,
   parseBudgetMultiplierSettingValue,
+  mergeBudgetMultiplierMaxValues,
   readBudgetMultiplierConfigFromFallbackStorage,
   writeBudgetMultiplierConfigToFallbackStorage
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
@@ -1658,7 +1659,9 @@ export default {
         const settings = this.parseSettingsPayload(response)
         const setting = settings.find(item => item && item.key === BUDGET_MULTIPLIER_SETTING_KEY)
         const rawValue = setting ? setting.value : null
-        this.budgetMultiplierConfig = parseBudgetMultiplierSettingValue(rawValue, { fallbackToDefault: true })
+        const parsedConfig = parseBudgetMultiplierSettingValue(rawValue, { fallbackToDefault: true })
+        const fallbackConfig = readBudgetMultiplierConfigFromFallbackStorage()
+        this.budgetMultiplierConfig = mergeBudgetMultiplierMaxValues(parsedConfig, fallbackConfig)
         writeBudgetMultiplierConfigToFallbackStorage(this.budgetMultiplierConfig)
       } catch (error) {
         const fallbackConfig = readBudgetMultiplierConfigFromFallbackStorage()

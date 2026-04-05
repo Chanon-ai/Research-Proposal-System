@@ -393,6 +393,7 @@ import {
   parseBudgetMultiplierSettingValue,
   normalizeBudgetMultiplierConfig as normalizeBudgetMultiplierConfigUtil,
   sanitizeBudgetMultiplierConfigForSave as sanitizeBudgetMultiplierConfigForSaveUtil,
+  mergeBudgetMultiplierMaxValues,
   toMultiplierNumber as toMultiplierNumberUtil,
   toMultiplierMaxNumber as toMultiplierMaxNumberUtil
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
@@ -650,7 +651,13 @@ export default {
         const settings = await this.fetchSettingCache()
         const setting = settings.find(item => item && item.key === BUDGET_MULTIPLIER_SETTING_KEY)
         const rawValue = setting ? setting.value : null
-        this.budgetMultiplierConfig = parseBudgetMultiplierSettingValue(rawValue, { fallbackToDefault: true })
+        const parsedConfig = parseBudgetMultiplierSettingValue(rawValue, { fallbackToDefault: true })
+        const fallbackRaw = localStorage.getItem(BUDGET_MULTIPLIER_LOCAL_FALLBACK_KEY)
+        const fallbackParsed = fallbackRaw ? JSON.parse(fallbackRaw) : null
+        const fallbackConfig = fallbackParsed && Array.isArray(fallbackParsed.budgetMultiplierConfig)
+          ? fallbackParsed.budgetMultiplierConfig
+          : []
+        this.budgetMultiplierConfig = mergeBudgetMultiplierMaxValues(parsedConfig, fallbackConfig)
         this.saveBudgetMultiplierFallback()
       } catch (error) {
         console.error('[AdminFundingBudgetSettings] fetch multiplier config error:', error)

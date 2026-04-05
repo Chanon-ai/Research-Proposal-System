@@ -28,63 +28,63 @@ export const DEFAULT_BUDGET_MULTIPLIER_CONFIG = Object.freeze([
     categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.COMPENSATION,
     categoryLabel: 'หมวดค่าตอบแทน',
     multipliers: [
-      { label: 'จำนวน (คน)', value: 1, isAdmin: false },
-      { label: 'จำนวน (ครั้ง/ด.)', value: 1, isAdmin: false },
-      { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
+      { label: 'จำนวน (คน)', value: 1, maxValue: null, isAdmin: false },
+      { label: 'จำนวน (ครั้ง/ด.)', value: 1, maxValue: null, isAdmin: false },
+      { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }
     ]
   },
   {
     categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.OPERATING,
     categoryLabel: 'หมวดค่าใช้สอย',
     multipliers: [
-      { label: 'จำนวน (คน/ชิ้น)', value: 1, isAdmin: false },
-      { label: 'จำนวน (วัน/ครั้ง)', value: 1, isAdmin: false },
-      { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
+      { label: 'จำนวน (คน/ชิ้น)', value: 1, maxValue: null, isAdmin: false },
+      { label: 'จำนวน (วัน/ครั้ง)', value: 1, maxValue: null, isAdmin: false },
+      { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }
     ]
   },
   {
     categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.TRAVEL,
     categoryLabel: 'หมวดค่าเดินทาง',
     multipliers: [
-      { label: 'จำนวน (คน)', value: 1, isAdmin: false },
-      { label: 'จำนวน (วัน/เที่ยว)', value: 1, isAdmin: false },
-      { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
+      { label: 'จำนวน (คน)', value: 1, maxValue: null, isAdmin: false },
+      { label: 'จำนวน (วัน/เที่ยว)', value: 1, maxValue: null, isAdmin: false },
+      { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }
     ]
   },
   {
     categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.MATERIAL,
     categoryLabel: 'หมวดค่าวัสดุ',
     multipliers: [
-      { label: 'จำนวน', value: 1, isAdmin: false },
-      { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false },
-      { label: 'ราคา/หน่วย', value: 5000, isAdmin: true }
+      { label: 'จำนวน', value: 1, maxValue: null, isAdmin: false },
+      { label: 'ตัวคูณ (ถ้ามี)', value: 1, maxValue: null, isAdmin: false },
+      { label: 'ราคา/หน่วย', value: 5000, maxValue: null, isAdmin: true }
     ]
   },
   {
     categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.UTILITY,
     categoryLabel: 'หมวดค่าสาธารณูปโภค',
     multipliers: [
-      { label: 'จำนวน (เดือน)', value: 1, isAdmin: false },
-      { label: 'จำนวน (หน่วย)', value: 1, isAdmin: false },
-      { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }
+      { label: 'จำนวน (เดือน)', value: 1, maxValue: null, isAdmin: false },
+      { label: 'จำนวน (หน่วย)', value: 1, maxValue: null, isAdmin: false },
+      { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }
     ]
   },
   {
     categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.EQUIPMENT,
     categoryLabel: 'หมวดครุภัณฑ์',
     multipliers: [
-      { label: 'จำนวน (รายการ)', value: 1, isAdmin: false },
-      { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false },
-      { label: 'ราคา/ชุด', value: 5000, isAdmin: true }
+      { label: 'จำนวน (รายการ)', value: 1, maxValue: null, isAdmin: false },
+      { label: 'ตัวคูณ (ถ้ามี)', value: 1, maxValue: null, isAdmin: false },
+      { label: 'ราคา/ชุด', value: 5000, maxValue: null, isAdmin: true }
     ]
   },
   {
     categoryKey: BUDGET_MULTIPLIER_CATEGORY_KEYS.OTHER,
     categoryLabel: 'หมวดอื่นๆ',
     multipliers: [
-      { label: 'จำนวน', value: 1, isAdmin: false },
-      { label: 'หน่วย', value: 1, isAdmin: false },
-      { label: 'ราคา/หน่วย', value: 0, isAdmin: false }
+      { label: 'จำนวน', value: 1, maxValue: null, isAdmin: false },
+      { label: 'หน่วย', value: 1, maxValue: null, isAdmin: false },
+      { label: 'ราคา/หน่วย', value: 0, maxValue: null, isAdmin: false }
     ]
   }
 ])
@@ -234,6 +234,52 @@ export const sanitizeBudgetMultiplierConfigForSave = (rawConfig) => {
     multipliers: cloneMultipliers(category.multipliers).filter(multiplier => multiplier.label),
     itemOverrides: cloneItemOverrides(category.itemOverrides)
   })).filter(category => category.categoryKey)
+}
+
+export const mergeBudgetMultiplierMaxValues = (primaryConfig, fallbackConfig) => {
+  const primary = normalizeBudgetMultiplierConfig(primaryConfig, { fallbackToDefault: true })
+  const fallback = normalizeBudgetMultiplierConfig(fallbackConfig, { fallbackToDefault: true })
+  const fallbackCategoryMap = new Map(fallback.map(category => [category.categoryKey, category]))
+
+  return primary.map((category) => {
+    const fallbackCategory = fallbackCategoryMap.get(category.categoryKey)
+    const fallbackOverrideMap = new Map(
+      ((fallbackCategory && Array.isArray(fallbackCategory.itemOverrides)) ? fallbackCategory.itemOverrides : [])
+        .map(itemOverride => [normalizeOverrideMatchText(itemOverride.matchText), itemOverride])
+    )
+
+    return {
+      ...category,
+      multipliers: (Array.isArray(category.multipliers) ? category.multipliers : []).map((multiplier, index) => {
+        const fallbackMultiplier = fallbackCategory && Array.isArray(fallbackCategory.multipliers)
+          ? fallbackCategory.multipliers[index]
+          : null
+        return {
+          ...multiplier,
+          maxValue: multiplier && multiplier.maxValue !== null && multiplier.maxValue !== undefined
+            ? multiplier.maxValue
+            : toMultiplierMaxNumber(fallbackMultiplier && fallbackMultiplier.maxValue, null)
+        }
+      }),
+      itemOverrides: (Array.isArray(category.itemOverrides) ? category.itemOverrides : []).map((itemOverride) => {
+        const fallbackOverride = fallbackOverrideMap.get(normalizeOverrideMatchText(itemOverride && itemOverride.matchText))
+        return {
+          ...itemOverride,
+          multipliers: (Array.isArray(itemOverride && itemOverride.multipliers) ? itemOverride.multipliers : []).map((multiplier, index) => {
+            const fallbackMultiplier = fallbackOverride && Array.isArray(fallbackOverride.multipliers)
+              ? fallbackOverride.multipliers[index]
+              : null
+            return {
+              ...multiplier,
+              maxValue: multiplier && multiplier.maxValue !== null && multiplier.maxValue !== undefined
+                ? multiplier.maxValue
+                : toMultiplierMaxNumber(fallbackMultiplier && fallbackMultiplier.maxValue, null)
+            }
+          })
+        }
+      })
+    }
+  })
 }
 
 export const buildBudgetMultiplierConfigMap = (config) => {

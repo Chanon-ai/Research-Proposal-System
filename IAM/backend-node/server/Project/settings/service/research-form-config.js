@@ -323,13 +323,13 @@ const FUNDING_BUDGET_DEFAULT = Object.freeze([
 ]);
 
 const BUDGET_MULTIPLIER_DEFAULT = Object.freeze([
-  { categoryKey: 'compensation', categoryLabel: 'หมวดค่าตอบแทน', multipliers: [{ label: 'จำนวน (คน)', value: 1, isAdmin: false }, { label: 'จำนวน (ครั้ง/ด.)', value: 1, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }] },
-  { categoryKey: 'operating', categoryLabel: 'หมวดค่าใช้สอย', multipliers: [{ label: 'จำนวน (คน/ชิ้น)', value: 1, isAdmin: false }, { label: 'จำนวน (วัน/ครั้ง)', value: 1, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }] },
-  { categoryKey: 'travel', categoryLabel: 'หมวดค่าเดินทาง', multipliers: [{ label: 'จำนวน (คน)', value: 1, isAdmin: false }, { label: 'จำนวน (วัน/เที่ยว)', value: 1, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }] },
-  { categoryKey: 'material', categoryLabel: 'หมวดค่าวัสดุ', multipliers: [{ label: 'จำนวน', value: 1, isAdmin: false }, { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false }, { label: 'ราคา/หน่วย', value: 5000, isAdmin: true }] },
-  { categoryKey: 'utility', categoryLabel: 'หมวดค่าสาธารณูปโภค', multipliers: [{ label: 'จำนวน (เดือน)', value: 1, isAdmin: false }, { label: 'จำนวน (หน่วย)', value: 1, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }] },
-  { categoryKey: 'equipment', categoryLabel: 'หมวดครุภัณฑ์', multipliers: [{ label: 'จำนวน (รายการ)', value: 1, isAdmin: false }, { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false }, { label: 'ราคา/ชุด', value: 5000, isAdmin: true }] },
-  { categoryKey: 'other', categoryLabel: 'หมวดอื่นๆ', multipliers: [{ label: 'จำนวน', value: 1, isAdmin: false }, { label: 'หน่วย', value: 1, isAdmin: false }, { label: 'ราคา/หน่วย', value: 0, isAdmin: false }] }
+  { categoryKey: 'compensation', categoryLabel: 'หมวดค่าตอบแทน', multipliers: [{ label: 'จำนวน (คน)', value: 1, maxValue: null, isAdmin: false }, { label: 'จำนวน (ครั้ง/ด.)', value: 1, maxValue: null, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'operating', categoryLabel: 'หมวดค่าใช้สอย', multipliers: [{ label: 'จำนวน (คน/ชิ้น)', value: 1, maxValue: null, isAdmin: false }, { label: 'จำนวน (วัน/ครั้ง)', value: 1, maxValue: null, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'travel', categoryLabel: 'หมวดค่าเดินทาง', multipliers: [{ label: 'จำนวน (คน)', value: 1, maxValue: null, isAdmin: false }, { label: 'จำนวน (วัน/เที่ยว)', value: 1, maxValue: null, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'material', categoryLabel: 'หมวดค่าวัสดุ', multipliers: [{ label: 'จำนวน', value: 1, maxValue: null, isAdmin: false }, { label: 'ตัวคูณ (ถ้ามี)', value: 1, maxValue: null, isAdmin: false }, { label: 'ราคา/หน่วย', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'utility', categoryLabel: 'หมวดค่าสาธารณูปโภค', multipliers: [{ label: 'จำนวน (เดือน)', value: 1, maxValue: null, isAdmin: false }, { label: 'จำนวน (หน่วย)', value: 1, maxValue: null, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'equipment', categoryLabel: 'หมวดครุภัณฑ์', multipliers: [{ label: 'จำนวน (รายการ)', value: 1, maxValue: null, isAdmin: false }, { label: 'ตัวคูณ (ถ้ามี)', value: 1, maxValue: null, isAdmin: false }, { label: 'ราคา/ชุด', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'other', categoryLabel: 'หมวดอื่นๆ', multipliers: [{ label: 'จำนวน', value: 1, maxValue: null, isAdmin: false }, { label: 'หน่วย', value: 1, maxValue: null, isAdmin: false }, { label: 'ราคา/หน่วย', value: 0, maxValue: null, isAdmin: false }] }
 ]);
 
 const COMMITTEE_FEEDBACK_DEFAULT = Object.freeze({
