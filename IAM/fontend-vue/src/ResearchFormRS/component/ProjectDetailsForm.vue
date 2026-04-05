@@ -308,6 +308,7 @@ import {
   normalizeFundingBudgetConfig,
   normalizeFundingBudgetKey
 } from '@/ResearchFormRS/utils/fundingBudgetConfig'
+import { RESEARCH_STANDARD_TEXT } from '@/ResearchFormRS/constants/researchStandard'
 
 // Structured funding definitions reserved for future cross-section constraints
 // (e.g. budget-cap rules) without changing template wiring.
@@ -1282,7 +1283,7 @@ export default {
       // 1. ตรวจสอบ Validation (ตัวอย่างการเช็คหัวข้อ 18)
       const std = this.form.researchStandard;
       if (std.mainType === 'human_animal' && !std.isHuman && !std.isAnimal) {
-        alert('กรุณาระบุข้อมูลมาตรฐานการวิจัยให้ครบถ้วน (ต้องเลือก มนุษย์ หรือ สัตว์ทดลอง อย่างน้อย 1 อย่าง)');
+        alert(RESEARCH_STANDARD_TEXT.minimumSelectionMessage);
         return;
       }
     },

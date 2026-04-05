@@ -773,6 +773,7 @@ import {
   PROPOSAL_STATUS_COLORS_COREUI_RESEARCH_FORM as ADMIN_STATUS_COLORS,
   PROPOSAL_STATUS_LABELS_TH_RESEARCHER as ADMIN_STATUS_LABELS
 } from '@/ResearchFormRS/constants/proposalWorkflow'
+import { RESEARCH_STANDARD_TEXT } from '@/ResearchFormRS/constants/researchStandard'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 import { cilHistory, cilCheck, cilTrash, cilPaperPlane, cilPeople } from '@coreui/icons'
 
@@ -4956,7 +4957,7 @@ export default {
       return { ok: true }
     },
     getResearchStandardValidationResult () {
-      const section18AlertMessage = 'โปรดแนบเอกสารมาตรฐานการวิจัย'
+      const section18AlertMessage = RESEARCH_STANDARD_TEXT.attachmentRequiredMessage
       const form = this.$refs.projectDetailsForm && typeof this.$refs.projectDetailsForm.getFormData === 'function'
         ? this.$refs.projectDetailsForm.getFormData()
         : null
