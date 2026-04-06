@@ -3,10 +3,8 @@ const bcrypt = require('bcryptjs');
 
 const USER_ROLES = ['admin', 'chairman', 'committee', 'researcher'];
 
-function normalizeStoredRole(role) {
-  const normalized = String(role || '').trim().toLowerCase();
-  if (normalized === 'office_chairman') return 'chairman';
-  return normalized;
+function normalizeUserRole(role) {
+  return String(role || '').trim().toLowerCase();
 }
 
 const userSchema = new mongoose.Schema({
@@ -76,7 +74,7 @@ const userSchema = new mongoose.Schema({
 userSchema.pre('save', async function preSave(next) {
   try {
     this.email = String(this.email || '').toLowerCase().trim();
-    this.role = normalizeStoredRole(this.role);
+    this.role = normalizeUserRole(this.role);
 
     if (this.isModified('password')) {
       this.password = await bcrypt.hash(this.password, 12);

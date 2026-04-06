@@ -10,7 +10,7 @@ function getJwtExpiresIn() {
 function toPublicUser(userDoc) {
   const user = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
   delete user.password;
-  user.role = normalizeRole(user.role);
+  user.role = normalizeAuthRole(user.role);
   return user;
 }
 
@@ -18,7 +18,7 @@ function signToken(user) {
   const payload = {
     userId: user._id,
     email: user.email,
-    role: normalizeRole(user.role),
+    role: normalizeAuthRole(user.role),
     fullName: user.fullName
   };
 
@@ -29,9 +29,8 @@ function buildRandomPassword() {
   return `Social-${crypto.randomBytes(20).toString('hex')}aA1!`;
 }
 
-function normalizeRole(role) {
+function normalizeAuthRole(role) {
   const token = String(role || '').trim().toLowerCase();
-  if (token === 'office_chairman') return 'chairman';
   if (token === 'admin' || token === 'chairman' || token === 'committee' || token === 'researcher') {
     return token;
   }
@@ -50,7 +49,7 @@ async function ensureUserByEmail(payload = {}) {
     throw new Error('email_required');
   }
 
-  const requestedRole = normalizeRole(payload.role || 'researcher');
+  const requestedRole = normalizeAuthRole(payload.role || 'researcher');
   const requestedName = String(payload.fullName || '').trim();
   const requestedAvatarUrl = normalizeAvatarUrl(
     payload.avatarUrl || payload.picture || payload.photo || payload.image || ''
@@ -71,7 +70,7 @@ async function ensureUserByEmail(payload = {}) {
     if (!user.fullName && requestedName) {
       user.fullName = requestedName;
     }
-    user.role = normalizeRole(user.role || requestedRole);
+    user.role = normalizeAuthRole(user.role || requestedRole);
     if (!user.role) {
       user.role = requestedRole;
     }

@@ -1,4 +1,4 @@
-const DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG = Object.freeze({
+const DEFAULT_CHAIRMAN_CHECKLIST_CONFIG = Object.freeze({
   templateVersion: 1,
   reviewerRole: 'chairman',
   reviewerLabel: 'ประธานสำนัก',
@@ -147,34 +147,34 @@ const normalizeFundingTemplate = (template = {}, index = 0) => ({
   sections: (Array.isArray(template.sections) ? template.sections : []).map(normalizeSection)
 })
 
-function buildNormalizedOfficeChairmanChecklistConfig(rawConfig = {}) {
+function buildNormalizedChairmanChecklistConfig(rawConfig = {}) {
   const source = rawConfig && typeof rawConfig === 'object' ? rawConfig : {}
-  const fundingTemplates = (Array.isArray(source.fundingTemplates) ? source.fundingTemplates : DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG.fundingTemplates)
+  const fundingTemplates = (Array.isArray(source.fundingTemplates) ? source.fundingTemplates : DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.fundingTemplates)
     .map(normalizeFundingTemplate)
     .filter((template) => template.fundingTypeKey)
 
   return {
-    templateVersion: Number(source.templateVersion) || DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG.templateVersion,
-    reviewerRole: String(source.reviewerRole || DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG.reviewerRole).trim() || DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG.reviewerRole,
-    reviewerLabel: String(source.reviewerLabel || DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG.reviewerLabel).trim() || DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG.reviewerLabel,
-    importStatus: String(source.importStatus || DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG.importStatus).trim() || DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG.importStatus,
-    note: String(source.note || DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG.note).trim() || DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG.note,
-    fundingTemplates: fundingTemplates.length > 0 ? fundingTemplates : DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG.fundingTemplates.map(normalizeFundingTemplate)
+    templateVersion: Number(source.templateVersion) || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.templateVersion,
+    reviewerRole: String(source.reviewerRole || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.reviewerRole).trim() || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.reviewerRole,
+    reviewerLabel: String(source.reviewerLabel || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.reviewerLabel).trim() || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.reviewerLabel,
+    importStatus: String(source.importStatus || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.importStatus).trim() || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.importStatus,
+    note: String(source.note || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.note).trim() || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.note,
+    fundingTemplates: fundingTemplates.length > 0 ? fundingTemplates : DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.fundingTemplates.map(normalizeFundingTemplate)
   }
 }
 
-let OFFICE_CHAIRMAN_CHECKLIST_CONFIG = buildNormalizedOfficeChairmanChecklistConfig(DEFAULT_OFFICE_CHAIRMAN_CHECKLIST_CONFIG)
+let CHAIRMAN_CHECKLIST_CONFIG = buildNormalizedChairmanChecklistConfig(DEFAULT_CHAIRMAN_CHECKLIST_CONFIG)
 
-export function setOfficeChairmanChecklistRuntimeConfig(rawConfig) {
-  OFFICE_CHAIRMAN_CHECKLIST_CONFIG = buildNormalizedOfficeChairmanChecklistConfig(rawConfig)
+export function setChairmanChecklistRuntimeConfig(rawConfig) {
+  CHAIRMAN_CHECKLIST_CONFIG = buildNormalizedChairmanChecklistConfig(rawConfig)
 }
 
-export function getOfficeChairmanChecklistConfig() {
-  return OFFICE_CHAIRMAN_CHECKLIST_CONFIG
+export function getChairmanChecklistConfig() {
+  return CHAIRMAN_CHECKLIST_CONFIG
 }
 
-export function getOfficeChairmanChecklistTemplate(fundingTypeKey) {
+export function getChairmanChecklistTemplate(fundingTypeKey) {
   const normalizedFundingTypeKey = normalizeKey(fundingTypeKey)
-  const templates = OFFICE_CHAIRMAN_CHECKLIST_CONFIG.fundingTemplates || []
+  const templates = CHAIRMAN_CHECKLIST_CONFIG.fundingTemplates || []
   return templates.find((template) => template.fundingTypeKey === normalizedFundingTypeKey) || templates[0] || null
 }

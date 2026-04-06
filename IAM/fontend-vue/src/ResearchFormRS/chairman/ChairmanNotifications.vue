@@ -8,7 +8,7 @@
 import NotificationPage from '../user/UserNotification.vue'
 
 export default {
-  name: 'OfficeChairmanNotifications',
+  name: 'ChairmanNotifications',
   components: { NotificationPage }
 }
 </script>

@@ -201,7 +201,6 @@ const cloneConfigRow = (row) => ({
 const normalizePageKey = (value) => String(value || '')
   .trim()
   .toLowerCase()
-  .replace(/^office-chairman-/, 'chairman-')
   .replace(/[^a-z0-9_-]/g, '')
 
 export const normalizeResearchRole = (value) => {
@@ -230,7 +229,6 @@ const normalizePathAlias = (value) => {
   const path = normalizePath(value)
   if (path === '/profile') return '/user/profile'
   if (path === '/admin-dashboard') return '/admin/dashboard'
-  if (path.startsWith('/office-chairman/')) return path.replace('/office-chairman/', '/chairman/')
   if (path.startsWith('/review/proposals/')) {
     return path.replace('/review/proposals/', '/committee/proposals/')
   }

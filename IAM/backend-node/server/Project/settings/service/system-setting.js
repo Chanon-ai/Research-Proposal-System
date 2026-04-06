@@ -221,13 +221,12 @@ function normalizeSmtpInputForTest(input = {}) {
 
 function toSettingDto(doc) {
   const row = doc && doc.toObject ? doc.toObject() : { ...(doc || {}) };
-  const normalizedKey = row.key === 'office_chairman_checklist_config_json' ? 'chairman_checklist_config_json' : row.key;
   const isSecret = isSecretKey(row.key);
   const isConfigured = isSecret ? isConfiguredSecretValue(row.value) : false;
 
   return {
     _id: row._id,
-    key: normalizedKey || '',
+    key: row.key || '',
     value: isSecret ? (isConfigured ? SECRET_MASK : '') : row.value,
     isSecret,
     isConfigured,

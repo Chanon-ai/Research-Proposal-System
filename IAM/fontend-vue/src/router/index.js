@@ -34,11 +34,11 @@ const CommitteeAssigned = () => import('@/ResearchFormRS/committee/CommitteeProj
 const CommitteeMeetings = () => import('@/ResearchFormRS/committee/CommitteeMeetings.vue')
 const CommitteeNotifications = () => import('@/ResearchFormRS/committee/CommitteeNotifications.vue')
 const CommitteeProposalDetail = () => import('@/ResearchFormRS/committee/CommitteeProposalDetail.vue')
-const OfficeChairmanDashboard = () => import('@/ResearchFormRS/officeChairman/OfficeChairmanDashboardSummary.vue')
-const OfficeChairmanAssigned = () => import('@/ResearchFormRS/officeChairman/OfficeChairmanProjectProposal.vue')
-const OfficeChairmanMeetings = () => import('@/ResearchFormRS/officeChairman/OfficeChairmanMeetings.vue')
-const OfficeChairmanNotifications = () => import('@/ResearchFormRS/officeChairman/OfficeChairmanNotifications.vue')
-const OfficeChairmanProposalDetail = () => import('@/ResearchFormRS/officeChairman/OfficeChairmanProposalDetail.vue')
+const ChairmanDashboard = () => import('@/ResearchFormRS/chairman/ChairmanDashboardSummary.vue')
+const ChairmanAssigned = () => import('@/ResearchFormRS/chairman/ChairmanProjectProposal.vue')
+const ChairmanMeetings = () => import('@/ResearchFormRS/chairman/ChairmanMeetings.vue')
+const ChairmanNotifications = () => import('@/ResearchFormRS/chairman/ChairmanNotifications.vue')
+const ChairmanProposalDetail = () => import('@/ResearchFormRS/chairman/ChairmanProposalDetail.vue')
 const ResearchForm = () => import('@/ResearchFormRS/ResearchForm.vue')
 
 const Colors = () => import('@/views/theme/Colors')
@@ -285,59 +285,35 @@ const router = new Router({
         {
           path: 'chairman/meetings',
           name: 'ChairmanMeetings',
-          component: OfficeChairmanMeetings,
+          component: ChairmanMeetings,
           meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
         },
         {
           path: 'chairman/notifications',
           name: 'ChairmanNotifications',
-          component: OfficeChairmanNotifications,
+          component: ChairmanNotifications,
           meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
         },
         {
           path: 'chairman/dashboard',
           name: 'ChairmanDashboard',
-          component: OfficeChairmanDashboard,
+          component: ChairmanDashboard,
           meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
         },
         {
           path: 'chairman/assigned',
           name: 'ChairmanAssigned',
-          component: OfficeChairmanAssigned,
+          component: ChairmanAssigned,
           meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
         },
         {
           path: 'chairman/proposals/:id',
           name: 'chairmanProposalDetail',
-          component: OfficeChairmanProposalDetail,
+          component: ChairmanProposalDetail,
           meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
         },
         {
           path: 'chairman/logout',
-          redirect: '/chairman/assigned'
-        },
-        {
-          path: 'office-chairman/meetings',
-          redirect: '/chairman/meetings'
-        },
-        {
-          path: 'office-chairman/notifications',
-          redirect: '/chairman/notifications'
-        },
-        {
-          path: 'office-chairman/dashboard',
-          redirect: '/chairman/dashboard'
-        },
-        {
-          path: 'office-chairman/assigned',
-          redirect: '/chairman/assigned'
-        },
-        {
-          path: 'office-chairman/proposals/:id',
-          redirect: to => `/chairman/proposals/${encodeURIComponent(to.params.id || '')}`
-        },
-        {
-          path: 'office-chairman/logout',
           redirect: '/chairman/assigned'
         },
         {

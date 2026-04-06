@@ -93,7 +93,7 @@ router.post('/send', authenticate, requireRole('admin', 'chairman'), async (req,
       const users = await User.find({ role: 'researcher', isActive: true, isDeleted: { $ne: true } }).select('_id');
       targetUserIds = users.map(u => u._id);
     } else if (recipientType === 'all_committee') {
-      const users = await User.find({ role: { $in: ['committee', 'chairman', 'office_chairman'] }, isActive: true, isDeleted: { $ne: true } }).select('_id');
+      const users = await User.find({ role: { $in: ['committee', 'chairman'] }, isActive: true, isDeleted: { $ne: true } }).select('_id');
       targetUserIds = users.map(u => u._id);
     } else if (recipientType === 'all_users') {
       const users = await User.find({ isActive: true, isDeleted: { $ne: true } }).select('_id');

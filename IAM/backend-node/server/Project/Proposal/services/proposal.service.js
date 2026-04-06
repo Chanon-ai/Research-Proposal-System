@@ -46,7 +46,7 @@ const FUNDING_LABELS = Object.freeze({
   'industry-extension': 'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
 });
 
-const REVIEWER_ROLE_SET = new Set(['committee', 'chairman', 'office_chairman']);
+const REVIEWER_ROLE_SET = new Set(['committee', 'chairman']);
 
 function isReviewerRole(role) {
   return REVIEWER_ROLE_SET.has(String(role || '').trim().toLowerCase());

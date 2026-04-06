@@ -12,10 +12,6 @@ const MANAGED_SETTING_KEYS = Object.freeze({
   RESEARCH_STANDARD: 'research_standard_config_json'
 });
 
-const LEGACY_MANAGED_SETTING_KEY_MAP = Object.freeze({
-  office_chairman_checklist_config_json: MANAGED_SETTING_KEYS.CHAIRMAN_CHECKLIST
-});
-
 const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
   statuses: [
     'draft',
@@ -690,9 +686,9 @@ function normalizeRolePageAccessConfig(rawValue) {
     });
 
     return {
-      pageKey: String(row && row.pageKey !== undefined ? row.pageKey : '').trim().replace(/^office-chairman-/, 'chairman-'),
+      pageKey: String(row && row.pageKey !== undefined ? row.pageKey : '').trim(),
       label: String(row && row.label !== undefined ? row.label : '').trim(),
-      path: String(row && row.path !== undefined ? row.path : '').trim().replace(/^\/office-chairman\//, '/chairman/'),
+      path: String(row && row.path !== undefined ? row.path : '').trim(),
       matchMode: String(row && row.matchMode || '').trim().toLowerCase() === 'prefix' ? 'prefix' : 'exact',
       roles: mergedRoles,
       requiredRoles: ROLE_ORDER.filter((role) => requiredRoles.includes(role))
@@ -746,7 +742,7 @@ function getManagedDefaultEntries(options = {}) {
 
 function normalizeManagedSettingInput(payload = {}) {
   const rawKey = String(payload.key || '').trim();
-  const key = LEGACY_MANAGED_SETTING_KEY_MAP[rawKey] || rawKey;
+  const key = rawKey;
   if (!MANAGED_KEY_SET.has(key)) {
     return {
       key,
@@ -767,8 +763,7 @@ function normalizeManagedSettingInput(payload = {}) {
 }
 
 function isPublicSettingKey(key) {
-  const normalizedKey = LEGACY_MANAGED_SETTING_KEY_MAP[String(key || '').trim()] || String(key || '').trim();
-  return PUBLIC_KEY_SET.has(normalizedKey);
+  return PUBLIC_KEY_SET.has(String(key || '').trim());
 }
 
 module.exports = {

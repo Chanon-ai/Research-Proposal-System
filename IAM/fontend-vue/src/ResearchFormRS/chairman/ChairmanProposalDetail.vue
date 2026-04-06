@@ -176,14 +176,14 @@ import ResearchForm from '../ResearchForm.vue'
 import Swal from 'sweetalert2'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 import {
-  getOfficeChairmanChecklistConfig,
-  getOfficeChairmanChecklistTemplate
-} from '@/ResearchFormRS/constants/officeChairmanChecklist'
+  getChairmanChecklistConfig,
+  getChairmanChecklistTemplate
+} from '@/ResearchFormRS/constants/chairmanChecklist'
 
 const INTERNAL_CHECKLIST_FIELD_KEY = 'checklist_payload'
 
 export default {
-  name: 'OfficeChairmanProposalDetail',
+  name: 'ChairmanProposalDetail',
   components: {
     ResearchForm
   },
@@ -245,7 +245,7 @@ export default {
       }
     },
     selectedFundingTemplate () {
-      return getOfficeChairmanChecklistTemplate(this.proposal && this.proposal.fundingType)
+      return getChairmanChecklistTemplate(this.proposal && this.proposal.fundingType)
     },
     selectedFundingLabel () {
       const template = this.selectedFundingTemplate
@@ -257,7 +257,7 @@ export default {
       return Array.isArray(template && template.sections) ? template.sections : []
     },
     importPlaceholderMessage () {
-      const config = getOfficeChairmanChecklistConfig()
+      const config = getChairmanChecklistConfig()
       const note = String(config && config.note ? config.note : '').trim()
       return note || 'พื้นที่ checklist ยังเว้นไว้สำหรับ import จาก backend ในขั้นถัดไป'
     },

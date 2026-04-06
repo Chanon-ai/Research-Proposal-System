@@ -13,7 +13,7 @@
 import AdminMeetings from '@/ResearchFormRS/admin/AdminMeetings.vue'
 
 export default {
-  name: 'OfficeChairmanMeetings',
+  name: 'ChairmanMeetings',
   components: { AdminMeetings }
 }
 </script>

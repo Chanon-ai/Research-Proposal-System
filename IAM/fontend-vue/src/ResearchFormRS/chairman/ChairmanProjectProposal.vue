@@ -200,7 +200,7 @@ const COMMITTEE_REVIEWED_STATUSES = Object.freeze([
 ])
 
 export default {
-  name: 'OfficeChairmanProjectProposal',
+  name: 'ChairmanProjectProposal',
   data () {
     return {
       loading: false,

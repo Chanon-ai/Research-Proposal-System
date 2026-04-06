@@ -2,10 +2,8 @@ const User = require('../models/User');
 
 const USER_ROLES = ['admin', 'chairman', 'committee', 'researcher'];
 
-function normalizeRoleToken(role) {
-  const normalized = String(role || '').trim().toLowerCase();
-  if (normalized === 'office_chairman') return 'chairman';
-  return normalized;
+function normalizeChairmanRoleToken(role) {
+  return String(role || '').trim().toLowerCase();
 }
 
 function normalizePagination(query = {}) {
@@ -24,10 +22,8 @@ function buildListFilter(query = {}) {
   };
 
   if (query.role) {
-    const normalizedRole = normalizeRoleToken(query.role);
-    filter.role = normalizedRole === 'chairman'
-      ? { $in: ['chairman', 'office_chairman'] }
-      : normalizedRole;
+    const normalizedRole = normalizeChairmanRoleToken(query.role);
+    filter.role = normalizedRole;
   }
 
   const department = String(query.department || '').trim();
@@ -59,7 +55,7 @@ function buildListFilter(query = {}) {
 function sanitizeUser(userDoc) {
   const user = userDoc && userDoc.toObject ? userDoc.toObject() : { ...(userDoc || {}) };
   delete user.password;
-  user.role = normalizeRoleToken(user.role);
+  user.role = normalizeChairmanRoleToken(user.role);
   return user;
 }
 
@@ -69,7 +65,7 @@ function normalizeEmail(email) {
 
 function assertValidRole(role) {
   if (role === undefined || role === null || role === '') return;
-  const normalizedRole = normalizeRoleToken(role);
+  const normalizedRole = normalizeChairmanRoleToken(role);
   if (!USER_ROLES.includes(normalizedRole)) {
     throw new Error(`role must be one of: ${USER_ROLES.join(', ')}`);
   }
@@ -98,7 +94,7 @@ async function ensureNotLastActiveAdmin(user, actionLabel) {
 async function getSummary() {
   const [totalUsers, totalCommittees, totalAdmins, totalActiveUsers] = await Promise.all([
     User.countDocuments({ isDeleted: { $ne: true } }),
-    User.countDocuments({ role: { $in: ['committee', 'chairman', 'office_chairman'] }, isDeleted: { $ne: true } }),
+    User.countDocuments({ role: { $in: ['committee', 'chairman'] }, isDeleted: { $ne: true } }),
     User.countDocuments({ role: 'admin', isDeleted: { $ne: true } }),
     User.countDocuments({ isActive: true, isDeleted: { $ne: true } })
   ]);
@@ -168,7 +164,7 @@ async function createUser(payload = {}) {
     fullName: payload.fullName,
     email,
     password: payload.password,
-    role: normalizeRoleToken(payload.role || 'researcher'),
+    role: normalizeChairmanRoleToken(payload.role || 'researcher'),
     department: payload.department || '',
     phone: payload.phone || '',
     isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : true
@@ -194,7 +190,7 @@ async function updateUser(userId, payload = {}) {
     }
   }
 
-  const nextRole = payload.role !== undefined ? normalizeRoleToken(payload.role) : normalizeRoleToken(user.role);
+  const nextRole = payload.role !== undefined ? normalizeChairmanRoleToken(payload.role) : normalizeChairmanRoleToken(user.role);
   const nextIsActive = payload.isActive !== undefined ? Boolean(payload.isActive) : user.isActive;
 
   const willLoseLastAdmin = user.role === 'admin' && user.isActive && (nextRole !== 'admin' || !nextIsActive);
