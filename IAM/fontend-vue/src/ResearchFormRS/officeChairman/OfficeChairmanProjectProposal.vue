@@ -257,7 +257,7 @@ export default {
     canAccessCommitteeProposalDetail () {
       return isRoleAllowedForPath(
         this.rolePageAccessConfig,
-        '/office-chairman/proposals',
+        '/chairman/proposals',
         this.currentResearchRole,
         { defaultAllow: true }
       )
@@ -265,7 +265,7 @@ export default {
     canAccessCommitteeMeetings () {
       return isRoleAllowedForPath(
         this.rolePageAccessConfig,
-        '/office-chairman/meetings',
+        '/chairman/meetings',
         this.currentResearchRole,
         { defaultAllow: true }
       )
@@ -273,7 +273,7 @@ export default {
     canAccessCommitteeNotifications () {
       return isRoleAllowedForPath(
         this.rolePageAccessConfig,
-        '/office-chairman/notifications',
+        '/chairman/notifications',
         this.currentResearchRole,
         { defaultAllow: true }
       )
@@ -779,15 +779,15 @@ export default {
     },
     view (item) {
       if (!this.canAccessCommitteeProposalDetail) return
-      this.$router.push({ name: 'officeChairmanProposalDetail', params: { id: item.proposalId || item.id } })
+      this.$router.push({ name: 'chairmanProposalDetail', params: { id: item.proposalId || item.id } })
     },
     goToMeetings () {
       if (!this.canAccessCommitteeMeetings) return
-      this.$router.push('/office-chairman/meetings')
+      this.$router.push('/chairman/meetings')
     },
     goToNotifications () {
       if (!this.canAccessCommitteeNotifications) return
-      this.$router.push('/office-chairman/notifications')
+      this.$router.push('/chairman/notifications')
     }
   }
 }

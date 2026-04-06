@@ -23,7 +23,7 @@
     "researcherMenu": "เมนูนักวิจัย",
     "adminMenu": "เมนูผู้ดูแลระบบ",
     "committeeMenu": "เมนูคณะกรรมการ",
-    "officeChairmanMenu": "เมนูประธานสำนัก",
+    "chairmanMenu": "เมนูประธานสำนัก",
     "userPanel": "แผงผู้ใช้",
     "userDashboard": "โครงการของฉัน",
     "userMeetings": "กำหนดการประชุม",

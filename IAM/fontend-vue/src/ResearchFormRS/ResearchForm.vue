@@ -1087,7 +1087,7 @@ export default {
     },
     isBudgetReportMode () {
       const path = String((this.$route && this.$route.path) || '').trim().toLowerCase()
-      const isCommitteeRoute = path.indexOf('/committee/') !== -1 || path.indexOf('/office-chairman/') !== -1 || path.indexOf('/review/proposals') !== -1
+      const isCommitteeRoute = path.indexOf('/committee/') !== -1 || path.indexOf('/chairman/') !== -1 || path.indexOf('/review/proposals') !== -1
       const status = String(this.currentStatus || '').trim().toLowerCase()
       return isCommitteeRoute && this.mainFormReadOnly && status !== '' && status !== 'draft'
     },

@@ -568,7 +568,7 @@ export default {
       }
     },
     goBack () {
-      this.$router.push({ path: '/office-chairman/assigned' })
+      this.$router.push({ path: '/chairman/assigned' })
     }
   }
 }

@@ -106,26 +106,26 @@ export default [{
     {
       _name: 'CSidebarNavTitle',
       roles: ['chairman'],
-      _children: ['nav.officeChairmanMenu']
+      _children: ['nav.chairmanMenu']
     },
     {
       _name: 'CSidebarNavItem',
       name: 'nav.assignedTasks',
-      to: '/office-chairman/assigned',
+      to: '/chairman/assigned',
       icon: 'cil-list',
       roles: ['chairman']
     },
     {
       _name: 'CSidebarNavItem',
       name: 'nav.meetings',
-      to: '/office-chairman/meetings',
+      to: '/chairman/meetings',
       icon: 'cil-calendar',
       roles: ['chairman']
     },
     {
       _name: 'CSidebarNavItem',
       name: 'nav.committeeSummary',
-      to: '/office-chairman/dashboard',
+      to: '/chairman/dashboard',
       icon: 'cil-speedometer',
       roles: ['chairman']
     },

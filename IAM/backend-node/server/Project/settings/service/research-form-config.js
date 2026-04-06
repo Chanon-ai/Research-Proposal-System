@@ -8,8 +8,12 @@ const MANAGED_SETTING_KEYS = Object.freeze({
   FUNDING_BUDGET: 'funding_budget_config_json',
   BUDGET_MULTIPLIER: 'budget_multiplier_config_json',
   COMMITTEE_FEEDBACK: 'committee_feedback_config_json',
-  OFFICE_CHAIRMAN_CHECKLIST: 'office_chairman_checklist_config_json',
+  CHAIRMAN_CHECKLIST: 'chairman_checklist_config_json',
   RESEARCH_STANDARD: 'research_standard_config_json'
+});
+
+const LEGACY_MANAGED_SETTING_KEY_MAP = Object.freeze({
+  office_chairman_checklist_config_json: MANAGED_SETTING_KEYS.CHAIRMAN_CHECKLIST
 });
 
 const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
@@ -294,11 +298,11 @@ const ROLE_PAGE_ACCESS_DEFAULT = Object.freeze([
   { pageKey: 'committee-meetings', label: 'ประชุมคณะกรรมการ', path: '/committee/meetings', matchMode: 'exact', roles: ['committee', 'admin', 'chairman'] },
   { pageKey: 'committee-notifications', label: 'การแจ้งเตือนคณะกรรมการ', path: '/committee/notifications', matchMode: 'exact', roles: ['committee', 'admin', 'chairman'] },
   { pageKey: 'committee-proposals', label: 'หน้าอ่านข้อเสนอของกรรมการ', path: '/committee/proposals', matchMode: 'prefix', roles: ['committee', 'admin', 'chairman'] },
-  { pageKey: 'office-chairman-dashboard', label: 'แดชบอร์ดประธานสำนัก', path: '/office-chairman/dashboard', matchMode: 'exact', roles: ['admin', 'chairman'] },
-  { pageKey: 'office-chairman-assigned', label: 'รายการที่ได้รับมอบหมายประธานสำนัก', path: '/office-chairman/assigned', matchMode: 'exact', roles: ['admin', 'chairman'] },
-  { pageKey: 'office-chairman-meetings', label: 'ประชุมประธานสำนัก', path: '/office-chairman/meetings', matchMode: 'exact', roles: ['admin', 'chairman'] },
-  { pageKey: 'office-chairman-notifications', label: 'การแจ้งเตือนประธานสำนัก', path: '/office-chairman/notifications', matchMode: 'exact', roles: ['admin', 'chairman'] },
-  { pageKey: 'office-chairman-proposals', label: 'หน้าอ่านข้อเสนอของประธานสำนัก', path: '/office-chairman/proposals', matchMode: 'prefix', roles: ['admin', 'chairman'] }
+  { pageKey: 'chairman-dashboard', label: 'แดชบอร์ดประธานสำนัก', path: '/chairman/dashboard', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'chairman-assigned', label: 'รายการที่ได้รับมอบหมายประธานสำนัก', path: '/chairman/assigned', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'chairman-meetings', label: 'ประชุมประธานสำนัก', path: '/chairman/meetings', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'chairman-notifications', label: 'การแจ้งเตือนประธานสำนัก', path: '/chairman/notifications', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'chairman-proposals', label: 'หน้าอ่านข้อเสนอของประธานสำนัก', path: '/chairman/proposals', matchMode: 'prefix', roles: ['admin', 'chairman'] }
 ]);
 
 const FUNDING_BUDGET_DEFAULT = Object.freeze([
@@ -359,7 +363,7 @@ const COMMITTEE_FEEDBACK_DEFAULT = Object.freeze({
   }
 });
 
-const OFFICE_CHAIRMAN_CHECKLIST_DEFAULT = Object.freeze({
+const CHAIRMAN_CHECKLIST_DEFAULT = Object.freeze({
   templateVersion: 1,
   reviewerRole: 'chairman',
   reviewerLabel: 'ประธานสำนัก',
@@ -533,10 +537,10 @@ const MANAGED_DEFAULTS = Object.freeze({
     group: RESEARCH_FORM_SETTING_GROUP,
     value: COMMITTEE_FEEDBACK_DEFAULT
   },
-  [MANAGED_SETTING_KEYS.OFFICE_CHAIRMAN_CHECKLIST]: {
-    description: 'Office chairman checklist templates for ResearchFormRS',
+  [MANAGED_SETTING_KEYS.CHAIRMAN_CHECKLIST]: {
+    description: 'Chairman checklist templates for ResearchFormRS',
     group: RESEARCH_FORM_SETTING_GROUP,
-    value: OFFICE_CHAIRMAN_CHECKLIST_DEFAULT
+    value: CHAIRMAN_CHECKLIST_DEFAULT
   },
   [MANAGED_SETTING_KEYS.RESEARCH_STANDARD]: {
     description: 'Research standard section config for ResearchFormRS',
@@ -686,9 +690,9 @@ function normalizeRolePageAccessConfig(rawValue) {
     });
 
     return {
-      pageKey: String(row && row.pageKey !== undefined ? row.pageKey : '').trim(),
+      pageKey: String(row && row.pageKey !== undefined ? row.pageKey : '').trim().replace(/^office-chairman-/, 'chairman-'),
       label: String(row && row.label !== undefined ? row.label : '').trim(),
-      path: String(row && row.path !== undefined ? row.path : '').trim(),
+      path: String(row && row.path !== undefined ? row.path : '').trim().replace(/^\/office-chairman\//, '/chairman/'),
       matchMode: String(row && row.matchMode || '').trim().toLowerCase() === 'prefix' ? 'prefix' : 'exact',
       roles: mergedRoles,
       requiredRoles: ROLE_ORDER.filter((role) => requiredRoles.includes(role))
@@ -716,8 +720,8 @@ function normalizeManagedSettingValue(key, rawValue) {
       return normalizeObjectOrDefault(rawValue, PROPOSAL_WORKFLOW_DEFAULT);
     case MANAGED_SETTING_KEYS.COMMITTEE_FEEDBACK:
       return normalizeObjectOrDefault(rawValue, COMMITTEE_FEEDBACK_DEFAULT);
-    case MANAGED_SETTING_KEYS.OFFICE_CHAIRMAN_CHECKLIST:
-      return normalizeObjectOrDefault(rawValue, OFFICE_CHAIRMAN_CHECKLIST_DEFAULT);
+    case MANAGED_SETTING_KEYS.CHAIRMAN_CHECKLIST:
+      return normalizeObjectOrDefault(rawValue, CHAIRMAN_CHECKLIST_DEFAULT);
     case MANAGED_SETTING_KEYS.RESEARCH_STANDARD:
       return normalizeObjectOrDefault(rawValue, RESEARCH_STANDARD_DEFAULT);
     default:
@@ -741,7 +745,8 @@ function getManagedDefaultEntries(options = {}) {
 }
 
 function normalizeManagedSettingInput(payload = {}) {
-  const key = String(payload.key || '').trim();
+  const rawKey = String(payload.key || '').trim();
+  const key = LEGACY_MANAGED_SETTING_KEY_MAP[rawKey] || rawKey;
   if (!MANAGED_KEY_SET.has(key)) {
     return {
       key,
@@ -762,7 +767,8 @@ function normalizeManagedSettingInput(payload = {}) {
 }
 
 function isPublicSettingKey(key) {
-  return PUBLIC_KEY_SET.has(String(key || '').trim());
+  const normalizedKey = LEGACY_MANAGED_SETTING_KEY_MAP[String(key || '').trim()] || String(key || '').trim();
+  return PUBLIC_KEY_SET.has(normalizedKey);
 }
 
 module.exports = {

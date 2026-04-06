@@ -314,7 +314,7 @@ export default {
       }
 
       if (String(role || '') === 'chairman') {
-        this.$router.push('/office-chairman/notifications')
+        this.$router.push('/chairman/notifications')
         return
       }
 

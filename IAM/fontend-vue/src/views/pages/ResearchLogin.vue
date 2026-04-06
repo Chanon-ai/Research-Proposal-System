@@ -216,7 +216,7 @@ export default {
         return
       }
       if (role === 'chairman') {
-        this.$router.push('/office-chairman/assigned')
+        this.$router.push('/chairman/assigned')
         return
       }
       if (role === 'admin') {

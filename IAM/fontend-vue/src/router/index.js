@@ -283,38 +283,62 @@ const router = new Router({
           redirect: '/committee/assigned'
         },
         {
-          path: 'office-chairman/meetings',
-          name: 'OfficeChairmanMeetings',
+          path: 'chairman/meetings',
+          name: 'ChairmanMeetings',
           component: OfficeChairmanMeetings,
           meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
         },
         {
-          path: 'office-chairman/notifications',
-          name: 'OfficeChairmanNotifications',
+          path: 'chairman/notifications',
+          name: 'ChairmanNotifications',
           component: OfficeChairmanNotifications,
           meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
         },
         {
-          path: 'office-chairman/dashboard',
-          name: 'OfficeChairmanDashboard',
+          path: 'chairman/dashboard',
+          name: 'ChairmanDashboard',
           component: OfficeChairmanDashboard,
           meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
         },
         {
-          path: 'office-chairman/assigned',
-          name: 'OfficeChairmanAssigned',
+          path: 'chairman/assigned',
+          name: 'ChairmanAssigned',
           component: OfficeChairmanAssigned,
           meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
         },
         {
-          path: 'office-chairman/proposals/:id',
-          name: 'officeChairmanProposalDetail',
+          path: 'chairman/proposals/:id',
+          name: 'chairmanProposalDetail',
           component: OfficeChairmanProposalDetail,
           meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
         },
         {
+          path: 'chairman/logout',
+          redirect: '/chairman/assigned'
+        },
+        {
+          path: 'office-chairman/meetings',
+          redirect: '/chairman/meetings'
+        },
+        {
+          path: 'office-chairman/notifications',
+          redirect: '/chairman/notifications'
+        },
+        {
+          path: 'office-chairman/dashboard',
+          redirect: '/chairman/dashboard'
+        },
+        {
+          path: 'office-chairman/assigned',
+          redirect: '/chairman/assigned'
+        },
+        {
+          path: 'office-chairman/proposals/:id',
+          redirect: to => `/chairman/proposals/${encodeURIComponent(to.params.id || '')}`
+        },
+        {
           path: 'office-chairman/logout',
-          redirect: '/office-chairman/assigned'
+          redirect: '/chairman/assigned'
         },
         {
           path: 'theme',
@@ -857,7 +881,7 @@ function getStoredRole() {
 function getRoleHome(role) {
   const normalizedRole = mapRoleForResearchAccess(role)
   if (normalizedRole === 'committee') return '/committee/assigned'
-  if (normalizedRole === 'chairman') return '/office-chairman/assigned'
+  if (normalizedRole === 'chairman') return '/chairman/assigned'
   if (normalizedRole === 'admin') return '/admin/dashboard'
   return '/userdashboard'
 }
@@ -913,7 +937,7 @@ router.beforeEach(async (to, from, next) => {
       if (!allowed) {
         if (researchRole === 'admin') return next('/admin/dashboard')
         if (researchRole === 'committee') return next('/committee/assigned')
-        if (researchRole === 'chairman') return next('/office-chairman/assigned')
+        if (researchRole === 'chairman') return next('/chairman/assigned')
         return next('/userdashboard')
       }
     }

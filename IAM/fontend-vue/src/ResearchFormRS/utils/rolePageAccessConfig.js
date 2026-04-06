@@ -146,37 +146,37 @@ const DEFAULT_ROLE_PAGE_ACCESS_CONFIG_SOURCE = [
     roles: ['committee', 'admin', 'chairman']
   },
   {
-    pageKey: 'office-chairman-dashboard',
+    pageKey: 'chairman-dashboard',
     label: 'แดชบอร์ดประธานสำนัก',
-    path: '/office-chairman/dashboard',
+    path: '/chairman/dashboard',
     matchMode: 'exact',
     roles: ['admin', 'chairman']
   },
   {
-    pageKey: 'office-chairman-assigned',
+    pageKey: 'chairman-assigned',
     label: 'รายการที่ได้รับมอบหมายประธานสำนัก',
-    path: '/office-chairman/assigned',
+    path: '/chairman/assigned',
     matchMode: 'exact',
     roles: ['admin', 'chairman']
   },
   {
-    pageKey: 'office-chairman-meetings',
+    pageKey: 'chairman-meetings',
     label: 'ประชุมประธานสำนัก',
-    path: '/office-chairman/meetings',
+    path: '/chairman/meetings',
     matchMode: 'exact',
     roles: ['admin', 'chairman']
   },
   {
-    pageKey: 'office-chairman-notifications',
+    pageKey: 'chairman-notifications',
     label: 'การแจ้งเตือนประธานสำนัก',
-    path: '/office-chairman/notifications',
+    path: '/chairman/notifications',
     matchMode: 'exact',
     roles: ['admin', 'chairman']
   },
   {
-    pageKey: 'office-chairman-proposals',
+    pageKey: 'chairman-proposals',
     label: 'หน้าอ่านข้อเสนอของประธานสำนัก',
-    path: '/office-chairman/proposals',
+    path: '/chairman/proposals',
     matchMode: 'prefix',
     roles: ['admin', 'chairman']
   }
@@ -186,7 +186,7 @@ const DEFAULT_ROLE_LANDING_PATHS = Object.freeze({
   researcher: ['/userdashboard', '/user/profile', '/research-form'],
   committee: ['/committee/assigned', '/committee/dashboard', '/committee/meetings'],
   admin: ['/admin/dashboard', '/admin/settings', '/admin/proposals'],
-  chairman: ['/office-chairman/assigned', '/office-chairman/dashboard', '/office-chairman/meetings']
+  chairman: ['/chairman/assigned', '/chairman/dashboard', '/chairman/meetings']
 })
 
 const cloneConfigRow = (row) => ({
@@ -201,6 +201,7 @@ const cloneConfigRow = (row) => ({
 const normalizePageKey = (value) => String(value || '')
   .trim()
   .toLowerCase()
+  .replace(/^office-chairman-/, 'chairman-')
   .replace(/[^a-z0-9_-]/g, '')
 
 export const normalizeResearchRole = (value) => {
@@ -229,6 +230,7 @@ const normalizePathAlias = (value) => {
   const path = normalizePath(value)
   if (path === '/profile') return '/user/profile'
   if (path === '/admin-dashboard') return '/admin/dashboard'
+  if (path.startsWith('/office-chairman/')) return path.replace('/office-chairman/', '/chairman/')
   if (path.startsWith('/review/proposals/')) {
     return path.replace('/review/proposals/', '/committee/proposals/')
   }

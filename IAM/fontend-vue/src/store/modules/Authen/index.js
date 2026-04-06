@@ -156,7 +156,7 @@ function resolveSignedInRoute() {
 
     if (role === 'admin') return '/admin/dashboard';
     if (role === 'committee') return '/committee/assigned';
-    if (role === 'chairman') return '/office-chairman/assigned';
+    if (role === 'chairman') return '/chairman/assigned';
     return '/userdashboard';
 }
 
