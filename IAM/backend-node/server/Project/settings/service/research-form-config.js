@@ -484,6 +484,28 @@ function toOptionalNonNegativeNumber(value, fallback = null) {
   return Math.max(0, numeric);
 }
 
+function normalizeOptionalMaxValue(value, fallback = null) {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? Math.max(0, value) : fallback;
+  }
+
+  const text = String(value || '').trim().replace(/,/g, '');
+  if (!text) return fallback;
+
+  const normalizedPercentText = text.replace(/\s+/g, '');
+  const percentMatch = normalizedPercentText.match(/^(\d+(?:\.\d+)?)%$/);
+  if (percentMatch) {
+    const percentValue = Number(percentMatch[1]);
+    if (!Number.isFinite(percentValue)) return fallback;
+    return `${Math.max(0, percentValue)}%`;
+  }
+
+  const numeric = Number(text);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.max(0, numeric);
+}
+
 function normalizeFundingBudgetConfig(rawValue) {
   const parsed = parseJsonish(rawValue);
   if (!Array.isArray(parsed)) return clone(FUNDING_BUDGET_DEFAULT);
@@ -513,7 +535,7 @@ function normalizeBudgetMultiplierConfig(rawValue) {
       multipliers: (Array.isArray(category && category.multipliers) ? category.multipliers : []).map((multiplier) => ({
         label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
         value: Math.max(0, toNumber(multiplier && multiplier.value, 0)),
-        maxValue: toOptionalNonNegativeNumber(multiplier && multiplier.maxValue, null),
+        maxValue: normalizeOptionalMaxValue(multiplier && multiplier.maxValue, null),
         isAdmin: Boolean(multiplier && multiplier.isAdmin)
       })).filter((multiplier) => multiplier.label),
       itemOverrides: (Array.isArray(category && category.itemOverrides) ? category.itemOverrides : []).map((itemOverride) => ({
@@ -525,7 +547,7 @@ function normalizeBudgetMultiplierConfig(rawValue) {
         multipliers: (Array.isArray(itemOverride && itemOverride.multipliers) ? itemOverride.multipliers : []).map((multiplier) => ({
           label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
           value: Math.max(0, toNumber(multiplier && multiplier.value, 0)),
-          maxValue: toOptionalNonNegativeNumber(multiplier && multiplier.maxValue, null),
+          maxValue: normalizeOptionalMaxValue(multiplier && multiplier.maxValue, null),
           isAdmin: Boolean(multiplier && multiplier.isAdmin)
         })).filter((multiplier) => multiplier.label)
       })).filter((itemOverride) => itemOverride.matchText && itemOverride.multipliers.length > 0)

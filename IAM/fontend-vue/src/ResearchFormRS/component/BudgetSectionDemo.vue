@@ -470,7 +470,9 @@ import {
 import {
   createDefaultBudgetMultiplierConfig,
   normalizeBudgetMultiplierConfig,
-  buildBudgetMultiplierCategoryMap
+  buildBudgetMultiplierCategoryMap,
+  toMultiplierMaxNumber,
+  resolveMultiplierMaxNumber
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
 
 const BUDGET_ATTACHMENT_EXAMPLE_WINDOW_NAME = 'budget-attachment-example-doc'
@@ -539,10 +541,7 @@ const BUDGET_CATEGORY_KEYS = Object.freeze({
 })
 
 const toOptionalMaxValue = (value) => {
-  if (value === '' || value === undefined || value === null) return null
-  const numeric = Number(value)
-  if (!Number.isFinite(numeric)) return null
-  return Math.max(0, numeric)
+  return toMultiplierMaxNumber(value, null)
 }
 
 const cloneMultiplierList = (multipliers = []) => (
@@ -1371,7 +1370,12 @@ export default {
       this.categories.forEach((category, catIndex) => {
         if (!category || !Array.isArray(category.items)) return
         category.items.forEach((item) => {
-          if (!item || typeof item !== 'object' || item.isManualMultiplier || category.isOther) return
+          if (!item || typeof item !== 'object') return
+          if (item.isManualMultiplier || category.isOther) {
+            this.formatItemNumericInputs(item, category)
+            this.calculateRowTotal(item)
+            return
+          }
           this.normalizeRowModel(item, category, catIndex)
           this.calculateRowTotal(item)
         })
@@ -2249,27 +2253,27 @@ export default {
       }
     },
     normalizeOptionalMaxValue(value) {
-      if (value === '' || value === undefined || value === null) return null
-      const numeric = Number(value)
-      if (!Number.isFinite(numeric)) return null
-      return Math.max(0, numeric)
+      return toMultiplierMaxNumber(value, null)
+    },
+    resolveEffectiveMaxValue(value) {
+      return resolveMultiplierMaxNumber(value, this.budgetLimit, null)
     },
     clampFormattedInputValue(value, maxValue = null) {
       const rawValue = this.toRawNumberString(value)
       if (!rawValue) return ''
 
-      const normalizedMax = this.normalizeOptionalMaxValue(maxValue)
+      const normalizedMax = this.resolveEffectiveMaxValue(maxValue)
       const numericValue = Number(rawValue)
       const clampedValue = normalizedMax === null ? numericValue : Math.min(numericValue, normalizedMax)
       return this.formatNumberInputValue(clampedValue)
     },
     getClampedNumericValue(value, maxValue = null) {
-      const normalizedMax = this.normalizeOptionalMaxValue(maxValue)
+      const normalizedMax = this.resolveEffectiveMaxValue(maxValue)
       const numericValue = this.toNumber(value)
       return normalizedMax === null ? numericValue : Math.min(numericValue, normalizedMax)
     },
     getHtmlInputMax(value) {
-      const normalizedMax = this.normalizeOptionalMaxValue(value)
+      const normalizedMax = this.resolveEffectiveMaxValue(value)
       return normalizedMax === null ? null : normalizedMax
     },
     cleanArrayNumber(arr, index) {

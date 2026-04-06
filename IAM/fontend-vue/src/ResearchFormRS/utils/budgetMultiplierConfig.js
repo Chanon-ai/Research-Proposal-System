@@ -104,9 +104,37 @@ export const toMultiplierNumber = (value, fallback = 0) => {
 
 export const toMultiplierMaxNumber = (value, fallback = null) => {
   if (value === '' || value === undefined || value === null) return fallback
-  const numeric = Number(value)
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? Math.max(0, value) : fallback
+  }
+
+  const text = String(value || '').trim().replace(/,/g, '')
+  if (!text) return fallback
+
+  const normalizedPercentText = text.replace(/\s+/g, '')
+  const percentMatch = normalizedPercentText.match(/^(\d+(?:\.\d+)?)%$/)
+  if (percentMatch) {
+    const percentValue = Number(percentMatch[1])
+    if (!Number.isFinite(percentValue)) return fallback
+    return `${Math.max(0, percentValue)}%`
+  }
+
+  const numeric = Number(text)
   if (!Number.isFinite(numeric)) return fallback
   return Math.max(0, numeric)
+}
+
+export const resolveMultiplierMaxNumber = (value, budgetLimit, fallback = null) => {
+  const normalized = toMultiplierMaxNumber(value, null)
+  if (normalized === null) return fallback
+  if (typeof normalized === 'string' && normalized.endsWith('%')) {
+    const numericBudgetLimit = Number(budgetLimit)
+    if (!Number.isFinite(numericBudgetLimit) || numericBudgetLimit <= 0) return fallback
+    const percentValue = Number(normalized.slice(0, -1))
+    if (!Number.isFinite(percentValue)) return fallback
+    return Math.max(0, Math.floor((numericBudgetLimit * percentValue) / 100))
+  }
+  return normalized
 }
 
 const normalizeCategoryKey = (value) => {

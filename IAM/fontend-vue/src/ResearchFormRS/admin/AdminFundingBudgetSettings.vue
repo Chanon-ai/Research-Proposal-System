@@ -219,12 +219,9 @@
                       </td>
                       <td>
                         <input
-                          type="number"
-                          min="0"
-                          step="1"
                           class="form-control"
                           :value="multiplier.maxValue"
-                          placeholder="ไม่จำกัด"
+                          placeholder="ไม่จำกัด, เช่น 5000 หรือ 10%"
                           @input="updateBudgetMultiplierMaxValue(categoryIndex, multiplierIndex, $event.target.value)"
                         />
                       </td>
@@ -360,12 +357,9 @@
                         </td>
                         <td>
                           <input
-                            type="number"
-                            min="0"
-                            step="1"
                             class="form-control"
                             :value="overrideMultiplier.maxValue"
-                            placeholder="ไม่จำกัด"
+                            placeholder="ไม่จำกัด, เช่น 5000 หรือ 10%"
                             @input="updateBudgetItemOverrideMultiplierMaxValue(categoryIndex, overrideIndex, overrideMultiplierIndex, $event.target.value)"
                           />
                         </td>
@@ -454,7 +448,8 @@ import {
   sanitizeBudgetMultiplierConfigForSave as sanitizeBudgetMultiplierConfigForSaveUtil,
   mergeBudgetMultiplierMaxValues,
   toMultiplierNumber as toMultiplierNumberUtil,
-  toMultiplierMaxNumber as toMultiplierMaxNumberUtil
+  toMultiplierMaxNumber as toMultiplierMaxNumberUtil,
+  resolveMultiplierMaxNumber as resolveMultiplierMaxNumberUtil
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
 
 const createFundingTypeTemplate = () => ({ key: '', label: '', budgetLimit: 0, subOptions: [] })
@@ -542,11 +537,55 @@ export default {
     toMultiplierMaxNumber (value, fallback = null) {
       return toMultiplierMaxNumberUtil(value, fallback)
     },
+    resolveMultiplierMaxNumber (value, budgetLimit, fallback = null) {
+      return resolveMultiplierMaxNumberUtil(value, budgetLimit, fallback)
+    },
     normalizeBudgetMultiplierConfig (rawConfig) {
       return normalizeBudgetMultiplierConfigUtil(rawConfig, { fallbackToDefault: true })
     },
     sanitizeBudgetMultiplierConfigForSave (config = this.budgetMultiplierConfig) {
       return sanitizeBudgetMultiplierConfigForSaveUtil(config)
+    },
+    isMultiplierMaxValueValid (value) {
+      if (value === '' || value === undefined || value === null) return true
+      return this.toMultiplierMaxNumber(value, '__invalid__') !== '__invalid__'
+    },
+    getApplicableFundingBudgetLimits (fundingTypeKeys = []) {
+      const normalizedFundingTypeKeys = Array.isArray(fundingTypeKeys) && fundingTypeKeys.length > 0
+        ? fundingTypeKeys.map(key => this.normalizeFundingKey(key)).filter(Boolean)
+        : this.fundingTypeSelectionOptions.map(option => option.key)
+
+      return normalizedFundingTypeKeys.reduce((result, fundingTypeKey) => {
+        const fundingType = this.fundingBudgetConfig.find(item => this.normalizeFundingKey(item && item.key) === fundingTypeKey)
+        const budgetLimit = this.toBudgetLimitNumber(fundingType && fundingType.budgetLimit, 0)
+        if (budgetLimit > 0) result.push(budgetLimit)
+        return result
+      }, [])
+    },
+    resolveAdminMultiplierMaxValue (maxValue, fundingTypeKeys = []) {
+      const normalizedMaxValue = this.toMultiplierMaxNumber(maxValue, '__invalid__')
+      if (normalizedMaxValue === '__invalid__') {
+        return { isValid: false, effectiveMaxValue: null }
+      }
+      if (normalizedMaxValue === null) {
+        return { isValid: true, effectiveMaxValue: null }
+      }
+      if (typeof normalizedMaxValue === 'string' && normalizedMaxValue.endsWith('%')) {
+        const budgetLimits = this.getApplicableFundingBudgetLimits(fundingTypeKeys)
+        if (!budgetLimits.length) {
+          return { isValid: true, effectiveMaxValue: null }
+        }
+
+        const effectiveMaxValue = budgetLimits.reduce((minValue, budgetLimit) => {
+          const resolvedMaxValue = this.resolveMultiplierMaxNumber(normalizedMaxValue, budgetLimit, null)
+          if (resolvedMaxValue === null) return minValue
+          return minValue === null ? resolvedMaxValue : Math.min(minValue, resolvedMaxValue)
+        }, null)
+
+        return { isValid: true, effectiveMaxValue }
+      }
+
+      return { isValid: true, effectiveMaxValue: normalizedMaxValue }
     },
     validateFundingBudgetPayload (payload) {
       if (!Array.isArray(payload) || payload.length === 0) {
@@ -607,8 +646,11 @@ export default {
           if (!Number.isFinite(numeric) || numeric < 0) {
             return `${categoryLabel}: ตัวคูณลำดับที่ ${no} มีค่าเริ่มต้นไม่ถูกต้อง`
           }
-          const maxValue = this.toMultiplierMaxNumber(multiplier && multiplier.maxValue, null)
-          if (maxValue !== null && numeric > maxValue) {
+          if (!this.isMultiplierMaxValueValid(multiplier && multiplier.maxValue)) {
+            return `${categoryLabel}: ตัวคูณลำดับที่ ${no} รูปแบบค่าสูงสุดไม่ถูกต้อง (เช่น 5000 หรือ 10%)`
+          }
+          const { effectiveMaxValue } = this.resolveAdminMultiplierMaxValue(multiplier && multiplier.maxValue)
+          if (effectiveMaxValue !== null && numeric > effectiveMaxValue) {
             return `${categoryLabel}: ตัวคูณลำดับที่ ${no} ต้องมีค่าสูงสุดมากกว่าหรือเท่ากับค่าเริ่มต้น`
           }
         }
@@ -647,8 +689,14 @@ export default {
             if (!Number.isFinite(overrideNumeric) || overrideNumeric < 0) {
               return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ตัวคูณลำดับที่ ${overrideMultiplierNo} มีค่าเริ่มต้นไม่ถูกต้อง`
             }
-            const overrideMaxValue = this.toMultiplierMaxNumber(overrideMultiplier && overrideMultiplier.maxValue, null)
-            if (overrideMaxValue !== null && overrideNumeric > overrideMaxValue) {
+            if (!this.isMultiplierMaxValueValid(overrideMultiplier && overrideMultiplier.maxValue)) {
+              return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ตัวคูณลำดับที่ ${overrideMultiplierNo} รูปแบบค่าสูงสุดไม่ถูกต้อง (เช่น 5000 หรือ 10%)`
+            }
+            const { effectiveMaxValue } = this.resolveAdminMultiplierMaxValue(
+              overrideMultiplier && overrideMultiplier.maxValue,
+              applyToAllFundingTypes ? [] : fundingTypeKeys
+            )
+            if (effectiveMaxValue !== null && overrideNumeric > effectiveMaxValue) {
               return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ตัวคูณลำดับที่ ${overrideMultiplierNo} ต้องมีค่าสูงสุดมากกว่าหรือเท่ากับค่าเริ่มต้น`
             }
           }
@@ -838,7 +886,7 @@ export default {
         ? category.multipliers[multiplierIndex]
         : null
       if (!multiplier) return
-      this.$set(multiplier, 'maxValue', this.toMultiplierMaxNumber(value, null))
+      this.$set(multiplier, 'maxValue', value)
     },
     updateBudgetMultiplierUserInputAllowed (categoryIndex, multiplierIndex, checked) {
       const category = this.budgetMultiplierConfig[categoryIndex]
@@ -963,7 +1011,7 @@ export default {
         ? itemOverride.multipliers[overrideMultiplierIndex]
         : null
       if (!multiplier) return
-      this.$set(multiplier, 'maxValue', this.toMultiplierMaxNumber(value, null))
+      this.$set(multiplier, 'maxValue', value)
     },
     updateBudgetItemOverrideMultiplierUserInputAllowed (categoryIndex, overrideIndex, overrideMultiplierIndex, checked) {
       const category = this.budgetMultiplierConfig[categoryIndex]
@@ -1001,12 +1049,13 @@ export default {
       this.fundingBudgetConfig = createDefaultFundingBudgetConfig()
     },
     async saveBudgetMultiplierConfig () {
-      const payload = this.sanitizeBudgetMultiplierConfigForSave()
-      const validationError = this.validateBudgetMultiplierPayload(payload)
+      const validationError = this.validateBudgetMultiplierPayload(this.budgetMultiplierConfig)
       if (validationError) {
         await Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบถ้วน', text: validationError })
         return
       }
+
+      const payload = this.sanitizeBudgetMultiplierConfigForSave()
 
       this.savingMultiplier = true
       try {
