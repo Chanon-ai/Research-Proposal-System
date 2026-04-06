@@ -292,6 +292,37 @@
                   />
                 </div>
 
+                <div class="mb-3">
+                  <label class="mb-1 font-weight-bold d-block">ปรับใช้ข้อกำหนดตัวคูณกับทุน</label>
+                  <div class="d-flex flex-wrap" style="gap: 12px;">
+                    <label class="mb-0 d-inline-flex align-items-center" style="gap: 6px;">
+                      <input
+                        type="checkbox"
+                        :checked="isOverrideAppliedToAllFundingTypes(itemOverride)"
+                        @change="toggleBudgetItemOverrideApplyAllFundingTypes(categoryIndex, overrideIndex, $event.target.checked)"
+                      >
+                      <span>ทั้งหมด</span>
+                    </label>
+                    <label
+                      v-for="option in fundingTypeSelectionOptions"
+                      :key="`${category.categoryKey}-override-${overrideIndex}-funding-${option.key}`"
+                      class="mb-0 d-inline-flex align-items-center"
+                      style="gap: 6px;"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="isOverrideFundingTypeSelected(itemOverride, option.key)"
+                        :disabled="isOverrideAppliedToAllFundingTypes(itemOverride)"
+                        @change="toggleBudgetItemOverrideFundingType(categoryIndex, overrideIndex, option.key, $event.target.checked)"
+                      >
+                      <span :title="option.label">{{ option.shortLabel }}</span>
+                    </label>
+                  </div>
+                  <small class="text-muted d-block mt-1">
+                    เมื่อเลือก "ทั้งหมด" ระบบจะใช้ข้อกำหนดนี้กับทุกประเภททุน
+                  </small>
+                </div>
+
                 <div class="table-responsive funding-suboptions-table">
                   <table class="table table-bordered table-striped mb-0">
                     <thead>
@@ -431,6 +462,8 @@ const createFundingSubOptionTemplate = () => ({ key: '', label: '' })
 const createBudgetMultiplierTemplate = () => ({ label: '', value: 1, maxValue: null, isAdmin: false })
 const createBudgetItemOverrideTemplate = () => ({
   matchText: '',
+  applyToAllFundingTypes: true,
+  fundingTypeKeys: [],
   multipliers: [createBudgetMultiplierTemplate()]
 })
 
@@ -456,6 +489,20 @@ export default {
       return this.budgetMultiplierConfig.reduce((sum, category) => (
         sum + ((category && Array.isArray(category.multipliers)) ? category.multipliers.length : 0)
       ), 0)
+    },
+    fundingTypeSelectionOptions () {
+      return this.fundingBudgetConfig.reduce((result, type, index) => {
+        const key = this.normalizeFundingKey(type && type.key)
+        if (!key) return result
+        const label = String(type && type.label ? type.label : key).trim() || key
+        result.push({
+          key,
+          index,
+          shortLabel: `ทุนที่ ${index + 1}: ${label}`,
+          label
+        })
+        return result
+      }, [])
     }
   },
   async mounted () {
@@ -573,6 +620,16 @@ export default {
           const matchText = String(itemOverride && itemOverride.matchText || '').trim()
           if (!matchText) {
             return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ต้องระบุคำจับคู่`
+          }
+
+          const applyToAllFundingTypes = itemOverride && itemOverride.applyToAllFundingTypes !== undefined
+            ? Boolean(itemOverride.applyToAllFundingTypes)
+            : true
+          const fundingTypeKeys = Array.isArray(itemOverride && itemOverride.fundingTypeKeys)
+            ? itemOverride.fundingTypeKeys.map(key => this.normalizeFundingKey(key)).filter(Boolean)
+            : []
+          if (!applyToAllFundingTypes && fundingTypeKeys.length === 0) {
+            return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ต้องเลือกอย่างน้อย 1 ประเภททุน หรือเลือก "ทั้งหมด"`
           }
 
           const overrideMultipliers = Array.isArray(itemOverride && itemOverride.multipliers) ? itemOverride.multipliers : []
@@ -811,6 +868,50 @@ export default {
         : null
       if (!itemOverride) return
       this.$set(itemOverride, 'matchText', value)
+    },
+    isOverrideAppliedToAllFundingTypes (itemOverride) {
+      if (!itemOverride || typeof itemOverride !== 'object') return true
+      return itemOverride.applyToAllFundingTypes !== false
+    },
+    isOverrideFundingTypeSelected (itemOverride, fundingTypeKey) {
+      if (!itemOverride || typeof itemOverride !== 'object') return false
+      const normalizedKey = this.normalizeFundingKey(fundingTypeKey)
+      if (!normalizedKey) return false
+      const current = Array.isArray(itemOverride.fundingTypeKeys)
+        ? itemOverride.fundingTypeKeys.map(key => this.normalizeFundingKey(key)).filter(Boolean)
+        : []
+      return current.includes(normalizedKey)
+    },
+    toggleBudgetItemOverrideApplyAllFundingTypes (categoryIndex, overrideIndex, checked) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      if (!itemOverride) return
+      this.$set(itemOverride, 'applyToAllFundingTypes', Boolean(checked))
+      if (checked) {
+        this.$set(itemOverride, 'fundingTypeKeys', [])
+      }
+    },
+    toggleBudgetItemOverrideFundingType (categoryIndex, overrideIndex, fundingTypeKey, checked) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      if (!itemOverride) return
+
+      const normalizedKey = this.normalizeFundingKey(fundingTypeKey)
+      if (!normalizedKey) return
+
+      const current = Array.isArray(itemOverride.fundingTypeKeys)
+        ? itemOverride.fundingTypeKeys.map(key => this.normalizeFundingKey(key)).filter(Boolean)
+        : []
+      const next = checked
+        ? Array.from(new Set(current.concat(normalizedKey)))
+        : current.filter(key => key !== normalizedKey)
+
+      this.$set(itemOverride, 'applyToAllFundingTypes', false)
+      this.$set(itemOverride, 'fundingTypeKeys', next)
     },
     addBudgetItemOverrideMultiplier (categoryIndex, overrideIndex) {
       const category = this.budgetMultiplierConfig[categoryIndex]

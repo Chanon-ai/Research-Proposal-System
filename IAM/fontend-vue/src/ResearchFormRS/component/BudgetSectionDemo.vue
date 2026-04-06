@@ -463,6 +463,7 @@
 <script>
 import {
   normalizeFundingBudgetConfig,
+  normalizeFundingBudgetKey,
   getFundingTypeBudgetLimit,
   getFundingTypeLabel
 } from '@/ResearchFormRS/utils/fundingBudgetConfig'
@@ -556,6 +557,12 @@ const cloneMultiplierList = (multipliers = []) => (
 const cloneItemOverrideList = (itemOverrides = []) => (
   (Array.isArray(itemOverrides) ? itemOverrides : []).map(itemOverride => ({
     matchText: String(itemOverride && itemOverride.matchText ? itemOverride.matchText : '').trim(),
+    applyToAllFundingTypes: itemOverride && itemOverride.applyToAllFundingTypes !== undefined
+      ? Boolean(itemOverride.applyToAllFundingTypes)
+      : true,
+    fundingTypeKeys: (Array.isArray(itemOverride && itemOverride.fundingTypeKeys) ? itemOverride.fundingTypeKeys : [])
+      .map(key => normalizeFundingBudgetKey(key))
+      .filter(Boolean),
     multipliers: cloneMultiplierList(itemOverride && itemOverride.multipliers)
   })).filter(itemOverride => itemOverride.matchText && itemOverride.multipliers.length > 0)
 )
@@ -1359,6 +1366,17 @@ export default {
         this.applyBudgetMultiplierConfig(val)
       }
     },
+    fundingType(newVal, oldVal) {
+      if (newVal === oldVal) return
+      this.categories.forEach((category, catIndex) => {
+        if (!category || !Array.isArray(category.items)) return
+        category.items.forEach((item) => {
+          if (!item || typeof item !== 'object' || item.isManualMultiplier || category.isOther) return
+          this.normalizeRowModel(item, category, catIndex)
+          this.calculateRowTotal(item)
+        })
+      })
+    },
     resetToken(newVal, oldVal) {
       if (newVal === oldVal) return
       this.resetBudgetData()
@@ -1892,6 +1910,18 @@ export default {
         .replace(/\s+/g, ' ')
         .trim()
     },
+    isItemOverrideApplicableToFundingType(itemOverride) {
+      if (!itemOverride || typeof itemOverride !== 'object') return false
+      if (itemOverride.applyToAllFundingTypes !== false) return true
+
+      const fundingTypeKey = normalizeFundingBudgetKey(this.fundingType)
+      if (!fundingTypeKey) return false
+
+      const fundingTypeKeys = Array.isArray(itemOverride.fundingTypeKeys)
+        ? itemOverride.fundingTypeKeys.map(key => normalizeFundingBudgetKey(key)).filter(Boolean)
+        : []
+      return fundingTypeKeys.includes(fundingTypeKey)
+    },
     findCategoryItemOverride(category, itemName) {
       if (!category || category.isOther) return null
       const normalizedItemName = this.normalizeKeywordText(itemName)
@@ -1900,6 +1930,7 @@ export default {
       const overrides = Array.isArray(category.itemOverrides) ? category.itemOverrides : []
       for (let index = 0; index < overrides.length; index += 1) {
         const itemOverride = overrides[index]
+        if (!this.isItemOverrideApplicableToFundingType(itemOverride)) continue
         const normalizedMatchText = this.normalizeKeywordText(itemOverride && itemOverride.matchText)
         if (!normalizedMatchText) continue
         if (normalizedItemName.includes(normalizedMatchText)) return itemOverride

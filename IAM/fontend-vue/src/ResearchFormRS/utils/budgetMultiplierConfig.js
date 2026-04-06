@@ -1,3 +1,5 @@
+import { normalizeFundingBudgetKey } from '@/ResearchFormRS/utils/fundingBudgetConfig'
+
 export const BUDGET_MULTIPLIER_SETTING_KEY = 'budget_multiplier_config_json'
 export const BUDGET_MULTIPLIER_LOCAL_FALLBACK_KEY = 'admin_budget_multiplier_settings_fallback_v1'
 
@@ -116,6 +118,18 @@ const normalizeCategoryKey = (value) => {
   return KNOWN_CATEGORY_KEY_SET.has(normalized) ? normalized : ''
 }
 
+const normalizeFundingTypeKeys = (value) => {
+  const source = Array.isArray(value) ? value : []
+  const seen = new Set()
+  return source.reduce((result, item) => {
+    const normalized = normalizeFundingBudgetKey(item)
+    if (!normalized || seen.has(normalized)) return result
+    seen.add(normalized)
+    result.push(normalized)
+    return result
+  }, [])
+}
+
 const normalizeMultiplierEntry = (entry) => ({
   label: String(entry && entry.label !== undefined ? entry.label : '').trim(),
   value: toMultiplierNumber(entry && entry.value, 0),
@@ -136,12 +150,20 @@ const cloneMultipliers = (multipliers) => (
 
 const normalizeItemOverrideEntry = (entry) => ({
   matchText: normalizeOverrideMatchText(entry && entry.matchText),
+  applyToAllFundingTypes: entry && entry.applyToAllFundingTypes !== undefined
+    ? Boolean(entry.applyToAllFundingTypes)
+    : true,
+  fundingTypeKeys: normalizeFundingTypeKeys(entry && entry.fundingTypeKeys),
   multipliers: cloneMultipliers(entry && entry.multipliers).filter(multiplier => multiplier.label)
 })
 
 const cloneItemOverrides = (itemOverrides) => (
   (Array.isArray(itemOverrides) ? itemOverrides : []).map(itemOverride => ({
     matchText: normalizeOverrideMatchText(itemOverride && itemOverride.matchText),
+    applyToAllFundingTypes: itemOverride && itemOverride.applyToAllFundingTypes !== undefined
+      ? Boolean(itemOverride.applyToAllFundingTypes)
+      : true,
+    fundingTypeKeys: normalizeFundingTypeKeys(itemOverride && itemOverride.fundingTypeKeys),
     multipliers: cloneMultipliers(itemOverride && itemOverride.multipliers)
   })).filter(itemOverride => itemOverride.matchText && itemOverride.multipliers.length > 0)
 )
@@ -265,6 +287,12 @@ export const mergeBudgetMultiplierMaxValues = (primaryConfig, fallbackConfig) =>
         const fallbackOverride = fallbackOverrideMap.get(normalizeOverrideMatchText(itemOverride && itemOverride.matchText))
         return {
           ...itemOverride,
+          applyToAllFundingTypes: itemOverride && itemOverride.applyToAllFundingTypes === false
+            ? false
+            : (fallbackOverride && fallbackOverride.applyToAllFundingTypes === false ? false : true),
+          fundingTypeKeys: itemOverride && Array.isArray(itemOverride.fundingTypeKeys) && itemOverride.fundingTypeKeys.length > 0
+            ? normalizeFundingTypeKeys(itemOverride.fundingTypeKeys)
+            : normalizeFundingTypeKeys(fallbackOverride && fallbackOverride.fundingTypeKeys),
           multipliers: (Array.isArray(itemOverride && itemOverride.multipliers) ? itemOverride.multipliers : []).map((multiplier, index) => {
             const fallbackMultiplier = fallbackOverride && Array.isArray(fallbackOverride.multipliers)
               ? fallbackOverride.multipliers[index]

@@ -459,6 +459,18 @@ function normalizeSlug(value) {
     .replace(/-+/g, '-');
 }
 
+function normalizeFundingTypeKeys(value) {
+  const source = Array.isArray(value) ? value : [];
+  const seen = new Set();
+  return source.reduce((result, item) => {
+    const normalized = normalizeSlug(item);
+    if (!normalized || seen.has(normalized)) return result;
+    seen.add(normalized);
+    result.push(normalized);
+    return result;
+  }, []);
+}
+
 function toNumber(value, fallback) {
   if (value === undefined || value === null || value === '') return fallback;
   const numeric = Number(value);
@@ -506,6 +518,10 @@ function normalizeBudgetMultiplierConfig(rawValue) {
       })).filter((multiplier) => multiplier.label),
       itemOverrides: (Array.isArray(category && category.itemOverrides) ? category.itemOverrides : []).map((itemOverride) => ({
         matchText: String(itemOverride && itemOverride.matchText !== undefined ? itemOverride.matchText : '').trim(),
+        applyToAllFundingTypes: itemOverride && itemOverride.applyToAllFundingTypes !== undefined
+          ? Boolean(itemOverride.applyToAllFundingTypes)
+          : true,
+        fundingTypeKeys: normalizeFundingTypeKeys(itemOverride && itemOverride.fundingTypeKeys),
         multipliers: (Array.isArray(itemOverride && itemOverride.multipliers) ? itemOverride.multipliers : []).map((multiplier) => ({
           label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
           value: Math.max(0, toNumber(multiplier && multiplier.value, 0)),
