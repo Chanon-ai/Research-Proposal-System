@@ -34,6 +34,11 @@ const CommitteeAssigned = () => import('@/ResearchFormRS/committee/CommitteeProj
 const CommitteeMeetings = () => import('@/ResearchFormRS/committee/CommitteeMeetings.vue')
 const CommitteeNotifications = () => import('@/ResearchFormRS/committee/CommitteeNotifications.vue')
 const CommitteeProposalDetail = () => import('@/ResearchFormRS/committee/CommitteeProposalDetail.vue')
+const OfficeChairmanDashboard = () => import('@/ResearchFormRS/officeChairman/OfficeChairmanDashboardSummary.vue')
+const OfficeChairmanAssigned = () => import('@/ResearchFormRS/officeChairman/OfficeChairmanProjectProposal.vue')
+const OfficeChairmanMeetings = () => import('@/ResearchFormRS/officeChairman/OfficeChairmanMeetings.vue')
+const OfficeChairmanNotifications = () => import('@/ResearchFormRS/officeChairman/OfficeChairmanNotifications.vue')
+const OfficeChairmanProposalDetail = () => import('@/ResearchFormRS/officeChairman/OfficeChairmanProposalDetail.vue')
 const ResearchForm = () => import('@/ResearchFormRS/ResearchForm.vue')
 
 const Colors = () => import('@/views/theme/Colors')
@@ -276,6 +281,40 @@ const router = new Router({
         {
           path: 'committee/logout',
           redirect: '/committee/assigned'
+        },
+        {
+          path: 'office-chairman/meetings',
+          name: 'OfficeChairmanMeetings',
+          component: OfficeChairmanMeetings,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'office-chairman/notifications',
+          name: 'OfficeChairmanNotifications',
+          component: OfficeChairmanNotifications,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'office-chairman/dashboard',
+          name: 'OfficeChairmanDashboard',
+          component: OfficeChairmanDashboard,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'office-chairman/assigned',
+          name: 'OfficeChairmanAssigned',
+          component: OfficeChairmanAssigned,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'office-chairman/proposals/:id',
+          name: 'officeChairmanProposalDetail',
+          component: OfficeChairmanProposalDetail,
+          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+        },
+        {
+          path: 'office-chairman/logout',
+          redirect: '/office-chairman/assigned'
         },
         {
           path: 'theme',
@@ -818,7 +857,8 @@ function getStoredRole() {
 function getRoleHome(role) {
   const normalizedRole = mapRoleForResearchAccess(role)
   if (normalizedRole === 'committee') return '/committee/assigned'
-  if (normalizedRole === 'admin' || normalizedRole === 'chairman') return '/admin/dashboard'
+  if (normalizedRole === 'chairman') return '/office-chairman/assigned'
+  if (normalizedRole === 'admin') return '/admin/dashboard'
   return '/userdashboard'
 }
 
@@ -871,8 +911,9 @@ router.beforeEach(async (to, from, next) => {
     if (roleRecords.length) {
       const allowed = roleRecords.every(record => record.meta.roles.includes(researchRole))
       if (!allowed) {
-        if (researchRole === 'admin' || researchRole === 'chairman') return next('/admin/dashboard')
+        if (researchRole === 'admin') return next('/admin/dashboard')
         if (researchRole === 'committee') return next('/committee/assigned')
+        if (researchRole === 'chairman') return next('/office-chairman/assigned')
         return next('/userdashboard')
       }
     }

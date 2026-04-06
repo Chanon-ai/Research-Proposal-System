@@ -10,6 +10,7 @@ function getJwtExpiresIn() {
 function toPublicUser(userDoc) {
   const user = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
   delete user.password;
+  user.role = normalizeRole(user.role);
   return user;
 }
 
@@ -17,7 +18,7 @@ function signToken(user) {
   const payload = {
     userId: user._id,
     email: user.email,
-    role: user.role,
+    role: normalizeRole(user.role),
     fullName: user.fullName
   };
 
@@ -30,6 +31,7 @@ function buildRandomPassword() {
 
 function normalizeRole(role) {
   const token = String(role || '').trim().toLowerCase();
+  if (token === 'office_chairman') return 'chairman';
   if (token === 'admin' || token === 'chairman' || token === 'committee' || token === 'researcher') {
     return token;
   }
@@ -69,6 +71,7 @@ async function ensureUserByEmail(payload = {}) {
     if (!user.fullName && requestedName) {
       user.fullName = requestedName;
     }
+    user.role = normalizeRole(user.role || requestedRole);
     if (!user.role) {
       user.role = requestedRole;
     }

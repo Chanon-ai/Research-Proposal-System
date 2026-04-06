@@ -947,8 +947,8 @@ export default {
     if (query.readOnly === 'true') {
       this.isReadOnly = true
     }
-    // Committee can view research form only (force read-only regardless of URL flags).
-    if (this.currentUserRole === 'committee') {
+    // Reviewer roles can view research form only (force read-only regardless of URL flags).
+    if (['committee', 'chairman'].includes(String(this.currentUserRole || '').trim().toLowerCase())) {
       this.isReadOnly = true
     }
     if (query.mode === 'admin-view') {
@@ -1087,7 +1087,7 @@ export default {
     },
     isBudgetReportMode () {
       const path = String((this.$route && this.$route.path) || '').trim().toLowerCase()
-      const isCommitteeRoute = path.indexOf('/committee/') !== -1 || path.indexOf('/review/proposals') !== -1
+      const isCommitteeRoute = path.indexOf('/committee/') !== -1 || path.indexOf('/office-chairman/') !== -1 || path.indexOf('/review/proposals') !== -1
       const status = String(this.currentStatus || '').trim().toLowerCase()
       return isCommitteeRoute && this.mainFormReadOnly && status !== '' && status !== 'draft'
     },

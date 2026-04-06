@@ -561,7 +561,7 @@ export default {
     },
     isCommitteeReviewRoute() {
       const path = String((this.$route && this.$route.path) || '').trim().toLowerCase()
-      return path.indexOf('/committee/') !== -1 || path.indexOf('/review/proposals') !== -1
+      return path.indexOf('/committee/') !== -1 || path.indexOf('/office-chairman/') !== -1 || path.indexOf('/review/proposals') !== -1
     },
     shouldUseBudgetReport() {
       return (

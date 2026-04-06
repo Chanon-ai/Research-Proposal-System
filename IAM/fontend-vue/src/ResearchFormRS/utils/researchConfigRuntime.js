@@ -1,11 +1,13 @@
 import { instance as axios } from '@/service/api'
 import { setProposalWorkflowRuntimeConfig } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { setCommitteeFeedbackRuntimeConfig } from '@/ResearchFormRS/constants/committeeFeedback'
+import { setOfficeChairmanChecklistRuntimeConfig } from '@/ResearchFormRS/constants/officeChairmanChecklist'
 import { setResearchStandardRuntimeConfig } from '@/ResearchFormRS/constants/researchStandard'
 
 const RESEARCH_CONFIG_CACHE_TTL_MS = 60 * 1000
 const PROPOSAL_WORKFLOW_SETTING_KEY = 'proposal_workflow_config_json'
 const COMMITTEE_FEEDBACK_SETTING_KEY = 'committee_feedback_config_json'
+const OFFICE_CHAIRMAN_CHECKLIST_SETTING_KEY = 'office_chairman_checklist_config_json'
 const RESEARCH_STANDARD_SETTING_KEY = 'research_standard_config_json'
 
 let cachedAt = 0
@@ -50,14 +52,17 @@ export const loadResearchFormRuntimeConfigs = async ({ force = false } = {}) => 
       const settings = parseSettingsPayload(response)
       const workflowSetting = settings.find(item => item && item.key === PROPOSAL_WORKFLOW_SETTING_KEY)
       const committeeFeedbackSetting = settings.find(item => item && item.key === COMMITTEE_FEEDBACK_SETTING_KEY)
+      const officeChairmanChecklistSetting = settings.find(item => item && item.key === OFFICE_CHAIRMAN_CHECKLIST_SETTING_KEY)
       const researchStandardSetting = settings.find(item => item && item.key === RESEARCH_STANDARD_SETTING_KEY)
 
       const workflowValue = parseSettingValue(workflowSetting)
       const committeeFeedbackValue = parseSettingValue(committeeFeedbackSetting)
+      const officeChairmanChecklistValue = parseSettingValue(officeChairmanChecklistSetting)
       const researchStandardValue = parseSettingValue(researchStandardSetting)
 
       if (workflowValue) setProposalWorkflowRuntimeConfig(workflowValue)
       if (committeeFeedbackValue) setCommitteeFeedbackRuntimeConfig(committeeFeedbackValue)
+      if (officeChairmanChecklistValue) setOfficeChairmanChecklistRuntimeConfig(officeChairmanChecklistValue)
       if (researchStandardValue) setResearchStandardRuntimeConfig(researchStandardValue)
 
       cachedAt = Date.now()

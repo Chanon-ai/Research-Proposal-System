@@ -154,8 +154,9 @@ function resolveSignedInRoute() {
         ? String(store.getters['Authentication/userRole']).trim().toLowerCase()
         : '';
 
-    if (role === 'admin' || role === 'chairman') return '/admin/dashboard';
+    if (role === 'admin') return '/admin/dashboard';
     if (role === 'committee') return '/committee/assigned';
+    if (role === 'chairman') return '/office-chairman/assigned';
     return '/userdashboard';
 }
 

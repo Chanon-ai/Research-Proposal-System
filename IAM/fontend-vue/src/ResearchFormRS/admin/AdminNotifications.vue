@@ -339,7 +339,7 @@ export default {
     previewRecipientCount () {
       if (this.sendForm.recipientType === 'specific') return this.sendForm.recipientIds.length
       if (this.sendForm.recipientType === 'all_researchers') return this.users.filter(u => u.role === 'researcher').length
-      if (this.sendForm.recipientType === 'all_committee') return this.users.filter(u => u.role === 'committee').length
+      if (this.sendForm.recipientType === 'all_committee') return this.users.filter(u => ['committee', 'chairman'].includes(u.role)).length
       return this.users.length
     }
   },

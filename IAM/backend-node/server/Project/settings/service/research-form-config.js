@@ -8,6 +8,7 @@ const MANAGED_SETTING_KEYS = Object.freeze({
   FUNDING_BUDGET: 'funding_budget_config_json',
   BUDGET_MULTIPLIER: 'budget_multiplier_config_json',
   COMMITTEE_FEEDBACK: 'committee_feedback_config_json',
+  OFFICE_CHAIRMAN_CHECKLIST: 'office_chairman_checklist_config_json',
   RESEARCH_STANDARD: 'research_standard_config_json'
 });
 
@@ -292,7 +293,12 @@ const ROLE_PAGE_ACCESS_DEFAULT = Object.freeze([
   { pageKey: 'committee-assigned', label: 'รายการที่ได้รับมอบหมาย', path: '/committee/assigned', matchMode: 'exact', roles: ['committee', 'admin', 'chairman'] },
   { pageKey: 'committee-meetings', label: 'ประชุมคณะกรรมการ', path: '/committee/meetings', matchMode: 'exact', roles: ['committee', 'admin', 'chairman'] },
   { pageKey: 'committee-notifications', label: 'การแจ้งเตือนคณะกรรมการ', path: '/committee/notifications', matchMode: 'exact', roles: ['committee', 'admin', 'chairman'] },
-  { pageKey: 'committee-proposals', label: 'หน้าอ่านข้อเสนอของกรรมการ', path: '/committee/proposals', matchMode: 'prefix', roles: ['committee', 'admin', 'chairman'] }
+  { pageKey: 'committee-proposals', label: 'หน้าอ่านข้อเสนอของกรรมการ', path: '/committee/proposals', matchMode: 'prefix', roles: ['committee', 'admin', 'chairman'] },
+  { pageKey: 'office-chairman-dashboard', label: 'แดชบอร์ดประธานสำนัก', path: '/office-chairman/dashboard', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'office-chairman-assigned', label: 'รายการที่ได้รับมอบหมายประธานสำนัก', path: '/office-chairman/assigned', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'office-chairman-meetings', label: 'ประชุมประธานสำนัก', path: '/office-chairman/meetings', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'office-chairman-notifications', label: 'การแจ้งเตือนประธานสำนัก', path: '/office-chairman/notifications', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'office-chairman-proposals', label: 'หน้าอ่านข้อเสนอของประธานสำนัก', path: '/office-chairman/proposals', matchMode: 'prefix', roles: ['admin', 'chairman'] }
 ]);
 
 const FUNDING_BUDGET_DEFAULT = Object.freeze([
@@ -351,6 +357,112 @@ const COMMITTEE_FEEDBACK_DEFAULT = Object.freeze({
     general: 'โปรดตรวจสอบและปรับปรุงข้อมูลในหัวข้อนี้ตามข้อเสนอแนะจากคณะกรรมการ',
     sectionPrefix: 'โปรดปรับปรุง{sectionLabel}ตามข้อเสนอแนะของคณะกรรมการ'
   }
+});
+
+const OFFICE_CHAIRMAN_CHECKLIST_DEFAULT = Object.freeze({
+  templateVersion: 1,
+  reviewerRole: 'chairman',
+  reviewerLabel: 'ประธานสำนัก',
+  importStatus: 'partial',
+  note: 'Imported checklist for new-researcher. Other funding types are still pending import.',
+  fundingTemplates: FUNDING_BUDGET_DEFAULT.map((item) => {
+    if (item.key === 'new-researcher') {
+      return {
+        fundingTypeKey: item.key,
+        fundingTypeLabel: item.label,
+        sections: [
+          {
+            sectionKey: 'applicant_eligibility',
+            sectionLabel: '1. คุณสมบัติของผู้ขอรับทุน',
+            description: 'ตรวจสอบคุณสมบัติของหัวหน้าโครงการตามเกณฑ์ของทุนนักวิจัยใหม่',
+            items: [
+              {
+                itemKey: 'academic_staff_position',
+                label: 'เป็นพนักงานสายวิชาการ ตำแหน่งอาจารย์ หรือนักวิจัยของมหาวิทยาลัยแม่ฟ้าหลวง'
+              },
+              {
+                itemKey: 'qualification_alignment',
+                label: 'มีคุณวุฒิสอดคล้องกับเนื้อหาของโครงการวิจัยที่เสนอ'
+              },
+              {
+                itemKey: 'capability_and_time',
+                label: 'มีศักยภาพและเวลาในการดำเนินโครงการวิจัยให้สำเร็จลุล่วงอย่างมีคุณภาพ และสามารถเผยแพร่ผลงานวิจัยได้ตามเกณฑ์ที่กำหนด'
+              },
+              {
+                itemKey: 'single_new_researcher_project',
+                label: 'เสนอขอรับทุนนักวิจัยใหม่ในตำแหน่งหัวหน้าโครงการวิจัย ไม่เกิน 1 โครงการ'
+              },
+              {
+                itemKey: 'no_previous_new_researcher_grant',
+                label: 'ไม่เคยได้รับทุนสนับสนุนการวิจัยประเภททุนนักวิจัยใหม่จากเงินรายได้มหาวิทยาลัยแม่ฟ้าหลวงมาก่อน ในตำแหน่งหัวหน้าโครงการ',
+                description: 'ข้อยกเว้น: คณาจารย์หรือนักวิจัยด้านสังคมศาสตร์และมนุษยศาสตร์ สามารถขอเพิ่มได้ตามกรอบงบประมาณที่เหลือจากโครงการเดิม รวมแล้วไม่เกิน 100,000 บาท'
+              },
+              {
+                itemKey: 'not_on_study_leave',
+                label: 'ไม่อยู่ระหว่างการลาศึกษาต่อ หรือมีแผนลาศึกษาต่อในระหว่างการรับทุน'
+              },
+              {
+                itemKey: 'no_previous_other_grants',
+                label: 'ไม่เคยได้รับทุนพัฒนานักวิจัย ทุนสอดคล้องยุทธศาสตร์การวิจัยและนวัตกรรม หรือทุนต่อยอดสู่ภาคอุตสาหกรรมมาก่อน นับตั้งแต่ปีงบประมาณ 2560'
+              },
+              {
+                itemKey: 'research_training_completed',
+                label: 'หัวหน้าโครงการต้องผ่านการอบรมมาตรฐานการวิจัย หรือจริยธรรมการวิจัยในมนุษย์ที่เกี่ยวข้อง พร้อมแสดงหลักฐาน'
+              }
+            ]
+          },
+          {
+            sectionKey: 'supported_project_characteristics',
+            sectionLabel: '2. ลักษณะโครงการวิจัยที่ให้การสนับสนุน',
+            description: 'ตรวจสอบลักษณะของโครงการวิจัยและเงื่อนไขการสนับสนุนของทุนนักวิจัยใหม่',
+            items: [
+              {
+                itemKey: 'has_project_advisor',
+                label: 'ควรมีที่ปรึกษาโครงการวิจัยอย่างน้อย 1 คน ซึ่งเป็นผู้เชี่ยวชาญในสาขาที่เกี่ยวข้อง'
+              },
+              {
+                itemKey: 'duration_within_one_year',
+                label: 'ระยะเวลาดำเนินการไม่เกิน 1 ปี'
+              },
+              {
+                itemKey: 'budget_within_limit',
+                label: 'งบประมาณที่เสนอขอไม่เกิน 100,000 บาท และเป็นไปตามระเบียบที่มหาวิทยาลัยกำหนด'
+              },
+              {
+                itemKey: 'clear_non_duplicate_problem',
+                label: 'มีโจทย์วิจัยที่ชัดเจนและไม่ซ้ำซ้อนกับงานที่เคยมีผู้ทำมาก่อน'
+              },
+              {
+                itemKey: 'feasible_objectives',
+                label: 'มีวัตถุประสงค์การวิจัยที่ดำเนินการได้จริงและประเมินได้'
+              },
+              {
+                itemKey: 'not_part_of_thesis',
+                label: 'ต้องไม่เป็นส่วนหนึ่งของวิทยานิพนธ์ของผู้ขอรับทุนเพื่อสำเร็จการศึกษา'
+              },
+              {
+                itemKey: 'publication_potential',
+                label: 'มีศักยภาพสามารถตีพิมพ์ผลงานวิจัยตามเกณฑ์ที่มหาวิทยาลัยกำหนด'
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+    return {
+      fundingTypeKey: item.key,
+      fundingTypeLabel: item.label,
+      sections: [
+        {
+          sectionKey: 'import_placeholder',
+          sectionLabel: 'Checklist Template',
+          description: 'พื้นที่สำหรับ import checklist ภายหลัง',
+          items: []
+        }
+      ]
+    }
+  })
 });
 
 const RESEARCH_STANDARD_DEFAULT = Object.freeze({
@@ -420,6 +532,11 @@ const MANAGED_DEFAULTS = Object.freeze({
     description: 'Committee feedback section mapping for ResearchFormRS',
     group: RESEARCH_FORM_SETTING_GROUP,
     value: COMMITTEE_FEEDBACK_DEFAULT
+  },
+  [MANAGED_SETTING_KEYS.OFFICE_CHAIRMAN_CHECKLIST]: {
+    description: 'Office chairman checklist templates for ResearchFormRS',
+    group: RESEARCH_FORM_SETTING_GROUP,
+    value: OFFICE_CHAIRMAN_CHECKLIST_DEFAULT
   },
   [MANAGED_SETTING_KEYS.RESEARCH_STANDARD]: {
     description: 'Research standard section config for ResearchFormRS',
@@ -599,6 +716,8 @@ function normalizeManagedSettingValue(key, rawValue) {
       return normalizeObjectOrDefault(rawValue, PROPOSAL_WORKFLOW_DEFAULT);
     case MANAGED_SETTING_KEYS.COMMITTEE_FEEDBACK:
       return normalizeObjectOrDefault(rawValue, COMMITTEE_FEEDBACK_DEFAULT);
+    case MANAGED_SETTING_KEYS.OFFICE_CHAIRMAN_CHECKLIST:
+      return normalizeObjectOrDefault(rawValue, OFFICE_CHAIRMAN_CHECKLIST_DEFAULT);
     case MANAGED_SETTING_KEYS.RESEARCH_STANDARD:
       return normalizeObjectOrDefault(rawValue, RESEARCH_STANDARD_DEFAULT);
     default:

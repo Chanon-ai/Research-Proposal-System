@@ -46,6 +46,12 @@ const FUNDING_LABELS = Object.freeze({
   'industry-extension': 'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
 });
 
+const REVIEWER_ROLE_SET = new Set(['committee', 'chairman', 'office_chairman']);
+
+function isReviewerRole(role) {
+  return REVIEWER_ROLE_SET.has(String(role || '').trim().toLowerCase());
+}
+
 function parseBudgetNumber(value) {
   if (value === null || value === undefined || value === '') return 0;
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
@@ -487,7 +493,7 @@ async function getProposalList(query = {}, user) {
   if (user && user.role === 'researcher' && user._id) {
     filter.applicantUserId = user._id;
   }
-  if (user && user.role === 'committee' && user._id) {
+  if (user && isReviewerRole(user.role) && user._id) {
     filter.committeeIds = user._id;
   }
   const statusTokens = [];
@@ -1054,7 +1060,7 @@ async function saveReview(proposalId, payload, user) {
   const filter = { proposalId, reviewerUserId: user._id, roundNo: round };
 
   // Access control: committee can only review proposals they are assigned to.
-  if (user.role === 'committee') {
+  if (isReviewerRole(user.role)) {
     const proposal = await Proposal.findById(proposalId).select('_id committeeIds').lean();
     if (!proposal) throw new Error('Proposal not found');
     const committeeIds = Array.isArray(proposal.committeeIds) ? proposal.committeeIds.map(String) : [];
@@ -1270,7 +1276,7 @@ async function getResearcherUsers(query = {}, currentUser = null) {
 async function getCommitteeUsers(query = {}) {
   try {
     const filter = {
-      role: 'committee',
+      role: { $in: ['committee', 'chairman'] },
       isActive: true,
       isDeleted: { $ne: true }
     };

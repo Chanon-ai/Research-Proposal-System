@@ -313,6 +313,11 @@ export default {
         return
       }
 
+      if (String(role || '') === 'chairman') {
+        this.$router.push('/office-chairman/notifications')
+        return
+      }
+
       this.$router.push('/user/notification')
     }
   }

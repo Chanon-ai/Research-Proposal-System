@@ -206,7 +206,7 @@ export default {
         const res = await Service.auth.me()
         const user = res && res.data && res.data.data ? res.data.data : null
         if (!user) return
-        const roleMap = { admin: 'ผู้ดูแลระบบ', researcher: 'นักวิจัย', committee: 'คณะกรรมการ', chairman: 'ประธาน' }
+        const roleMap = { admin: 'ผู้ดูแลระบบ', researcher: 'นักวิจัย', committee: 'คณะกรรมการ', chairman: 'ประธานสำนัก' }
         const addr = user.address && Array.isArray(user.address) && user.address[0]
         this.form = {
           ...this.form,
