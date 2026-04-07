@@ -14,7 +14,7 @@
           <!-- Header: title (top-left) + filter buttons + toolbar -->
           <div class="notif-header">
             <div class="header-left">
-              <h2 class="page-title">การแจ้งเตือน</h2>
+              <h2 class="page-title">{{ $t('userNotification.title') }}</h2>
               <div class="filter-tabs">
                 <button
                   v-for="tab in filterTabs"
@@ -27,14 +27,14 @@
 
             <div class="header-right">
               <div class="notif-toolbar" v-if="unreadCount > 0">
-                <span class="unread-count">{{ unreadCount }} รายการยังไม่ได้อ่าน</span>
-                <button class="btn-mark-all" @click="markAllRead"><CIcon name="cil-chevron-right" class="mr-1" /> อ่านทั้งหมด</button>
+                <span class="unread-count">{{ $t('userNotification.unreadCount', { count: unreadCount }) }}</span>
+                <button class="btn-mark-all" @click="markAllRead"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('userNotification.actions.markAllRead') }}</button>
               </div>
             </div>
           </div>
 
           <div v-if="loading" class="empty-state">
-            <p>กำลังโหลดการแจ้งเตือน...</p>
+            <p>{{ $t('userNotification.states.loading') }}</p>
           </div>
 
           <!-- Groups -->
@@ -118,7 +118,7 @@
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
-            <p>ไม่มีการแจ้งเตือน</p>
+            <p>{{ $t('userNotification.states.empty') }}</p>
           </div>
 
         </div>
@@ -149,10 +149,6 @@ export default {
 
       // Filter
       activeFilter: 'all',
-      filterTabs: [
-        { key: 'all',    label: 'ทั้งหมด' },
-        { key: 'unread', label: 'ยังไม่ได้อ่าน' },
-      ],
       loading: false,
       notifications: [],
       pagination: {
@@ -185,10 +181,17 @@ export default {
       return this.notifications
     },
 
+    filterTabs() {
+      return [
+        { key: 'all', label: this.$t('userNotification.filters.all') },
+        { key: 'unread', label: this.$t('userNotification.filters.unread') },
+      ]
+    },
+
     filteredGroups() {
       const groups = [
-        { key: 'recent',  label: 'ล่าสุด' },
-        { key: 'earlier', label: 'ก่อนหน้านี้' },
+        { key: 'recent',  label: this.$t('userNotification.groups.recent') },
+        { key: 'earlier', label: this.$t('userNotification.groups.earlier') },
       ]
       return groups
         .map(g => ({
@@ -227,11 +230,11 @@ export default {
         group,
         icon: this.iconByEvent(eventKey),
         iconClass: this.iconClassByEvent(eventKey),
-        title: n && n.title ? n.title : 'การแจ้งเตือน',
+        title: n && n.title ? n.title : this.$t('userNotification.defaultTitle'),
         desc: n && n.message ? n.message : '-',
         time: this.timeAgo(n && (n.createdAt || n.sentAt)),
         read: Boolean(n && n.isRead),
-        actions: n && n.proposalId ? [{ label: 'ดูข้อเสนอโครงการ', handler: () => this.openProposal(n) }] : [],
+        actions: n && n.proposalId ? [{ label: this.$t('userNotification.actions.viewProposal'), handler: () => this.openProposal(n) }] : [],
       }
     },
 
@@ -262,12 +265,12 @@ export default {
       const diff = Date.now() - new Date(dateStr).getTime()
       if (!Number.isFinite(diff) || diff < 0) return '-'
       const minutes = Math.floor(diff / 60000)
-      if (minutes < 1) return 'เมื่อสักครู่'
-      if (minutes < 60) return `${minutes} นาทีที่แล้ว`
+      if (minutes < 1) return this.$t('userNotification.time.justNow')
+      if (minutes < 60) return this.$t('userNotification.time.minutesAgo', { count: minutes })
       const hours = Math.floor(minutes / 60)
-      if (hours < 24) return `${hours} ชั่วโมงที่แล้ว`
+      if (hours < 24) return this.$t('userNotification.time.hoursAgo', { count: hours })
       const days = Math.floor(hours / 24)
-      return `${days} วันที่แล้ว`
+      return this.$t('userNotification.time.daysAgo', { count: days })
     },
 
     async markRead(item) {

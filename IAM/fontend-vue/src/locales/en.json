@@ -139,5 +139,506 @@
       "errorTitle": "Unable to send to chairman",
       "errorText": "Please try again"
     }
+  },
+  "userDashboard": {
+    "cards": {
+      "all": "All",
+      "inProgress": "In Progress",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "filters": {
+      "allProjects": "All projects",
+      "filteredProjects": "Filtered projects: {label}"
+    },
+    "search": {
+      "placeholder": "Search...",
+      "ariaLabel": "Search table"
+    },
+    "states": {
+      "loading": "Loading data...",
+      "loadError": "Failed to load data: {error}",
+      "noResults": "No matching results found"
+    },
+    "table": {
+      "proposalCode": "Proposal Code",
+      "projectTitleAndLeader": "Project Title / Project Leader",
+      "status": "Status",
+      "actions": "Actions",
+      "unnamedProject": "(Untitled)",
+      "proposedBudget": "Proposed project budget:",
+      "perPage": "Per page",
+      "itemsSuffix": "items",
+      "fundingTypeOnly": "Funding type: {type}",
+      "fundingTypeWithSubType": "Funding type: {type} / {subType}"
+    },
+    "actions": {
+      "clearFilter": "Clear filter",
+      "retry": "Try again",
+      "viewDocument": "View document",
+      "deleteDocument": "Delete document",
+      "deleting": "Deleting...",
+      "newProject": "Create new project"
+    },
+    "status": {
+      "reviewRound": "Review Round {round}"
+    },
+    "progress": {
+      "ownerFallback": "Researcher",
+      "draft": "{ownerName}: filling in information",
+      "pendingConfirm": "Research team: waiting for consent from collaborators/project advisors",
+      "submitted": "Research office: under review",
+      "facultyReviewPending": "Chairman is reviewing",
+      "facultyApproved": "Research office: waiting to receive the matter",
+      "facultyRejected": "Research office: pending rejection closure",
+      "officeReceived": "Research office: received and processing",
+      "documentChecking": "Research office: checking documents",
+      "assignedToCommittee": "Research office: assigning expert committee",
+      "underReview": "Expert committee: reviewing round {round}",
+      "committeeValuated": "Research office: waiting to summarize the review result",
+      "meetingCompleted": "Research office: preparing the result",
+      "revisionRequested": "{ownerName}: waiting to revise documents based on feedback",
+      "resubmitted": "Research office: revised documents received and forwarded for review",
+      "approved": "Research office: project approved",
+      "rejected": "Research office: project rejected",
+      "announced": "Research office: result announced",
+      "default": "Research office: in progress"
+    },
+    "lastAction": {
+      "noData": "Latest action: no timestamp available",
+      "justNow": "Latest action: just now",
+      "minutesAgo": "Latest action: {count} minute(s) ago",
+      "hoursAgo": "Latest action: {count} hour(s) ago",
+      "daysAgo": "Latest action: {count} day(s) ago",
+      "weeksAgo": "Latest action: {count} week(s) ago",
+      "monthsAgo": "Latest action: {count} month(s) ago",
+      "yearsAgo": "Latest action: {count} year(s) ago"
+    },
+    "alerts": {
+      "cannotDeleteTitle": "Unable to delete document",
+      "cannotDeleteText": "Only documents in draft status can be deleted.",
+      "confirmDeleteTitle": "Delete document {code}?",
+      "confirmDeleteText": "This action cannot be undone.",
+      "deleteErrorTitle": "Delete failed",
+      "deleteErrorText": "Unable to delete the document. Please try again.",
+      "ok": "OK",
+      "cancel": "Cancel"
+    }
+  },
+  "userHistory": {
+    "title": "Project History",
+    "subtitle": "Past project submissions for this user",
+    "filters": {
+      "all": "All",
+      "waiting": "Pending",
+      "reviewing": "Under Review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "fix": "Revision Requested"
+    },
+    "states": {
+      "loading": "Loading data...",
+      "loadError": "Unable to load project history"
+    },
+    "labels": {
+      "submittedUpdatedRound": "Submitted/updated {date} • Round {round}",
+      "unnamedProject": "(Untitled project)"
+    },
+    "statuses": {
+      "waiting": "Pending",
+      "reviewing": "Under Review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "fix": "Revision Requested",
+      "pendingConfirm": "Pending confirmation"
+    }
+  },
+  "userProfile": {
+    "tabs": {
+      "info": "Profile",
+      "address": "Address"
+    },
+    "sections": {
+      "info": "Profile Information",
+      "address": "Address"
+    },
+    "fields": {
+      "username": "Username",
+      "prefix": "Prefix",
+      "fullName": "Full Name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "birthdate": "Birthdate",
+      "position": "Role",
+      "department": "Department / Faculty",
+      "gender": "Gender",
+      "address": "Address",
+      "subdistrict": "Subdistrict / แขวง",
+      "district": "District / เขต",
+      "province": "Province",
+      "postalCode": "Postal Code"
+    },
+    "placeholders": {
+      "fullName": "Full name",
+      "phone": "088-xxx-xxxx",
+      "address": "Enter address",
+      "subdistrict": "Subdistrict / แขวง",
+      "district": "District / เขต",
+      "province": "Province",
+      "postalCode": "xxxxx"
+    },
+    "roles": {
+      "admin": "Administrator",
+      "researcher": "Researcher",
+      "committee": "Committee",
+      "chairman": "Chairman"
+    },
+    "toasts": {
+      "saveSuccess": "Profile saved successfully",
+      "saveError": "Unable to save profile"
+    }
+  },
+  "userNotification": {
+    "title": "Notifications",
+    "filters": {
+      "all": "All",
+      "unread": "Unread"
+    },
+    "groups": {
+      "recent": "Recent",
+      "earlier": "Earlier"
+    },
+    "states": {
+      "loading": "Loading notifications...",
+      "empty": "No notifications"
+    },
+    "actions": {
+      "markAllRead": "Mark all as read",
+      "viewProposal": "View proposal"
+    },
+    "unreadCount": "{count} unread item(s)",
+    "defaultTitle": "Notification",
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{count} minute(s) ago",
+      "hoursAgo": "{count} hour(s) ago",
+      "daysAgo": "{count} day(s) ago"
+    }
+  },
+  "userMeetings": {
+    "hero": {
+      "eyebrow": "Researcher Meetings",
+      "title": "My Meeting Schedule",
+      "subtitle": "Track meetings related to your proposals"
+    }
+  },
+  "adminProposalList": {
+    "title": "Project Management (Admin)",
+    "searchPlaceholder": "Search project title or code...",
+    "reset": "Reset",
+    "listTitle": "Project list",
+    "summary": "Showing {from}-{to} of {total} items",
+    "loading": "Loading data...",
+    "noResults": "No data found",
+    "noItems": "No projects available",
+    "page": "Page {page} / {totalPages}",
+    "previous": "Previous",
+    "next": "Next",
+    "currentRound": "Round {round}",
+    "view": "View details",
+    "statusFilterAll": "All",
+    "fiscalYearAll": "All fiscal years",
+    "nextStatusNone": "No allowed next status",
+    "nextStatusSelect": "Select status",
+    "nextStatusSecondRound": "Send to committee review",
+    "chairmanSelect": "Select chairman",
+    "chairmanCount": "{count} people",
+    "chairmanSent": "Sent to chairman",
+    "chairmanSentWithName": "Sent to chairman: {name}",
+    "chairmanApproved": "Chairman approved",
+    "chairmanApprovedWithName": "Chairman approved: {name}",
+    "chairmanRejected": "Chairman rejected",
+    "chairmanRejectedWithName": "Chairman rejected: {name}",
+    "chairmanActionSent": "Sent to chairman",
+    "chairmanActionResend": "Resend to chairman",
+    "chairmanActionApproved": "Chairman already approved",
+    "chairmanActionSend": "Send to chairman",
+    "chairmanLoadError": "Unable to load chairman list",
+    "loadErrorTitle": "Unable to load data",
+    "loadErrorText": "Unable to fetch project list. Please try again.",
+    "changeStatusSuccess": "Status updated successfully",
+    "changeStatusError": "Unable to update status",
+    "assignCommitteeSuccess": "Committee assigned successfully",
+    "assignCommitteeError": "Unable to assign committee",
+    "genericRetry": "Please verify the information and try again.",
+    "modals": {
+      "changeStatus": {
+        "title": "Change project status",
+        "proposalCode": "Proposal code:",
+        "projectTitle": "Project title:",
+        "currentStatus": "Current status:",
+        "toStatus": "Change status to",
+        "remarkLabel": "Remark / reason (optional)",
+        "remarkPlaceholder": "Enter additional remark",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "saving": "Saving..."
+      },
+      "assignChairman": {
+        "title": "Send document to chairman",
+        "proposalCode": "Proposal code:",
+        "projectTitle": "Project title:",
+        "loading": "Loading chairman list...",
+        "select": "Select chairman",
+        "cancel": "Cancel",
+        "confirm": "Confirm send to chairman",
+        "sending": "Sending..."
+      },
+      "assignCommittee": {
+        "title": "Assign committee",
+        "proposalCode": "Proposal code:",
+        "projectTitle": "Project title:",
+        "input": "Enter Committee IDs (comma separated)",
+        "placeholder": "For example 65fa..., 65fb..., 65fc...",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "saving": "Saving..."
+      }
+    },
+    "fields": {
+      "proposalCode": "Proposal Code",
+      "projectTitleTh": "Project Title (TH)",
+      "fiscalYear": "Fiscal Year",
+      "fundingType": "Funding Type",
+      "currentStatus": "Status",
+      "currentRound": "Round",
+      "updatedAt": "Updated",
+      "actions": "Actions"
+    }
+  },
+  "adminUsers": {
+    "title": "User Management (Admin)",
+    "addNew": "Add new user",
+    "cards": {
+      "total": "Total users",
+      "committee": "Committee (this page)",
+      "researcher": "Researchers (this page)",
+      "active": "Active (this page)"
+    },
+    "searchPlaceholder": "Search name or email...",
+    "reset": "Reset",
+    "listTitle": "User list",
+    "summary": "Showing {from}-{to} of {total} items",
+    "apiNotReady": "No data yet (API not ready)",
+    "loading": "Loading data...",
+    "noUsers": "No users found",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "edit": "Edit",
+    "disable": "Disable",
+    "enable": "Enable",
+    "delete": "Delete",
+    "page": "Page {page} / {totalPages}",
+    "previous": "Previous",
+    "next": "Next",
+    "modals": {
+      "addTitle": "Add new user",
+      "editTitle": "Edit user",
+      "accountInfo": "Account information",
+      "extraInfo": "Additional information",
+      "fullName": "Full name",
+      "fullNamePlaceholder": "Enter full name",
+      "email": "Email",
+      "password": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Re-enter password",
+      "role": "Role",
+      "phone": "Phone number",
+      "phonePlaceholder": "08x-xxx-xxxx",
+      "department": "Department",
+      "departmentPlaceholder": "For example Research Office",
+      "accountStatus": "Account status",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving...",
+      "saveEdit": "Save changes"
+    }
+  },
+  "committee": {
+    "meetings": {
+      "hero": {
+        "eyebrow": "Committee Meetings",
+        "title": "Committee Meeting Schedule",
+        "subtitle": "Show only meetings that include your name"
+      }
+    },
+    "dashboard": {
+      "title": "Summary Dashboard",
+      "subtitle": "Overview of assigned work, review status, and meeting summary",
+      "exportCsv": "Export CSV",
+      "kpi": {
+        "total": "Total",
+        "totalNote": "Assigned proposals",
+        "pending": "Pending review",
+        "pendingNote": "Review not submitted yet",
+        "announced": "Announced",
+        "announcedNote": "Proposals already announced",
+        "reviewed": "Reviewed",
+        "reviewedNote": "Statuses with submitted feedback"
+      },
+      "decision": {
+        "title": "Decision summary (submitted only)",
+        "approve": "Approve",
+        "revise": "Request revision",
+        "reject": "Reject",
+        "total": "Total {count} item(s)",
+        "chartTitle": "Decision summary chart",
+        "empty": "No decision data yet"
+      },
+      "proposalStatus": {
+        "title": "Proposal status from assignment to announcement",
+        "loading": "Loading data...",
+        "loadErrorTitle": "Unable to load data"
+      },
+      "score": {
+        "title": "Scores and backlog",
+        "avg": "Average score (% of full score)",
+        "pending": "Pending submissions",
+        "over7": "Over 7 days:",
+        "over14": "Over 14 days:"
+      },
+      "meetings": {
+        "title": "Meeting overview",
+        "loading": "Loading meeting summary...",
+        "scheduled": "Scheduled",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "total": "Total",
+        "chartSeries": "Number of meetings"
+      },
+      "filters": {
+        "allRounds": "All rounds",
+        "round": "Round {round}",
+        "allFundingTypes": "All funding types",
+        "allDecisions": "All decisions",
+        "none": "Not submitted yet",
+        "unknownFunding": "Unspecified"
+      },
+      "fundingTypes": {
+        "newResearcher": "New Researcher Grant",
+        "researcherDevelopment": "Researcher Development Grant",
+        "strategicResearch": "Strategic Research Grant",
+        "industryExtension": "Industry Extension Grant"
+      },
+      "csv": {
+        "proposalCode": "Proposal Code",
+        "projectTitle": "Project Title",
+        "projectLeader": "Project Leader",
+        "department": "Department",
+        "round": "Round",
+        "fundingType": "Funding Type",
+        "status": "Status",
+        "decision": "Decision",
+        "score": "Total Score",
+        "maxScore": "Max Score",
+        "percent": "Percentage",
+        "updatedAt": "Updated At"
+      },
+      "unnamedProject": "(Untitled project)"
+    },
+    "proposalDetail": {
+      "loading": "Loading proposal details...",
+      "loadError": "Unable to load proposal data: {error}",
+      "attachments": "Attachments",
+      "download": "Download",
+      "notFound": "Proposal not found",
+      "back": "Back",
+      "title": "Proposal evaluation form",
+      "submitted": "Evaluation submitted successfully (cannot submit again)",
+      "draftSaved": "Draft saved",
+      "rubricTitle": "Proposal review criteria and score levels",
+      "fundTypeLabel": "Funding type used for weighting",
+      "fundTypeHelp": "Based on the funding type selected in the submitted form",
+      "fundTypeFallback": "Funding type was not found in the form, so the default value is used for weighting",
+      "rowComment": "Suggestion for this section",
+      "rowCommentPlaceholder": "Describe what the researcher should revise for this section",
+      "totalScore": "Total score",
+      "maxScore": "Maximum score",
+      "comments": "Comments and suggestions",
+      "commentsPlaceholder": "Type your comments...",
+      "uploadLabel": "Upload additional evaluation file (PDF, DOCX, XLSX)",
+      "selectedFile": "Selected file: {name}",
+      "decision": "Decision",
+      "saveDraft": "Save draft",
+      "submit": "Submit evaluation",
+      "decisionOptions": {
+        "approve": "Approve",
+        "reject": "Reject",
+        "revision": "Request additional revision"
+      },
+      "alerts": {
+        "alreadySubmittedTitle": "Evaluation already submitted",
+        "alreadySubmittedText": "This item can only be submitted once and cannot be resubmitted.",
+        "submitSuccessTitle": "Evaluation submitted successfully",
+        "submitSuccessText": "The system has saved the evaluation result.",
+        "duplicateSubmitText": "The system does not allow resubmission because the evaluation has already been submitted.",
+        "submitErrorTitle": "Unable to submit evaluation",
+        "retry": "Please try again."
+      }
+    }
+  },
+  "chairman": {
+    "meetings": {
+      "hero": {
+        "eyebrow": "Office Chairman Meetings",
+        "title": "Chairman Meeting Schedule",
+        "subtitle": "Show only meetings that include your name"
+      }
+    },
+    "proposalDetail": {
+      "loading": "Loading proposal details...",
+      "loadError": "Unable to load proposal data: {error}",
+      "attachments": "Attachments",
+      "download": "Download",
+      "downloadErrorTitle": "Download failed",
+      "downloadErrorText": "Unable to download the file",
+      "notFound": "Proposal not found",
+      "back": "Back",
+      "title": "Proposal review checklist",
+      "submitted": "Decision submitted successfully (cannot submit again)",
+      "draftSaved": "Draft saved",
+      "rubricTitle": "Checklist template by funding type",
+      "fundingLabel": "Funding type used for the template",
+      "fundingHelp": "This template is loaded from backend settings based on the selected funding type",
+      "emptyChecklist": "There are no checklist items in this template yet. This section is reserved for future import.",
+      "comments": "Comments and suggestions",
+      "commentsPlaceholder": "Type your comments...",
+      "uploadLabel": "Upload additional review file (import not connected yet)",
+      "selectedFile": "Selected file: {name}",
+      "decision": "Decision",
+      "saveDraft": "Save draft",
+      "submit": "Submit decision",
+      "decisionOptions": {
+        "approve": "Approve",
+        "reject": "Reject"
+      },
+      "status": {
+        "approved": "This item has already been approved by the chairman and can no longer be edited.",
+        "rejected": "This item has already been rejected by the chairman and can no longer be edited.",
+        "notPending": "This item is no longer pending chairman review."
+      },
+      "alerts": {
+        "alreadySubmittedTitle": "Decision already submitted",
+        "alreadySubmittedText": "This item can only be submitted once and cannot be resubmitted.",
+        "cannotSubmitTitle": "Unable to submit decision",
+        "submitSuccessTitle": "Decision submitted successfully",
+        "submitSuccessText": "The system has saved the decision result.",
+        "duplicateSubmitText": "The system does not allow resubmission because the decision has already been submitted.",
+        "submitErrorTitle": "Unable to submit decision",
+        "retry": "Please try again."
+      },
+      "importPlaceholderFallback": "The checklist area is still reserved for backend import in the next step"
+    }
   }
 }

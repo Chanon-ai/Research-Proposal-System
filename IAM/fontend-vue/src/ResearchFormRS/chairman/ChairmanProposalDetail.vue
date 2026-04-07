@@ -2,10 +2,10 @@
   <div>
     <div v-if="loading" class="text-center py-4">
       <CSpinner color="primary" />
-      <div class="text-muted mt-2">กำลังโหลดรายละเอียดโครงการ...</div>
+      <div class="text-muted mt-2">{{ $t('chairman.proposalDetail.loading') }}</div>
     </div>
     <CAlert v-else-if="error" color="danger" show>
-      ไม่สามารถโหลดข้อมูลโครงการได้: {{ error }}
+      {{ $t('chairman.proposalDetail.loadError', { error }) }}
     </CAlert>
     <CRow>
       <CCol col="12" lg="7">
@@ -14,7 +14,7 @@
 
           <CCard class="mt-3 mb-0">
             <CCardHeader>
-              ไฟล์เอกสารแนบ
+              {{ $t('chairman.proposalDetail.attachments') }}
             </CCardHeader>
             <CCardBody>
               <CRow v-for="(fileItem, idx) in attachments" :key="idx" class="align-items-center mb-2">
@@ -24,7 +24,7 @@
                 </CCol>
                 <CCol sm="4" class="text-sm-right mt-2 mt-sm-0">
                   <CButton size="sm" color="primary" variant="outline" @click="downloadAttachment(fileItem)">
-                    <CIcon name="cil-cloud-download" class="mr-1" /> ดาวน์โหลด
+                    <CIcon name="cil-cloud-download" class="mr-1" /> {{ $t('chairman.proposalDetail.download') }}
                   </CButton>
                 </CCol>
               </CRow>
@@ -34,8 +34,8 @@
 
         <CCard v-else>
           <CCardBody>
-            <CAlert color="warning" show>ไม่พบข้อเสนอโครงการ</CAlert>
-            <CButton color="secondary" @click="goBack"><CIcon name="cil-chevron-right" class="mr-1" /> ย้อนกลับ</CButton>
+            <CAlert color="warning" show>{{ $t('chairman.proposalDetail.notFound') }}</CAlert>
+            <CButton color="secondary" @click="goBack"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('chairman.proposalDetail.back') }}</CButton>
           </CCardBody>
         </CCard>
       </CCol>
@@ -44,7 +44,7 @@
         <div class="evaluation-sticky">
           <CCard class="evaluation-card">
             <CCardHeader class="evaluation-card__header">
-              Checklist พิจารณาข้อเสนอโครงการ
+              {{ $t('chairman.proposalDetail.title') }}
             </CCardHeader>
             <CCardBody v-if="proposal" class="evaluation-card__body" :class="{ 'evaluation-locked': isEvaluationLocked }">
               <CAlert
@@ -55,7 +55,7 @@
                 class="evaluation-alert evaluation-alert--submitted"
                 @update:show="submittedBannerVisible = false"
               >
-                ส่งผลการพิจารณาเรียบร้อยแล้ว (ส่งซ้ำไม่ได้)
+                {{ $t('chairman.proposalDetail.submitted') }}
               </CAlert>
               <CAlert
                 color="light"
@@ -65,7 +65,7 @@
                 class="evaluation-alert evaluation-alert--draft"
                 @update:show="draftSaved = false"
               >
-                บันทึกฉบับร่างแล้ว
+                {{ $t('chairman.proposalDetail.draftSaved') }}
               </CAlert>
               <CAlert
                 color="warning"
@@ -79,15 +79,15 @@
               <CCard class="rubric-card mb-3">
                 <CCardHeader class="rubric-card__header">
                   <div class="rubric-card__header-row">
-                    <div class="rubric-card__title">Template checklist ตามประเภททุน</div>
+                    <div class="rubric-card__title">{{ $t('chairman.proposalDetail.rubricTitle') }}</div>
                   </div>
                 </CCardHeader>
                 <CCardBody class="rubric-card__body">
                   <div class="rubric-toolbar rubric-toolbar--readonly">
                     <div class="rubric-toolbar__left">
-                      <div class="rubric-toolbar__label">ประเภททุนที่ใช้อ้างอิง template</div>
+                      <div class="rubric-toolbar__label">{{ $t('chairman.proposalDetail.fundingLabel') }}</div>
                       <div class="rubric-toolbar__help text-muted small">
-                        Template นี้ดึงจาก backend setting ตามทุนที่ผู้ยื่นเลือกไว้
+                        {{ $t('chairman.proposalDetail.fundingHelp') }}
                       </div>
                     </div>
                     <div class="rubric-toolbar__right">
@@ -111,7 +111,7 @@
                       </div>
 
                       <div v-if="section.items.length === 0" class="checklist-empty-state">
-                        ยังไม่มี checklist item ใน template นี้ ตอนนี้เว้นส่วนนี้ไว้สำหรับ import ภายหลัง
+                        {{ $t('chairman.proposalDetail.emptyChecklist') }}
                       </div>
 
                       <div v-else class="checklist-items">
@@ -135,25 +135,25 @@
 
               <CForm @submit.prevent>
                 <CTextarea
-                  label="ข้อคิดเห็นและข้อเสนอแนะ"
+                  :label="$t('chairman.proposalDetail.comments')"
                   rows="5"
-                  placeholder="พิมพ์ความคิดเห็น..."
+                  :placeholder="$t('chairman.proposalDetail.commentsPlaceholder')"
                   :value.sync="form.comments"
                   :disabled="isEvaluationLocked"
                 />
 
                 <CInputFile
-                  label="อัปโหลดไฟล์ประกอบการพิจารณาเพิ่มเติม (ยังไม่เชื่อม import จริง)"
+                  :label="$t('chairman.proposalDetail.uploadLabel')"
                   custom
                   accept=".pdf,.doc,.docx,.xlsx"
                   :disabled="isEvaluationLocked"
                   @change="onEvaluationFileChange"
                 />
                 <div class="text-muted small" v-if="evaluationFileName">
-                  ไฟล์ที่เลือก: {{ evaluationFileName }}
+                  {{ $t('chairman.proposalDetail.selectedFile', { name: evaluationFileName }) }}
                 </div>
 
-                <div class="mt-3 mb-2 text-muted">ผลการพิจารณา</div>
+                <div class="mt-3 mb-2 text-muted">{{ $t('chairman.proposalDetail.decision') }}</div>
                 <div v-if="isEvaluationLocked" class="decision-readonly">
                   {{ decisionLabel }}
                 </div>
@@ -162,10 +162,10 @@
                 <div class="evaluation-actions">
                   <div class="form-actions">
                     <CButton color="secondary" variant="outline" :disabled="isEvaluationLocked" @click="saveDraft">
-                      <CIcon name="cil-save" class="mr-1" /> บันทึกฉบับร่าง
+                      <CIcon name="cil-save" class="mr-1" /> {{ $t('chairman.proposalDetail.saveDraft') }}
                     </CButton>
                     <CButton color="primary" class="ml-2" :disabled="!canSubmit || isSubmitting" @click="submitEvaluation">
-                      <CIcon name="cil-paper-plane" class="mr-1" /> ส่งผลการพิจารณา
+                      <CIcon name="cil-paper-plane" class="mr-1" /> {{ $t('chairman.proposalDetail.submit') }}
                     </CButton>
                   </div>
                 </div>
@@ -205,10 +205,6 @@ export default {
       submittedBannerVisible: false,
       isEvaluationLocked: false,
       evaluationFileName: '',
-      decisionOptions: [
-        { value: 'approve', label: 'อนุมัติ' },
-        { value: 'reject', label: 'ไม่อนุมัติ' }
-      ],
       form: {
         checklistValues: {},
         comments: '',
@@ -266,7 +262,7 @@ export default {
     importPlaceholderMessage () {
       const config = getChairmanChecklistConfig()
       const note = String(config && config.note ? config.note : '').trim()
-      return note || 'พื้นที่ checklist ยังเว้นไว้สำหรับ import จาก backend ในขั้นถัดไป'
+      return note || this.$t('chairman.proposalDetail.importPlaceholderFallback')
     },
     canSubmit () {
       return !!this.proposal && !this.isEvaluationLocked && this.isPendingChairmanReview
@@ -278,13 +274,19 @@ export default {
     reviewAvailabilityMessage () {
       if (!this.proposal || this.isPendingChairmanReview || this.submittedBannerVisible) return ''
       const status = String(this.proposal.currentStatus || '').trim().toLowerCase()
-      if (status === 'faculty_approved') return 'รายการนี้ถูกประธานอนุมัติแล้ว จึงไม่สามารถแก้ไขผลการพิจารณาได้'
-      if (status === 'faculty_rejected' || status === 'rejected') return 'รายการนี้ถูกประธานไม่อนุมัติแล้ว จึงไม่สามารถแก้ไขผลการพิจารณาได้'
-      return 'รายการนี้ไม่ได้อยู่ในสถานะรอการพิจารณาของประธานแล้ว'
+      if (status === 'faculty_approved') return this.$t('chairman.proposalDetail.status.approved')
+      if (status === 'faculty_rejected' || status === 'rejected') return this.$t('chairman.proposalDetail.status.rejected')
+      return this.$t('chairman.proposalDetail.status.notPending')
     },
     decisionLabel () {
       const match = (this.decisionOptions || []).find(option => option && option.value === (this.form && this.form.decision))
       return match ? match.label : ((this.form && this.form.decision) || '-')
+    },
+    decisionOptions () {
+      return [
+        { value: 'approve', label: this.$t('chairman.proposalDetail.decisionOptions.approve') },
+        { value: 'reject', label: this.$t('chairman.proposalDetail.decisionOptions.reject') }
+      ]
     }
   },
   watch: {
@@ -518,16 +520,16 @@ export default {
       if (this.isEvaluationLocked) {
         await this.showAlert({
           icon: 'info',
-          title: 'ส่งผลการพิจารณาแล้ว',
-          text: 'รายการนี้ส่งได้เพียงครั้งเดียว และไม่สามารถส่งซ้ำได้'
+          title: this.$t('chairman.proposalDetail.alerts.alreadySubmittedTitle'),
+          text: this.$t('chairman.proposalDetail.alerts.alreadySubmittedText')
         })
         return
       }
       if (!this.isPendingChairmanReview) {
         await this.showAlert({
           icon: 'warning',
-          title: 'ไม่สามารถส่งผลการพิจารณาได้',
-          text: this.reviewAvailabilityMessage || 'รายการนี้ไม่ได้อยู่ในสถานะรอการพิจารณาของประธานแล้ว'
+          title: this.$t('chairman.proposalDetail.alerts.cannotSubmitTitle'),
+          text: this.reviewAvailabilityMessage || this.$t('chairman.proposalDetail.status.notPending')
         })
         return
       }
@@ -566,8 +568,8 @@ export default {
 
         await this.showAlert({
           icon: 'success',
-          title: 'ส่งผลการพิจารณาสำเร็จ',
-          text: 'ระบบได้บันทึกผลการพิจารณาเรียบร้อยแล้ว',
+          title: this.$t('chairman.proposalDetail.alerts.submitSuccessTitle'),
+          text: this.$t('chairman.proposalDetail.alerts.submitSuccessText'),
           timer: 1800,
           showConfirmButton: false
         })
@@ -578,15 +580,15 @@ export default {
           this.submittedBannerVisible = true
           await this.showAlert({
             icon: 'info',
-            title: 'ส่งผลการพิจารณาแล้ว',
-            text: 'ระบบไม่อนุญาตให้ส่งซ้ำ เนื่องจากมีการส่งผลการพิจารณาไปแล้ว'
+            title: this.$t('chairman.proposalDetail.alerts.alreadySubmittedTitle'),
+            text: this.$t('chairman.proposalDetail.alerts.duplicateSubmitText')
           })
           return
         }
         await this.showAlert({
           icon: 'error',
-          title: 'ส่งผลการพิจารณาไม่สำเร็จ',
-          text: (error && error.response && error.response.data && error.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+          title: this.$t('chairman.proposalDetail.alerts.submitErrorTitle'),
+          text: (error && error.response && error.response.data && error.response.data.message) || this.$t('chairman.proposalDetail.alerts.retry')
         })
       } finally {
         this.isSubmitting = false
@@ -614,8 +616,8 @@ export default {
       } catch (error) {
         await this.showAlert({
           icon: 'error',
-          title: 'ดาวน์โหลดไม่สำเร็จ',
-          text: (error && error.response && error.response.data && error.response.data.message) || 'ไม่สามารถดาวน์โหลดไฟล์ได้'
+          title: this.$t('chairman.proposalDetail.downloadErrorTitle'),
+          text: (error && error.response && error.response.data && error.response.data.message) || this.$t('chairman.proposalDetail.downloadErrorText')
         })
       }
     },

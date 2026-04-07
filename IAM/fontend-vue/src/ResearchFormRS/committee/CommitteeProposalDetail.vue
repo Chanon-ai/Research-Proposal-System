@@ -2,10 +2,10 @@
   <div>
     <div v-if="loading" class="text-center py-4">
       <CSpinner color="primary" />
-      <div class="text-muted mt-2">กำลังโหลดรายละเอียดโครงการ...</div>
+      <div class="text-muted mt-2">{{ $t('committee.proposalDetail.loading') }}</div>
     </div>
     <CAlert v-else-if="error" color="danger" show>
-      ไม่สามารถโหลดข้อมูลโครงการได้: {{ error }}
+      {{ $t('committee.proposalDetail.loadError', { error }) }}
     </CAlert>
     <CRow>
       <CCol col="12" lg="7">
@@ -14,7 +14,7 @@
 
           <CCard class="mt-3 mb-0">
             <CCardHeader>
-              ไฟล์เอกสารแนบ
+              {{ $t('committee.proposalDetail.attachments') }}
             </CCardHeader>
             <CCardBody>
               <CRow v-for="(f, idx) in attachments" :key="idx" class="align-items-center mb-2">
@@ -24,7 +24,7 @@
                 </CCol>
                 <CCol sm="4" class="text-sm-right mt-2 mt-sm-0">
                   <CButton size="sm" color="primary" variant="outline" @click="downloadAttachment(f)">
-                    <CIcon name="cil-cloud-download" class="mr-1" /> ดาวน์โหลด
+                    <CIcon name="cil-cloud-download" class="mr-1" /> {{ $t('committee.proposalDetail.download') }}
                   </CButton>
                 </CCol>
               </CRow>
@@ -34,8 +34,8 @@
 
         <CCard v-else>
           <CCardBody>
-            <CAlert color="warning" show>ไม่พบข้อเสนอโครงการ</CAlert>
-            <CButton color="secondary" @click="goBack"><CIcon name="cil-chevron-right" class="mr-1" /> ย้อนกลับ</CButton>
+            <CAlert color="warning" show>{{ $t('committee.proposalDetail.notFound') }}</CAlert>
+            <CButton color="secondary" @click="goBack"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('committee.proposalDetail.back') }}</CButton>
           </CCardBody>
         </CCard>
       </CCol>
@@ -45,7 +45,7 @@
         <div class="evaluation-sticky">
           <CCard class="evaluation-card">
             <CCardHeader class="evaluation-card__header">
-              แบบประเมินข้อเสนอโครงการ
+              {{ $t('committee.proposalDetail.title') }}
             </CCardHeader>
             <CCardBody v-if="proposal" class="evaluation-card__body" :class="{ 'evaluation-locked': isEvaluationLocked }">
               <CAlert
@@ -56,7 +56,7 @@
                 class="evaluation-alert evaluation-alert--submitted"
                 @update:show="submittedBannerVisible = false"
               >
-                ส่งผลการประเมินเรียบร้อยแล้ว (ส่งซ้ำไม่ได้)
+                {{ $t('committee.proposalDetail.submitted') }}
               </CAlert>
               <CAlert
                 color="light"
@@ -66,13 +66,13 @@
                 class="evaluation-alert evaluation-alert--draft"
                 @update:show="draftSaved = false"
               >
-                บันทึกฉบับร่างแล้ว
+                {{ $t('committee.proposalDetail.draftSaved') }}
               </CAlert>
 
               <CCard class="rubric-card mb-3">
                 <CCardHeader class="rubric-card__header">
                   <div class="rubric-card__header-row">
-                    <div class="rubric-card__title">เกณฑ์การพิจารณาข้อเสนอโครงการวิจัย และระดับคะแนน</div>
+                    <div class="rubric-card__title">{{ $t('committee.proposalDetail.rubricTitle') }}</div>
                     <CLink class="card-header-action btn-minimize" @click="showRubric = !showRubric">
                       <CIcon :name="`cil-chevron-${showRubric ? 'top' : 'bottom'}`" />
                     </CLink>
@@ -82,12 +82,12 @@
                   <CCardBody class="rubric-card__body">
                     <div class="rubric-toolbar rubric-toolbar--readonly">
                       <div class="rubric-toolbar__left">
-                        <div class="rubric-toolbar__label">ประเภททุนสำหรับคำนวณค่าน้ำหนัก</div>
+                        <div class="rubric-toolbar__label">{{ $t('committee.proposalDetail.fundTypeLabel') }}</div>
                         <div v-if="!fundTypeFallback" class="rubric-toolbar__help text-muted small">
-                          ยึดตามประเภททุนที่ผู้ยื่นเลือกในแบบฟอร์ม
+                          {{ $t('committee.proposalDetail.fundTypeHelp') }}
                         </div>
                         <div v-else class="rubric-toolbar__help small text-danger">
-                          ไม่พบประเภททุนจากแบบฟอร์ม จึงใช้ค่าเริ่มต้นเพื่อคำนวณน้ำหนัก
+                          {{ $t('committee.proposalDetail.fundTypeFallback') }}
                         </div>
                       </div>
                       <div class="rubric-toolbar__right">
@@ -117,7 +117,7 @@
                                 </div>
                               </div>
                               <div class="rubric-controls__pill">
-                                <span class="rubric-scorepill" aria-label="คะแนนต่อค่าน้ำหนัก">
+                                <span class="rubric-scorepill" aria-label="weighted score">
                                   <span class="rubric-scorepill__score">{{ formatScore(weightedScore(row)) }}</span>
                                   <span class="rubric-scorepill__sep">/</span>
                                   <span class="rubric-scorepill__weight">{{ formatWeight(weightFor(row)) }}</span>
@@ -127,13 +127,13 @@
                           </div>
                         </div>
                         <div v-if="shouldShowRowComment(row)" class="rubric-item__comment">
-                          <label class="rubric-comment-label">ข้อเสนอแนะสำหรับหัวข้อนี้</label>
+                          <label class="rubric-comment-label">{{ $t('committee.proposalDetail.rowComment') }}</label>
                           <textarea
                             v-model.trim="form.rowComments[row.no]"
                             class="form-control form-control-sm"
                             rows="3"
                             :disabled="isEvaluationLocked"
-                            placeholder="ระบุสิ่งที่ต้องการให้นักวิจัยแก้ไขในหัวข้อนี้"
+                            :placeholder="$t('committee.proposalDetail.rowCommentPlaceholder')"
                           />
                         </div>
                       </div>
@@ -145,35 +145,35 @@
               <CForm @submit.prevent>
                 <CRow class="mb-3">
                   <CCol sm="6">
-                    <div class="text-muted">คะแนนรวม</div>
+                    <div class="text-muted">{{ $t('committee.proposalDetail.totalScore') }}</div>
                     <div class="font-weight-bold">{{ totalScore }}</div>
                   </CCol>
                   <CCol sm="6">
-                    <div class="text-muted">คะแนนเต็ม</div>
+                    <div class="text-muted">{{ $t('committee.proposalDetail.maxScore') }}</div>
                     <div class="font-weight-bold">{{ maxScore }}</div>
                   </CCol>
                 </CRow>
 
                 <CTextarea
-                  label="ข้อคิดเห็นและข้อเสนอแนะ"
+                  :label="$t('committee.proposalDetail.comments')"
                   rows="5"
-                  placeholder="พิมพ์ความคิดเห็น..."
+                  :placeholder="$t('committee.proposalDetail.commentsPlaceholder')"
                   :value.sync="form.comments"
                   :disabled="isEvaluationLocked"
                 />
 
                 <CInputFile
-                  label="อัปโหลดไฟล์ประกอบการประเมินเพิ่มเติม (PDF, DOCX, XLSX)"
+                  :label="$t('committee.proposalDetail.uploadLabel')"
                   custom
                   accept=".pdf,.doc,.docx,.xlsx"
                   :disabled="isEvaluationLocked"
                   @change="onEvaluationFileChange"
                 />
                 <div class="text-muted small" v-if="evaluationFileName">
-                  ไฟล์ที่เลือก: {{ evaluationFileName }}
+                  {{ $t('committee.proposalDetail.selectedFile', { name: evaluationFileName }) }}
                 </div>
 
-                <div class="mt-3 mb-2 text-muted">ผลการพิจารณา</div>
+                <div class="mt-3 mb-2 text-muted">{{ $t('committee.proposalDetail.decision') }}</div>
                 <div v-if="isEvaluationLocked" class="decision-readonly">
                   {{ decisionLabel }}
                 </div>
@@ -182,10 +182,10 @@
                 <div class="evaluation-actions">
                   <div class="form-actions">
                     <CButton color="secondary" variant="outline" :disabled="isEvaluationLocked" @click="saveDraft">
-                      <CIcon name="cil-save" class="mr-1" /> บันทึกฉบับร่าง
+                      <CIcon name="cil-save" class="mr-1" /> {{ $t('committee.proposalDetail.saveDraft') }}
                     </CButton>
                     <CButton color="primary" class="ml-2" :disabled="!canSubmit || isSubmitting" @click="submitEvaluation">
-                      <CIcon name="cil-paper-plane" class="mr-1" /> ส่งผลการประเมิน
+                      <CIcon name="cil-paper-plane" class="mr-1" /> {{ $t('committee.proposalDetail.submit') }}
                     </CButton>
                   </div>
                 </div>
@@ -229,11 +229,6 @@ export default {
       selectedFundType: 'new',
       fundTypeLocked: false,
       fundTypeFallback: false,
-      decisionOptions: [
-        { value: 'approve', label: 'อนุมัติ' },
-        { value: 'reject', label: 'ไม่อนุมัติ' },
-        { value: 'revision', label: 'ขอแก้ไขเพิ่มเติม' }
-      ],
       form: {
         rubricScores: {},
         rowComments: {},
@@ -311,6 +306,13 @@ export default {
     decisionLabel() {
       const match = (this.decisionOptions || []).find(o => o && o.value === (this.form && this.form.decision))
       return match ? match.label : ((this.form && this.form.decision) || '-')
+    },
+    decisionOptions() {
+      return [
+        { value: 'approve', label: this.$t('committee.proposalDetail.decisionOptions.approve') },
+        { value: 'reject', label: this.$t('committee.proposalDetail.decisionOptions.reject') },
+        { value: 'revision', label: this.$t('committee.proposalDetail.decisionOptions.revision') }
+      ]
     }
   },
   watch: {
@@ -525,8 +527,8 @@ export default {
       if (this.isEvaluationLocked) {
         await this.showAlert({
           icon: 'info',
-          title: 'ส่งผลการประเมินแล้ว',
-          text: 'รายการนี้ส่งได้เพียงครั้งเดียว และไม่สามารถส่งซ้ำได้'
+          title: this.$t('committee.proposalDetail.alerts.alreadySubmittedTitle'),
+          text: this.$t('committee.proposalDetail.alerts.alreadySubmittedText')
         })
         return
       }
@@ -577,8 +579,8 @@ export default {
 
         await this.showAlert({
           icon: 'success',
-          title: 'ส่งผลการประเมินสำเร็จ',
-          text: 'ระบบได้บันทึกผลการประเมินเรียบร้อยแล้ว',
+          title: this.$t('committee.proposalDetail.alerts.submitSuccessTitle'),
+          text: this.$t('committee.proposalDetail.alerts.submitSuccessText'),
           timer: 1800,
           showConfirmButton: false
         })
@@ -589,15 +591,15 @@ export default {
           this.submittedBannerVisible = true
           await this.showAlert({
             icon: 'info',
-            title: 'ส่งผลการประเมินแล้ว',
-            text: 'ระบบไม่อนุญาตให้ส่งซ้ำ เนื่องจากมีการส่งผลการประเมินไปแล้ว'
+            title: this.$t('committee.proposalDetail.alerts.alreadySubmittedTitle'),
+            text: this.$t('committee.proposalDetail.alerts.duplicateSubmitText')
           })
           return
         }
         await this.showAlert({
           icon: 'error',
-          title: 'ส่งผลการประเมินไม่สำเร็จ',
-          text: (e && e.response && e.response.data && e.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+          title: this.$t('committee.proposalDetail.alerts.submitErrorTitle'),
+          text: (e && e.response && e.response.data && e.response.data.message) || this.$t('committee.proposalDetail.alerts.retry')
         })
       } finally {
         this.isSubmitting = false

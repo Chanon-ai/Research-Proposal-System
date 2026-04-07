@@ -25,42 +25,42 @@
 
           <!-- Tab: ข้อมูลส่วนตัว -->
           <div v-if="activeTab === 'info'" class="tab-content tab-info">
-            <div class="section-title">ข้อมูลส่วนตัว</div>
+            <div class="section-title">{{ $t('userProfile.sections.info') }}</div>
             <div class="form-grid">
               <div class="form-group full-width">
-                <label>ชื่อผู้ใช้ (USERNAME)</label>
+                <label>{{ $t('userProfile.fields.username') }}</label>
                 <input v-model="form.username" class="form-input" disabled />
               </div>
               <div class="form-group">
-                <label>คำนำหน้า</label>
+                <label>{{ $t('userProfile.fields.prefix') }}</label>
                 <input v-model="form.prefix" class="form-input" :disabled="!editing" />
               </div>
               <div class="form-group">
-                <label>ชื่อ - นามสกุล</label>
-                <input v-model="form.name" class="form-input" :disabled="!editing" placeholder="ชื่อจริง" />
+                <label>{{ $t('userProfile.fields.fullName') }}</label>
+                <input v-model="form.name" class="form-input" :disabled="!editing" :placeholder="$t('userProfile.placeholders.fullName')" />
               </div>
               <div class="form-group">
-                <label>อีเมล</label>
+                <label>{{ $t('userProfile.fields.email') }}</label>
                 <input v-model="form.email" type="email" class="form-input" :disabled="!editing" />
               </div>
               <div class="form-group">
-                <label>เบอร์โทรศัพท์</label>
-                <input v-model="form.phone" class="form-input" :disabled="!editing" placeholder="088-xxx-xxxx" />
+                <label>{{ $t('userProfile.fields.phone') }}</label>
+                <input v-model="form.phone" class="form-input" :disabled="!editing" :placeholder="$t('userProfile.placeholders.phone')" />
               </div>
               <div class="form-group">
-                <label>วันเกิด</label>
+                <label>{{ $t('userProfile.fields.birthdate') }}</label>
                 <input v-model="form.birthdate" type="date" class="form-input" :disabled="!editing" />
               </div>
               <div class="form-group">
-                <label>ตำแหน่ง</label>
+                <label>{{ $t('userProfile.fields.position') }}</label>
                 <input v-model="form.position" class="form-input" :disabled="!editing" />
               </div>
               <div class="form-group">
-                <label>สังกัด / คณะ</label>
+                <label>{{ $t('userProfile.fields.department') }}</label>
                 <input v-model="form.department" class="form-input" :disabled="!editing" />
               </div>
               <div class="form-group">
-                <label>เพศ</label>
+                <label>{{ $t('userProfile.fields.gender') }}</label>
                 <input v-model="form.gender" class="form-input" :disabled="!editing" />
               </div>
               <div class="form-group full-width address-field">
@@ -71,10 +71,10 @@
 
           <!-- Tab: ที่อยู่ — tab-address ลด padding ด้านล่าง -->
           <div v-if="activeTab === 'address'" class="tab-content tab-address">
-            <div class="section-title">ที่อยู่</div>
+            <div class="section-title">{{ $t('userProfile.sections.address') }}</div>
             <div class="form-grid">
               <div class="form-group full-width">
-                <label>ที่อยู่</label>
+                <label>{{ $t('userProfile.fields.address') }}</label>
                 <div class="input-wrap icon-left full">
                   <span class="input-icon">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b1212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -82,12 +82,12 @@
                       <circle cx="12" cy="10" r="2"/>
                     </svg>
                   </span>
-                  <input v-model="form.addrLine" class="form-input" :disabled="true" placeholder="ระบุที่อยู่" />
+                  <input v-model="form.addrLine" class="form-input" :disabled="true" :placeholder="$t('userProfile.placeholders.address')" />
                 </div>
               </div>
 
               <div class="form-group">
-                <label>ตำบล / แขวง</label>
+                <label>{{ $t('userProfile.fields.subdistrict') }}</label>
                 <div class="input-wrap icon-left full">
                   <span class="input-icon">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b1212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -95,11 +95,11 @@
                       <circle cx="12" cy="10" r="2"/>
                     </svg>
                   </span>
-                  <input v-model="form.addrSubdistrict" class="form-input" :disabled="true" placeholder="ตำบล / แขวง" />
+                  <input v-model="form.addrSubdistrict" class="form-input" :disabled="true" :placeholder="$t('userProfile.placeholders.subdistrict')" />
                 </div>
               </div>
               <div class="form-group">
-                <label>อำเภอ / เขต</label>
+                <label>{{ $t('userProfile.fields.district') }}</label>
                 <div class="input-wrap icon-left full">
                   <span class="input-icon">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b1212" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -107,17 +107,17 @@
                       <circle cx="12" cy="10" r="2"/>
                     </svg>
                   </span>
-                  <input v-model="form.addrDistrict" class="form-input" :disabled="true" placeholder="อำเภอ / เขต" />
+                  <input v-model="form.addrDistrict" class="form-input" :disabled="true" :placeholder="$t('userProfile.placeholders.district')" />
                 </div>
               </div>
 
               <div class="form-group">
-                <label>จังหวัด</label>
-                <input v-model="form.addrProvince" class="form-input" :disabled="true" placeholder="จังหวัด" />
+                <label>{{ $t('userProfile.fields.province') }}</label>
+                <input v-model="form.addrProvince" class="form-input" :disabled="true" :placeholder="$t('userProfile.placeholders.province')" />
               </div>
               <div class="form-group">
-                <label>รหัสไปรษณีย์</label>
-                <input v-model="form.addrPostal" class="form-input" :disabled="true" placeholder="xxxxx" />
+                <label>{{ $t('userProfile.fields.postalCode') }}</label>
+                <input v-model="form.addrPostal" class="form-input" :disabled="true" :placeholder="$t('userProfile.placeholders.postalCode')" />
               </div>
             </div>
           </div>
@@ -149,16 +149,12 @@ export default {
   data () {
     return {
       activeTab: 'info',
-      tabs: [
-        { key: 'info',    label: 'ข้อมูลส่วนตัว' },
-        { key: 'address', label: 'ที่อยู่' }
-      ],
       editing: false,
       form: {
         username: '', prefix: '', name: '', email: '', phone: '',
         position: '', department: '', address: '',
         addrLine: '', addrSubdistrict: '', addrDistrict: '',
-        addrProvince: '', addrPostal: '', birthdate: '', gender: ''
+        addrProvince: '', addrPostal: '', birthdate: '', gender: '', positionKey: ''
       },
       formBackup: null,
       toast: { show: false, msg: '', type: 'success' },
@@ -180,10 +176,26 @@ export default {
   computed: {
     isDarkTheme () {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+    tabs () {
+      return [
+        { key: 'info', label: this.$t('userProfile.tabs.info') },
+        { key: 'address', label: this.$t('userProfile.tabs.address') }
+      ]
     }
   },
 
   methods: {
+    getRoleLabel(role) {
+      const roleKey = String(role || '').toLowerCase()
+      const map = {
+        admin: 'userProfile.roles.admin',
+        researcher: 'userProfile.roles.researcher',
+        committee: 'userProfile.roles.committee',
+        chairman: 'userProfile.roles.chairman'
+      }
+      return map[roleKey] ? this.$t(map[roleKey]) : (role || '-')
+    },
     updateSlider () {
       try {
         const wrap = this.$refs.tabsWrap
@@ -206,7 +218,6 @@ export default {
         const res = await Service.auth.me()
         const user = res && res.data && res.data.data ? res.data.data : null
         if (!user) return
-        const roleMap = { admin: 'ผู้ดูแลระบบ', researcher: 'นักวิจัย', committee: 'คณะกรรมการ', chairman: 'ประธานสำนัก' }
         const addr = user.address && Array.isArray(user.address) && user.address[0]
         this.form = {
           ...this.form,
@@ -214,7 +225,8 @@ export default {
           name:            user.fullName || '',
           email:           user.email || '',
           phone:           user.phone || '',
-          position:        roleMap[user.role] || user.role || '-',
+          position:        this.getRoleLabel(user.role),
+          positionKey:     user.role || '',
           department:      user.department || user.faculty || '-',
           address:         user.address || '',
           addrLine:        addr ? addr.address     : (user.address || ''),
@@ -243,10 +255,10 @@ export default {
         }
         this.editing = false
         this.formBackup = null
-        this.showToast('บันทึกข้อมูลสำเร็จ', 'success')
+        this.showToast(this.$t('userProfile.toasts.saveSuccess'), 'success')
         await this.fetchProfile()
       } catch (err) {
-        this.showToast('บันทึกข้อมูลไม่สำเร็จ', 'error')
+        this.showToast(this.$t('userProfile.toasts.saveError'), 'error')
       }
     },
 
@@ -257,7 +269,15 @@ export default {
   },
 
   watch: {
-    activeTab () { this.$nextTick(() => this.updateSlider()) }
+    activeTab () { this.$nextTick(() => this.updateSlider()) },
+    '$i18n.locale' () {
+      if (this.form.positionKey && !this.editing) {
+        this.form = {
+          ...this.form,
+          position: this.getRoleLabel(this.form.positionKey)
+        }
+      }
+    }
   }
 }
 </script>

@@ -4,8 +4,8 @@
       <div class="history-page" :class="{ 'is-dark': isDarkTheme }">
         <div class="history-card">
           <div class="history-header">
-            <h2>ประวัติโครงการ</h2>
-            <p class="history-sub">รายการโครงการย้อนหลังของผู้ใช้</p>
+            <h2>{{ $t('userHistory.title') }}</h2>
+            <p class="history-sub">{{ $t('userHistory.subtitle') }}</p>
           </div>
 
           <div class="history-controls">
@@ -16,7 +16,7 @@
           </div>
 
           <div v-if="loading" class="history-list">
-            <div class="history-item">กำลังโหลดข้อมูล...</div>
+            <div class="history-item">{{ $t('userHistory.states.loading') }}</div>
           </div>
 
           <div v-else-if="errorText" class="history-list">
@@ -27,7 +27,7 @@
             <div v-for="proj in filteredProjects" :key="proj._id || proj.code" class="history-item" :class="{ selected: proj.code===selected }" @click="select(proj)">
               <div class="history-left">
                 <div class="history-title">{{ proj.title }} <span class="small-code">{{ proj.code }}</span></div>
-                <div class="history-date">ยื่น/อัปเดต {{ proj.date }} • รอบที่ {{ proj.currentRound }}</div>
+                <div class="history-date">{{ $t('userHistory.labels.submittedUpdatedRound', { date: proj.date, round: proj.currentRound }) }}</div>
               </div>
               <div class="history-right">
                 <CBadge class="history-badge" :color="getStatusColor(proj.currentStatus)">{{ proj.status }}</CBadge>
@@ -55,14 +55,6 @@ export default {
     return {
       // Filters
       activeFilter: 'all',
-      filters: [
-        { key: 'all', label: 'ทั้งหมด' },
-        { key: 'waiting', label: 'รอดำเนินการ' },
-        { key: 'reviewing', label: 'กำลังพิจารณา' },
-        { key: 'approved', label: 'อนุมัติ' },
-        { key: 'rejected', label: 'ไม่อนุมัติ' },
-        { key: 'fix', label: 'รอแก้ไข' },
-      ],
       selected: null,
       loading: false,
       errorText: '',
@@ -85,19 +77,33 @@ export default {
       const userId = user && (user._id || user.id)
       return userId ? String(userId) : null
     },
+    filters() {
+      return [
+        { key: 'all', label: this.$t('userHistory.filters.all') },
+        { key: 'waiting', label: this.$t('userHistory.filters.waiting') },
+        { key: 'reviewing', label: this.$t('userHistory.filters.reviewing') },
+        { key: 'approved', label: this.$t('userHistory.filters.approved') },
+        { key: 'rejected', label: this.$t('userHistory.filters.rejected') },
+        { key: 'fix', label: this.$t('userHistory.filters.fix') },
+      ]
+    },
     filteredProjects() {
       if (this.activeFilter === 'all') return this.projectHistory
-      const map = {
-        waiting: 'รอดำเนินการ',
-        reviewing: 'กำลังพิจารณา',
-        approved: 'อนุมัติ',
-        rejected: 'ไม่อนุมัติ',
-        fix: 'รอแก้ไข',
-      }
-      return this.projectHistory.filter(p => p.status === map[this.activeFilter])
+      return this.projectHistory.filter(p => this.matchesFilter(p.currentStatus, this.activeFilter))
     }
   },
   methods: {
+    matchesFilter(status, filterKey) {
+      const key = normalizeProposalStatus(status)
+      if (filterKey === 'approved') return key === 'approved'
+      if (filterKey === 'rejected') return key === 'rejected'
+      if (filterKey === 'fix') return key === 'revision_requested'
+      if (filterKey === 'waiting') return ['draft', 'pending_confirm', 'submitted'].includes(key)
+      if (filterKey === 'reviewing') {
+        return !['draft', 'pending_confirm', 'submitted', 'approved', 'rejected', 'revision_requested'].includes(key)
+      }
+      return true
+    },
     async fetchHistory () {
       this.loading = true
       this.errorText = ''
@@ -132,7 +138,7 @@ export default {
         this.projectHistory = deduped.map(this.toHistoryItem)
       } catch (err) {
         this.projectHistory = []
-        this.errorText = (err && err.message) || 'ไม่สามารถโหลดประวัติโครงการได้'
+        this.errorText = (err && err.message) || this.$t('userHistory.states.loadError')
       } finally {
         this.loading = false
       }
@@ -156,7 +162,7 @@ export default {
       return {
         _id: item && item._id,
         code: item && item.proposalCode ? item.proposalCode : '-',
-        title: (item && (item.projectTitleTh || item.projectTitleEn)) || '(ไม่มีชื่อโครงการ)',
+        title: (item && (item.projectTitleTh || item.projectTitleEn)) || this.$t('userHistory.labels.unnamedProject'),
         date: this.formatDate(item && (item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt || item.submittedAt)),
         status: this.statusLabel(status),
         currentStatus: status,
@@ -165,13 +171,13 @@ export default {
     },
 
     statusLabel (status) {
-      if (status === 'approved') return 'อนุมัติ'
-      if (status === 'rejected') return 'ไม่อนุมัติ'
-      if (status === 'revision_requested') return 'รอแก้ไข'
-      if (status === 'draft') return this.$t ? this.$t('status.draft') : 'Draft'
-      if (status === 'pending_confirm') return 'Pending confirmation'
-      if (status === 'submitted') return 'รอดำเนินการ'
-      return 'กำลังพิจารณา'
+      if (status === 'approved') return this.$t('userHistory.statuses.approved')
+      if (status === 'rejected') return this.$t('userHistory.statuses.rejected')
+      if (status === 'revision_requested') return this.$t('userHistory.statuses.fix')
+      if (status === 'draft') return this.$t('status.draft')
+      if (status === 'pending_confirm') return this.$t('userHistory.statuses.pendingConfirm')
+      if (status === 'submitted') return this.$t('userHistory.statuses.waiting')
+      return this.$t('userHistory.statuses.reviewing')
     },
 
     getStatusColor (status) {
@@ -199,7 +205,8 @@ export default {
       if (!dateStr) return '-'
       const d = new Date(dateStr)
       if (Number.isNaN(d.getTime())) return '-'
-      return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })
+      const locale = this.$i18n && this.$i18n.locale === 'en' ? 'en-US' : 'th-TH'
+      return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })
     }
   }
 }

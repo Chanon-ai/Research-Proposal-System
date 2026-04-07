@@ -6,8 +6,8 @@
           <CIcon name="cil-speedometer" width="34" height="34" />
         </span>
         <div>
-          <h2>แดชบอร์ดสรุปผล</h2>
-          <div class="subtext">สรุปภาพรวมงานที่ได้รับมอบหมาย สถานะการประเมิน และภาพรวมการประชุม</div>
+          <h2>{{ $t('committee.dashboard.title') }}</h2>
+          <div class="subtext">{{ $t('committee.dashboard.subtitle') }}</div>
         </div>
       </div>
       <div class="hero-actions mt-1">
@@ -55,7 +55,7 @@
               @click="exportOverviewCsv"
             >
               <CIcon name="cil-cloud-download" class="mr-1" />
-              Export CSV
+              {{ $t('committee.dashboard.exportCsv') }}
             </CButton>
           </div>
         </div>
@@ -65,30 +65,30 @@
     <CRow class="mb-3">
       <CCol sm="6" lg="3" class="mb-2">
         <div class="kpi-card kpi-card--all">
-          <small class="kpi-label">ทั้งหมด</small>
+          <small class="kpi-label">{{ $t('committee.dashboard.kpi.total') }}</small>
           <div class="kpi-number">{{ proposalKpis.total }}</div>
-          <div class="kpi-note">โครงการที่ได้รับมอบหมาย</div>
+          <div class="kpi-note">{{ $t('committee.dashboard.kpi.totalNote') }}</div>
         </div>
       </CCol>
       <CCol sm="6" lg="3" class="mb-2">
         <div class="kpi-card kpi-card--pending">
-          <small class="kpi-label">รอการประเมิน</small>
+          <small class="kpi-label">{{ $t('committee.dashboard.kpi.pending') }}</small>
           <div class="kpi-number">{{ proposalKpis.pending }}</div>
-          <div class="kpi-note">ยังไม่ได้ส่งผลประเมิน</div>
+          <div class="kpi-note">{{ $t('committee.dashboard.kpi.pendingNote') }}</div>
         </div>
       </CCol>
       <CCol sm="6" lg="3" class="mb-2">
         <div class="kpi-card kpi-card--announced">
-          <small class="kpi-label">ประกาศผล</small>
+          <small class="kpi-label">{{ $t('committee.dashboard.kpi.announced') }}</small>
           <div class="kpi-number">{{ proposalKpis.announced }}</div>
-          <div class="kpi-note">เอกสารที่ประกาศผลแล้ว</div>
+          <div class="kpi-note">{{ $t('committee.dashboard.kpi.announcedNote') }}</div>
         </div>
       </CCol>
       <CCol sm="6" lg="3" class="mb-2">
         <div class="kpi-card kpi-card--reviewed">
-          <small class="kpi-label">ส่งผลการประเมินแล้ว</small>
+          <small class="kpi-label">{{ $t('committee.dashboard.kpi.reviewed') }}</small>
           <div class="kpi-number">{{ proposalKpis.reviewed }}</div>
-          <div class="kpi-note">สถานะที่ผ่านการให้ความเห็นแล้ว</div>
+          <div class="kpi-note">{{ $t('committee.dashboard.kpi.reviewedNote') }}</div>
         </div>
       </CCol>
     </CRow>
@@ -96,34 +96,34 @@
     <CRow class="mb-3">
       <CCol lg="6" class="mb-2">
         <CCard>
-          <CCardHeader class="font-weight-bold">สรุปผลการพิจารณา (เฉพาะที่ส่งผลแล้ว)</CCardHeader>
+          <CCardHeader class="font-weight-bold">{{ $t('committee.dashboard.decision.title') }}</CCardHeader>
           <CCardBody>
             <div class="decision-layout">
               <div class="decision-left">
                 <div class="decision-grid">
                   <div class="decision-item decision-item--approve">
-                    <div class="decision-item__label">อนุมัติ</div>
+                    <div class="decision-item__label">{{ $t('committee.dashboard.decision.approve') }}</div>
                     <div class="decision-item__value">{{ decisionStats.approve }}</div>
                     <CProgress class="progress-xs" color="success" :value="decisionStats.approvePct" />
                   </div>
                   <div class="decision-item decision-item--revise">
-                    <div class="decision-item__label">ขอแก้ไข</div>
+                    <div class="decision-item__label">{{ $t('committee.dashboard.decision.revise') }}</div>
                     <div class="decision-item__value">{{ decisionStats.revise }}</div>
                     <CProgress class="progress-xs" color="info" :value="decisionStats.revisePct" />
                   </div>
                   <div class="decision-item decision-item--reject">
-                    <div class="decision-item__label">ไม่อนุมัติ</div>
+                    <div class="decision-item__label">{{ $t('committee.dashboard.decision.reject') }}</div>
                     <div class="decision-item__value">{{ decisionStats.reject }}</div>
                     <CProgress class="progress-xs" color="danger" :value="decisionStats.rejectPct" />
                   </div>
                 </div>
-                <div class="text-muted small mt-2">รวม {{ decisionStats.total }} รายการ</div>
+                <div class="text-muted small mt-2">{{ $t('committee.dashboard.decision.total', { count: decisionStats.total }) }}</div>
               </div>
 
               <div class="decision-right">
-                <div class="chart-title chart-title--tight">กราฟสรุปผลการพิจารณา</div>
+                <div class="chart-title chart-title--tight">{{ $t('committee.dashboard.decision.chartTitle') }}</div>
                 <div v-if="decisionStats.total === 0" class="text-muted small text-center py-3">
-                  ยังไม่มีข้อมูลผลการพิจารณา
+                  {{ $t('committee.dashboard.decision.empty') }}
                 </div>
                 <div v-else class="chart-wrap chart-wrap--doughnut">
                   <CChartDoughnut
@@ -138,14 +138,14 @@
         </CCard>
 
         <CCard class="mt-1">
-          <CCardHeader class="font-weight-bold">สถานะเอกสารตั้งแต่มอบหมายงานจนประกาศผล</CCardHeader>
+          <CCardHeader class="font-weight-bold">{{ $t('committee.dashboard.proposalStatus.title') }}</CCardHeader>
           <CCardBody>
             <div v-if="loading" class="text-center py-4">
               <CSpinner color="primary" size="sm" />
-              <span class="text-muted ml-2">กำลังโหลดข้อมูล...</span>
+              <span class="text-muted ml-2">{{ $t('committee.dashboard.proposalStatus.loading') }}</span>
             </div>
             <div v-else-if="fetchError" class="text-center py-4">
-              <div class="text-danger mb-2">โหลดข้อมูลไม่สำเร็จ</div>
+              <div class="text-danger mb-2">{{ $t('committee.dashboard.proposalStatus.loadErrorTitle') }}</div>
               <small class="text-muted">{{ fetchError }}</small>
             </div>
             <div v-else>
@@ -174,20 +174,20 @@
 
       <CCol lg="6" class="mb-2">
         <CCard>
-          <CCardHeader class="font-weight-bold">คะแนนและงานค้าง</CCardHeader>
+          <CCardHeader class="font-weight-bold">{{ $t('committee.dashboard.score.title') }}</CCardHeader>
           <CCardBody>
             <div class="score-row">
               <div class="score-box">
-                <div class="score-box__label">คะแนนเฉลี่ย (% ของคะแนนเต็ม)</div>
+                <div class="score-box__label">{{ $t('committee.dashboard.score.avg') }}</div>
                 <div class="score-box__value">{{ scoreStats.avgPercentDisplay }}</div>
                 <CProgress class="mt-1" color="warning" :value="scoreStats.avgPercent" />
               </div>
               <div class="stale-box">
-                <div class="stale-box__label">งานที่ยังไม่ส่งผล</div>
+                <div class="stale-box__label">{{ $t('committee.dashboard.score.pending') }}</div>
                 <div class="stale-box__value">{{ staleStats.pending }}</div>
                 <div class="stale-box__sub">
-                  ค้างเกิน 7 วัน: <strong>{{ staleStats.over7Days }}</strong> |
-                  เกิน 14 วัน: <strong>{{ staleStats.over14Days }}</strong>
+                  {{ $t('committee.dashboard.score.over7') }} <strong>{{ staleStats.over7Days }}</strong> |
+                  {{ $t('committee.dashboard.score.over14') }} <strong>{{ staleStats.over14Days }}</strong>
                 </div>
               </div>
             </div>
@@ -195,23 +195,23 @@
         </CCard>
 
         <CCard class="mt-1">
-          <CCardHeader class="font-weight-bold">ภาพรวมการประชุม</CCardHeader>
+          <CCardHeader class="font-weight-bold">{{ $t('committee.dashboard.meetings.title') }}</CCardHeader>
           <CCardBody>
             <div v-if="meetingSummaryLoading" class="text-center py-4">
               <CSpinner color="primary" size="sm" />
-              <span class="text-muted ml-2">กำลังโหลดสรุปการประชุม...</span>
+              <span class="text-muted ml-2">{{ $t('committee.dashboard.meetings.loading') }}</span>
             </div>
             <div v-else>
               <CRow class="mb-2">
                 <CCol sm="6" class="mb-2 mb-sm-0">
                   <div class="meeting-kpi meeting-kpi--scheduled">
-                    <div class="meeting-kpi__label">กำหนดการแล้ว</div>
+                    <div class="meeting-kpi__label">{{ $t('committee.dashboard.meetings.scheduled') }}</div>
                     <div class="meeting-kpi__value">{{ meetingSummary.scheduled }}</div>
                   </div>
                 </CCol>
                 <CCol sm="6">
                   <div class="meeting-kpi meeting-kpi--completed">
-                    <div class="meeting-kpi__label">เสร็จสิ้น</div>
+                    <div class="meeting-kpi__label">{{ $t('committee.dashboard.meetings.completed') }}</div>
                     <div class="meeting-kpi__value">{{ meetingSummary.completed }}</div>
                   </div>
                 </CCol>
@@ -219,13 +219,13 @@
               <CRow class="mb-2">
                 <CCol sm="6" class="mb-2 mb-sm-0">
                   <div class="meeting-kpi meeting-kpi--cancelled">
-                    <div class="meeting-kpi__label">ยกเลิก</div>
+                    <div class="meeting-kpi__label">{{ $t('committee.dashboard.meetings.cancelled') }}</div>
                     <div class="meeting-kpi__value">{{ meetingSummary.cancelled }}</div>
                   </div>
                 </CCol>
                 <CCol sm="6">
                   <div class="meeting-kpi meeting-kpi--total">
-                    <div class="meeting-kpi__label">ทั้งหมด</div>
+                    <div class="meeting-kpi__label">{{ $t('committee.dashboard.meetings.total') }}</div>
                     <div class="meeting-kpi__value">{{ meetingSummary.total }}</div>
                   </div>
                 </CCol>
@@ -430,7 +430,11 @@ export default {
     },
     decisionDoughnut() {
       return {
-        labels: ['อนุมัติ', 'ขอแก้ไข', 'ไม่อนุมัติ'],
+        labels: [
+          this.$t('committee.dashboard.decision.approve'),
+          this.$t('committee.dashboard.decision.revise'),
+          this.$t('committee.dashboard.decision.reject')
+        ],
         datasets: [
           {
             backgroundColor: ['rgba(197, 155, 58, 0.5)', 'rgba(139, 26, 26, 0.45)', 'rgba(55, 65, 81, 0.4)'],
@@ -470,7 +474,7 @@ export default {
         rows.map(p => Number(this.deriveRoundNo(p))).filter(n => Number.isFinite(n) && n > 0)
       )).sort((a, b) => a - b)
       const options = rounds.length > 0 ? rounds : [1]
-      return [{ value: 'all', label: 'ทุกรอบ' }].concat(options.map(r => ({ value: r, label: `รอบ ${r}` })))
+      return [{ value: 'all', label: this.$t('committee.dashboard.filters.allRounds') }].concat(options.map(r => ({ value: r, label: this.$t('committee.dashboard.filters.round', { round: r }) })))
     },
     fundTypeFilterOptions() {
       const rows = this.assignedProposalsRaw || []
@@ -478,10 +482,10 @@ export default {
       const unique = Array.from(new Set(labels.filter(Boolean)))
 
       const ordered = [
-        'ทุนนักวิจัยรุ่นใหม่',
-        'ทุนพัฒนานักวิจัย',
-        'ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์',
-        'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
+        this.$t('committee.dashboard.fundingTypes.newResearcher'),
+        this.$t('committee.dashboard.fundingTypes.researcherDevelopment'),
+        this.$t('committee.dashboard.fundingTypes.strategicResearch'),
+        this.$t('committee.dashboard.fundingTypes.industryExtension')
       ]
 
       // Always show all 4 types (even if current data has none for some types).
@@ -491,17 +495,17 @@ export default {
       const rest = unique
         .filter(label => !ordered.includes(label))
         .sort((a, b) => a.localeCompare(b, 'th'))
-        .map(v => ({ value: v, label: v === '-' ? 'ไม่ระบุ' : v }))
+        .map(v => ({ value: v, label: v === '-' ? this.$t('committee.dashboard.filters.unknownFunding') : v }))
 
-      return [{ value: 'all', label: 'ทุกประเภททุน' }].concat(options, rest)
+      return [{ value: 'all', label: this.$t('committee.dashboard.filters.allFundingTypes') }].concat(options, rest)
     },
     decisionFilterOptions() {
       return [
-        { value: 'all', label: 'ทุกผลการพิจารณา' },
-        { value: 'approve', label: 'อนุมัติ' },
-        { value: 'revise', label: 'ขอแก้ไข' },
-        { value: 'reject', label: 'ไม่อนุมัติ' },
-        { value: 'none', label: 'ยังไม่ส่งผล' }
+        { value: 'all', label: this.$t('committee.dashboard.filters.allDecisions') },
+        { value: 'approve', label: this.$t('committee.dashboard.decision.approve') },
+        { value: 'revise', label: this.$t('committee.dashboard.decision.revise') },
+        { value: 'reject', label: this.$t('committee.dashboard.decision.reject') },
+        { value: 'none', label: this.$t('committee.dashboard.filters.none') }
       ]
     },
     decisionStats() {
@@ -576,10 +580,14 @@ export default {
     },
     meetingBar() {
       return {
-        labels: ['กำหนดการแล้ว', 'เสร็จสิ้น', 'ยกเลิก'],
+        labels: [
+          this.$t('committee.dashboard.meetings.scheduled'),
+          this.$t('committee.dashboard.meetings.completed'),
+          this.$t('committee.dashboard.meetings.cancelled')
+        ],
         datasets: [
           {
-            label: 'จำนวนการประชุม',
+            label: this.$t('committee.dashboard.meetings.chartSeries'),
             backgroundColor: ['rgba(181, 133, 34, 0.45)', 'rgba(22, 163, 74, 0.45)', 'rgba(185, 28, 28, 0.45)'],
             borderColor: ['rgba(181, 133, 34, 1)', 'rgba(22, 163, 74, 1)', 'rgba(185, 28, 28, 1)'],
             borderWidth: 1,
@@ -658,10 +666,10 @@ export default {
       const ft = proposal && proposal.fundingType ? String(proposal.fundingType) : ''
       const k = ft.toLowerCase()
       if (!k) return '-'
-      if (k === 'new-researcher' || k.includes('new')) return 'ทุนนักวิจัยรุ่นใหม่'
-      if (k === 'researcher-development' || k.includes('develop')) return 'ทุนพัฒนานักวิจัย'
-      if (k.includes('strategic') || k.includes('strategy')) return 'ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์'
-      if (k === 'industry-extension' || k.includes('extension') || k.includes('industry')) return 'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
+      if (k === 'new-researcher' || k.includes('new')) return this.$t('committee.dashboard.fundingTypes.newResearcher')
+      if (k === 'researcher-development' || k.includes('develop')) return this.$t('committee.dashboard.fundingTypes.researcherDevelopment')
+      if (k.includes('strategic') || k.includes('strategy')) return this.$t('committee.dashboard.fundingTypes.strategicResearch')
+      if (k === 'industry-extension' || k.includes('extension') || k.includes('industry')) return this.$t('committee.dashboard.fundingTypes.industryExtension')
       return ft
     },
     committeeStatusLabel(status, roundNo, includeRound = true, reviewStatus = null) {
@@ -725,9 +733,9 @@ export default {
         return s
       }
       const decisionLabel = (key) => {
-        if (key === 'approve') return 'อนุมัติ'
-        if (key === 'reject') return 'ไม่อนุมัติ'
-        if (key === 'revise') return 'ขอแก้ไข'
+        if (key === 'approve') return this.$t('committee.dashboard.decision.approve')
+        if (key === 'reject') return this.$t('committee.dashboard.decision.reject')
+        if (key === 'revise') return this.$t('committee.dashboard.decision.revise')
         return ''
       }
       const statusLabel = (p) => {
@@ -749,7 +757,7 @@ export default {
           : ''
         return [
           p.proposalCode || p._id || '-',
-          p.projectTitleTh || p.projectTitleEn || '(ไม่มีชื่อโครงการ)',
+          p.projectTitleTh || p.projectTitleEn || this.$t('committee.dashboard.unnamedProject'),
           p.projectLeaderName || '-',
           p.projectLeaderAffiliation || p.departmentName || p.facultyName || '-',
           roundNo,
@@ -763,18 +771,18 @@ export default {
         ]
       }
       const header = [
-        'รหัสโครงการ',
-        'ชื่อโครงการ',
-        'หัวหน้าโครงการ',
-        'สังกัด',
-        'รอบ',
-        'ประเภททุน',
-        'สถานะ',
-        'ผลการพิจารณา',
-        'คะแนนรวม',
-        'คะแนนเต็ม',
-        'คิดเป็น %',
-        'อัปเดตล่าสุด'
+        this.$t('committee.dashboard.csv.proposalCode'),
+        this.$t('committee.dashboard.csv.projectTitle'),
+        this.$t('committee.dashboard.csv.projectLeader'),
+        this.$t('committee.dashboard.csv.department'),
+        this.$t('committee.dashboard.csv.round'),
+        this.$t('committee.dashboard.csv.fundingType'),
+        this.$t('committee.dashboard.csv.status'),
+        this.$t('committee.dashboard.csv.decision'),
+        this.$t('committee.dashboard.csv.score'),
+        this.$t('committee.dashboard.csv.maxScore'),
+        this.$t('committee.dashboard.csv.percent'),
+        this.$t('committee.dashboard.csv.updatedAt')
       ]
       const rows = items.map(rowFor)
       const csv = '\ufeff' + [header, ...rows].map(r => r.map(escapeCell).join(',')).join('\r\n')

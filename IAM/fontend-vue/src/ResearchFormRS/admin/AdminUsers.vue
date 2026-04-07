@@ -2,32 +2,32 @@
   <div class="admin-users-page">
     <AdminUsersManagement />
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap" style="gap: 8px;">
-      <h2 class="mb-0">จัดการผู้ใช้ (Admin)</h2>
-      <CButton color="primary" @click="openAddModal"><CIcon name="cil-plus" class="mr-1" /> + เพิ่มผู้ใช้ใหม่</CButton>
+      <h2 class="mb-0">{{ $t('adminUsers.title') }}</h2>
+      <CButton color="primary" @click="openAddModal"><CIcon name="cil-plus" class="mr-1" /> + {{ $t('adminUsers.addNew') }}</CButton>
     </div>
 
     <CRow class="mb-3">
       <CCol sm="6" lg="3" class="mb-2 mb-lg-0">
         <CCallout color="primary" class="mb-0">
-          <small class="text-muted">ผู้ใช้ทั้งหมด</small><br>
+          <small class="text-muted">{{ $t('adminUsers.cards.total') }}</small><br>
           <strong class="h5">{{ total }}</strong>
         </CCallout>
       </CCol>
       <CCol sm="6" lg="3" class="mb-2 mb-lg-0">
         <CCallout color="info" class="mb-0">
-          <small class="text-muted">คณะกรรมการ (หน้านี้)</small><br>
+          <small class="text-muted">{{ $t('adminUsers.cards.committee') }}</small><br>
           <strong class="h5">{{ committeeCount }}</strong>
         </CCallout>
       </CCol>
       <CCol sm="6" lg="3" class="mb-2 mb-sm-0">
         <CCallout color="success" class="mb-0">
-          <small class="text-muted">นักวิจัย (หน้านี้)</small><br>
+          <small class="text-muted">{{ $t('adminUsers.cards.researcher') }}</small><br>
           <strong class="h5">{{ researcherCount }}</strong>
         </CCallout>
       </CCol>
       <CCol sm="6" lg="3">
         <CCallout color="warning" class="mb-0">
-          <small class="text-muted">ใช้งานอยู่ (หน้านี้)</small><br>
+          <small class="text-muted">{{ $t('adminUsers.cards.active') }}</small><br>
           <strong class="h5">{{ activeCount }}</strong>
         </CCallout>
       </CCol>
@@ -39,7 +39,7 @@
           <CCol md="7" class="mb-2 mb-md-0">
             <CInput
               v-model="filters.keyword"
-              placeholder="ค้นหาชื่อ หรือ อีเมล..."
+              :placeholder="$t('adminUsers.searchPlaceholder')"
             />
           </CCol>
           <CCol md="3" class="mb-2 mb-md-0">
@@ -50,7 +50,7 @@
             />
           </CCol>
           <CCol md="2">
-            <CButton color="secondary" variant="outline" block @click="resetFilters"><CIcon name="cil-chevron-right" class="mr-1" /> รีเซ็ต</CButton>
+            <CButton color="secondary" variant="outline" block @click="resetFilters"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminUsers.reset') }}</CButton>
           </CCol>
         </CRow>
       </CCardBody>
@@ -59,18 +59,18 @@
     <CCard>
       <CCardHeader>
         <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
-          <strong>รายการผู้ใช้งาน</strong>
-          <small class="text-muted">แสดง {{ displayFrom }}-{{ displayTo }} จาก {{ total }} รายการ</small>
+          <strong>{{ $t('adminUsers.listTitle') }}</strong>
+          <small class="text-muted">{{ $t('adminUsers.summary', { from: displayFrom, to: displayTo, total }) }}</small>
         </div>
       </CCardHeader>
       <CCardBody>
         <div v-if="apiNotReady" class="alert alert-warning">
-          ยังไม่มีข้อมูล (API ยังไม่พร้อม)
+          {{ $t('adminUsers.apiNotReady') }}
         </div>
 
         <div v-if="loading" class="text-center py-5">
           <CSpinner color="primary" />
-          <div class="mt-2 text-muted">กำลังโหลดข้อมูล...</div>
+          <div class="mt-2 text-muted">{{ $t('adminUsers.loading') }}</div>
         </div>
 
         <div v-else>
@@ -82,7 +82,7 @@
             bordered
             small
             :items-per-page="limit"
-            :no-items-view="{ noResults: 'ไม่พบผู้ใช้งาน', noItems: 'ไม่พบผู้ใช้งาน' }"
+            :no-items-view="{ noResults: $t('adminUsers.noUsers'), noItems: $t('adminUsers.noUsers') }"
           >
             <template #index="{ item }">
               <td>{{ item.index }}</td>
@@ -99,7 +99,7 @@
             <template #isActive="{ item }">
               <td>
                 <CBadge :color="item.isActive ? 'success' : 'secondary'">
-                  {{ item.isActive ? 'ใช้งานอยู่' : 'ปิดใช้งาน' }}
+                  {{ item.isActive ? $t('adminUsers.statusActive') : $t('adminUsers.statusInactive') }}
                 </CBadge>
               </td>
             </template>
@@ -110,22 +110,22 @@
 
             <template #actions="{ item }">
               <td class="text-nowrap">
-                <CButton size="sm" color="primary" class="mr-1" @click="openEditModal(item)"><CIcon name="cil-chevron-right" class="mr-1" /> แก้ไข</CButton>
+                <CButton size="sm" color="primary" class="mr-1" @click="openEditModal(item)"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminUsers.edit') }}</CButton>
                 <CButton
                   size="sm"
                   class="mr-1"
                   :color="item.isActive ? 'danger' : 'success'"
                   @click="toggleActive(item)"
                 >
-                  <CIcon name="cil-chevron-right" class="mr-1" /> {{ item.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน' }}
+                  <CIcon name="cil-chevron-right" class="mr-1" /> {{ item.isActive ? $t('adminUsers.disable') : $t('adminUsers.enable') }}
                 </CButton>
-                <CButton size="sm" color="danger" @click="deleteUser(item)"><CIcon name="cil-chevron-right" class="mr-1" /> ลบ</CButton>
+                <CButton size="sm" color="danger" @click="deleteUser(item)"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminUsers.delete') }}</CButton>
               </td>
             </template>
           </CDataTable>
 
           <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap" style="gap: 8px;">
-            <small class="text-muted">หน้าที่ {{ page }} / {{ totalPages }}</small>
+            <small class="text-muted">{{ $t('adminUsers.page', { page, totalPages }) }}</small>
             <div>
               <CButton
                 size="sm"
@@ -135,7 +135,7 @@
                 :disabled="page <= 1 || loading"
                 @click="changePage(page - 1)"
               >
-                <CIcon name="cil-chevron-right" class="mr-1" /> ก่อนหน้า
+                <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminUsers.previous') }}
               </CButton>
               <CButton
                 size="sm"
@@ -144,7 +144,7 @@
                 :disabled="page >= totalPages || loading"
                 @click="changePage(page + 1)"
               >
-                <CIcon name="cil-chevron-right" class="mr-1" /> ถัดไป
+                <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminUsers.next') }}
               </CButton>
             </div>
           </div>
@@ -157,31 +157,31 @@
       :show.sync="showAddModal"
       :close-on-backdrop="false"
       centered
-      title="เพิ่มผู้ใช้ใหม่"
+      :title="$t('adminUsers.modals.addTitle')"
     >
       <template #body-wrapper>
         <form class="user-form">
           <div class="section">
-            <div class="section-title">ข้อมูลบัญชี</div>
+            <div class="section-title">{{ $t('adminUsers.modals.accountInfo') }}</div>
 
             <div class="form-group">
-              <label class="form-label">ชื่อ-นามสกุล <span class="required">*</span></label>
-              <CInput v-model="addForm.fullName" placeholder="ระบุชื่อ-นามสกุล" />
+              <label class="form-label">{{ $t('adminUsers.modals.fullName') }} <span class="required">*</span></label>
+              <CInput v-model="addForm.fullName" :placeholder="$t('adminUsers.modals.fullNamePlaceholder')" />
             </div>
 
             <div class="form-group">
-              <label class="form-label">อีเมล <span class="required">*</span></label>
+              <label class="form-label">{{ $t('adminUsers.modals.email') }} <span class="required">*</span></label>
               <CInput type="email" v-model="addForm.email" placeholder="example@mfu.ac.th" />
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">รหัสผ่าน <span class="required">*</span></label>
-                <CInput type="password" v-model="addForm.password" placeholder="อย่างน้อย 8 ตัวอักษร" />
+                <label class="form-label">{{ $t('adminUsers.modals.password') }} <span class="required">*</span></label>
+                <CInput type="password" v-model="addForm.password" :placeholder="$t('adminUsers.modals.passwordPlaceholder')" />
               </div>
               <div class="form-group">
-                <label class="form-label">ยืนยันรหัสผ่าน <span class="required">*</span></label>
-                <CInput type="password" v-model="addForm.confirmPassword" placeholder="กรอกรหัสผ่านอีกครั้ง" />
+                <label class="form-label">{{ $t('adminUsers.modals.confirmPassword') }} <span class="required">*</span></label>
+                <CInput type="password" v-model="addForm.confirmPassword" :placeholder="$t('adminUsers.modals.confirmPasswordPlaceholder')" />
               </div>
             </div>
           </div>
@@ -189,21 +189,21 @@
           <hr class="section-divider" />
 
           <div class="section">
-            <div class="section-title">ข้อมูลเพิ่มเติม</div>
+            <div class="section-title">{{ $t('adminUsers.modals.extraInfo') }}</div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">บทบาท <span class="required">*</span></label>
+                <label class="form-label">{{ $t('adminUsers.modals.role') }} <span class="required">*</span></label>
                 <CSelect :value="addForm.role" :options="roleInputOptions" @change="onAddRoleChange" />
               </div>
               <div class="form-group">
-                <label class="form-label">เบอร์โทรศัพท์</label>
-                <CInput v-model="addForm.phone" placeholder="08x-xxx-xxxx" />
+                <label class="form-label">{{ $t('adminUsers.modals.phone') }}</label>
+                <CInput v-model="addForm.phone" :placeholder="$t('adminUsers.modals.phonePlaceholder')" />
               </div>
             </div>
 
             <div class="form-group">
-              <label class="form-label">สังกัดหน่วยงาน</label>
-              <CInput v-model="addForm.department" placeholder="เช่น สำนักวิจัย" />
+              <label class="form-label">{{ $t('adminUsers.modals.department') }}</label>
+              <CInput v-model="addForm.department" :placeholder="$t('adminUsers.modals.departmentPlaceholder')" />
             </div>
           </div>
         </form>
@@ -211,9 +211,9 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="closeAddModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
+          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="closeAddModal"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminUsers.modals.cancel') }}</CButton>
           <CButton color="primary" class="modal-btn modal-btn--primary" :disabled="submittingAdd" @click="submitAddUser">
-            <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingAdd ? 'กำลังบันทึก...' : 'บันทึก' }}
+            <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingAdd ? $t('adminUsers.modals.saving') : $t('adminUsers.modals.save') }}
           </CButton>
         </div>
       </template>
@@ -224,21 +224,21 @@
       :show.sync="showEditModal"
       :close-on-backdrop="false"
       centered
-      title="แก้ไขผู้ใช้งาน"
+      :title="$t('adminUsers.modals.editTitle')"
     >
       <template #body-wrapper>
         <div v-if="editForm._id">
           <form class="user-form">
             <div class="section">
-              <div class="section-title">ข้อมูลบัญชี</div>
+              <div class="section-title">{{ $t('adminUsers.modals.accountInfo') }}</div>
 
               <div class="form-group">
-                <label class="form-label">ชื่อ-นามสกุล <span class="required">*</span></label>
-                <CInput v-model="editForm.fullName" placeholder="ระบุชื่อ-นามสกุล" />
+                <label class="form-label">{{ $t('adminUsers.modals.fullName') }} <span class="required">*</span></label>
+                <CInput v-model="editForm.fullName" :placeholder="$t('adminUsers.modals.fullNamePlaceholder')" />
               </div>
 
               <div class="form-group">
-                <label class="form-label">อีเมล</label>
+                <label class="form-label">{{ $t('adminUsers.modals.email') }}</label>
                 <CInput v-model="editForm.email" readonly />
               </div>
             </div>
@@ -246,26 +246,26 @@
             <hr class="section-divider" />
 
             <div class="section">
-              <div class="section-title">ข้อมูลเพิ่มเติม</div>
+              <div class="section-title">{{ $t('adminUsers.modals.extraInfo') }}</div>
 
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label">บทบาท <span class="required">*</span></label>
+                  <label class="form-label">{{ $t('adminUsers.modals.role') }} <span class="required">*</span></label>
                   <CSelect :value="editForm.role" :options="roleInputOptions" @change="onEditRoleChange" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">เบอร์โทรศัพท์</label>
-                  <CInput v-model="editForm.phone" placeholder="08x-xxx-xxxx" />
+                  <label class="form-label">{{ $t('adminUsers.modals.phone') }}</label>
+                  <CInput v-model="editForm.phone" :placeholder="$t('adminUsers.modals.phonePlaceholder')" />
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">สังกัดหน่วยงาน</label>
-                <CInput v-model="editForm.department" placeholder="เช่น สำนักวิจัย" />
+                <label class="form-label">{{ $t('adminUsers.modals.department') }}</label>
+                <CInput v-model="editForm.department" :placeholder="$t('adminUsers.modals.departmentPlaceholder')" />
               </div>
 
               <div class="form-group mb-0 mt-2">
-                <label>สถานะบัญชี</label>
+                <label>{{ $t('adminUsers.modals.accountStatus') }}</label>
                 <div class="custom-control custom-switch mt-1">
                   <input
                     :id="`edit-active-${editForm._id}`"
@@ -274,7 +274,7 @@
                     class="custom-control-input"
                   >
                   <label class="custom-control-label" :for="`edit-active-${editForm._id}`">
-                    {{ editForm.isActive ? 'ใช้งานอยู่' : 'ปิดใช้งาน' }}
+                    {{ editForm.isActive ? $t('adminUsers.statusActive') : $t('adminUsers.statusInactive') }}
                   </label>
                 </div>
               </div>
@@ -285,9 +285,9 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="closeEditModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
+          <CButton color="secondary" class="modal-btn modal-btn--secondary" @click="closeEditModal"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminUsers.modals.cancel') }}</CButton>
           <CButton color="primary" class="modal-btn modal-btn--primary" :disabled="submittingEdit" @click="submitEditUser">
-            <CIcon name="cil-pencil" class="mr-1" /> {{ submittingEdit ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
+            <CIcon name="cil-pencil" class="mr-1" /> {{ submittingEdit ? $t('adminUsers.modals.saving') : $t('adminUsers.modals.saveEdit') }}
           </CButton>
         </div>
       </template>

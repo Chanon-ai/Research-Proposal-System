@@ -3,9 +3,9 @@
     :read-only="true"
     read-only-cta-tone="dark"
     :my-only="true"
-    hero-eyebrow="Office Chairman Meetings"
-    hero-title="กำหนดการประชุมประธานสำนัก"
-    hero-subtitle="แสดงเฉพาะการประชุมที่มีชื่อของคุณ"
+    :hero-eyebrow="$t('chairman.meetings.hero.eyebrow')"
+    :hero-title="$t('chairman.meetings.hero.title')"
+    :hero-subtitle="$t('chairman.meetings.hero.subtitle')"
   />
 </template>
 

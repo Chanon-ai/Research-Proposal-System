@@ -1,7 +1,7 @@
 <template>
   <div class="admin-proposal-list">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="mb-0">จัดการโครงการ (Admin)</h2>
+      <h2 class="mb-0">{{ $t('adminProposalList.title') }}</h2>
     </div>
 
     <CCard class="mb-3 admin-proposal-list__filter-card">
@@ -10,7 +10,7 @@
           <CCol md="5" class="mb-2 mb-md-0">
             <CInput
               v-model="filters.keyword"
-              placeholder="ค้นหาชื่อโครงการ หรือ รหัส..."
+              :placeholder="$t('adminProposalList.searchPlaceholder')"
             />
           </CCol>
           <CCol md="3" class="mb-2 mb-md-0">
@@ -28,7 +28,7 @@
             />
           </CCol>
           <CCol md="2" class="text-md-right">
-            <CButton color="secondary" variant="outline" block @click="resetFilters"><CIcon name="cil-chevron-right" class="mr-1" /> รีเซ็ต</CButton>
+            <CButton color="secondary" variant="outline" block @click="resetFilters"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminProposalList.reset') }}</CButton>
           </CCol>
         </CRow>
       </CCardBody>
@@ -37,27 +37,27 @@
     <CCard class="admin-proposal-list__table-card">
       <CCardHeader class="admin-proposal-list__table-header">
         <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
-          <strong>รายการโครงการ</strong>
-          <small class="text-muted">แสดง {{ displayFrom }}-{{ displayTo }} จาก {{ total }} รายการ</small>
+          <strong>{{ $t('adminProposalList.listTitle') }}</strong>
+          <small class="text-muted">{{ $t('adminProposalList.summary', { from: displayFrom, to: displayTo, total }) }}</small>
         </div>
       </CCardHeader>
       <CCardBody class="admin-proposal-list__table-body">
         <div v-if="loading" class="text-center py-5">
           <CSpinner color="primary" />
-          <div class="mt-2 text-muted">กำลังโหลดข้อมูล...</div>
+          <div class="mt-2 text-muted">{{ $t('adminProposalList.loading') }}</div>
         </div>
 
         <div v-else>
           <div class="admin-proposal-list__table-surface">
             <CDataTable
               :items="tableItems"
-              :fields="fields"
+              :fields="tableFields"
               hover
               striped
               bordered
               small
               :items-per-page="limit"
-              :no-items-view="{ noResults: 'ไม่พบข้อมูล', noItems: 'ยังไม่มีรายการโครงการ' }"
+              :no-items-view="{ noResults: $t('adminProposalList.noResults'), noItems: $t('adminProposalList.noItems') }"
             >
               <template #index="{ item }">
                 <td>{{ item.index }}</td>
@@ -82,7 +82,7 @@
               </template>
 
               <template #currentRound="{ item }">
-                <td>{{ item.currentRound ? `รอบ ${item.currentRound}` : '-' }}</td>
+                <td>{{ item.currentRound ? $t('adminProposalList.currentRound', { round: item.currentRound }) : '-' }}</td>
               </template>
 
               <template #updatedAt="{ item }">
@@ -91,14 +91,14 @@
 
               <template #actions="{ item }">
                 <td class="text-nowrap">
-                  <CButton color="primary" size="sm" class="mr-1 admin-proposal-action-btn" @click="onView(item)"><CIcon name="cil-folder-open" class="mr-1" /> View</CButton>
+                  <CButton color="primary" size="sm" class="mr-1 admin-proposal-action-btn" @click="onView(item)"><CIcon name="cil-folder-open" class="mr-1" /> {{ $t('adminProposalList.view') }}</CButton>
                 </td>
               </template>
             </CDataTable>
           </div>
 
           <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap admin-proposal-list__pager" style="gap: 8px;">
-            <small class="text-muted">หน้าที่ {{ page }} / {{ totalPages }}</small>
+            <small class="text-muted">{{ $t('adminProposalList.page', { page, totalPages }) }}</small>
             <div>
               <CButton
                 size="sm"
@@ -108,7 +108,7 @@
                 :disabled="page <= 1 || loading"
                 @click="changePage(page - 1)"
               >
-                <CIcon name="cil-chevron-right" class="mr-1" /> ก่อนหน้า
+                <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminProposalList.previous') }}
               </CButton>
               <CButton
                 size="sm"
@@ -117,7 +117,7 @@
                 :disabled="page >= totalPages || loading"
                 @click="changePage(page + 1)"
               >
-                <CIcon name="cil-chevron-right" class="mr-1" /> ถัดไป
+                <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminProposalList.next') }}
               </CButton>
             </div>
           </div>
@@ -129,45 +129,45 @@
       :show.sync="showStatusModal"
       :close-on-backdrop="false"
       centered
-      title="เปลี่ยนสถานะโครงการ"
+      :title="$t('adminProposalList.modals.changeStatus.title')"
     >
       <template #body-wrapper>
         <div v-if="selectedProposal">
-          <div class="mb-2"><strong>รหัสโครงการ:</strong> {{ selectedProposal.proposalCode || '-' }}</div>
-          <div class="mb-2"><strong>ชื่อโครงการ:</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
+          <div class="mb-2"><strong>{{ $t('adminProposalList.modals.changeStatus.proposalCode') }}</strong> {{ selectedProposal.proposalCode || '-' }}</div>
+          <div class="mb-2"><strong>{{ $t('adminProposalList.modals.changeStatus.projectTitle') }}</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
           <div class="mb-3">
-            <strong>สถานะปัจจุบัน:</strong>
+            <strong>{{ $t('adminProposalList.modals.changeStatus.currentStatus') }}</strong>
             <CBadge :color="getStatusColor(selectedProposal.currentStatus)" class="ml-1">
               {{ getStatusLabel(selectedProposal.currentStatus, selectedProposal) }}
             </CBadge>
           </div>
 
           <CSelect
-            label="เปลี่ยนสถานะเป็น"
+            :label="$t('adminProposalList.modals.changeStatus.toStatus')"
             :value="statusForm.toStatus"
             :options="nextStatusOptions"
             @change="onToStatusChange"
           />
 
-          <label class="mt-2">หมายเหตุ / เหตุผล (ไม่บังคับ)</label>
+          <label class="mt-2">{{ $t('adminProposalList.modals.changeStatus.remarkLabel') }}</label>
           <textarea
             v-model="statusForm.remark"
             class="form-control"
             rows="3"
-            placeholder="ระบุหมายเหตุเพิ่มเติม"
+            :placeholder="$t('adminProposalList.modals.changeStatus.remarkPlaceholder')"
           />
         </div>
       </template>
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100">
-          <CButton color="secondary" class="mr-2" @click="closeStatusModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-2" @click="closeStatusModal"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminProposalList.modals.changeStatus.cancel') }}</CButton>
           <CButton
             color="primary"
             :disabled="!statusForm.toStatus || submittingStatus"
             @click="confirmChangeStatus"
           >
-            <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingStatus ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+            <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingStatus ? $t('adminProposalList.modals.changeStatus.saving') : $t('adminProposalList.modals.changeStatus.confirm') }}
           </CButton>
         </div>
       </template>
@@ -177,16 +177,16 @@
       :show.sync="showChairmanModal"
       :close-on-backdrop="false"
       centered
-      title="ส่งเอกสารให้ประธาน"
+      :title="$t('adminProposalList.modals.assignChairman.title')"
     >
       <template #body-wrapper>
         <div v-if="selectedProposal">
-          <div class="mb-2"><strong>รหัสโครงการ:</strong> {{ selectedProposal.proposalCode || '-' }}</div>
-          <div class="mb-3"><strong>ชื่อโครงการ:</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
+          <div class="mb-2"><strong>{{ $t('adminProposalList.modals.assignChairman.proposalCode') }}</strong> {{ selectedProposal.proposalCode || '-' }}</div>
+          <div class="mb-3"><strong>{{ $t('adminProposalList.modals.assignChairman.projectTitle') }}</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
 
           <div v-if="chairmanLoading" class="text-center py-3">
             <CSpinner size="sm" color="primary" />
-            <div class="small text-muted mt-2">กำลังโหลดรายชื่อประธาน...</div>
+            <div class="small text-muted mt-2">{{ $t('adminProposalList.modals.assignChairman.loading') }}</div>
           </div>
 
           <CAlert v-else-if="chairmanError" color="warning" show>
@@ -195,7 +195,7 @@
 
           <CSelect
             v-else
-            label="เลือกประธาน"
+            :label="$t('adminProposalList.modals.assignChairman.select')"
             :value="selectedChairmanId"
             :options="chairmanOptions"
             @change="onChairmanChange"
@@ -205,13 +205,13 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100">
-          <CButton color="secondary" class="mr-2" @click="closeChairmanModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-2" @click="closeChairmanModal"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminProposalList.modals.assignChairman.cancel') }}</CButton>
           <CButton
             color="warning"
             :disabled="!selectedChairmanId || sendingChairman"
             @click="confirmAssignChairman"
           >
-            <CIcon name="cil-check-circle" class="mr-1" /> {{ sendingChairman ? 'กำลังส่ง...' : 'ยืนยันส่งให้ประธาน' }}
+            <CIcon name="cil-check-circle" class="mr-1" /> {{ sendingChairman ? $t('adminProposalList.modals.assignChairman.sending') : $t('adminProposalList.modals.assignChairman.confirm') }}
           </CButton>
         </div>
       </template>
@@ -221,30 +221,30 @@
       :show.sync="showCommitteeModal"
       :close-on-backdrop="false"
       centered
-      title="มอบหมายกรรมการ"
+      :title="$t('adminProposalList.modals.assignCommittee.title')"
     >
       <template #body-wrapper>
         <div v-if="selectedProposal">
-          <div class="mb-2"><strong>รหัสโครงการ:</strong> {{ selectedProposal.proposalCode || '-' }}</div>
-          <div class="mb-3"><strong>ชื่อโครงการ:</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
+          <div class="mb-2"><strong>{{ $t('adminProposalList.modals.assignCommittee.proposalCode') }}</strong> {{ selectedProposal.proposalCode || '-' }}</div>
+          <div class="mb-3"><strong>{{ $t('adminProposalList.modals.assignCommittee.projectTitle') }}</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
 
           <CInput
-            label="กรอก Committee IDs (comma separated)"
+            :label="$t('adminProposalList.modals.assignCommittee.input')"
             v-model="committeeForm.committeeIdsText"
-            placeholder="เช่น 65fa..., 65fb..., 65fc..."
+            :placeholder="$t('adminProposalList.modals.assignCommittee.placeholder')"
           />
         </div>
       </template>
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100">
-          <CButton color="secondary" class="mr-2" @click="closeCommitteeModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-2" @click="closeCommitteeModal"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminProposalList.modals.assignCommittee.cancel') }}</CButton>
           <CButton
             color="success"
             :disabled="submittingCommittee"
             @click="confirmAssignCommittee"
           >
-            <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingCommittee ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+            <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingCommittee ? $t('adminProposalList.modals.assignCommittee.saving') : $t('adminProposalList.modals.assignCommittee.confirm') }}
           </CButton>
         </div>
       </template>
@@ -269,17 +269,6 @@ export default {
   name: 'AdminProposalList',
   data () {
     return {
-      fields: [
-        { key: 'index', label: '#' },
-        { key: 'proposalCode', label: 'Proposal Code' },
-        { key: 'projectTitleTh', label: 'ชื่อโครงการ (TH)' },
-        { key: 'fiscalYear', label: 'ปีงบ' },
-        { key: 'fundingType', label: 'ประเภททุน' },
-        { key: 'currentStatus', label: 'สถานะ' },
-        { key: 'currentRound', label: 'รอบ' },
-        { key: 'updatedAt', label: 'อัปเดต' },
-        { key: 'actions', label: 'Actions', _classes: 'text-center text-nowrap' }
-      ],
       proposals: [],
       loading: false,
       page: 1,
@@ -317,6 +306,19 @@ export default {
     }
   },
   computed: {
+    tableFields () {
+      return [
+        { key: 'index', label: '#' },
+        { key: 'proposalCode', label: this.$t('adminProposalList.fields.proposalCode') },
+        { key: 'projectTitleTh', label: this.$t('adminProposalList.fields.projectTitleTh') },
+        { key: 'fiscalYear', label: this.$t('adminProposalList.fields.fiscalYear') },
+        { key: 'fundingType', label: this.$t('adminProposalList.fields.fundingType') },
+        { key: 'currentStatus', label: this.$t('adminProposalList.fields.currentStatus') },
+        { key: 'currentRound', label: this.$t('adminProposalList.fields.currentRound') },
+        { key: 'updatedAt', label: this.$t('adminProposalList.fields.updatedAt') },
+        { key: 'actions', label: this.$t('adminProposalList.fields.actions'), _classes: 'text-center text-nowrap' }
+      ]
+    },
     tableItems () {
       return this.proposals.map((item, idx) => ({
         ...item,
@@ -333,13 +335,13 @@ export default {
     },
     statusFilterOptions () {
       return [
-        { value: '', label: 'ทั้งหมด' },
+        { value: '', label: this.$t('adminProposalList.statusFilterAll') },
         ...STATUS_KEYS.map(status => ({ value: status, label: this.getStatusLabel(status) }))
       ]
     },
     fiscalYearOptions () {
       return [
-        { value: '', label: 'ทุกปีงบประมาณ' },
+        { value: '', label: this.$t('adminProposalList.fiscalYearAll') },
         { value: 2023, label: '2023' },
         { value: 2024, label: '2024' },
         { value: 2025, label: '2025' },
@@ -350,21 +352,21 @@ export default {
       const currentStatus = this.selectedProposal && this.selectedProposal.currentStatus
       const nextStatuses = currentStatus ? (ALLOWED_TRANSITIONS[currentStatus] || []) : []
       if (nextStatuses.length === 0) {
-        return [{ value: '', label: 'ไม่มีสถานะถัดไปที่อนุญาต' }]
+        return [{ value: '', label: this.$t('adminProposalList.nextStatusNone') }]
       }
       return [{
         value: '',
-        label: 'เลือกสถานะ'
+        label: this.$t('adminProposalList.nextStatusSelect')
       }, ...nextStatuses.map(s => ({
         value: s,
         label: s === 'second_round_review'
-          ? 'ส่งให้คณะกรรมการพิจารณา'
+          ? this.$t('adminProposalList.nextStatusSecondRound')
           : this.getStatusLabel(s, this.selectedProposal, { nextRoundForSecondRoundReview: true })
       }))]
     },
     chairmanOptions () {
       return [
-        { value: '', label: 'เลือกประธาน' },
+        { value: '', label: this.$t('adminProposalList.chairmanSelect') },
         ...(this.chairmanUsers || []).map(user => ({
           value: user && user._id ? String(user._id) : '',
           label: user && user.fullName ? `${user.fullName}${user.department ? ` (${user.department})` : ''}` : '-'
@@ -414,23 +416,23 @@ export default {
         .map(user => user.fullName || '')
         .filter(Boolean)
       if (names.length > 0) return names.join(', ')
-      return `${ids.length} คน`
+      return this.$t('adminProposalList.chairmanCount', { count: ids.length })
     },
     getChairmanStatusText (proposal) {
       const assignment = this.getChairmanAssignment(proposal)
       const status = String(assignment.status || '').trim().toLowerCase()
       const names = this.getChairmanNames(proposal)
-      if (status === 'pending') return names ? `ส่งให้ประธานแล้ว: ${names}` : 'ส่งให้ประธานแล้ว'
-      if (status === 'approved') return names ? `ประธานอนุมัติ: ${names}` : 'ประธานอนุมัติ'
-      if (status === 'rejected') return names ? `ประธานไม่อนุมัติ: ${names}` : 'ประธานไม่อนุมัติ'
+      if (status === 'pending') return names ? this.$t('adminProposalList.chairmanSentWithName', { name: names }) : this.$t('adminProposalList.chairmanSent')
+      if (status === 'approved') return names ? this.$t('adminProposalList.chairmanApprovedWithName', { name: names }) : this.$t('adminProposalList.chairmanApproved')
+      if (status === 'rejected') return names ? this.$t('adminProposalList.chairmanRejectedWithName', { name: names }) : this.$t('adminProposalList.chairmanRejected')
       return ''
     },
     getChairmanActionLabel (proposal) {
       const status = String(this.getChairmanAssignment(proposal).status || '').trim().toLowerCase()
-      if (status === 'pending') return 'ส่งให้ประธานแล้ว'
-      if (status === 'rejected') return 'ส่งให้ประธานอีกครั้ง'
-      if (status === 'approved') return 'ประธานอนุมัติแล้ว'
-      return 'ส่งให้ประธาน'
+      if (status === 'pending') return this.$t('adminProposalList.chairmanActionSent')
+      if (status === 'rejected') return this.$t('adminProposalList.chairmanActionResend')
+      if (status === 'approved') return this.$t('adminProposalList.chairmanActionApproved')
+      return this.$t('adminProposalList.chairmanActionSend')
     },
     canOpenChairmanAssign (proposal) {
       const currentStatus = normalizeProposalStatus(proposal && proposal.currentStatus)
@@ -453,7 +455,7 @@ export default {
           : (payload && Array.isArray(payload.data) ? payload.data : [])
       } catch (error) {
         this.chairmanUsers = []
-        this.chairmanError = (error && error.response && error.response.data && error.response.data.message) || error.message || 'ไม่สามารถโหลดรายชื่อประธานได้'
+        this.chairmanError = (error && error.response && error.response.data && error.response.data.message) || error.message || this.$t('adminProposalList.chairmanLoadError')
       } finally {
         this.chairmanLoading = false
       }
@@ -487,8 +489,8 @@ export default {
         this.totalPages = 1
         await Swal.fire({
           icon: 'error',
-          title: 'โหลดข้อมูลไม่สำเร็จ',
-          text: 'ไม่สามารถดึงรายการโครงการได้ กรุณาลองใหม่อีกครั้ง'
+          title: this.$t('adminProposalList.loadErrorTitle'),
+          text: this.$t('adminProposalList.loadErrorText')
         })
       } finally {
         this.loading = false
@@ -570,15 +572,15 @@ export default {
         await this.fetchProposals()
         await Swal.fire({
           icon: 'success',
-          title: 'ส่งให้ประธานสำเร็จ',
+          title: this.$t('admin.assignChairman.successTitle'),
           timer: 1600,
           showConfirmButton: false
         })
       } catch (error) {
         await Swal.fire({
           icon: 'error',
-          title: 'ส่งให้ประธานไม่สำเร็จ',
-          text: (error && error.response && error.response.data && error.response.data.message) || 'กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง'
+          title: this.$t('admin.assignChairman.errorTitle'),
+          text: (error && error.response && error.response.data && error.response.data.message) || this.$t('adminProposalList.genericRetry')
         })
       } finally {
         this.sendingChairman = false
@@ -611,7 +613,7 @@ export default {
         await this.fetchProposals()
         await Swal.fire({
           icon: 'success',
-          title: 'เปลี่ยนสถานะสำเร็จ',
+          title: this.$t('adminProposalList.changeStatusSuccess'),
           timer: 1600,
           showConfirmButton: false
         })
@@ -619,8 +621,8 @@ export default {
         console.error('[AdminProposalList] Error changing status:', error)
         await Swal.fire({
           icon: 'error',
-          title: 'เปลี่ยนสถานะไม่สำเร็จ',
-          text: (error && error.response && error.response.data && error.response.data.message) || 'กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง'
+          title: this.$t('adminProposalList.changeStatusError'),
+          text: (error && error.response && error.response.data && error.response.data.message) || this.$t('adminProposalList.genericRetry')
         })
       } finally {
         this.submittingStatus = false
@@ -653,7 +655,7 @@ export default {
         await this.fetchProposals()
         await Swal.fire({
           icon: 'success',
-          title: 'มอบหมายกรรมการสำเร็จ',
+          title: this.$t('adminProposalList.assignCommitteeSuccess'),
           timer: 1600,
           showConfirmButton: false
         })
@@ -661,8 +663,8 @@ export default {
         console.error('[AdminProposalList] Error assigning committee:', error)
         await Swal.fire({
           icon: 'error',
-          title: 'มอบหมายกรรมการไม่สำเร็จ',
-          text: (error && error.response && error.response.data && error.response.data.message) || 'กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง'
+          title: this.$t('adminProposalList.assignCommitteeError'),
+          text: (error && error.response && error.response.data && error.response.data.message) || this.$t('adminProposalList.genericRetry')
         })
       } finally {
         this.submittingCommittee = false

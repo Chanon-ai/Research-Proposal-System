@@ -139,5 +139,506 @@
       "errorTitle": "ส่งให้ประธานไม่สำเร็จ",
       "errorText": "กรุณาลองใหม่อีกครั้ง"
     }
+  },
+  "userDashboard": {
+    "cards": {
+      "all": "ทั้งหมด",
+      "inProgress": "กำลังดำเนินการ",
+      "approved": "อนุมัติ",
+      "rejected": "ไม่อนุมัติ"
+    },
+    "filters": {
+      "allProjects": "โครงการทั้งหมด",
+      "filteredProjects": "โครงการที่กรอง: {label}"
+    },
+    "search": {
+      "placeholder": "ค้นหา...",
+      "ariaLabel": "ค้นหาในตาราง"
+    },
+    "states": {
+      "loading": "กำลังโหลดข้อมูล...",
+      "loadError": "เกิดข้อผิดพลาดในการโหลดข้อมูล: {error}",
+      "noResults": "ไม่พบข้อมูลที่ค้นหา"
+    },
+    "table": {
+      "proposalCode": "รหัสโครงการ",
+      "projectTitleAndLeader": "ชื่อโครงการวิจัย / หัวหน้าโครงการ",
+      "status": "สถานะ",
+      "actions": "การดำเนินการ",
+      "unnamedProject": "(ไม่มีชื่อ)",
+      "proposedBudget": "งบโครงการที่เสนอ:",
+      "perPage": "แสดงต่อหน้า",
+      "itemsSuffix": "รายการ",
+      "fundingTypeOnly": "ประเภททุน: {type}",
+      "fundingTypeWithSubType": "ประเภททุน: {type} / {subType}"
+    },
+    "actions": {
+      "clearFilter": "ล้างตัวกรอง",
+      "retry": "ลองอีกครั้ง",
+      "viewDocument": "ดูเอกสาร",
+      "deleteDocument": "ลบเอกสาร",
+      "deleting": "กำลังลบ...",
+      "newProject": "สร้างโครงการใหม่"
+    },
+    "status": {
+      "reviewRound": "พิจารณารอบ {round}"
+    },
+    "progress": {
+      "ownerFallback": "ชื่อนักวิจัย",
+      "draft": "{ownerName}: กำลังกรอกข้อมูล",
+      "pendingConfirm": "คณะวิจัย: รอการยินยอมจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ",
+      "submitted": "ส่วนบริหารโครงการ: กำลังพิจารณา",
+      "facultyReviewPending": "ประธานกำลังพิจารณา",
+      "facultyApproved": "ส่วนบริหารโครงการ: รอรับเรื่อง",
+      "facultyRejected": "ส่วนบริหารโครงการ: รอปิดผลไม่อนุมัติ",
+      "officeReceived": "ส่วนบริหารโครงการ: รับเรื่องแล้ว กำลังดำเนินการ",
+      "documentChecking": "ส่วนบริหารโครงการ: กำลังตรวจสอบเอกสาร",
+      "assignedToCommittee": "ส่วนบริหารโครงการ: กำลังมอบหมายคณะผู้ทรงคุณวุฒิ",
+      "underReview": "คณะผู้ทรงคุณวุฒิ: กำลังทำการพิจารณารอบที่ {round}",
+      "committeeValuated": "ส่วนบริหารโครงการ: รอสรุปผลการพิจารณา",
+      "meetingCompleted": "ส่วนบริหารโครงการ: กำลังจัดเตรียมผล",
+      "revisionRequested": "{ownerName}: รอแก้ไขเอกสารตามข้อเสนอแนะ",
+      "resubmitted": "ส่วนบริหารโครงการ: ได้รับเอกสารแก้ไข กำลังส่งพิจารณาต่อ",
+      "approved": "ส่วนบริหารโครงการ: อนุมัติโครงการแล้ว",
+      "rejected": "ส่วนบริหารโครงการ: ไม่อนุมัติโครงการ",
+      "announced": "ส่วนบริหารโครงการ: ประกาศผลแล้ว",
+      "default": "ส่วนบริหารโครงการ: อยู่ระหว่างดำเนินการ"
+    },
+    "lastAction": {
+      "noData": "เวลาล่าสุด: ไม่พบข้อมูลเวลา",
+      "justNow": "เวลาล่าสุด: เมื่อสักครู่",
+      "minutesAgo": "เวลาล่าสุด: {count} นาทีที่แล้ว",
+      "hoursAgo": "เวลาล่าสุด: {count} ชั่วโมงที่แล้ว",
+      "daysAgo": "เวลาล่าสุด: {count} วันที่แล้ว",
+      "weeksAgo": "เวลาล่าสุด: {count} สัปดาห์ที่แล้ว",
+      "monthsAgo": "เวลาล่าสุด: {count} เดือนที่แล้ว",
+      "yearsAgo": "เวลาล่าสุด: {count} ปีที่แล้ว"
+    },
+    "alerts": {
+      "cannotDeleteTitle": "ไม่สามารถลบเอกสารได้",
+      "cannotDeleteText": "สามารถลบได้เฉพาะเอกสารที่อยู่สถานะแบบร่างเท่านั้น",
+      "confirmDeleteTitle": "ยืนยันการลบเอกสาร {code}?",
+      "confirmDeleteText": "เมื่อลบแล้วจะไม่สามารถกู้คืนข้อมูลได้",
+      "deleteErrorTitle": "ลบเอกสารไม่สำเร็จ",
+      "deleteErrorText": "ไม่สามารถลบเอกสารได้ กรุณาลองใหม่อีกครั้ง",
+      "ok": "ตกลง",
+      "cancel": "ยกเลิก"
+    }
+  },
+  "userHistory": {
+    "title": "ประวัติโครงการ",
+    "subtitle": "รายการโครงการย้อนหลังของผู้ใช้",
+    "filters": {
+      "all": "ทั้งหมด",
+      "waiting": "รอดำเนินการ",
+      "reviewing": "กำลังพิจารณา",
+      "approved": "อนุมัติ",
+      "rejected": "ไม่อนุมัติ",
+      "fix": "รอแก้ไข"
+    },
+    "states": {
+      "loading": "กำลังโหลดข้อมูล...",
+      "loadError": "ไม่สามารถโหลดประวัติโครงการได้"
+    },
+    "labels": {
+      "submittedUpdatedRound": "ยื่น/อัปเดต {date} • รอบที่ {round}",
+      "unnamedProject": "(ไม่มีชื่อโครงการ)"
+    },
+    "statuses": {
+      "waiting": "รอดำเนินการ",
+      "reviewing": "กำลังพิจารณา",
+      "approved": "อนุมัติ",
+      "rejected": "ไม่อนุมัติ",
+      "fix": "รอแก้ไข",
+      "pendingConfirm": "รอการยืนยัน"
+    }
+  },
+  "userProfile": {
+    "tabs": {
+      "info": "ข้อมูลส่วนตัว",
+      "address": "ที่อยู่"
+    },
+    "sections": {
+      "info": "ข้อมูลส่วนตัว",
+      "address": "ที่อยู่"
+    },
+    "fields": {
+      "username": "ชื่อผู้ใช้ (USERNAME)",
+      "prefix": "คำนำหน้า",
+      "fullName": "ชื่อ - นามสกุล",
+      "email": "อีเมล",
+      "phone": "เบอร์โทรศัพท์",
+      "birthdate": "วันเกิด",
+      "position": "ตำแหน่ง",
+      "department": "สังกัด / คณะ",
+      "gender": "เพศ",
+      "address": "ที่อยู่",
+      "subdistrict": "ตำบล / แขวง",
+      "district": "อำเภอ / เขต",
+      "province": "จังหวัด",
+      "postalCode": "รหัสไปรษณีย์"
+    },
+    "placeholders": {
+      "fullName": "ชื่อจริง",
+      "phone": "088-xxx-xxxx",
+      "address": "ระบุที่อยู่",
+      "subdistrict": "ตำบล / แขวง",
+      "district": "อำเภอ / เขต",
+      "province": "จังหวัด",
+      "postalCode": "xxxxx"
+    },
+    "roles": {
+      "admin": "ผู้ดูแลระบบ",
+      "researcher": "นักวิจัย",
+      "committee": "คณะกรรมการ",
+      "chairman": "ประธานสำนัก"
+    },
+    "toasts": {
+      "saveSuccess": "บันทึกข้อมูลสำเร็จ",
+      "saveError": "บันทึกข้อมูลไม่สำเร็จ"
+    }
+  },
+  "userNotification": {
+    "title": "การแจ้งเตือน",
+    "filters": {
+      "all": "ทั้งหมด",
+      "unread": "ยังไม่ได้อ่าน"
+    },
+    "groups": {
+      "recent": "ล่าสุด",
+      "earlier": "ก่อนหน้านี้"
+    },
+    "states": {
+      "loading": "กำลังโหลดการแจ้งเตือน...",
+      "empty": "ไม่มีการแจ้งเตือน"
+    },
+    "actions": {
+      "markAllRead": "อ่านทั้งหมด",
+      "viewProposal": "ดูข้อเสนอโครงการ"
+    },
+    "unreadCount": "{count} รายการยังไม่ได้อ่าน",
+    "defaultTitle": "การแจ้งเตือน",
+    "time": {
+      "justNow": "เมื่อสักครู่",
+      "minutesAgo": "{count} นาทีที่แล้ว",
+      "hoursAgo": "{count} ชั่วโมงที่แล้ว",
+      "daysAgo": "{count} วันที่แล้ว"
+    }
+  },
+  "userMeetings": {
+    "hero": {
+      "eyebrow": "การประชุมของนักวิจัย",
+      "title": "กำหนดการประชุมของฉัน",
+      "subtitle": "ติดตามการประชุมที่เกี่ยวข้องกับข้อเสนอโครงการของคุณ"
+    }
+  },
+  "adminProposalList": {
+    "title": "จัดการโครงการ (Admin)",
+    "searchPlaceholder": "ค้นหาชื่อโครงการ หรือ รหัส...",
+    "reset": "รีเซ็ต",
+    "listTitle": "รายการโครงการ",
+    "summary": "แสดง {from}-{to} จาก {total} รายการ",
+    "loading": "กำลังโหลดข้อมูล...",
+    "noResults": "ไม่พบข้อมูล",
+    "noItems": "ยังไม่มีรายการโครงการ",
+    "page": "หน้าที่ {page} / {totalPages}",
+    "previous": "ก่อนหน้า",
+    "next": "ถัดไป",
+    "currentRound": "รอบ {round}",
+    "view": "ดูรายละเอียด",
+    "statusFilterAll": "ทั้งหมด",
+    "fiscalYearAll": "ทุกปีงบประมาณ",
+    "nextStatusNone": "ไม่มีสถานะถัดไปที่อนุญาต",
+    "nextStatusSelect": "เลือกสถานะ",
+    "nextStatusSecondRound": "ส่งให้คณะกรรมการพิจารณา",
+    "chairmanSelect": "เลือกประธาน",
+    "chairmanCount": "{count} คน",
+    "chairmanSent": "ส่งให้ประธานแล้ว",
+    "chairmanSentWithName": "ส่งให้ประธานแล้ว: {name}",
+    "chairmanApproved": "ประธานอนุมัติ",
+    "chairmanApprovedWithName": "ประธานอนุมัติ: {name}",
+    "chairmanRejected": "ประธานไม่อนุมัติ",
+    "chairmanRejectedWithName": "ประธานไม่อนุมัติ: {name}",
+    "chairmanActionSent": "ส่งให้ประธานแล้ว",
+    "chairmanActionResend": "ส่งให้ประธานอีกครั้ง",
+    "chairmanActionApproved": "ประธานอนุมัติแล้ว",
+    "chairmanActionSend": "ส่งให้ประธาน",
+    "chairmanLoadError": "ไม่สามารถโหลดรายชื่อประธานได้",
+    "loadErrorTitle": "โหลดข้อมูลไม่สำเร็จ",
+    "loadErrorText": "ไม่สามารถดึงรายการโครงการได้ กรุณาลองใหม่อีกครั้ง",
+    "changeStatusSuccess": "เปลี่ยนสถานะสำเร็จ",
+    "changeStatusError": "เปลี่ยนสถานะไม่สำเร็จ",
+    "assignCommitteeSuccess": "มอบหมายกรรมการสำเร็จ",
+    "assignCommitteeError": "มอบหมายกรรมการไม่สำเร็จ",
+    "genericRetry": "กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง",
+    "modals": {
+      "changeStatus": {
+        "title": "เปลี่ยนสถานะโครงการ",
+        "proposalCode": "รหัสโครงการ:",
+        "projectTitle": "ชื่อโครงการ:",
+        "currentStatus": "สถานะปัจจุบัน:",
+        "toStatus": "เปลี่ยนสถานะเป็น",
+        "remarkLabel": "หมายเหตุ / เหตุผล (ไม่บังคับ)",
+        "remarkPlaceholder": "ระบุหมายเหตุเพิ่มเติม",
+        "cancel": "ยกเลิก",
+        "confirm": "ยืนยัน",
+        "saving": "กำลังบันทึก..."
+      },
+      "assignChairman": {
+        "title": "ส่งเอกสารให้ประธาน",
+        "proposalCode": "รหัสโครงการ:",
+        "projectTitle": "ชื่อโครงการ:",
+        "loading": "กำลังโหลดรายชื่อประธาน...",
+        "select": "เลือกประธาน",
+        "cancel": "ยกเลิก",
+        "confirm": "ยืนยันส่งให้ประธาน",
+        "sending": "กำลังส่ง..."
+      },
+      "assignCommittee": {
+        "title": "มอบหมายกรรมการ",
+        "proposalCode": "รหัสโครงการ:",
+        "projectTitle": "ชื่อโครงการ:",
+        "input": "กรอก Committee IDs (comma separated)",
+        "placeholder": "เช่น 65fa..., 65fb..., 65fc...",
+        "cancel": "ยกเลิก",
+        "confirm": "ยืนยัน",
+        "saving": "กำลังบันทึก..."
+      }
+    },
+    "fields": {
+      "proposalCode": "Proposal Code",
+      "projectTitleTh": "ชื่อโครงการ (TH)",
+      "fiscalYear": "ปีงบ",
+      "fundingType": "ประเภททุน",
+      "currentStatus": "สถานะ",
+      "currentRound": "รอบ",
+      "updatedAt": "อัปเดต",
+      "actions": "การดำเนินการ"
+    }
+  },
+  "adminUsers": {
+    "title": "จัดการผู้ใช้ (Admin)",
+    "addNew": "เพิ่มผู้ใช้ใหม่",
+    "cards": {
+      "total": "ผู้ใช้ทั้งหมด",
+      "committee": "คณะกรรมการ (หน้านี้)",
+      "researcher": "นักวิจัย (หน้านี้)",
+      "active": "ใช้งานอยู่ (หน้านี้)"
+    },
+    "searchPlaceholder": "ค้นหาชื่อ หรือ อีเมล...",
+    "reset": "รีเซ็ต",
+    "listTitle": "รายการผู้ใช้งาน",
+    "summary": "แสดง {from}-{to} จาก {total} รายการ",
+    "apiNotReady": "ยังไม่มีข้อมูล (API ยังไม่พร้อม)",
+    "loading": "กำลังโหลดข้อมูล...",
+    "noUsers": "ไม่พบผู้ใช้งาน",
+    "statusActive": "ใช้งานอยู่",
+    "statusInactive": "ปิดใช้งาน",
+    "edit": "แก้ไข",
+    "disable": "ปิดใช้งาน",
+    "enable": "เปิดใช้งาน",
+    "delete": "ลบ",
+    "page": "หน้าที่ {page} / {totalPages}",
+    "previous": "ก่อนหน้า",
+    "next": "ถัดไป",
+    "modals": {
+      "addTitle": "เพิ่มผู้ใช้ใหม่",
+      "editTitle": "แก้ไขผู้ใช้งาน",
+      "accountInfo": "ข้อมูลบัญชี",
+      "extraInfo": "ข้อมูลเพิ่มเติม",
+      "fullName": "ชื่อ-นามสกุล",
+      "fullNamePlaceholder": "ระบุชื่อ-นามสกุล",
+      "email": "อีเมล",
+      "password": "รหัสผ่าน",
+      "passwordPlaceholder": "อย่างน้อย 8 ตัวอักษร",
+      "confirmPassword": "ยืนยันรหัสผ่าน",
+      "confirmPasswordPlaceholder": "กรอกรหัสผ่านอีกครั้ง",
+      "role": "บทบาท",
+      "phone": "เบอร์โทรศัพท์",
+      "phonePlaceholder": "08x-xxx-xxxx",
+      "department": "สังกัดหน่วยงาน",
+      "departmentPlaceholder": "เช่น สำนักวิจัย",
+      "accountStatus": "สถานะบัญชี",
+      "cancel": "ยกเลิก",
+      "save": "บันทึก",
+      "saving": "กำลังบันทึก...",
+      "saveEdit": "บันทึกการแก้ไข"
+    }
+  },
+  "committee": {
+    "meetings": {
+      "hero": {
+        "eyebrow": "Committee Meetings",
+        "title": "กำหนดการประชุมคณะกรรมการ",
+        "subtitle": "แสดงเฉพาะการประชุมที่มีชื่อของคุณ"
+      }
+    },
+    "dashboard": {
+      "title": "แดชบอร์ดสรุปผล",
+      "subtitle": "สรุปภาพรวมงานที่ได้รับมอบหมาย สถานะการประเมิน และภาพรวมการประชุม",
+      "exportCsv": "Export CSV",
+      "kpi": {
+        "total": "ทั้งหมด",
+        "totalNote": "โครงการที่ได้รับมอบหมาย",
+        "pending": "รอการประเมิน",
+        "pendingNote": "ยังไม่ได้ส่งผลประเมิน",
+        "announced": "ประกาศผล",
+        "announcedNote": "เอกสารที่ประกาศผลแล้ว",
+        "reviewed": "ส่งผลการประเมินแล้ว",
+        "reviewedNote": "สถานะที่ผ่านการให้ความเห็นแล้ว"
+      },
+      "decision": {
+        "title": "สรุปผลการพิจารณา (เฉพาะที่ส่งผลแล้ว)",
+        "approve": "อนุมัติ",
+        "revise": "ขอแก้ไข",
+        "reject": "ไม่อนุมัติ",
+        "total": "รวม {count} รายการ",
+        "chartTitle": "กราฟสรุปผลการพิจารณา",
+        "empty": "ยังไม่มีข้อมูลผลการพิจารณา"
+      },
+      "proposalStatus": {
+        "title": "สถานะเอกสารตั้งแต่มอบหมายงานจนประกาศผล",
+        "loading": "กำลังโหลดข้อมูล...",
+        "loadErrorTitle": "โหลดข้อมูลไม่สำเร็จ"
+      },
+      "score": {
+        "title": "คะแนนและงานค้าง",
+        "avg": "คะแนนเฉลี่ย (% ของคะแนนเต็ม)",
+        "pending": "งานที่ยังไม่ส่งผล",
+        "over7": "ค้างเกิน 7 วัน:",
+        "over14": "เกิน 14 วัน:"
+      },
+      "meetings": {
+        "title": "ภาพรวมการประชุม",
+        "loading": "กำลังโหลดสรุปการประชุม...",
+        "scheduled": "กำหนดการแล้ว",
+        "completed": "เสร็จสิ้น",
+        "cancelled": "ยกเลิก",
+        "total": "ทั้งหมด",
+        "chartSeries": "จำนวนการประชุม"
+      },
+      "filters": {
+        "allRounds": "ทุกรอบ",
+        "round": "รอบ {round}",
+        "allFundingTypes": "ทุกประเภททุน",
+        "allDecisions": "ทุกผลการพิจารณา",
+        "none": "ยังไม่ส่งผล",
+        "unknownFunding": "ไม่ระบุ"
+      },
+      "fundingTypes": {
+        "newResearcher": "ทุนนักวิจัยรุ่นใหม่",
+        "researcherDevelopment": "ทุนพัฒนานักวิจัย",
+        "strategicResearch": "ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์",
+        "industryExtension": "ทุนต่อยอดสู่ภาคอุตสาหกรรม"
+      },
+      "csv": {
+        "proposalCode": "รหัสโครงการ",
+        "projectTitle": "ชื่อโครงการ",
+        "projectLeader": "หัวหน้าโครงการ",
+        "department": "สังกัด",
+        "round": "รอบ",
+        "fundingType": "ประเภททุน",
+        "status": "สถานะ",
+        "decision": "ผลการพิจารณา",
+        "score": "คะแนนรวม",
+        "maxScore": "คะแนนเต็ม",
+        "percent": "คิดเป็นร้อยละ",
+        "updatedAt": "อัปเดตล่าสุด"
+      },
+      "unnamedProject": "(ไม่มีชื่อโครงการ)"
+    },
+    "proposalDetail": {
+      "loading": "กำลังโหลดรายละเอียดโครงการ...",
+      "loadError": "ไม่สามารถโหลดข้อมูลโครงการได้: {error}",
+      "attachments": "ไฟล์เอกสารแนบ",
+      "download": "ดาวน์โหลด",
+      "notFound": "ไม่พบข้อเสนอโครงการ",
+      "back": "ย้อนกลับ",
+      "title": "แบบประเมินข้อเสนอโครงการ",
+      "submitted": "ส่งผลการประเมินเรียบร้อยแล้ว (ส่งซ้ำไม่ได้)",
+      "draftSaved": "บันทึกฉบับร่างแล้ว",
+      "rubricTitle": "เกณฑ์การพิจารณาข้อเสนอโครงการวิจัย และระดับคะแนน",
+      "fundTypeLabel": "ประเภททุนสำหรับคำนวณค่าน้ำหนัก",
+      "fundTypeHelp": "ยึดตามประเภททุนที่ผู้ยื่นเลือกในแบบฟอร์ม",
+      "fundTypeFallback": "ไม่พบประเภททุนจากแบบฟอร์ม จึงใช้ค่าเริ่มต้นเพื่อคำนวณน้ำหนัก",
+      "rowComment": "ข้อเสนอแนะสำหรับหัวข้อนี้",
+      "rowCommentPlaceholder": "ระบุสิ่งที่ต้องการให้นักวิจัยแก้ไขในหัวข้อนี้",
+      "totalScore": "คะแนนรวม",
+      "maxScore": "คะแนนเต็ม",
+      "comments": "ข้อคิดเห็นและข้อเสนอแนะ",
+      "commentsPlaceholder": "พิมพ์ความคิดเห็น...",
+      "uploadLabel": "อัปโหลดไฟล์ประกอบการประเมินเพิ่มเติม (PDF, DOCX, XLSX)",
+      "selectedFile": "ไฟล์ที่เลือก: {name}",
+      "decision": "ผลการพิจารณา",
+      "saveDraft": "บันทึกฉบับร่าง",
+      "submit": "ส่งผลการประเมิน",
+      "decisionOptions": {
+        "approve": "อนุมัติ",
+        "reject": "ไม่อนุมัติ",
+        "revision": "ขอแก้ไขเพิ่มเติม"
+      },
+      "alerts": {
+        "alreadySubmittedTitle": "ส่งผลการประเมินแล้ว",
+        "alreadySubmittedText": "รายการนี้ส่งได้เพียงครั้งเดียว และไม่สามารถส่งซ้ำได้",
+        "submitSuccessTitle": "ส่งผลการประเมินสำเร็จ",
+        "submitSuccessText": "ระบบได้บันทึกผลการประเมินเรียบร้อยแล้ว",
+        "duplicateSubmitText": "ระบบไม่อนุญาตให้ส่งซ้ำ เนื่องจากมีการส่งผลการประเมินไปแล้ว",
+        "submitErrorTitle": "ส่งผลการประเมินไม่สำเร็จ",
+        "retry": "กรุณาลองใหม่อีกครั้ง"
+      }
+    }
+  },
+  "chairman": {
+    "meetings": {
+      "hero": {
+        "eyebrow": "Office Chairman Meetings",
+        "title": "กำหนดการประชุมประธานสำนัก",
+        "subtitle": "แสดงเฉพาะการประชุมที่มีชื่อของคุณ"
+      }
+    },
+    "proposalDetail": {
+      "loading": "กำลังโหลดรายละเอียดโครงการ...",
+      "loadError": "ไม่สามารถโหลดข้อมูลโครงการได้: {error}",
+      "attachments": "ไฟล์เอกสารแนบ",
+      "download": "ดาวน์โหลด",
+      "downloadErrorTitle": "ดาวน์โหลดไม่สำเร็จ",
+      "downloadErrorText": "ไม่สามารถดาวน์โหลดไฟล์ได้",
+      "notFound": "ไม่พบข้อเสนอโครงการ",
+      "back": "ย้อนกลับ",
+      "title": "Checklist พิจารณาข้อเสนอโครงการ",
+      "submitted": "ส่งผลการพิจารณาเรียบร้อยแล้ว (ส่งซ้ำไม่ได้)",
+      "draftSaved": "บันทึกฉบับร่างแล้ว",
+      "rubricTitle": "Template checklist ตามประเภททุน",
+      "fundingLabel": "ประเภททุนที่ใช้อ้างอิง template",
+      "fundingHelp": "Template นี้ดึงจาก backend setting ตามทุนที่ผู้ยื่นเลือกไว้",
+      "emptyChecklist": "ยังไม่มี checklist item ใน template นี้ ตอนนี้เว้นส่วนนี้ไว้สำหรับ import ภายหลัง",
+      "comments": "ข้อคิดเห็นและข้อเสนอแนะ",
+      "commentsPlaceholder": "พิมพ์ความคิดเห็น...",
+      "uploadLabel": "อัปโหลดไฟล์ประกอบการพิจารณาเพิ่มเติม (ยังไม่เชื่อม import จริง)",
+      "selectedFile": "ไฟล์ที่เลือก: {name}",
+      "decision": "ผลการพิจารณา",
+      "saveDraft": "บันทึกฉบับร่าง",
+      "submit": "ส่งผลการพิจารณา",
+      "decisionOptions": {
+        "approve": "อนุมัติ",
+        "reject": "ไม่อนุมัติ"
+      },
+      "status": {
+        "approved": "รายการนี้ถูกประธานอนุมัติแล้ว จึงไม่สามารถแก้ไขผลการพิจารณาได้",
+        "rejected": "รายการนี้ถูกประธานไม่อนุมัติแล้ว จึงไม่สามารถแก้ไขผลการพิจารณาได้",
+        "notPending": "รายการนี้ไม่ได้อยู่ในสถานะรอการพิจารณาของประธานแล้ว"
+      },
+      "alerts": {
+        "alreadySubmittedTitle": "ส่งผลการพิจารณาแล้ว",
+        "alreadySubmittedText": "รายการนี้ส่งได้เพียงครั้งเดียว และไม่สามารถส่งซ้ำได้",
+        "cannotSubmitTitle": "ไม่สามารถส่งผลการพิจารณาได้",
+        "submitSuccessTitle": "ส่งผลการพิจารณาสำเร็จ",
+        "submitSuccessText": "ระบบได้บันทึกผลการพิจารณาเรียบร้อยแล้ว",
+        "duplicateSubmitText": "ระบบไม่อนุญาตให้ส่งซ้ำ เนื่องจากมีการส่งผลการพิจารณาไปแล้ว",
+        "submitErrorTitle": "ส่งผลการพิจารณาไม่สำเร็จ",
+        "retry": "กรุณาลองใหม่อีกครั้ง"
+      },
+      "importPlaceholderFallback": "พื้นที่ checklist ยังเว้นไว้สำหรับ import จาก backend ในขั้นถัดไป"
+    }
   }
 }

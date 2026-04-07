@@ -38,7 +38,7 @@
         size="sm"
         @click="clearFilter"
       >
-        <CIcon name="cil-chevron-right" class="mr-1" /> × ล้างตัวกรอง
+        <CIcon name="cil-chevron-right" class="mr-1" /> × {{ $t('userDashboard.actions.clearFilter') }}
       </CButton>
     </div>
 
@@ -54,8 +54,8 @@
           <div class="header-tools">
             <CInput
               class="search-input"
-              placeholder="ค้นหา..."
-              aria-label="ค้นหาในตาราง"
+              :placeholder="$t('userDashboard.search.placeholder')"
+              :aria-label="$t('userDashboard.search.ariaLabel')"
               v-model="searchQuery"
             />
             <CButton
@@ -65,7 +65,7 @@
               class="clear-filter-btn"
               @click="clearFilter"
             >
-              <CIcon name="cil-chevron-right" class="mr-1" /> ล้างตัวกรอง
+              <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('userDashboard.actions.clearFilter') }}
             </CButton>
           </div>
         </div>
@@ -73,12 +73,12 @@
       <CCardBody class="card-body-tight">
         <div v-if="loading" class="state-box">
           <div class="spinner"></div>
-          <div class="state-text">กำลังโหลดข้อมูล…</div>
+          <div class="state-text">{{ $t('userDashboard.states.loading') }}</div>
         </div>
 
         <div v-else-if="fetchError" class="state-box">
-          <div class="state-text">เกิดข้อผิดพลาดในการโหลดข้อมูล: {{ fetchError }}</div>
-          <div style="margin-top:10px;"><button class="btn-quick btn-success" @click="retryFetch"><CIcon name="cil-chevron-right" class="mr-1" /> ลองอีกครั้ง</button></div>
+          <div class="state-text">{{ $t('userDashboard.states.loadError', { error: fetchError }) }}</div>
+          <div style="margin-top:10px;"><button class="btn-quick btn-success" @click="retryFetch"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('userDashboard.actions.retry') }}</button></div>
         </div>
 
         <div v-else class="table-surface">
@@ -101,10 +101,10 @@
             <template #projectTitleTh="{ item }">
               <td class="project-info-cell">
                 <div class="project-meta">
-                  <div class="project-title">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
+                  <div class="project-title">{{ item.projectTitleTh || item.projectTitleEn || $t('userDashboard.table.unnamedProject') }}</div>
                   <div class="project-owner">{{ item.projectLeaderName || '-' }}</div>
                   <div v-if="getFundingTypeDisplay(item)" class="project-funding-type">{{ getFundingTypeDisplay(item) }}</div>
-                  <div class="project-budget-line">งบโครงการที่เสนอ: {{ formatBudgetAmount(item.budgetUsedAmount) }}</div>
+                  <div class="project-budget-line">{{ $t('userDashboard.table.proposedBudget') }} {{ formatBudgetAmount(item.budgetUsedAmount) }}</div>
                 </div>
               </td>
             </template>
@@ -134,7 +134,7 @@
                     @click.stop="viewDocument(item)"
                   >
                     <CIcon name="cil-file" class="mr-1" />
-                    ดูเอกสาร
+                      {{ $t('userDashboard.actions.viewDocument') }}
                   </CButton>
                   <CButton
                     v-if="canDeleteDocument(item)"
@@ -146,7 +146,7 @@
                     @click.stop="deleteDocument(item)"
                   >
                     <CIcon name="cil-trash" class="mr-1" />
-                    {{ isDeleting(item) ? 'กำลังลบ...' : 'ลบเอกสาร' }}
+                    {{ isDeleting(item) ? $t('userDashboard.actions.deleting') : $t('userDashboard.actions.deleteDocument') }}
                   </CButton>
                 </div>
               </td>
@@ -154,15 +154,15 @@
 
           </CDataTable>
           <div v-if="displayItems.length === 0" class="text-muted text-center py-4">
-            ไม่พบข้อมูลที่ค้นหา
+            {{ $t('userDashboard.states.noResults') }}
           </div>
           <div class="table-footer">
             <div class="table-footer__left">
-              <span class="table-footer__label">แสดงต่อหน้า</span>
-              <select v-model.number="perPage" class="form-control form-control-sm per-page-select" aria-label="แสดงต่อหน้า">
+              <span class="table-footer__label">{{ $t('userDashboard.table.perPage') }}</span>
+              <select v-model.number="perPage" class="form-control form-control-sm per-page-select" :aria-label="$t('userDashboard.table.perPage')">
                 <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
               </select>
-              <span class="table-footer__suffix">รายการ</span>
+              <span class="table-footer__suffix">{{ $t('userDashboard.table.itemsSuffix') }}</span>
             </div>
             <div class="table-footer__right">
               <CPagination
@@ -179,7 +179,7 @@
       </CCardBody>
     </CCard>
 
-    <button v-if="canAccessResearchForm" class="fab" title="สร้างโครงการใหม่" @click="onAdd"><CIcon name="cil-plus" /></button>
+    <button v-if="canAccessResearchForm" class="fab" :title="$t('userDashboard.actions.newProject')" @click="onAdd"><CIcon name="cil-plus" /></button>
   </div>
 </template>
 
@@ -192,10 +192,8 @@ import {
   IN_PROGRESS_STATUSES,
   PROPOSAL_STATUSES,
   PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_BADGE_COLORS,
-  PROPOSAL_STATUS_LABELS_TH_BADGE,
   PROPOSAL_STATUS_LABELS_TH_RESEARCHER as STATUS_LABEL_MAP,
   STATUS_STEP_MAP,
-  getProposalStatusLabel,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
@@ -227,33 +225,7 @@ export default {
       activePage: 1,
       sorterValue: { column: 'latestStatusUpdatedAt', asc: false },
       deletingProposalIds: {},
-      tableFields: [
-        {
-          key: 'proposalCode',
-          label: 'รหัสโครงการ',
-          _style: 'width:170px; text-align:center;',
-          _classes: 'proposal-code-column'
-        },
-        {
-          key: 'projectTitleTh',
-          label: 'ชื่อโครงการวิจัย / หัวหน้าโครงการ',
-          _style: 'min-width:260px;',
-          _classes: 'project-info-column'
-        },
-        {
-          key: 'currentStatus',
-          label: 'สถานะ',
-          _style: 'width:360px; text-align:center;'
-        },
-        {
-          key: 'action',
-          label: 'Action',
-          _style: 'width:220px; text-align:center;',
-          _classes: 'action-column',
-          sorter: false,
-          filter: false
-        },
-      ],
+      tableFields: [],
       activeFilter: null,
       filterGroups: {
         in_progress: [...FILTER_IN_PROGRESS_STATUSES],
@@ -269,6 +241,7 @@ export default {
   async mounted() {
     await loadResearchFormRuntimeConfigs()
     this.loadFundingBudgetConfig()
+    this.refreshTableFields()
     this.workflowSteps = this.buildWorkflowSteps()
     this.$forceUpdate()
     await Promise.all([
@@ -327,7 +300,7 @@ export default {
       return [
         {
           key: 'all',
-          label: 'ทั้งหมด',
+          label: this.$t('userDashboard.cards.all'),
           count: String(this.stats.all || 0),
           toneClass: 'summary-tone-submitted',
           filterKey: null,
@@ -336,7 +309,7 @@ export default {
         },
         {
           key: 'in_progress',
-          label: 'กำลังดำเนินการ',
+          label: this.$t('userDashboard.cards.inProgress'),
           count: String(this.stats.inProgress || 0),
           toneClass: 'summary-tone-checking',
           filterKey: 'in_progress',
@@ -345,7 +318,7 @@ export default {
         },
         {
           key: 'approved',
-          label: 'อนุมัติ',
+          label: this.$t('userDashboard.cards.approved'),
           count: String(this.stats.approved || 0),
           toneClass: 'summary-tone-approved',
           filterKey: 'approved',
@@ -354,7 +327,7 @@ export default {
         },
         {
           key: 'rejected',
-          label: 'ไม่อนุมัติ',
+          label: this.$t('userDashboard.cards.rejected'),
           count: String(this.stats.rejected || 0),
           toneClass: 'summary-tone-rejected',
           filterKey: 'rejected',
@@ -374,13 +347,13 @@ export default {
 
     filterLabel() {
       const labels = {
-        in_progress: 'กำลังดำเนินการ',
-        approved: 'อนุมัติ',
-        rejected: 'ไม่อนุมัติ',
+        in_progress: this.$t('userDashboard.cards.inProgress'),
+        approved: this.$t('userDashboard.cards.approved'),
+        rejected: this.$t('userDashboard.cards.rejected'),
       };
       return this.activeFilter
-        ? `โครงการที่กรอง: ${labels[this.activeFilter] || '-'}`
-        : 'โครงการทั้งหมด';
+        ? this.$t('userDashboard.filters.filteredProjects', { label: labels[this.activeFilter] || '-' })
+        : this.$t('userDashboard.filters.allProjects');
     },
 
     displayItems() {
@@ -408,6 +381,9 @@ export default {
       const per = Number(this.perPage) || 1;
       return Math.max(1, Math.ceil(total / Math.max(1, per)));
     },
+    activeLocale() {
+      return this.$i18n && this.$i18n.locale ? this.$i18n.locale : 'th'
+    },
   },
 
   watch: {
@@ -420,9 +396,41 @@ export default {
     displayItems() {
       if (this.activePage > this.pageCount) this.activePage = 1;
     },
+    '$i18n.locale'() {
+      this.refreshTableFields()
+    }
   },
 
   methods: {
+    refreshTableFields() {
+      this.tableFields = [
+        {
+          key: 'proposalCode',
+          label: this.$t('userDashboard.table.proposalCode'),
+          _style: 'width:170px; text-align:center;',
+          _classes: 'proposal-code-column'
+        },
+        {
+          key: 'projectTitleTh',
+          label: this.$t('userDashboard.table.projectTitleAndLeader'),
+          _style: 'min-width:260px;',
+          _classes: 'project-info-column'
+        },
+        {
+          key: 'currentStatus',
+          label: this.$t('userDashboard.table.status'),
+          _style: 'width:360px; text-align:center;'
+        },
+        {
+          key: 'action',
+          label: this.$t('userDashboard.table.actions'),
+          _style: 'width:220px; text-align:center;',
+          _classes: 'action-column',
+          sorter: false,
+          filter: false
+        },
+      ]
+    },
     buildWorkflowSteps() {
       return PROPOSAL_STATUSES.map((key) => ({
         key,
@@ -448,9 +456,9 @@ export default {
     },
     setFilter(filterKey) {
       if (this.activeFilter === filterKey) {
-        this.activeFilter = null;
+        this.activeFilter = null
       } else {
-        this.activeFilter = filterKey;
+        this.activeFilter = filterKey
       }
     },
 
@@ -463,52 +471,52 @@ export default {
     },
 
     clearFilter() {
-      this.activeFilter = null;
+      this.activeFilter = null
     },
 
     async fetchResearch() {
-      this.loading = true;
-      this.fetchError = null;
+      this.loading = true
+      this.fetchError = null
       try {
         const response = await Service.research.list({
           page: 1,
           limit: 300,
           sortBy: 'latestStatusUpdatedAt',
           sortOrder: this.sorterValue && this.sorterValue.asc === false ? 'desc' : 'asc'
-        });
-        const payload = response && response.data ? response.data : null;
-        let data = [];
+        })
+        const payload = response && response.data ? response.data : null
+        let data = []
         if (Array.isArray(payload)) {
-          data = payload;
+          data = payload
         } else if (payload && payload.data) {
           const wrapped = payload.data;
           if (Array.isArray(wrapped.items)) {
-            data = wrapped.items;
+            data = wrapped.items
           } else if (Array.isArray(wrapped.proposals)) {
-            data = wrapped.proposals;
+            data = wrapped.proposals
           } else if (Array.isArray(wrapped.data)) {
-            data = wrapped.data;
+            data = wrapped.data
           } else if (Array.isArray(wrapped)) {
-            data = wrapped;
+            data = wrapped
           }
         }
 
         const mine = this.currentUserId
           ? data.filter(item => this.extractApplicantUserId(item) === this.currentUserId)
-          : data;
+          : data
 
         const deduped = Array.from(
           new Map((mine || []).map(item => [String(item && item._id ? item._id : ''), item]))
             .values()
-        ).filter(item => item && item._id);
+        ).filter(item => item && item._id)
 
-        this.allProjects = deduped.map(item => this.mapItem(item));
+        this.allProjects = deduped.map(item => this.mapItem(item))
       } catch (err) {
-        console.error("fetchResearch error:", err);
-        this.allProjects = [];
-        this.fetchError = err.message || String(err);
+        console.error('fetchResearch error:', err)
+        this.allProjects = []
+        this.fetchError = err.message || String(err)
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
 
@@ -602,7 +610,8 @@ export default {
 
     formatBudgetAmount(value) {
       const amount = this.parseBudgetNumber(value);
-      return amount.toLocaleString('th-TH', { maximumFractionDigits: 2 });
+      const locale = this.activeLocale === 'en' ? 'en-US' : 'th-TH'
+      return amount.toLocaleString(locale, { maximumFractionDigits: 2 });
     },
 
     resolveFundingTypeValue(item) {
@@ -627,11 +636,16 @@ export default {
 
       const fundingTypeLabel = getFundingTypeLabel(this.fundingBudgetConfig, fundingType, fundingType)
       const fundingSubType = this.resolveFundingSubTypeValue(item)
-      if (!fundingSubType) return `ประเภททุน: ${fundingTypeLabel}`
+      if (!fundingSubType) {
+        return this.$t('userDashboard.table.fundingTypeOnly', { type: fundingTypeLabel })
+      }
 
       const subType = findFundingSubTypeConfig(this.fundingBudgetConfig, fundingType, fundingSubType)
       const fundingSubTypeLabel = String(subType && subType.label ? subType.label : fundingSubType).trim()
-      return `ประเภททุน: ${fundingTypeLabel} / ${fundingSubTypeLabel}`
+      return this.$t('userDashboard.table.fundingTypeWithSubType', {
+        type: fundingTypeLabel,
+        subType: fundingSubTypeLabel
+      })
     },
 
     mapItem(item) {
@@ -680,12 +694,11 @@ export default {
 
     getStatusLabel(itemOrStatus) {
       const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
-      const status = item ? item.currentStatus : itemOrStatus
-      return getProposalStatusLabel(
-        status,
-        PROPOSAL_STATUS_LABELS_TH_BADGE,
-        item || this.deriveRoundNo(itemOrStatus)
-      ) || this.$t('status.inProgress')
+      const key = normalizeProposalStatus(item ? item.currentStatus : itemOrStatus)
+      if (key === 'under_review' || key === 'second_round_review') {
+        return this.$t('userDashboard.status.reviewRound', { round: this.deriveRoundNo(itemOrStatus) })
+      }
+      return this.$t(`status.${key}`)
     },
 
     getStatusBadgeColor(status) {
@@ -711,35 +724,35 @@ export default {
       const key = String(item ? item.currentStatus : itemOrStatus || '').toLowerCase();
       const roundNo = this.deriveRoundNo(itemOrStatus)
       const researcherName = item && item.projectLeaderName ? String(item.projectLeaderName).trim() : '';
-      const ownerName = researcherName || 'ชื่อนักวิจัย';
+      const ownerName = researcherName || this.$t('userDashboard.progress.ownerFallback');
       const statusOwnerMap = {
-        draft: `${ownerName} : กำลังกรอกข้อมูล`,
-        pending_confirm: 'คณะวิจัย : รอการยินยอมจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
-        submitted: 'ส่วนบริหารโครงการ : กำลังพิจารณา',
-        faculty_review_pending: 'ประธานกำลังพิจารณา',
-        faculty_approved: 'ส่วนบริหารโครงการ : รอรับเรื่อง',
-        faculty_rejected: 'ส่วนบริหารโครงการ : รอปิดผลไม่อนุมัติ',
-        office_received: 'ส่วนบริหารโครงการ : รับเรื่องแล้ว กำลังดำเนินการ',
-        document_checking: 'ส่วนบริหารโครงการ : กำลังตรวจสอบเอกสาร',
-        assigned_to_committee: 'ส่วนบริหารโครงการ : กำลังมอบหมายคณะผู้ทรงคุณวุฒิ',
-        under_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,
-        committee_valuated: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
-        meeting_completed: 'ส่วนบริหารโครงการ : กำลังจัดเตรียมผล',
-        revision_requested: `${ownerName} : รอแก้ไขเอกสารตามข้อเสนอแนะ`,
-        resubmitted: 'ส่วนบริหารโครงการ : ได้รับเอกสารแก้ไข กำลังส่งพิจารณาต่อ',
-        second_round_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,
-        approved: 'ส่วนบริหารโครงการ : อนุมัติโครงการแล้ว',
-        rejected: 'ส่วนบริหารโครงการ : ไม่อนุมัติโครงการ',
-        announced: 'ส่วนบริหารโครงการ : ประกาศผลแล้ว'
+        draft: this.$t('userDashboard.progress.draft', { ownerName }),
+        pending_confirm: this.$t('userDashboard.progress.pendingConfirm'),
+        submitted: this.$t('userDashboard.progress.submitted'),
+        faculty_review_pending: this.$t('userDashboard.progress.facultyReviewPending'),
+        faculty_approved: this.$t('userDashboard.progress.facultyApproved'),
+        faculty_rejected: this.$t('userDashboard.progress.facultyRejected'),
+        office_received: this.$t('userDashboard.progress.officeReceived'),
+        document_checking: this.$t('userDashboard.progress.documentChecking'),
+        assigned_to_committee: this.$t('userDashboard.progress.assignedToCommittee'),
+        under_review: this.$t('userDashboard.progress.underReview', { round: roundNo }),
+        committee_valuated: this.$t('userDashboard.progress.committeeValuated'),
+        meeting_completed: this.$t('userDashboard.progress.meetingCompleted'),
+        revision_requested: this.$t('userDashboard.progress.revisionRequested', { ownerName }),
+        resubmitted: this.$t('userDashboard.progress.resubmitted'),
+        second_round_review: this.$t('userDashboard.progress.underReview', { round: roundNo }),
+        approved: this.$t('userDashboard.progress.approved'),
+        rejected: this.$t('userDashboard.progress.rejected'),
+        announced: this.$t('userDashboard.progress.announced')
       };
-      return statusOwnerMap[key] || 'ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ';
+      return statusOwnerMap[key] || this.$t('userDashboard.progress.default');
     },
     getProgressText(status) {
       const key = String(status || '').toLowerCase();
       const pct = this.getProgressPercent(key);
-      if (key === 'approved' || key === 'announced') return 'อนุมัติแล้ว';
-      if (key === 'rejected') return 'ไม่ผ่าน';
-      if (key === 'revision_requested') return 'รอแก้ไข';
+      if (key === 'approved' || key === 'announced') return this.$t('userDashboard.cards.approved');
+      if (key === 'rejected') return this.$t('userDashboard.cards.rejected');
+      if (key === 'revision_requested') return this.$t('userHistory.filters.fix');
       return `${pct}%`;
     },
 
@@ -779,10 +792,10 @@ export default {
 
     formatElapsedSince(dateValue) {
       const date = this.toValidDate(dateValue);
-      if (!date) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: \u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e40\u0e27\u0e25\u0e32';
+      if (!date) return this.$t('userDashboard.lastAction.noData');
 
       const diffMs = Date.now() - date.getTime();
-      if (diffMs < 60000) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: \u0e40\u0e21\u0e37\u0e48\u0e2d\u0e2a\u0e31\u0e01\u0e04\u0e23\u0e39\u0e48';
+      if (diffMs < 60000) return this.$t('userDashboard.lastAction.justNow');
 
       const minuteMs = 60 * 1000;
       const hourMs = 60 * minuteMs;
@@ -791,12 +804,12 @@ export default {
       const monthMs = 30 * dayMs;
       const yearMs = 365 * dayMs;
 
-      if (diffMs < hourMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / minuteMs) + ' \u0e19\u0e32\u0e17\u0e35\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
-      if (diffMs < dayMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / hourMs) + ' \u0e0a\u0e31\u0e48\u0e27\u0e42\u0e21\u0e07\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
-      if (diffMs < weekMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / dayMs) + ' \u0e27\u0e31\u0e19\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
-      if (diffMs < monthMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / weekMs) + ' \u0e2a\u0e31\u0e1b\u0e14\u0e32\u0e2b\u0e4c\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
-      if (diffMs < yearMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / monthMs) + ' \u0e40\u0e14\u0e37\u0e2d\u0e19\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
-      return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / yearMs) + ' \u0e1b\u0e35\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
+      if (diffMs < hourMs) return this.$t('userDashboard.lastAction.minutesAgo', { count: Math.floor(diffMs / minuteMs) });
+      if (diffMs < dayMs) return this.$t('userDashboard.lastAction.hoursAgo', { count: Math.floor(diffMs / hourMs) });
+      if (diffMs < weekMs) return this.$t('userDashboard.lastAction.daysAgo', { count: Math.floor(diffMs / dayMs) });
+      if (diffMs < monthMs) return this.$t('userDashboard.lastAction.weeksAgo', { count: Math.floor(diffMs / weekMs) });
+      if (diffMs < yearMs) return this.$t('userDashboard.lastAction.monthsAgo', { count: Math.floor(diffMs / monthMs) });
+      return this.$t('userDashboard.lastAction.yearsAgo', { count: Math.floor(diffMs / yearMs) });
     },
 
     getLastActionElapsedLabel(item) {
@@ -825,9 +838,9 @@ export default {
       if (!this.canDeleteDocument(item)) {
         await Swal.fire({
           icon: 'warning',
-          title: 'ไม่สามารถลบเอกสารได้',
-          text: 'สามารถลบได้เฉพาะเอกสารที่อยู่สถานะแบบร่างเท่านั้น',
-          confirmButtonText: 'ตกลง'
+          title: this.$t('userDashboard.alerts.cannotDeleteTitle'),
+          text: this.$t('userDashboard.alerts.cannotDeleteText'),
+          confirmButtonText: this.$t('userDashboard.alerts.ok')
         });
         return;
       }
@@ -835,11 +848,11 @@ export default {
       const code = item && item.proposalCode ? String(item.proposalCode) : '-';
       const confirmation = await Swal.fire({
         icon: 'warning',
-        title: `ยืนยันการลบเอกสาร ${code} ?`,
-        text: 'เมื่อลบแล้วจะไม่สามารถกู้คืนข้อมูลได้',
+        title: this.$t('userDashboard.alerts.confirmDeleteTitle', { code }),
+        text: this.$t('userDashboard.alerts.confirmDeleteText'),
         showCancelButton: true,
-        confirmButtonText: 'ลบเอกสาร',
-        cancelButtonText: 'ยกเลิก',
+        confirmButtonText: this.$t('userDashboard.actions.deleteDocument'),
+        cancelButtonText: this.$t('userDashboard.alerts.cancel'),
         confirmButtonColor: '#dc3545',
         cancelButtonColor: '#6c757d',
         reverseButtons: true
@@ -860,9 +873,9 @@ export default {
           : '';
         await Swal.fire({
           icon: 'error',
-          title: 'ลบเอกสารไม่สำเร็จ',
-          text: apiMessage || 'ไม่สามารถลบเอกสารได้ กรุณาลองใหม่อีกครั้ง',
-          confirmButtonText: 'ตกลง'
+          title: this.$t('userDashboard.alerts.deleteErrorTitle'),
+          text: apiMessage || this.$t('userDashboard.alerts.deleteErrorText'),
+          confirmButtonText: this.$t('userDashboard.alerts.ok')
         });
       } finally {
         const nextMap = { ...this.deletingProposalIds };
