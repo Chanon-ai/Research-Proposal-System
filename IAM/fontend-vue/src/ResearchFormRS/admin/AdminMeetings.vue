@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="admin-meetings-page">
     <section class="meetings-hero">
       <div class="meetings-hero__content">
@@ -9,7 +9,7 @@
         </p>
       </div>
       <div v-if="canCreate" class="meetings-hero__action">
-        <CButton color="primary" size="lg" class="hero-action-btn" @click="openCreateModal"><CIcon name="cil-plus" class="mr-1" /> สร้างการประชุมใหม่
+        <CButton color="primary" size="lg" class="hero-action-btn" @click="openCreateModal"><CIcon name="cil-plus" class="mr-1" /> {{ $t('userMeetings.adminActions.createMeeting') }}
         </CButton>
       </div>
     </section>
@@ -21,9 +21,9 @@
           :aria-pressed="isSummaryFilterActive('scheduled') ? 'true' : 'false'"
           @click="toggleSummaryFilter('scheduled')" @keydown.enter.prevent="toggleSummaryFilter('scheduled')"
           @keydown.space.prevent="toggleSummaryFilter('scheduled')">
-          <div class="summary-label">กำหนดการแล้ว</div>
-          <div class="summary-number">{{ summaryCountsLoading ? '…' : getSummaryCount('scheduled') }}</div>
-          <div class="summary-caption">รายการที่กำลังรอวันประชุมหรือยังไม่ปิดผล</div>
+          <div class="summary-label">{{ $t('userMeetings.summary.scheduled.label') }}</div>
+          <div class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('scheduled') }}</div>
+          <div class="summary-caption">{{ $t('userMeetings.summary.scheduled.caption') }}</div>
         </div>
       </CCol>
       <CCol sm="6" lg="4">
@@ -32,9 +32,9 @@
           :aria-pressed="isSummaryFilterActive('completed') ? 'true' : 'false'"
           @click="toggleSummaryFilter('completed')" @keydown.enter.prevent="toggleSummaryFilter('completed')"
           @keydown.space.prevent="toggleSummaryFilter('completed')">
-          <div class="summary-label">เสร็จสิ้น</div>
-          <div class="summary-number">{{ summaryCountsLoading ? '…' : getSummaryCount('completed') }}</div>
-          <div class="summary-caption">ประชุมที่บันทึกผลเรียบร้อยแล้ว</div>
+          <div class="summary-label">{{ $t('userMeetings.summary.completed.label') }}</div>
+          <div class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('completed') }}</div>
+          <div class="summary-caption">{{ $t('userMeetings.summary.completed.caption') }}</div>
         </div>
       </CCol>
       <CCol sm="6" lg="4">
@@ -43,9 +43,9 @@
           :aria-pressed="isSummaryFilterActive('cancelled') ? 'true' : 'false'"
           @click="toggleSummaryFilter('cancelled')" @keydown.enter.prevent="toggleSummaryFilter('cancelled')"
           @keydown.space.prevent="toggleSummaryFilter('cancelled')">
-          <div class="summary-label">ยกเลิก</div>
-          <div class="summary-number">{{ summaryCountsLoading ? '…' : getSummaryCount('cancelled') }}</div>
-          <div class="summary-caption">ใช้ติดตามรายการที่ต้องนัดหมายใหม่</div>
+          <div class="summary-label">{{ $t('userMeetings.summary.cancelled.label') }}</div>
+          <div class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('cancelled') }}</div>
+          <div class="summary-caption">{{ $t('userMeetings.summary.cancelled.caption') }}</div>
         </div>
       </CCol>
     </CRow>
@@ -54,16 +54,16 @@
       <CCardBody>
         <div class="filter-card__header">
           <div>
-            <div class="filter-card__title">ค้นหาการประชุม</div>
+            <div class="filter-card__title">{{ $t('userMeetings.search.title') }}</div>
             <div class="filter-card__subtitle">
-              พิมพ์คำค้นหาเพื่อค้นหาจาก
-              <span>ชื่อการประชุม สถานที่ ลิงก์ วาระการประชุม</span>
+              {{ $t('userMeetings.search.subtitlePrefix') }}
+              <span>{{ $t('userMeetings.search.subtitleFields') }}</span>
             </div>
           </div>
         </div>
         <CRow class="align-items-end">
           <CCol md="12" class="mb-2 mb-md-0">
-            <CInput v-model="searchKeyword" label="ค้นหา" placeholder="เช่น ชื่อการประชุม, สถานที่, ลิงก์..."
+            <CInput v-model="searchKeyword" :label="$t('userMeetings.search.label')" :placeholder="$t('userMeetings.search.placeholder')"
               @input="onSearchKeywordInput" />
           </CCol>
         </CRow>
@@ -72,17 +72,17 @@
 
     <div v-if="loading" class="text-center py-5">
       <CSpinner color="primary" />
-      <div class="mt-2 text-muted">กำลังโหลดรายการประชุม...</div>
+      <div class="mt-2 text-muted">{{ $t('userMeetings.states.loading') }}</div>
     </div>
 
     <div v-else>
       <div v-if="meetings.length === 0" class="empty-state">
-        <div class="empty-state__icon">🗓️</div>
-        <div class="empty-state__title">ยังไม่มีรายการประชุม</div>
+        <div class="empty-state__icon"><CIcon name="cil-calendar" width="42" /></div>
+        <div class="empty-state__title">{{ $t('userMeetings.states.emptyTitle') }}</div>
         <div class="empty-state__text">
           {{ canCreate
-            ? 'เริ่มต้นด้วยการสร้างการประชุมใหม่เพื่อจัดการรอบประชุมและบันทึกผลภายหลัง'
-            : 'ยังไม่มีรายการประชุมในระบบ'
+            ? $t('userMeetings.states.emptyCanCreate')
+            : $t('userMeetings.states.emptyReadOnly')
           }}
         </div>
       </div>
@@ -106,7 +106,7 @@
               <span class="meeting-card__participant-pill">
                 <CIcon name="cil-people" width="16" class="meeting-card__participant-ic" aria-hidden="true" />
                 <span class="meeting-card__participant-text">
-                  {{ Array.isArray(meeting.participantIds) ? meeting.participantIds.length : 0 }} ผู้เข้าร่วม
+                  {{ Array.isArray(meeting.participantIds) ? meeting.participantIds.length : 0 }} {{ $t('userMeetings.card.participantsSuffix') }}
                 </span>
               </span>
             </div>
@@ -116,7 +116,7 @@
                 <div class="meeting-card__title-wrap">
                   <div class="meeting-card__title-row">
                     <button v-if="getMeetingProposalId(meeting)" type="button" class="meeting-card__proposal-link"
-                      :aria-label="`เปิดแบบฟอร์มโครงการ`" @click.stop="goToProposalForm(meeting)">
+                      :aria-label="$t('userMeetings.card.openProposalAria')" @click.stop="goToProposalForm(meeting)">
                       <CIcon name="cil-description" width="18" aria-hidden="true" />
                     </button>
                     <h5 class="meeting-card__title" :aria-label="meeting.title || '-'" tabindex="0"
@@ -132,11 +132,11 @@
                 </div>
                 <div class="meeting-card__meta">
                   <div class="meeting-card__meta-item meeting-card__meta-item--datetime" tabindex="0"
-                    @mouseenter="maybeOpenMetaTooltip($event, `${meeting._id}-datetime`, `${formatDate(meeting.meetingDate)} • ${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)"
+                    @mouseenter="maybeOpenMetaTooltip($event, `${meeting._id}-datetime`, `${formatDate(meeting.meetingDate)} | ${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)"
                     @mouseleave="closeMetaTooltip()"
-                    @focus="maybeOpenMetaTooltip($event, `${meeting._id}-datetime`, `${formatDate(meeting.meetingDate)} • ${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)"
+                    @focus="maybeOpenMetaTooltip($event, `${meeting._id}-datetime`, `${formatDate(meeting.meetingDate)} | ${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)"
                     @blur="closeMetaTooltip()"
-                    @click.stop="toggleMetaTooltip($event, `${meeting._id}-datetime`, `${formatDate(meeting.meetingDate)} • ${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)">
+                    @click.stop="toggleMetaTooltip($event, `${meeting._id}-datetime`, `${formatDate(meeting.meetingDate)} | ${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}`)">
                     <div class="meeting-card__datetime-card">
                       <div class="meeting-card__datetime-cell meeting-card__datetime-cell--date">
                         <div class="meeting-card__datetime-icon-wrap">
@@ -144,7 +144,7 @@
                         </div>
                         <div class="meeting-card__datetime-text">
                           <div class="meeting-card__datetime-value">{{ formatDate(meeting.meetingDate) }}</div>
-                          <div class="meeting-card__datetime-label">วันที่</div>
+                          <div class="meeting-card__datetime-label">{{ $t('userMeetings.card.dateLabel') }}</div>
                         </div>
                       </div>
                       <div class="meeting-card__datetime-divider" aria-hidden="true"></div>
@@ -154,7 +154,7 @@
                         </div>
                         <div class="meeting-card__datetime-text">
                           <div class="meeting-card__datetime-value">{{ `${formatTime(meeting.startTime)} - ${formatTime(meeting.endTime)}` }}</div>
-                          <div class="meeting-card__datetime-label">เวลา</div>
+                          <div class="meeting-card__datetime-label">{{ $t('userMeetings.card.timeLabel') }}</div>
                         </div>
                       </div>
                     </div>
@@ -167,7 +167,7 @@
 
                 <div class="meeting-card__detail-list">
                   <div class="meeting-card__detail">
-                    <span class="meeting-card__detail-key">รูปแบบ</span>
+                    <span class="meeting-card__detail-key">{{ $t('userMeetings.card.modeLabel') }}</span>
                     <span
                       :class="[
                         'meeting-card__detail-value',
@@ -182,14 +182,14 @@
                     </span>
                   </div>
                   <div class="meeting-card__detail">
-                    <span class="meeting-card__detail-key">สถานที่</span>
+                    <span class="meeting-card__detail-key">{{ $t('userMeetings.card.locationLabel') }}</span>
                     <span class="meeting-card__detail-value">{{ meeting.location || '-' }}</span>
                   </div>
                   <div class="meeting-card__detail">
-                    <span class="meeting-card__detail-key">ลิงก์ประชุม</span>
+                    <span class="meeting-card__detail-key">{{ $t('userMeetings.card.linkLabel') }}</span>
                     <span class="meeting-card__detail-value is-link">
                       <a v-if="meeting.videoLink" class="meeting-card__link-btn" :href="meeting.videoLink"
-                        target="_blank" rel="noopener noreferrer" :aria-label="`เปิดลิงก์ประชุม: ${meeting.videoLink}`"
+                        target="_blank" rel="noopener noreferrer" :aria-label="`${$t('userMeetings.card.openMeetingLinkAria')}: ${meeting.videoLink}`"
                         @click.stop>
                         <CIcon name="cil-external-link" width="18" aria-hidden="true" />
                       </a>
@@ -202,7 +202,7 @@
                 </div>
 
                 <div class="meeting-card__agenda">
-                  <div class="meeting-card__agenda-label">วาระการประชุม</div>
+                  <div class="meeting-card__agenda-label">{{ $t('userMeetings.card.agendaLabel') }}</div>
                   <div class="meeting-card__agenda-body">
                     {{ (meeting && typeof meeting.agenda === 'string' && meeting.agenda.trim()) ? meeting.agenda : '-' }}
                   </div>
@@ -219,19 +219,19 @@
                       (isReadOnly(meeting) && readOnlyCtaTone === 'soft') ? 'meeting-card__cta--soft' : ''
                     ]"
                     @click.stop="openMinutesModal(meeting)">
-                    <CIcon name="cil-save" class="mr-1" /> {{ isReadOnly(meeting) ? 'ดูรายละเอียด' : (meeting.status === 'completed' ? 'ดูผลประชุม' : 'บันทึกผลประชุม') }}
+                    <CIcon name="cil-save" class="mr-1" /> {{ isReadOnly(meeting) ? $t('userMeetings.actions.viewDetail') : (meeting.status === 'completed' ? $t('userMeetings.actions.viewResult') : $t('userMeetings.actions.saveResult')) }}
                   </CButton>
                   <div v-if="canEditDelete && isMeetingActionable(meeting)" class="meeting-card__footer-side-actions">
                     <CButton size="sm" color="warning" class="meeting-card__side-btn meeting-card__side-btn--edit"
                       @click.stop="openEditModal(meeting)">
                       <CIcon name="cil-pencil" width="16" class="meeting-card__side-ic" aria-hidden="true" />
-                      แก้ไข
+                      {{ $t('userMeetings.adminActions.edit') }}
                     </CButton>
                     <CButton size="sm" color="danger" class="meeting-card__side-btn meeting-card__side-btn--delete"
                       :disabled="deletingMeeting"
                       @click.stop="deleteMeeting(meeting)">
                       <CIcon name="cil-trash" width="16" class="meeting-card__side-ic" aria-hidden="true" />
-                      ลบ
+                      {{ $t('userMeetings.adminActions.delete') }}
                     </CButton>
                   </div>
                 </div>
@@ -242,20 +242,19 @@
       </div>
 
       <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap" style="gap: 8px;">
-        <small class="text-muted">หน้าที่ {{ page }} / {{ totalPages }} | ทั้งหมด {{ total }} รายการ</small>
+        <small class="text-muted">{{ $t('userMeetings.pagination.summary', { page, totalPages, total }) }}</small>
         <div>
           <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="page <= 1 || loading"
             @click="onPageChange(page - 1)">
-            <CIcon name="cil-chevron-left" class="mr-1" /> ก่อนหน้า
+            <CIcon name="cil-chevron-left" class="mr-1" /> {{ $t('userMeetings.pagination.previous') }}
           </CButton>
           <CButton size="sm" color="secondary" variant="outline" :disabled="page >= totalPages || loading"
             @click="onPageChange(page + 1)">
-            <CIcon name="cil-chevron-right" class="mr-1" /> ถัดไป
+            <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('userMeetings.pagination.next') }}
           </CButton>
         </div>
       </div>
     </div>
-
     <CModal v-if="canCreate" :show.sync="showMeetingModal" :close-on-backdrop="false" centered size="lg" class="meeting-modal">
       <template #header-wrapper>
         <div class="modal-header">
@@ -1182,7 +1181,15 @@ export default {
       this.$router.replace({ path: this.$route.path, query: nextQuery })
     },
     getSelectValue(val) { return val && val.target ? val.target.value : val },
-    getStatusMeta(status) { return MEETING_STATUS[status] || { label: status || '-', color: 'secondary' } },
+    getStatusMeta(status) {
+      const meta = MEETING_STATUS[status] || { color: 'secondary' }
+      const labelMap = {
+        scheduled: this.$t('userMeetings.summary.scheduled.label'),
+        completed: this.$t('userMeetings.summary.completed.label'),
+        cancelled: this.$t('userMeetings.summary.cancelled.label')
+      }
+      return { label: labelMap[status] || status || '-', color: meta.color || 'secondary' }
+    },
     getMeetingCardClass(meeting) { return { scheduled: meeting.status === 'scheduled', completed: meeting.status === 'completed', cancelled: meeting.status === 'cancelled' } },
     isMeetingActionable(meeting) { return !!(meeting && meeting.status === 'scheduled') },
     toggleSelectionMode() { if (!this.canEditDelete) return; this.selectionMode = !this.selectionMode; this.selectedMeetingForActions = null },
@@ -1198,14 +1205,14 @@ export default {
     },
     getMeetingModeLabel(meeting) {
       if (!meeting) return '-'; const type = meeting.meetingType ? String(meeting.meetingType).trim().toLowerCase() : ''
-      if (type === 'online') return 'ออนไลน์'; if (type === 'onsite') return 'ออนไซต์'
+      if (type === 'online') return this.$t('userMeetings.card.modeOnline'); if (type === 'onsite') return this.$t('userMeetings.card.modeOnsite')
       const videoLink = meeting.videoLink ? String(meeting.videoLink).trim() : ''; const location = meeting.location ? String(meeting.location).trim() : ''
       const locationLooksOnline = /online|zoom|teams|meet|webex/i.test(location) || /^https?:\/\//i.test(location)
-      return (videoLink || locationLooksOnline) ? 'ออนไลน์' : 'ออนไซต์'
+      return (videoLink || locationLooksOnline) ? this.$t('userMeetings.card.modeOnline') : this.$t('userMeetings.card.modeOnsite')
     },
     getMinutesLocationLabel(meeting) {
       if (!meeting) return '-'; const mode = this.getMeetingModeLabel(meeting)
-      if (mode === 'ออนไลน์') return 'ออนไลน์'; return meeting.location || '-'
+      if (mode === this.$t('userMeetings.card.modeOnline')) return this.$t('userMeetings.card.modeOnline'); return meeting.location || '-'
     },
     async fetchMeetings() {
       this.loading = true

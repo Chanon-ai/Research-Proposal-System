@@ -8,7 +8,7 @@
           class="flex-fill rounded-0"
           @click="setDuration(6)"
         >
-           6 เดือน
+          {{ text.duration6 }}
         </CButton>
         <CButton
           :color="selectedDuration === 12 ? 'primary' : 'secondary'"
@@ -16,7 +16,7 @@
           class="flex-fill rounded-0"
           @click="setDuration(12)"
         >
-          1 ปี (12 เดือน)
+          {{ text.duration12 }}
         </CButton>
         <CButton
           :color="selectedDuration === 24 ? 'primary' : 'secondary'"
@@ -24,31 +24,31 @@
           class="flex-fill rounded-0"
           @click="setDuration(24)"
         >
-          2 ปี (24 เดือน)
+          {{ text.duration24 }}
         </CButton>
       </CButtonGroup>
 
       <div v-else class="mb-3 fw-bold text-primary">
-        แผนการดำเนินงานระยะเวลา: {{ selectedDuration }} เดือน
+        {{ text.readOnlyDuration(selectedDuration) }}
       </div>
 
       <div class="table-wrapper">
         <table class="table table-bordered mb-0 plan-table" :class="`table-months-${selectedDuration}`">
           <thead>
             <tr class="bg-primary text-white text-center">
-              <th class="sticky-left head-col text-left">กิจกรรม</th>
-              
+              <th class="sticky-left head-col text-left">{{ text.activity }}</th>
+
               <th v-for="m in selectedDuration" :key="m" class="month-col">
                 {{ m }}
               </th>
-              
-              <th 
-                class="sticky-right head-col text-left" 
+
+              <th
+                class="sticky-right head-col text-left"
                 :class="{ 'has-action-col': !isReadOnly && activities.length > 1 }"
               >
-                ผู้รับผิดชอบ
+                {{ text.responsible }}
               </th>
-              
+
               <th class="sticky-action action-col" v-if="!isReadOnly && activities.length > 1">#</th>
             </tr>
           </thead>
@@ -59,24 +59,24 @@
                   v-model="row.activityName"
                   @input="autoGrow"
                   class="form-control custom-textarea"
-                  placeholder="ระบุกิจกรรม..."
+                  :placeholder="text.activityPlaceholder"
                   rows="1"
                   :disabled="isReadOnly"
                 ></textarea>
               </td>
-              
+
               <td
                 v-for="m in selectedDuration"
                 :key="m"
                 class="p-0 month-cell"
-                :class="{ 
+                :class="{
                   'bg-success': row.selectedMonths.includes(m),
-                  'read-only-cell': isReadOnly 
+                  'read-only-cell': isReadOnly
                 }"
                 @click="!isReadOnly && toggleMonth(row, m)"
               ></td>
-              
-              <td 
+
+              <td
                 class="p-1 sticky-right align-top bg-white sticky-border-left"
                 :class="{ 'has-action-col': !isReadOnly && activities.length > 1 }"
               >
@@ -84,22 +84,22 @@
                   v-model="row.responsible"
                   @input="autoGrow"
                   class="form-control custom-textarea"
-                  placeholder="ผู้รับผิดชอบ"
+                  :placeholder="text.responsiblePlaceholder"
                   rows="1"
                   :disabled="isReadOnly"
                 ></textarea>
               </td>
 
               <td class="p-1 sticky-action text-center align-middle bg-white" v-if="!isReadOnly && activities.length > 1">
-                <CButton 
-                  color="danger" 
-                  size="sm" 
+                <CButton
+                  color="danger"
+                  size="sm"
                   variant="outline"
                   class="my-1"
-                  @click="removeActivity(index)" 
-                  title="ลบกิจกรรม"
+                  @click="removeActivity(index)"
+                  :title="text.removeActivityTitle"
                 >
-                  <CIcon name="cil-trash" class="mr-1" /> ลบ
+                  <CIcon name="cil-trash" class="mr-1" /> {{ text.remove }}
                 </CButton>
               </td>
             </tr>
@@ -109,7 +109,7 @@
 
       <div class="d-flex justify-content-end mt-3" v-if="!isReadOnly">
         <CButton color="primary" variant="outline" @click="addActivity">
-          <CIcon name="cil-plus" class="mr-1" />  เพิ่มกิจกรรมใหม่
+          <CIcon name="cil-plus" class="mr-1" /> {{ text.addActivity }}
         </CButton>
       </div>
     </CCardBody>
@@ -150,6 +150,41 @@ export default {
   computed: {
     isDarkTheme () {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+    isEnglishLocale () {
+      const locale = this.$i18n && this.$i18n.locale ? String(this.$i18n.locale) : 'th'
+      return locale.toLowerCase().startsWith('en')
+    },
+    text () {
+      if (this.isEnglishLocale) {
+        return {
+          duration6: '6 months',
+          duration12: '1 year (12 months)',
+          duration24: '2 years (24 months)',
+          readOnlyDuration: (months) => `Work plan duration: ${months} month${months > 1 ? 's' : ''}`,
+          activity: 'Activity',
+          responsible: 'Responsible person',
+          activityPlaceholder: 'Specify the activity...',
+          responsiblePlaceholder: 'Responsible person',
+          removeActivityTitle: 'Remove activity',
+          remove: 'Remove',
+          addActivity: 'Add New Activity'
+        }
+      }
+
+      return {
+        duration6: '6 เดือน',
+        duration12: '1 ปี (12 เดือน)',
+        duration24: '2 ปี (24 เดือน)',
+        readOnlyDuration: (months) => `แผนการดำเนินงานระยะเวลา: ${months} เดือน`,
+        activity: 'กิจกรรม',
+        responsible: 'ผู้รับผิดชอบ',
+        activityPlaceholder: 'ระบุกิจกรรม...',
+        responsiblePlaceholder: 'ผู้รับผิดชอบ',
+        removeActivityTitle: 'ลบกิจกรรม',
+        remove: 'ลบ',
+        addActivity: 'เพิ่มกิจกรรมใหม่'
+      }
     }
   },
   watch: {
@@ -354,7 +389,7 @@ export default {
 }
 
 .plan-table.table-bordered {
-  border: 0 !important; /* remove square outer border so rounded wrapper is clean */
+  border: 0 !important;
 }
 
 .plan-table.table-bordered th,
@@ -410,51 +445,45 @@ export default {
 }
 
 /* =========================================
-   Sticky Columns & Backgrounds (แก้ปัญหาพื้นหลังโปร่งใส)
+   Sticky Columns & Backgrounds
    ========================================= */
-/* ตรึงคอลัมน์ซ้าย (กิจกรรม) */
 .sticky-left {
   position: sticky;
   left: 0;
   z-index: 2;
-  background-color: #ffffff !important; /* บังคับพื้นหลังสีขาว */
+  background-color: #ffffff !important;
 }
 .sticky-border-right {
-  border-right: 2px solid #d8dbe0 !important; 
+  border-right: 2px solid #d8dbe0 !important;
 }
 
-/* ตรึงคอลัมน์ขวาสุด (ปุ่มลบ) */
 .sticky-action {
   position: sticky;
   right: 0;
   z-index: 2;
-  background-color: #ffffff !important; /* บังคับพื้นหลังสีขาว */
+  background-color: #ffffff !important;
   border-left: 1px solid #d8dbe0;
 }
 
-/* ตรึงคอลัมน์ขวา (ผู้รับผิดชอบ) */
 .sticky-right {
   position: sticky;
   right: 0;
   z-index: 2;
-  background-color: #ffffff !important; /* บังคับพื้นหลังสีขาว */
+  background-color: #ffffff !important;
   transition: right 0.2s ease;
 }
 .sticky-border-left {
   border-left: 2px solid #d8dbe0 !important;
 }
 
-/* กรณีที่มีปุ่มลบ ให้ขยับคอลัมน์ผู้รับผิดชอบมาทางซ้าย 60px */
 .sticky-right.has-action-col {
   right: 60px;
 }
 
-/* บังคับสีพื้นหลังของหัวตาราง (Thead) ไม่ให้ข้อความทะลุเวลา Scroll */
 thead .sticky-left,
 thead .sticky-right,
 thead .sticky-action {
   z-index: 3;
-  /* Match Research Form's red/gold theme and keep header readable while scrolling */
   background: inherit !important;
   color: #ffffff;
 }
@@ -478,17 +507,17 @@ thead .sticky-action {
   overflow: hidden;
   min-height: 45px;
   width: 100%;
-  background-color: #ffffff; /* บังคับให้ช่องพิมพ์มีสีขาวทึบ */
+  background-color: #ffffff;
 }
 
 .month-cell.read-only-cell {
   cursor: not-allowed;
 }
 .month-cell.read-only-cell:hover {
-  background-color: transparent; /* เอา hover effect ออก */
+  background-color: transparent;
 }
 .month-cell.bg-success.read-only-cell:hover {
-  background-color: #2563EB !important; /* keep selected state */
+  background-color: #2563EB !important;
 }
 
 .workplan-table--dark .table-wrapper {

@@ -2,27 +2,27 @@
   <div class="project-details-form" :class="{ 'is-dark': isDarkTheme }">
     <div class="card">
       <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">1-19 รายละเอียดโครงการ</h5>
+        <h5 class="mb-0">{{ formText.cardTitle }}</h5>
       </div>
       <div class="card-body">
 
         <div class="section mb-4">
-          <h6 class="section-title">1. ชื่อโครงการ <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section1Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <div class="form-group">
-            <label class="sub-label">ชื่อโครงการ (ภาษาไทย)</label>
+            <label class="sub-label">{{ formText.projectNameThaiLabel }}</label>
             <input
               v-model="form.projectNameThai"
               type="text"
               class="form-control"
               :disabled="isProjectTitleDisabled"
-              placeholder="กรุณากรอกชื่อโครงการภาษาไทย"
+              :placeholder="formText.projectNameThaiPlaceholder"
               @input="filterThaiInput"
               required
             >
-            <small class="form-text text-muted lang-hint">กรุณากรอกชื่อโครงการภาษาไทย (สามารถใช้ตัวเลขและสัญลักษณ์ได้) *</small>
+            <small class="form-text text-muted lang-hint">{{ formText.projectNameThaiHint }}</small>
           </div>
           <div class="form-group">
-            <label class="sub-label">ชื่อโครงการ (ภาษาอังกฤษ)</label>
+            <label class="sub-label">{{ formText.projectNameEnglishLabel }}</label>
             <input
               v-model="form.projectNameEnglish"
               type="text"
@@ -32,12 +32,12 @@
               @input="filterEnglishInput"
               required
             >
-            <small class="form-text text-muted lang-hint">กรุณากรอกเป็นภาษาอังกฤษเท่านั้น *</small>
+            <small class="form-text text-muted lang-hint">{{ formText.projectNameEnglishHint }}</small>
           </div>
         </div>
 
         <div ref="strategic_alignment" :class="sectionClass('strategic_alignment')">
-          <h6 class="section-title">2. ประเภททุน <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section2Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <ProjectFundingTypeSection
             ref="fundingTypeSection"
             :funding-type-options="fundingTypeOptions"
@@ -59,7 +59,7 @@
         </div>
 
         <div class="section mb-4">
-          <h6 class="section-title">3. หน่วยงานที่ร่วมมือ</h6>
+          <h6 class="section-title">{{ formText.section3Title }}</h6>
           <ProjectCollaborationSection
             :records="collaborationRecords"
             :validation-count="collaborationValidationCount"
@@ -75,7 +75,7 @@
         </div>
 
         <div class="section mb-4">
-          <h6 class="section-title">4. ประเภทงานวิจัย <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section4Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <ProjectResearchTypeSection
             :research-type-options="researchTypeOptions"
             :research-type="form.researchType"
@@ -88,7 +88,7 @@
         </div>
 
         <div class="section mb-4">
-          <h6 class="section-title">5. คำสำคัญ (Keywords) <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section5Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <TextEditor
             v-model="form.keywords"
             :is-read-only="isReadOnly"
@@ -103,7 +103,7 @@
         </div>
 
         <div ref="problem_significance" :class="sectionClass('problem_significance')">
-          <h6 class="section-title">6. ความสำคัญของปัญหาและแนวคิด <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section6Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <TextEditor
             v-model="form.problemSignificance"
             :is-read-only="isReadOnly"
@@ -118,7 +118,7 @@
         </div>
 
         <div ref="objectives" :class="sectionClass('objectives')">
-          <h6 class="section-title">7. วัตถุประสงค์ <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section7Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <TextEditor
             v-model="form.objectives"
             :is-read-only="isReadOnly"
@@ -133,7 +133,7 @@
         </div>
 
         <div ref="literature_review" :class="sectionClass('literature_review')">
-          <h6 class="section-title">8. ทบทวนวรรณกรรม <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section8Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <TextEditor
             v-model="form.literatureReview"
             :is-read-only="isReadOnly"
@@ -148,7 +148,7 @@
         </div>
 
         <div class="section mb-4">
-          <h6 class="section-title">9. เอกสารอ้างอิง <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section9Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <TextEditor
             v-model="form.references"
             :is-read-only="isReadOnly"
@@ -163,7 +163,7 @@
         </div>
 
         <div ref="research_methodology" :class="sectionClass('research_methodology')">
-          <h6 class="section-title">10. วิธีดำเนินการวิจัย <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section10Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <TextEditor
             v-model="form.researchMethodology"
             :is-read-only="isReadOnly"
@@ -178,7 +178,7 @@
         </div>
 
         <div class="section mb-4">
-          <h6 class="section-title">11. ขอบเขตการวิจัย <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section11Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <TextEditor
             v-model="form.researchScope"
             :is-read-only="isReadOnly"
@@ -193,12 +193,12 @@
         </div>
 
         <div ref="work_plan" :class="sectionClass('work_plan')">
-          <h6 class="section-title">12. แผนการดำเนินงาน <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section12Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <Section12 v-model="form.workPlan" :is-read-only="isReadOnly" />
         </div>
 
         <div class="section mb-4">
-          <h6 class="section-title">13. ผลงานตามระยะเวลาการรายงาน <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section13Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <TextEditor
             v-model="form.milestones"
             :is-read-only="isReadOnly"
@@ -213,7 +213,7 @@
         </div>
 
         <div ref="expected_outcomes" :class="sectionClass('expected_outcomes')">
-          <h6 class="section-title">14. ผลลัพธ์ที่คาดว่าจะได้รับ <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section14Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <ProjectExpectedOutcomesSection
             :funding-type="form.fundingType"
             :selected-outcome="form.selectedOutcome"
@@ -224,7 +224,7 @@
         </div>
 
         <div ref="integration" :class="sectionClass('integration')">
-          <h6 class="section-title">15. การบูรณาการงานวิจัย <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section15Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <TextEditor
             v-model="form.integration"
             :is-read-only="isReadOnly"
@@ -239,7 +239,7 @@
         </div>
 
         <div ref="transfer_level" :class="sectionClass('transfer_level')">
-          <h6 class="section-title">16. ระดับการถ่ายทอดสู่สังคม <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section16Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <ProjectTransferLevelSection
             :transfer-level-options="transferLevelOptions"
             :transfer-level="form.transferLevel"
@@ -252,7 +252,7 @@
         </div>
 
         <div ref="budget" :class="sectionClass('budget')">
-          <h6 class="section-title">17. งบประมาณโครงการ <span v-if="!isReadOnly" class="text-danger">*</span></h6>
+          <h6 class="section-title">{{ formText.section17Title }} <span v-if="!isReadOnly" class="text-danger">*</span></h6>
           <BudgetReport
             v-if="shouldUseBudgetReport"
             :model-value="form.budget"
@@ -507,6 +507,202 @@ const TEXT_EDITOR_FIELD_CONFIG = {
   }
 }
 
+
+const FUNDING_TYPE_OPTIONS_EN = [
+  {
+    value: 'new-researcher',
+    shortName: 'New Researcher Grant',
+    shortDescription: 'For researchers submitting projects aligned with their qualifications, discipline, or workload.',
+    officialText: 'Project aligned with qualifications, discipline, or workload',
+    subSectionTitle: 'Project condition (select 1)',
+    constraintKey: 'funding.newResearcher',
+    subOptions: [
+      {
+        value: 'qualification-alignment',
+        shortName: 'Aligned with qualifications/discipline/workload',
+        shortDescription: 'Confirms that the project is within the researcher\'s qualifications, discipline, or workload.',
+        officialText: 'Project aligned with qualifications, discipline, or workload',
+        constraintKey: 'funding.newResearcher.alignment'
+      }
+    ]
+  },
+  {
+    value: 'researcher-development',
+    shortName: 'Researcher Development Grant',
+    shortDescription: 'Supports projects aligned with research and innovation strategy.',
+    officialText: 'Researcher development grant / grant aligned with research and innovation strategy',
+    subSectionTitle: 'Research framework (select 1)',
+    constraintKey: 'funding.researcherDevelopment',
+    subOptions: [
+      {
+        value: 'economic-development',
+        shortName: 'Creative economy and competitiveness',
+        shortDescription: 'Builds a value-based economy, competitiveness, and sustainable self-reliance.',
+        officialText: 'Development of the Thai economy through a value-based and creative economy with competitiveness and sustainable self-reliance',
+        constraintKey: 'funding.researcherDevelopment.economic'
+      },
+      {
+        value: 'social-environment',
+        shortName: 'Society and environment',
+        shortDescription: 'Advances sustainable social and environmental development and adaptation to global change.',
+        officialText: 'Advancing society and the environment toward sustainable development and resilience to global change',
+        constraintKey: 'funding.researcherDevelopment.social'
+      },
+      {
+        value: 'science-technology',
+        shortName: 'Advanced science, technology, and innovation',
+        shortDescription: 'Develops frontier research and innovation to create new opportunities and future readiness.',
+        officialText: 'Advancement of science, technology, research, and innovation at the frontier to create future opportunities and readiness',
+        constraintKey: 'funding.researcherDevelopment.science'
+      },
+      {
+        value: 'human-resources',
+        shortName: 'Human capital and research institutions',
+        shortDescription: 'Strengthens research talent and institutions as a foundation for economic and social development.',
+        officialText: 'Development of human capital and institutions in science, research, and innovation as a foundation for national economic and social development',
+        constraintKey: 'funding.researcherDevelopment.humanCapital'
+      }
+    ]
+  },
+  {
+    value: 'strategic-research',
+    shortName: 'Strategic Research Grant',
+    shortDescription: 'Research projects aligned with defined strategic directions.',
+    officialText: 'Strategic research grant',
+    subSectionTitle: '',
+    constraintKey: 'funding.strategicResearch',
+    subOptions: []
+  },
+  {
+    value: 'industry-extension',
+    shortName: 'Industry Extension Grant',
+    shortDescription: 'Extends research and innovation toward industrial application.',
+    officialText: 'Industry extension grant',
+    subSectionTitle: 'Research framework (select 1)',
+    constraintKey: 'funding.industryExtension',
+    subOptions: [
+      {
+        value: 'competitiveness',
+        shortName: 'Research and innovation for competitiveness',
+        shortDescription: 'Builds on research outcomes and innovation to improve industrial competitiveness.',
+        officialText: 'Research and innovation for improved competitiveness',
+        constraintKey: 'funding.industryExtension.competitiveness'
+      }
+    ]
+  }
+]
+
+const RESEARCH_TYPE_OPTIONS_EN = [
+  {
+    value: 'science-technology',
+    label: 'Science and Technology',
+    description: 'Focuses on scientific knowledge, technology, or science-based innovation.'
+  },
+  {
+    value: 'health-science',
+    label: 'Health Sciences',
+    description: 'Focuses on health, medicine, or quality-of-life research.'
+  },
+  {
+    value: 'social-humanities',
+    label: 'Social Sciences and Humanities',
+    description: 'Focuses on social, cultural, policy, or humanities issues.'
+  }
+]
+
+const TRANSFER_LEVEL_OPTIONS_EN = [
+  {
+    value: 'national-international',
+    label: 'Regional / National / International',
+    description: 'Can be transferred as a model or guideline at the regional, national, or international level.'
+  },
+  {
+    value: 'community-provincial',
+    label: 'Occupational Group / Community / Provincial',
+    description: 'Can be transferred as a model or guideline for occupational groups, communities, or provinces.'
+  },
+  {
+    value: 'none',
+    label: 'No social transfer yet',
+    description: 'The project outcomes have not yet been transferred to society at this stage.'
+  }
+]
+
+const TEXT_EDITOR_FIELD_CONFIG_EN = {
+  keywords: {
+    key: 'keywords',
+    label: '5. Keywords',
+    helperText: 'Provide keywords in both Thai and English, separated by commas (,).',
+    placeholder: 'Example: Community Water Management, Smart Agriculture',
+    minHeight: 100,
+    toolbarPreset: 'minimal'
+  },
+  problemSignificance: {
+    key: 'problemSignificance',
+    label: '6. Problem significance and conceptual framework',
+    helperText: 'Explain the background, significance, current situation, knowledge gap, and conceptual framework of the study.',
+    placeholder: 'Describe the current situation, impacts, knowledge gap from prior work, and the concept used to develop this project.',
+    minHeight: 220,
+    toolbarPreset: 'basic'
+  },
+  objectives: {
+    key: 'objectives',
+    label: '7. Research objectives',
+    helperText: 'Write clear, measurable objectives that align with the project title.',
+    placeholder: '1) To study...\n2) To develop...\n3) To evaluate...',
+    minHeight: 160,
+    toolbarPreset: 'basic'
+  },
+  literatureReview: {
+    key: 'literatureReview',
+    label: '8. Literature review and related research',
+    helperText: 'Summarize theories and related studies, and identify the gap this project addresses.',
+    placeholder: 'Summarize who studied what, using which methods, the findings, and the gap this project extends.',
+    minHeight: 220,
+    toolbarPreset: 'basic'
+  },
+  references: {
+    key: 'references',
+    label: '9. References',
+    helperText: 'Format references consistently using an accepted standard in the discipline, such as APA, IEEE, or Vancouver.',
+    placeholder: 'Example: Smith, J. (2025). Article title. Journal Name, 12(3), 45-60.',
+    minHeight: 180,
+    toolbarPreset: 'basic'
+  },
+  researchMethodology: {
+    key: 'researchMethodology',
+    label: '10. Research process and methodology, study site, and data collection',
+    helperText: 'Specify research design, study area, population/sample, sampling method, instruments, analysis method, and attach a sample questionnaire if used.',
+    placeholder: 'Suggested structure:\n1) Research design\n2) Study area and period\n3) Population/sample and sampling method\n4) Instruments and data collection\n5) Data analysis',
+    minHeight: 260,
+    toolbarPreset: 'basic'
+  },
+  researchScope: {
+    key: 'researchScope',
+    label: '11. Research scope',
+    helperText: 'Define the scope in line with the project title and objectives, including content, area, population/sample, and time.',
+    placeholder: 'Example:\n- Content scope: ...\n- Area scope: ...\n- Population/sample scope: ...\n- Time scope: ...',
+    minHeight: 180,
+    toolbarPreset: 'basic'
+  },
+  milestones: {
+    key: 'milestones',
+    label: '13. Outputs by the progress-reporting period',
+    helperText: 'Describe expected outputs or results when the project reaches around 50% of the plan, not only completed activities.',
+    placeholder: 'Example outcomes: 50% of field data completed, prototype version 1 completed, preliminary analysis with key findings ready.',
+    minHeight: 160,
+    toolbarPreset: 'basic'
+  },
+  integration: {
+    key: 'integration',
+    label: '15. Research integration',
+    helperText: 'Explain either interdisciplinary/organizational integration or why integration is not required, with clear reasons.',
+    placeholder: 'If yes: The project integrates ... with each discipline responsible for ...\nIf no: This project is discipline-specific, so integration is not yet necessary.',
+    minHeight: 180,
+    toolbarPreset: 'basic'
+  }
+}
+
 export default {
   name: 'ProjectDetailsForm',
   components: {
@@ -558,6 +754,64 @@ export default {
     },
     normalizedCurrentStatus() {
       return String(this.currentStatus || '').trim().toLowerCase()
+    },
+    isEnglishLocale() {
+      const locale = String((this.$i18n && this.$i18n.locale) || '').trim().toLowerCase()
+      return locale === 'en'
+    },
+    formText() {
+      if (this.isEnglishLocale) {
+        return {
+          cardTitle: '1-19 Project Details',
+          section1Title: '1. Project Title',
+          section2Title: '2. Funding Type',
+          section3Title: '3. Collaborating Organization',
+          section4Title: '4. Research Type',
+          section5Title: '5. Keywords',
+          section6Title: '6. Problem Significance and Concept',
+          section7Title: '7. Objectives',
+          section8Title: '8. Literature Review',
+          section9Title: '9. References',
+          section10Title: '10. Research Methodology',
+          section11Title: '11. Research Scope',
+          section12Title: '12. Work Plan',
+          section13Title: '13. Progress-Reporting Outputs',
+          section14Title: '14. Expected Outcomes',
+          section15Title: '15. Research Integration',
+          section16Title: '16. Level of Social Transfer',
+          section17Title: '17. Project Budget',
+          projectNameThaiLabel: 'Project title (Thai)',
+          projectNameThaiPlaceholder: 'Enter the project title in Thai',
+          projectNameThaiHint: 'Please enter the project title in Thai. Numbers and symbols are allowed. *',
+          projectNameEnglishLabel: 'Project title (English)',
+          projectNameEnglishHint: 'Please enter English only. *'
+        }
+      }
+      return {
+        cardTitle: '1-19 ?????????????????',
+        section1Title: '1. ???????????',
+        section2Title: '2. ?????????',
+        section3Title: '3. ??????????????????',
+        section4Title: '4. ??????????????',
+        section5Title: '5. ??????? (Keywords)',
+        section6Title: '6. ??????????????????????????',
+        section7Title: '7. ????????????',
+        section8Title: '8. ?????????????',
+        section9Title: '9. ?????????????',
+        section10Title: '10. ??????????????????',
+        section11Title: '11. ??????????????',
+        section12Title: '12. ???????????????',
+        section13Title: '13. ?????????????????????????',
+        section14Title: '14. ????????????????????????',
+        section15Title: '15. ???????????????????',
+        section16Title: '16. ???????????????????????',
+        section17Title: '17. ???????????????',
+        projectNameThaiLabel: '??????????? (???????)',
+        projectNameThaiPlaceholder: '???????????????????????????',
+        projectNameThaiHint: '??????????????????????????? (??????????????????????????????) *',
+        projectNameEnglishLabel: '??????????? (??????????)',
+        projectNameEnglishHint: '??????????????????????????????? *'
+      }
     },
     isCommitteeReviewRoute() {
       const path = String((this.$route && this.$route.path) || '').trim().toLowerCase()
@@ -612,7 +866,7 @@ export default {
     },
 
     fundingSubSelectionStatusText() {
-      return this.isFundingSubSelectionComplete ? 'เลือกครบแล้ว' : 'ยังไม่ครบ'
+      return this.isFundingSubSelectionComplete ? (this.isEnglishLocale ? 'Complete' : '????????????') : (this.isEnglishLocale ? 'Incomplete' : '?????????')
     },
 
     fundingSubSelectionStatusIcon() {
@@ -635,7 +889,7 @@ export default {
     },
 
     researchTypeOptions() {
-      return RESEARCH_TYPE_OPTIONS
+      return this.isEnglishLocale ? RESEARCH_TYPE_OPTIONS_EN : RESEARCH_TYPE_OPTIONS
     },
 
     selectedResearchTypeOption() {
@@ -651,7 +905,7 @@ export default {
     },
 
     transferLevelOptions() {
-      return TRANSFER_LEVEL_OPTIONS
+      return this.isEnglishLocale ? TRANSFER_LEVEL_OPTIONS_EN : TRANSFER_LEVEL_OPTIONS
     },
 
     selectedTransferLevelOption() {
@@ -667,7 +921,7 @@ export default {
     },
 
     textEditorFieldConfig() {
-      return TEXT_EDITOR_FIELD_CONFIG
+      return this.isEnglishLocale ? TEXT_EDITOR_FIELD_CONFIG_EN : TEXT_EDITOR_FIELD_CONFIG
     },
 
     collaborationValidationCount() {
@@ -851,11 +1105,11 @@ export default {
         const fallbackValue = normalizeFundingBudgetKey(fallbackOption && fallbackOption.value)
         const value = subTypeKey || fallbackValue || `${typeKey || 'funding'}-sub-${subIndex + 1}`
         const shortName = String(
-          (subOption && subOption.label) ||
+          (this.isEnglishLocale ? '' : (subOption && subOption.label)) ||
           fallbackOption.shortName ||
           fallbackOption.label ||
           ''
-        ).trim() || `ทุนย่อย ${subIndex + 1}`
+        ).trim() || (this.isEnglishLocale ? `Sub grant ${subIndex + 1}` : `??????? ${subIndex + 1}`)
         const officialText = String(
           fallbackOption.officialText ||
           shortName
@@ -875,10 +1129,10 @@ export default {
     },
     buildFundingTypeOptions(config) {
       const normalizedConfig = Array.isArray(config) ? config : []
-      if (!normalizedConfig.length) return FUNDING_TYPE_OPTIONS
+      if (!normalizedConfig.length) return this.isEnglishLocale ? FUNDING_TYPE_OPTIONS_EN : FUNDING_TYPE_OPTIONS
 
       const fallbackMap = new Map(
-        FUNDING_TYPE_OPTIONS.map(item => [normalizeFundingBudgetKey(item && item.value), item])
+        (this.isEnglishLocale ? FUNDING_TYPE_OPTIONS_EN : FUNDING_TYPE_OPTIONS).map(item => [normalizeFundingBudgetKey(item && item.value), item])
       )
 
       return normalizedConfig.map((fundingType, typeIndex) => {
@@ -888,11 +1142,11 @@ export default {
         const value = typeKey || fallbackValue || `funding-type-${typeIndex + 1}`
         const budgetLimit = Number(fundingType && fundingType.budgetLimit)
         const shortName = String(
-          (fundingType && fundingType.label) ||
+          (this.isEnglishLocale ? '' : (fundingType && fundingType.label)) ||
           fallbackType.shortName ||
           fallbackType.label ||
           ''
-        ).trim() || `ประเภททุน ${typeIndex + 1}`
+        ).trim() || (this.isEnglishLocale ? `Funding type ${typeIndex + 1}` : `????????? ${typeIndex + 1}`)
         const shortDescription = String(fallbackType.shortDescription || '').trim()
         const officialText = String(
           fallbackType.officialText ||
@@ -905,7 +1159,7 @@ export default {
           fallbackSubOptions
         )
         const fallbackSubSectionTitle = String(fallbackType.subSectionTitle || '').trim()
-        const subSectionTitle = fallbackSubSectionTitle || (mappedSubOptions.length ? 'กรอบการวิจัย (เลือก 1)' : '')
+        const subSectionTitle = fallbackSubSectionTitle || (mappedSubOptions.length ? (this.isEnglishLocale ? 'Research framework (select 1)' : '???????????? (????? 1)') : '')
         const constraintKey = fallbackType.constraintKey || `funding.${value}`
 
         return {

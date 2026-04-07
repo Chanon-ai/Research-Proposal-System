@@ -2,13 +2,13 @@
   <div class="expected-outcomes-section" :class="{ 'is-dark': isDarkTheme }">
     <div class="funding-options expected-outcome-selector">
       <div v-if="!hasFundingType" class="alert alert-warning mb-0">
-        <i class="cil-info me-2"></i> กรุณาเลือก "ประเภททุน" ในหัวข้อที่ 2 เพื่อเลือกผลลัพธ์
+        <i class="cil-info me-2"></i> {{ chooseFundingFirstText }}
       </div>
 
       <template v-else>
         <div class="expected-outcome-selector__heading">
           <div class="expected-outcome-selector__title">{{ currentFundingSectionLabel }}</div>
-          <div class="expected-outcome-selector__intro">เลือก 1 ผลลัพธ์ที่คาดว่าจะได้รับให้สอดคล้องกับประเภททุนที่เลือก</div>
+          <div class="expected-outcome-selector__intro">{{ introText }}</div>
         </div>
 
         <div class="expected-outcome-selector__grid">
@@ -38,7 +38,7 @@
                 class="expected-outcome-card__marker"
                 :class="{ 'is-active': selectedOutcome === option.value }"
                 aria-hidden="true"
-              >✓</span>
+              >?</span>
             </div>
 
             <p class="expected-outcome-card__description mb-0">{{ option.description }}</p>
@@ -51,9 +51,9 @@
           role="status"
           aria-live="polite"
         >
-          <span class="expected-outcome-summary__icon" aria-hidden="true">{{ isOutcomeSelected ? '✓' : 'i' }}</span>
-          <span v-if="isOutcomeSelected">เลือกแล้ว: {{ selectedOutcomeLabel }}</span>
-          <span v-else>กรุณาเลือก 1 ผลลัพธ์ที่คาดว่าจะได้รับ</span>
+          <span class="expected-outcome-summary__icon" aria-hidden="true">{{ isOutcomeSelected ? '?' : 'i' }}</span>
+          <span v-if="isOutcomeSelected">{{ selectedOutcomeText }}</span>
+          <span v-else>{{ promptText }}</span>
         </div>
       </template>
     </div>
@@ -61,77 +61,11 @@
 </template>
 
 <script>
-const FUNDING_SECTION_LABELS = {
-  'new-researcher': '14.1 ทุนนักวิจัยรุ่นใหม่',
-  'researcher-development': '14.2 ทุนพัฒนานักวิจัย',
-  'strategic-research': '14.3 ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์',
-  'industry-extension': '14.4 ทุนต่อยอดสู่ภาคอุตสาหกรรม'
-}
-
-const OUTCOME_OPTIONS_BY_FUNDING = {
-  'new-researcher': [
-    {
-      value: 'internationalConference',
-      label: 'นำเสนอในการประชุมวิชาการระดับนานาชาติ (Proceedings)',
-      description: 'เผยแพร่ผลงานในการประชุมวิชาการระดับนานาชาติ'
-    },
-    {
-      value: 'scopusJournal',
-      label: 'ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.',
-      description: 'ตีพิมพ์บทความวิจัยในวารสารนานาชาติที่ได้รับการยอมรับ'
-    },
-    {
-      value: 'tciJournal',
-      label: 'ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น',
-      description: 'ตีพิมพ์บทความในวารสาร TCI กลุ่ม 1 ตามเกณฑ์ที่กำหนด'
-    },
-    {
-      value: 'patent',
-      label: 'อนุสิทธิบัตร/สิทธิบัตร',
-      description: 'พัฒนาองค์ความรู้สู่การคุ้มครองทรัพย์สินทางปัญญา'
-    }
-  ],
-  'researcher-development': [
-    {
-      value: 'scopusJournal',
-      label: 'ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.',
-      description: 'ตีพิมพ์บทความวิจัยในวารสารนานาชาติที่ได้รับการยอมรับ'
-    },
-    {
-      value: 'tciJournal',
-      label: 'ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น',
-      description: 'ตีพิมพ์บทความในวารสาร TCI กลุ่ม 1 ตามเกณฑ์ที่กำหนด'
-    },
-    {
-      value: 'patent',
-      label: 'อนุสิทธิบัตร/สิทธิบัตร',
-      description: 'พัฒนาองค์ความรู้สู่การคุ้มครองทรัพย์สินทางปัญญา'
-    }
-  ],
-  'strategic-research': [
-    {
-      value: 'scopusJournal',
-      label: 'ตีพิมพ์วารสารนานาชาติฐานข้อมูล ก.พ.อ.',
-      description: 'ตีพิมพ์บทความวิจัยในวารสารนานาชาติที่ได้รับการยอมรับ'
-    },
-    {
-      value: 'tciJournal',
-      label: 'ตีพิมพ์วารสาร TCI กลุ่ม 1 เท่านั้น',
-      description: 'ตีพิมพ์บทความในวารสาร TCI กลุ่ม 1 ตามเกณฑ์ที่กำหนด'
-    },
-    {
-      value: 'patent',
-      label: 'อนุสิทธิบัตร/สิทธิบัตร',
-      description: 'พัฒนาองค์ความรู้สู่การคุ้มครองทรัพย์สินทางปัญญา'
-    }
-  ],
-  'industry-extension': [
-    {
-      value: 'ipRegistration',
-      label: 'การยื่นขอจดทะเบียนทรัพย์สินทางปัญญา (มีเลขคำขอฯ)',
-      description: 'ยื่นคำขอจดทะเบียนทรัพย์สินทางปัญญาเพื่อเตรียมการใช้ประโยชน์'
-    }
-  ]
+const OUTCOME_OPTION_KEYS_BY_FUNDING = {
+  'new-researcher': ['internationalConference', 'scopusJournal', 'tciJournal', 'patent'],
+  'researcher-development': ['scopusJournal', 'tciJournal', 'patent'],
+  'strategic-research': ['scopusJournal', 'tciJournal', 'patent'],
+  'industry-extension': ['ipRegistration']
 }
 
 export default {
@@ -155,20 +89,117 @@ export default {
     }
   },
   computed: {
+    isEnglishLocale() {
+      const locale = String((this.$i18n && this.$i18n.locale) || '')
+      return locale.toLowerCase().startsWith('en')
+    },
+    sectionLabels() {
+      return this.isEnglishLocale
+        ? {
+            'new-researcher': '14.1 New Researcher Grant',
+            'researcher-development': '14.2 Researcher Development Grant',
+            'strategic-research': '14.3 Strategic Research Grant',
+            'industry-extension': '14.4 Industry Extension Grant'
+          }
+        : {
+            'new-researcher': '14.1 ???????????????????',
+            'researcher-development': '14.2 ????????????????',
+            'strategic-research': '14.3 ????????????????????????????????',
+            'industry-extension': '14.4 ?????????????????????????'
+          }
+    },
+    outcomeOptionDictionary() {
+      return this.isEnglishLocale
+        ? {
+            internationalConference: {
+              value: 'internationalConference',
+              label: 'International academic conference presentation (Proceedings)',
+              description: 'Disseminate research at an international academic conference.'
+            },
+            scopusJournal: {
+              value: 'scopusJournal',
+              label: 'International journal publication in an approved index',
+              description: 'Publish a research article in an internationally recognized journal.'
+            },
+            tciJournal: {
+              value: 'tciJournal',
+              label: 'TCI Group 1 journal publication only',
+              description: 'Publish an article in a TCI Group 1 journal according to the criteria.'
+            },
+            patent: {
+              value: 'patent',
+              label: 'Petty patent / Patent',
+              description: 'Develop knowledge toward intellectual property protection.'
+            },
+            ipRegistration: {
+              value: 'ipRegistration',
+              label: 'Intellectual property registration application (with application number)',
+              description: 'File an intellectual property registration application for future utilization.'
+            }
+          }
+        : {
+            internationalConference: {
+              value: 'internationalConference',
+              label: '????????????????????????????????????? (Proceedings)',
+              description: '???????????????????????????????????????????'
+            },
+            scopusJournal: {
+              value: 'scopusJournal',
+              label: '?????????????????????????????? ?.?.?.',
+              description: '????????????????????????????????????????????????????'
+            },
+            tciJournal: {
+              value: 'tciJournal',
+              label: '????????????? TCI ????? 1 ????????',
+              description: '????????????????????? TCI ????? 1 ????????????????'
+            },
+            patent: {
+              value: 'patent',
+              label: '????????????/?????????',
+              description: '???????????????????????????????????????????????'
+            },
+            ipRegistration: {
+              value: 'ipRegistration',
+              label: '??????????????????????????????????? (??????????)',
+              description: '???????????????????????????????????????????????????????????'
+            }
+          }
+    },
+    chooseFundingFirstText() {
+      return this.isEnglishLocale
+        ? 'Please select the funding type in section 2 before choosing an outcome.'
+        : '?????????? "?????????" ??????????? 2 ?????????????????'
+    },
+    introText() {
+      return this.isEnglishLocale
+        ? 'Select 1 expected outcome that matches the selected funding type.'
+        : '????? 1 ???????????????????????????????????????????????????????'
+    },
+    promptText() {
+      return this.isEnglishLocale
+        ? 'Please select 1 expected outcome'
+        : '?????????? 1 ????????????????????????'
+    },
     hasFundingType() {
       return Boolean(this.outcomeOptions.length)
     },
     currentFundingSectionLabel() {
-      return FUNDING_SECTION_LABELS[this.fundingType] || ''
+      return this.sectionLabels[this.fundingType] || ''
     },
     outcomeOptions() {
-      return OUTCOME_OPTIONS_BY_FUNDING[this.fundingType] || []
+      const keys = OUTCOME_OPTION_KEYS_BY_FUNDING[this.fundingType] || []
+      return keys.map((key) => this.outcomeOptionDictionary[key]).filter(Boolean)
     },
     selectedOutcomeOption() {
       return this.outcomeOptions.find((item) => item.value === this.selectedOutcome) || null
     },
     selectedOutcomeLabel() {
       return this.selectedOutcomeOption ? this.selectedOutcomeOption.label : ''
+    },
+    selectedOutcomeText() {
+      return this.isEnglishLocale
+        ? `Selected: ${this.selectedOutcomeLabel}`
+        : `?????????: ${this.selectedOutcomeLabel}`
     },
     isOutcomeSelected() {
       return Boolean(this.selectedOutcomeOption)
@@ -296,119 +327,50 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
-  font-weight: 700;
-  flex: 0 0 20px;
-  margin-top: 2px;
+  font-size: 0.74rem;
+  flex: 0 0 auto;
 }
 
 .expected-outcome-card__marker.is-active {
-  border-color: #2563eb;
-  background: #2563eb;
+  border-color: #1d4ed8;
+  background: #1d4ed8;
   color: #ffffff;
 }
 
 .expected-outcome-summary {
   margin-top: 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  background: #f8fafc;
-  padding: 9px 11px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 0.82rem;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
   font-weight: 700;
-  color: #475569;
 }
 
 .expected-outcome-summary.is-complete {
   background: #ecfdf3;
-  border-color: #86efac;
-  color: #166534;
+  color: #15803d;
+}
+
+.expected-outcome-summary.is-incomplete {
+  background: #fff7ed;
+  color: #b45309;
 }
 
 .expected-outcome-summary__icon {
-  font-size: 0.84rem;
-  line-height: 1;
-}
-
-.expected-outcomes-section.is-dark .funding-options {
-  background: #1a2432;
-  border: 1px solid #2f3f52;
-}
-
-.expected-outcomes-section.is-dark .expected-outcome-selector {
-  background: #1a2432;
-  border-color: #324458;
-}
-
-.expected-outcomes-section.is-dark .expected-outcome-selector__title {
-  color: #e6edf7;
-}
-
-.expected-outcomes-section.is-dark .expected-outcome-selector__intro,
-.expected-outcomes-section.is-dark .expected-outcome-card__description {
-  color: #aab9ca;
-}
-
-.expected-outcomes-section.is-dark .expected-outcome-card {
-  background: #202c3a;
-  border-color: #35506a;
-}
-
-.expected-outcomes-section.is-dark .expected-outcome-card:hover {
-  border-color: #557a9d;
-  background: #243243;
-}
-
-.expected-outcomes-section.is-dark .expected-outcome-card.is-active {
-  border-color: #6aa7ff;
-  box-shadow: 0 0 0 3px rgba(106, 167, 255, 0.22);
-  background: rgba(29, 78, 216, 0.26);
-}
-
-.expected-outcomes-section.is-dark .expected-outcome-card__title {
-  color: #e6edf7;
-}
-
-.expected-outcomes-section.is-dark .expected-outcome-card__marker {
-  border-color: #496786;
-  background: #223142;
-}
-
-.expected-outcomes-section.is-dark .expected-outcome-card__marker.is-active {
-  border-color: #7fb6ff;
-  background: #4f86db;
-}
-
-.expected-outcomes-section.is-dark .expected-outcome-summary.is-complete {
-  background: rgba(34, 197, 94, 0.18);
-  border-color: rgba(74, 222, 128, 0.4);
-  color: #bbf7d0;
-}
-
-.expected-outcomes-section.is-dark .expected-outcome-summary.is-incomplete {
-  background: rgba(30, 41, 59, 0.72);
-  border-color: #3b5168;
-  color: #cbd5e1;
-}
-
-.expected-outcomes-section.is-dark .alert.alert-warning {
-  background: rgba(245, 158, 11, 0.18);
-  border-color: rgba(245, 158, 11, 0.35);
-  color: #f8d48a;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 @media (max-width: 768px) {
-  .expected-outcome-selector {
-    padding: 12px;
-  }
   .expected-outcome-selector__grid {
     grid-template-columns: 1fr;
-  }
-  .expected-outcome-summary {
-    width: 100%;
   }
 }
 </style>

@@ -10,10 +10,10 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col-12">
-          <h2 class="mb-4">แบบฟอร์มข้อมูลการวิจัย</h2>
+          <h2 class="mb-4">{{ pageText.pageTitle }}</h2>
           <div v-if="isAdminView" class="admin-view-banner"
             style="background:#e8f4ff;border-left:4px solid #1a73e8;padding:10px 16px;margin-bottom:16px;border-radius:4px;font-size:14px;color:#1a73e8">
-            โหมดดูข้อมูล (Admin View) - ไม่สามารถแก้ไขได้
+            {{ pageText.adminViewBanner }}
           </div>
         </div>
       </div>
@@ -300,17 +300,17 @@
       <div v-if="!isAdminView && viewProposalId" class="card mt-3 mb-5">
         <div class="card-body">
           <CAlert v-if="isRevisionRequested" color="warning" show class="mb-3">
-            โครงการนี้อยู่ในสถานะขอแก้ไขเพิ่มเติม คุณสามารถแก้ไขข้อมูล บันทึก และส่งแก้ไขอีกครั้งได้
+            {{ pageText.revisionRequestedAlert }}
           </CAlert>
           <CAlert v-else-if="isRejectedStatus" color="danger" show class="mb-3">
-            โครงการนี้ไม่อนุมัติ และไม่สามารถส่งแก้ไขอีกครั้งใน workflow เดิมได้
+            {{ pageText.rejectedAlert }}
           </CAlert>
           <CAlert v-else-if="isApprovedStatus" color="success" show class="mb-3">
-            โครงการนี้ได้รับการอนุมัติแล้ว
+            {{ pageText.approvedAlert }}
           </CAlert>
 
           <div v-if="isRevisionRequested && pendingFeedbackSectionsForResubmit.length" class="alert alert-info mb-3">
-            กรุณาส่งแก้ไขรายหัวข้อให้ครบก่อนส่งเอกสารแก้ไขอีกครั้ง
+            {{ pageText.pendingRevisionSectionsAlert }}
             <ul class="mb-0 mt-2 pl-3">
               <li
                 v-for="section in pendingFeedbackSectionsForResubmit"
@@ -328,7 +328,7 @@
               :disabled="savingRevision"
               @click="saveRevisionChanges"
             >
-              <CIcon name="cil-pencil" class="mr-1" /> {{ savingRevision ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
+              <CIcon name="cil-pencil" class="mr-1" /> {{ savingRevision ? pageText.savingLabel : pageText.saveRevisionButton }}
             </CButton>
             <CButton
               class="revision-action-btn revision-action-btn--submit"
@@ -336,7 +336,7 @@
               :disabled="submittingRevision || !canResubmitRevision"
               @click="resubmitRevision"
             >
-              <CIcon name="cil-paper-plane" class="mr-1" /> {{ submittingRevision ? 'กำลังส่ง...' : 'ส่งแก้ไขอีกครั้ง' }}
+              <CIcon name="cil-paper-plane" class="mr-1" /> {{ submittingRevision ? pageText.submittingLabel : pageText.resubmitButton }}
             </CButton>
           </div>
         </div>
@@ -346,7 +346,7 @@
         <div class="d-flex justify-content-between align-items-center w-100 px-2">
 
           <div class="d-flex align-items-center" style="gap: 12px;">
-            <span class="me-2 fw-bold text-muted">สถานะ:</span>
+            <span class="me-2 fw-bold text-muted">{{ pageText.statusLabel }}</span>
             <StatusBadge :status="currentStatus" role="researcher" :round-source="loadedProposal" />
             <span
               v-if="isAutoSaving || isDraftSaving"
@@ -367,9 +367,9 @@
             <span
               v-if="isAutoSaving || isDraftSaving"
               class="save-hint"
-              title="บันทึกอัตโนมัติ"
+              :title="pageText.autoSaveTitle"
             >
-              กำลังเซฟ
+              {{ pageText.savingHint }}
             </span>
           </div>
 
@@ -377,7 +377,7 @@
             <div v-if="showSubmitButton" class="px-3 py-2 rounded text-success fw-bold d-flex align-items-center"
               style="background-color: #d1e7dd; border: 1px solid #badbcc;">
               <i class="cil-check-circle me-2"></i>
-              {{ currentStatus === 'pending_confirm' ? 'ส่งขอความยินยอมแล้ว' : 'ยื่นโครงการวิจัยแล้ว' }}
+              {{ currentStatus === 'pending_confirm' ? pageText.pendingConfirmSubmitted : pageText.submittedBadge }}
             </div>
 
             <button
@@ -388,13 +388,13 @@
               @click="deleteDraftProposal"
             >
               <CIcon :content="$options.icons.cilTrash" class="me-2" />
-              ลบโครงการ
+              {{ pageText.deleteProjectButton }}
             </button>
 
             <button v-if="showDraftActions" type="button" class="btn btn-lg text-white"
               style="background-color: #8b1212; border-color: #8b1212;" @click="submitProject">
               <CIcon :content="$options.icons.cilPaperPlane" class="me-2" />
-              ยื่นโครงการ
+              {{ pageText.submitProjectButton }}
             </button>
 
             <button
@@ -412,7 +412,7 @@
               style="background-color: #b58522; border-color: #b58522;" :disabled="isExportingPdf" @click="exportProposalPdf">
               <i v-if="isExportingPdf" class="cil-loop export-pdf-icon--spin" aria-hidden="true"></i>
               <i v-else class="cil-cloud-download" aria-hidden="true"></i>
-              {{ isExportingPdf ? 'กำลังสร้าง PDF...' : 'Export PDF' }}
+              {{ isExportingPdf ? pageText.exportingPdf : pageText.exportPdf }}
             </button>
           </div>
 
@@ -1135,6 +1135,56 @@ export default {
   computed: {
     isDarkTheme () {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+    isEnglishLocale () {
+      const locale = String((this.$i18n && this.$i18n.locale) || '').trim().toLowerCase()
+      return locale === 'en'
+    },
+    pageText () {
+      if (this.isEnglishLocale) {
+        return {
+          pageTitle: 'Research Information Form',
+          adminViewBanner: 'View-only mode (Admin View) - editing is disabled',
+          revisionRequestedAlert: 'This proposal requires revision. You can edit, save, and resubmit it.',
+          rejectedAlert: 'This proposal was rejected and cannot be resubmitted in the current workflow.',
+          approvedAlert: 'This proposal has already been approved.',
+          pendingRevisionSectionsAlert: 'Please submit all required section revisions before resubmitting the proposal.',
+          savingLabel: 'Saving...',
+          saveRevisionButton: 'Save Revision',
+          submittingLabel: 'Submitting...',
+          resubmitButton: 'Resubmit Revision',
+          statusLabel: 'Status:',
+          autoSaveTitle: 'Auto save',
+          savingHint: 'Saving',
+          pendingConfirmSubmitted: 'Consent request sent',
+          submittedBadge: 'Proposal submitted',
+          deleteProjectButton: 'Delete Project',
+          submitProjectButton: 'Submit Proposal',
+          exportingPdf: 'Generating PDF...',
+          exportPdf: 'Export PDF'
+        }
+      }
+      return {
+        pageTitle: '??????????????????????',
+        adminViewBanner: '???????????? (Admin View) - ?????????????????',
+        revisionRequestedAlert: '????????????????????????????????????? ???????????????????? ?????? ??????????????????????',
+        rejectedAlert: '???????????????????? ?????????????????????????????? workflow ???????',
+        approvedAlert: '??????????????????????????????',
+        pendingRevisionSectionsAlert: '??????????????????????????????????????????????????????',
+        savingLabel: '???????????...',
+        saveRevisionButton: '??????????????',
+        submittingLabel: '????????...',
+        resubmitButton: '????????????????',
+        statusLabel: '?????:',
+        autoSaveTitle: '???????????????',
+        savingHint: '????????',
+        pendingConfirmSubmitted: '???????????????????',
+        submittedBadge: '????????????????????',
+        deleteProjectButton: '?????????',
+        submitProjectButton: '???????????',
+        exportingPdf: '?????????? PDF...',
+        exportPdf: 'Export PDF'
+      }
     },
     stickyOverlayChecklistItems () {
       const detailsForm = this.$refs && this.$refs.projectDetailsForm
