@@ -255,8 +255,10 @@ import {
   IN_PROGRESS_STATUSES,
   PROPOSAL_STATUSES,
   PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_BADGE_COLORS,
+  PROPOSAL_STATUS_LABELS_TH_BADGE,
   PROPOSAL_STATUS_LABELS_TH_RESEARCHER as STATUS_LABEL_MAP,
   STATUS_STEP_MAP,
+  getProposalStatusLabel,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
@@ -715,13 +717,12 @@ export default {
 
     getStatusLabel(itemOrStatus) {
       const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
-      const key = String(item ? item.currentStatus : itemOrStatus || '').toLowerCase()
-      const roundNo = this.deriveRoundNo(itemOrStatus)
-
-      if (key === 'under_review' || key === 'second_round_review') {
-        return `พิจารณารอบ ${roundNo}`
-      }
-      return STATUS_LABEL_MAP[key] || key || this.$t('status.inProgress')
+      const status = item ? item.currentStatus : itemOrStatus
+      return getProposalStatusLabel(
+        status,
+        PROPOSAL_STATUS_LABELS_TH_BADGE,
+        item || this.deriveRoundNo(itemOrStatus)
+      ) || this.$t('status.inProgress')
     },
 
     getStatusBadgeColor(status) {

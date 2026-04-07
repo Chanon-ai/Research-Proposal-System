@@ -438,7 +438,7 @@ const STATUS_FLOW_ALLOWED_TRANSITIONS = Object.freeze({
   assigned_to_committee: ['under_review'],
   under_review: ['committee_valuated'],
   committee_valuated: ['meeting_completed'],
-  meeting_completed: ['revision_requested', 'approved', 'rejected'],
+  meeting_completed: ['announced'],
   revision_requested: ['resubmitted'],
   resubmitted: ['second_round_review'],
   second_round_review: ['committee_valuated'],

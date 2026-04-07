@@ -26,6 +26,12 @@ function handleKnownProposalError(res, err) {
       data: err.meta || null
     });
   }
+  if (err.code === 'ADMIN_MANUAL_FINAL_STATUS_DISABLED') {
+    return res.status(err.statusCode || 400).json({
+      success: false,
+      message: err.message || 'Admin cannot manually change status to approved or rejected'
+    });
+  }
   return false;
 }
 
@@ -413,6 +419,7 @@ exports.changeStatus = async (req, res, next) => {
     const proposal = await service.changeProposalStatus(req.params.id, toStatus, remark, user);
     return jsonResponse(res, { success: true, message: 'Status changed', data: proposal });
   } catch (err) {
+    if (handleKnownProposalError(res, err)) return;
     next(err);
   }
 };

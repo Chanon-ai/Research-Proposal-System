@@ -183,7 +183,9 @@ import {
   mapRoleForResearchAccess
 } from '@/ResearchFormRS/utils/rolePageAccessRuntime'
 import {
+  PROPOSAL_STATUS_LABELS_TH_BADGE as STATUS_LABELS,
   PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_COLORS,
+  getProposalStatusLabel,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
@@ -744,17 +746,7 @@ export default {
         ? Number(roundNo)
         : (String(status || '').toLowerCase() === 'second_round_review' ? 2 : 1)
       const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)
-
-      if (displayStatus === 'assigned_to_committee') return 'รอการประเมิน'
-      if (displayStatus === 'under_review' || displayStatus === 'second_round_review') {
-        return `พิจารณารอบ ${resolvedRound}`
-      }
-      if (displayStatus === 'committee_valuated') return 'ส่งผลการประเมินแล้ว'
-      if (displayStatus === 'revision_requested') return 'ขอแก้ไข'
-      if (displayStatus === 'resubmitted') return 'ส่งแก้ไขแล้ว'
-      if (displayStatus === 'announced') return 'ประกาศผล'
-
-      return status || '-'
+      return getProposalStatusLabel(displayStatus, STATUS_LABELS, resolvedRound)
     },
     statusColor (status, reviewStatus = null) {
       const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)

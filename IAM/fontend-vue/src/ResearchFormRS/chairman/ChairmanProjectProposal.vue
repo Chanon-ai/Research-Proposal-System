@@ -67,8 +67,8 @@
                 </template>
                 <template #statusDisplay="{item}">
                   <td class="current-status-cell">
-                    <CBadge class="mb-2 status-badge" :color="statusColor(item.status, item.reviewStatus)">
-                      {{ statusLabel(item.status, item.roundNo, item.reviewStatus) }}
+                    <CBadge class="mb-2 status-badge" :color="statusColor(item.status, item.reviewStatus, item.reviewDecision)">
+                      {{ statusLabel(item.status, item.roundNo, item.reviewStatus, item.reviewDecision) }}
                     </CBadge>
                     <div class="status-progress-label">
                       {{ getProgressLabel(item) }}
@@ -183,7 +183,9 @@ import {
   mapRoleForResearchAccess
 } from '@/ResearchFormRS/utils/rolePageAccessRuntime'
 import {
+  PROPOSAL_STATUS_LABELS_TH_BADGE as STATUS_LABELS,
   PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_COLORS,
+  getProposalStatusLabel,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
@@ -320,11 +322,11 @@ export default {
         const decisionCode = review && review.decision ? String(review.decision).toLowerCase() : ''
         const decisionDisplay = this.decisionLabel(decisionCode, isReviewed)
         const roundNo = this.deriveRoundNo(p)
-        const chairmanStatusKey = this.getCommitteeStatusKey(currentStatus, reviewStatus)
-        const chairmanProgressDisplay = this.statusLabel(currentStatus, roundNo, reviewStatus)
-        const chairmanProgress = chairmanStatusKey === 'reviewed'
+        const chairmanStatusKey = this.getCommitteeStatusKey(currentStatus, reviewStatus, decisionCode)
+        const chairmanProgressDisplay = this.statusLabel(currentStatus, roundNo, reviewStatus, decisionCode)
+        const chairmanProgress = chairmanStatusKey === 'approved' || chairmanStatusKey === 'rejected'
           ? 'review_submitted'
-          : (chairmanStatusKey === 'announced' ? 'announced' : 'waiting_for_review')
+          : 'waiting_for_review'
         const latestTs = this.getLatestStatusUpdatedAt(p)
 
         return {
@@ -350,7 +352,7 @@ export default {
             mime: f.mime || 'application/octet-stream',
             content: f.content || ''
           })),
-          statusDisplay: this.statusLabel(currentStatus, roundNo, reviewStatus)
+          statusDisplay: this.statusLabel(currentStatus, roundNo, reviewStatus, decisionCode)
         }
       })
     },
@@ -366,7 +368,7 @@ export default {
         })
       },
     summaryTiles () {
-      const bucketStatus = (item) => item.committeeStatusKey || this.getCommitteeStatusKey(item.status, item.reviewStatus)
+      const bucketStatus = (item) => item.committeeStatusKey || this.getCommitteeStatusKey(item.status, item.reviewStatus, item.reviewDecision)
       const base = this.assignedProposals.map(p => ({
         ...p,
         lastUpdatedAt: p.lastUpdatedAt,
@@ -376,16 +378,16 @@ export default {
       return [
         { key: 'ALL', label: 'ทั้งหมด', icon: 'cil-list', filter: 'all', count: base.length },
         { key: 'PENDING', label: 'รอการพิจารณา', icon: 'cil-clock', filter: 'pending', count: countBy('pending') },
-        { key: 'REVIEWED', label: 'ตัดสินแล้ว', icon: 'cil-check-circle', filter: 'reviewed', count: countBy('reviewed') },
-        { key: 'ANNOUNCED', label: 'ประกาศผล', icon: 'cil-bullhorn', filter: 'announced', count: countBy('announced') }
+        { key: 'APPROVED', label: 'ประธานอนุมัติ', icon: 'cil-check-circle', filter: 'approved', count: countBy('approved') },
+        { key: 'REJECTED', label: 'ประธานไม่อนุมัติ', icon: 'cil-x-circle', filter: 'rejected', count: countBy('rejected') }
       ]
     },
     tableItems () {
       const items = this.assignedProposals.map(p => ({
         ...p,
         lastUpdatedAt: p.lastUpdatedAt,
-        statusDisplay: this.statusLabel(p.status, p.roundNo, p.reviewStatus),
-        bucketStatus: p.committeeStatusKey || this.getCommitteeStatusKey(p.status, p.reviewStatus)
+        statusDisplay: this.statusLabel(p.status, p.roundNo, p.reviewStatus, p.reviewDecision),
+        bucketStatus: p.committeeStatusKey || this.getCommitteeStatusKey(p.status, p.reviewStatus, p.reviewDecision)
       }))
       const filteredItems = this.filterStatus === 'all'
         ? items
@@ -723,20 +725,25 @@ export default {
         : ''
       return reviewedBy === this.currentUserId
     },
-    getCommitteeStatusKey (status, reviewStatus = null) {
+    getCommitteeStatusKey (status, reviewStatus = null, reviewDecision = null) {
+      const decisionKey = String(reviewDecision || '').trim().toLowerCase()
       const key = normalizeProposalStatus(status)
-      if (key === 'announced') return 'announced'
-      if (this.isCommitteeReviewSubmitted(reviewStatus)) return 'reviewed'
+      if (this.isCommitteeReviewSubmitted(reviewStatus) && decisionKey === 'approve') return 'approved'
+      if (this.isCommitteeReviewSubmitted(reviewStatus) && decisionKey === 'reject') return 'rejected'
       if (CHAIRMAN_PENDING_STATUSES.includes(key)) return 'pending'
-      if (CHAIRMAN_REVIEWED_STATUSES.includes(key)) return 'reviewed'
+      if (key === 'faculty_approved') return 'approved'
+      if (key === 'faculty_rejected' || key === 'rejected') return 'rejected'
+      if (CHAIRMAN_REVIEWED_STATUSES.includes(key)) return 'pending'
       return 'pending'
     },
-    getCommitteeDisplayStatus (status, reviewStatus = null) {
+    getCommitteeDisplayStatus (status, reviewStatus = null, reviewDecision = null) {
+      const decisionKey = String(reviewDecision || '').trim().toLowerCase()
       const key = normalizeProposalStatus(status)
-      if (key === 'announced') return key
-      if (this.isCommitteeReviewSubmitted(reviewStatus) && key === 'faculty_review_pending') return 'faculty_review_pending'
-      if (key === 'faculty_approved' || key === 'faculty_rejected' || key === 'rejected') return key
-      return key
+      if (this.isCommitteeReviewSubmitted(reviewStatus) && decisionKey === 'approve') return 'faculty_approved'
+      if (this.isCommitteeReviewSubmitted(reviewStatus) && decisionKey === 'reject') return 'faculty_rejected'
+      if (key === 'faculty_approved') return 'faculty_approved'
+      if (key === 'faculty_rejected' || key === 'rejected') return 'faculty_rejected'
+      return 'faculty_review_pending'
     },
     statusLabelClass (status) {
       switch (status) {
@@ -750,32 +757,24 @@ export default {
         default: return 'status-label--secondary'
       }
     },
-    statusLabel (status, roundNo, reviewStatus = null) {
-      const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)
-
-      if (displayStatus === 'faculty_review_pending') return 'ประธานกำลังพิจารณา'
-      if (displayStatus === 'faculty_approved') return 'ประธานอนุมัติ'
-      if (displayStatus === 'rejected') return 'ประธานไม่อนุมัติ'
-      if (displayStatus === 'faculty_rejected') return 'ประธานไม่อนุมัติ'
-      if (displayStatus === 'announced') return 'ประกาศผล'
-
-      return status || '-'
+    statusLabel (status, roundNo, reviewStatus = null, reviewDecision = null) {
+      const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus, reviewDecision)
+      return getProposalStatusLabel(displayStatus, STATUS_LABELS, roundNo)
     },
-    statusColor (status, reviewStatus = null) {
-      const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)
+    statusColor (status, reviewStatus = null, reviewDecision = null) {
+      const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus, reviewDecision)
       return STATUS_COLORS[normalizeProposalStatus(displayStatus)] || 'secondary'
     },
     getProgressLabel (itemOrStatus) {
       const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
       const status = item ? item.status : itemOrStatus
       const reviewStatus = item ? item.reviewStatus : null
-      const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)
+      const reviewDecision = item ? item.reviewDecision : null
+      const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus, reviewDecision)
 
       if (displayStatus === 'faculty_review_pending') return 'ประธานสำนัก : รอพิจารณา/กำลังพิจารณา'
       if (displayStatus === 'faculty_approved') return 'ประธานสำนัก : อนุมัติแล้ว'
-      if (displayStatus === 'rejected') return 'ประธานสำนัก : ไม่อนุมัติ'
       if (displayStatus === 'faculty_rejected') return 'ประธานสำนัก : ไม่อนุมัติ'
-      if (displayStatus === 'announced') return 'สำนักงานบริหารโครงการ : ประกาศผล'
 
       return 'ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ'
     },

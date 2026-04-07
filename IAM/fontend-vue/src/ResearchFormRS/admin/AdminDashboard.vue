@@ -366,7 +366,7 @@ import {
   PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
   PROPOSAL_STATUS_KEYS as STATUS_KEYS,
-  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
+  PROPOSAL_STATUS_LABELS_TH_BADGE as STATUS_LABELS,
   deriveProposalRoundNo,
   getProposalStatusLabel,
   normalizeProposalStatus
@@ -855,18 +855,7 @@ export default {
       return card && Array.isArray(card.statuses) ? card.statuses : []
     },
     getStatusLabel (status, roundSource = null, options = {}) {
-      const key = normalizeProposalStatus(status)
-      const useDynamicReviewLabel = key === 'under_review' || key === 'second_round_review'
-      if (!useDynamicReviewLabel) {
-        try {
-          const i18nKey = `status.${key}`
-          const translated = this.$t(i18nKey)
-          if (translated && translated !== i18nKey) return translated
-        } catch (e) {
-          // Fallback to static label map when i18n lookup fails.
-        }
-      }
-      return getProposalStatusLabel(key, STATUS_LABELS, roundSource, options)
+      return getProposalStatusLabel(status, STATUS_LABELS, roundSource, options)
     },
     getStatusBadgeColor (status) {
       return STATUS_COLORS[normalizeProposalStatus(status)] || 'secondary'

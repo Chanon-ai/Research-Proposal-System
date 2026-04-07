@@ -26,13 +26,15 @@ const ALLOWED_TRANSITIONS = {
   [STATUS.ASSIGNED_TO_COMMITTEE]: [STATUS.UNDER_REVIEW],
   [STATUS.UNDER_REVIEW]: [STATUS.COMMITTEE_VALUATED],
   [STATUS.COMMITTEE_VALUATED]: [STATUS.MEETING_COMPLETED],
-  [STATUS.MEETING_COMPLETED]: [STATUS.REVISION_REQUESTED, STATUS.APPROVED, STATUS.REJECTED],
+  [STATUS.MEETING_COMPLETED]: [STATUS.ANNOUNCED],
   [STATUS.REVISION_REQUESTED]: [STATUS.RESUBMITTED],
   [STATUS.RESUBMITTED]: [STATUS.SECOND_ROUND_REVIEW],
   [STATUS.SECOND_ROUND_REVIEW]: [STATUS.COMMITTEE_VALUATED],
   [STATUS.APPROVED]: [STATUS.ANNOUNCED],
   [STATUS.REJECTED]: [STATUS.ANNOUNCED]
 };
+
+const ADMIN_BLOCKED_MANUAL_STATUSES = new Set([STATUS.APPROVED, STATUS.REJECTED]);
 
 const FUNDING_BUDGET_LIMITS = Object.freeze({
   'new-researcher': 100000,
@@ -1012,6 +1014,13 @@ async function changeProposalStatus(id, toStatus, remark, user) {
   const currentRound = normalizeRoundNo(proposal.currentRound, 1);
   const fromStatus = STATUS.normalizeStatus(proposal.currentStatus);
   toStatus = STATUS.normalizeStatus(toStatus);
+
+  if (String((user && user.role) || '').trim().toLowerCase() === 'admin' && ADMIN_BLOCKED_MANUAL_STATUSES.has(toStatus)) {
+    const err = new Error('Admin cannot manually change status to approved or rejected');
+    err.code = 'ADMIN_MANUAL_FINAL_STATUS_DISABLED';
+    err.statusCode = 400;
+    throw err;
+  }
 
   let allowed = ALLOWED_TRANSITIONS[fromStatus] || [];
   const submittedReviewCount = await ProposalReview.countDocuments({

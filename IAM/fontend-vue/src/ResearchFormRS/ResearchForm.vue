@@ -964,6 +964,7 @@ const FEEDBACK_SECTION_BASELINE_STORAGE_PREFIX = 'research_form_feedback_section
 const SUBMIT_SUCCESS_PENDING_STORAGE_PREFIX = 'research_form_submit_success_pending'
 const BASE_MEETING_START_TIME = '06:00'
 const CHAIRMAN_CHECKLIST_FIELD_KEY = 'checklist_payload'
+const ADMIN_BLOCKED_MANUAL_STATUSES = Object.freeze(['approved', 'rejected'])
 
 export default {
   name: 'ResearchForm',
@@ -1319,7 +1320,7 @@ export default {
     },
     adminNextStatusOptions () {
       const current = String(this.currentStatus || '').trim()
-      const statuses = ADMIN_ALLOWED_TRANSITIONS[current] || []
+      const statuses = (ADMIN_ALLOWED_TRANSITIONS[current] || []).filter(status => !this.isAdminManualStatusBlocked(status))
       if (!statuses.length) return [{ value: '', label: 'ไม่มีสถานะถัดไปที่อนุญาต' }]
       return [{
         value: '',
@@ -1671,11 +1672,15 @@ export default {
       return this.showDraftActions && Boolean(this.viewProposalId)
     },
     adminDecisionOptions () {
+      const current = String(this.currentStatus || '').trim()
+      const statuses = (ADMIN_ALLOWED_TRANSITIONS[current] || []).filter(status => !this.isAdminManualStatusBlocked(status))
+      if (!statuses.length) return [{ value: '', label: 'ไม่มีผลการตัดสินใจที่อนุญาต' }]
       return [
         { value: '', label: 'เลือกผลการตัดสินใจ' },
-        { value: 'revision_requested', label: 'ขอแก้ไขเพิ่มเติม' },
-        { value: 'approved', label: 'อนุมัติ' },
-        { value: 'rejected', label: 'ไม่อนุมัติ' }
+        ...statuses.map(status => ({
+          value: status,
+          label: status === 'second_round_review' ? 'ส่งให้คณะกรรมการพิจารณา' : this.adminGetStatusLabel(status)
+        }))
       ]
     },
     isSidebarOpen() {
@@ -2428,6 +2433,10 @@ export default {
     },
     async confirmAdminChangeStatus () {
       if (!this.isAdminView || !this.viewProposalId || !this.adminNewStatus) return
+      if (this.isAdminManualStatusBlocked(this.adminNewStatus)) {
+        await Swal.fire('เปลี่ยนสถานะไม่สำเร็จ', 'แอดมินไม่สามารถเปลี่ยนสถานะเป็นอนุมัติหรือไม่อนุมัติได้', 'error')
+        return
+      }
       this.adminSubmittingStatus = true
       try {
         await Service.proposal.changeStatus(this.viewProposalId, {
@@ -2878,11 +2887,23 @@ export default {
       if (status === 'submitted') return 'ยื่นแล้ว'
       return status || '-'
     },
+    isAdminManualStatusBlocked (status) {
+      const normalizedStatus = String(normalizeProposalStatus(status) || status || '').trim().toLowerCase()
+      return ADMIN_BLOCKED_MANUAL_STATUSES.includes(normalizedStatus)
+    },
     onAdminFinalDecisionChange (val) {
       this.adminFinalDecision = val && val.target ? val.target.value : val
     },
     async saveAdminFinalDecision () {
       if (!this.isAdminView || !this.viewProposalId || !this.adminFinalDecision) return
+      if (this.isAdminManualStatusBlocked(this.adminFinalDecision)) {
+        await this.showAlert({
+          icon: 'error',
+          title: 'บันทึกผลการตัดสินใจไม่สำเร็จ',
+          text: 'แอดมินไม่สามารถเปลี่ยนสถานะเป็นอนุมัติหรือไม่อนุมัติได้'
+        })
+        return
+      }
 
       this.savingAdminDecision = true
       try {
