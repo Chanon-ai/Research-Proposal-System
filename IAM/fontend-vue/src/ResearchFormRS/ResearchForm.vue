@@ -216,6 +216,57 @@
               </div>
             </div>
 
+            <div v-if="chairmanReviewCards.length" class="card mb-3 review-summary-card" style="background: #fffaf0; border-color: #f3d19a;">
+              <div class="card-body">
+                <h6 class="mb-3">สรุป Checklist จากประธาน</h6>
+                <div
+                  v-for="card in chairmanReviewCards"
+                  :key="card.reviewId"
+                  class="card mb-2 chairman-review-card"
+                >
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6 mb-1"><strong>ผู้ประเมิน:</strong> {{ reviewerName(card.review) }}</div>
+                      <div class="col-md-6 mb-1"><strong>วันที่ส่ง:</strong> {{ formatReviewDateTime(card.review.submittedAt || card.review.updatedAt) }}</div>
+                      <div class="col-md-6 mb-1"><strong>ผลการพิจารณา:</strong> {{ decisionLabel(card.review.decision) }}</div>
+                      <div class="col-md-6 mb-1"><strong>Checklist ที่เลือก:</strong> {{ card.checkedCount }}/{{ card.totalItems }} ข้อ</div>
+                      <div class="col-md-12 mb-2"><strong>ประเภททุนอ้างอิง:</strong> {{ card.fundingTypeLabel }}</div>
+                      <div class="col-12 mb-2"><strong>สรุปข้อเสนอแนะ:</strong> {{ card.review.summaryComment || '-' }}</div>
+                    </div>
+
+                    <div v-if="card.sections.length" class="chairman-review-card__sections">
+                      <div
+                        v-for="section in card.sections"
+                        :key="card.reviewId + '-' + section.sectionKey"
+                        class="chairman-review-card__section"
+                      >
+                        <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
+                          <div class="font-weight-bold">{{ section.sectionLabel }}</div>
+                          <CBadge color="warning" class="chairman-review-card__badge">{{ section.checkedItems.length }}/{{ section.totalItems }} ข้อ</CBadge>
+                        </div>
+                        <div v-if="section.checkedItems.length" class="mt-2">
+                          <ul class="mb-0 pl-3 chairman-review-card__list">
+                            <li
+                              v-for="item in section.checkedItems"
+                              :key="card.reviewId + '-' + section.sectionKey + '-' + item.itemKey"
+                            >
+                              {{ item.label }}
+                            </li>
+                          </ul>
+                        </div>
+                        <div v-else class="text-muted small mt-2">
+                          ไม่มีรายการที่ติ๊กในหัวข้อนี้
+                        </div>
+                      </div>
+                    </div>
+                    <div v-else class="text-muted small">
+                      ไม่พบ payload checklist จากผลประเมินของประธาน
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div v-if="!groupedReviews.length" class="text-muted">
               ยังไม่มีผลการประเมินจากคณะกรรมการ
             </div>
@@ -827,6 +878,7 @@ const FEEDBACK_SECTION_PROGRESS_STORAGE_PREFIX = 'research_form_feedback_section
 const FEEDBACK_SECTION_BASELINE_STORAGE_PREFIX = 'research_form_feedback_section_baseline'
 const SUBMIT_SUCCESS_PENDING_STORAGE_PREFIX = 'research_form_submit_success_pending'
 const BASE_MEETING_START_TIME = '06:00'
+const CHAIRMAN_CHECKLIST_FIELD_KEY = 'checklist_payload'
 
 export default {
   name: 'ResearchForm',
@@ -1222,7 +1274,7 @@ export default {
     },
     groupedReviews () {
       const groups = {}
-      ;(this.proposalReviews || []).forEach(r => {
+      ;(this.committeeSubmittedReviews || []).forEach(r => {
         const key = r && r.roundNo ? r.roundNo : 1
         if (!groups[key]) groups[key] = []
         groups[key].push(r)
@@ -1231,8 +1283,48 @@ export default {
         .map(k => ({ roundNo: Number(k), reviews: groups[k] }))
         .sort((a, b) => a.roundNo - b.roundNo)
     },
+    chairmanReviewedById () {
+      const reviewedBy = this.loadedProposal
+        && this.loadedProposal.chairmanAssignment
+        && this.loadedProposal.chairmanAssignment.reviewedBy
+      return reviewedBy ? String(reviewedBy) : ''
+    },
+    chairmanSubmittedReviews () {
+      return (this.proposalReviews || []).filter(review => this.isChairmanReview(review) && this.isReviewSubmitted(review))
+    },
+    committeeSubmittedReviews () {
+      return (this.proposalReviews || []).filter(review => !this.isChairmanReview(review) && this.isReviewSubmitted(review))
+    },
+    chairmanReviewCards () {
+      return this.chairmanSubmittedReviews.map((review) => {
+        const parsed = this.parseChairmanChecklistReview(review)
+        const sections = Array.isArray(parsed.sections) ? parsed.sections : []
+        const normalizedSections = sections.map((section) => {
+          const items = Array.isArray(section && section.items) ? section.items : []
+          const checkedItems = items.filter(item => Boolean(item && item.checked))
+          return {
+            sectionKey: String(section && section.sectionKey ? section.sectionKey : 'section'),
+            sectionLabel: String(section && section.sectionLabel ? section.sectionLabel : 'หัวข้อประเมิน'),
+            totalItems: items.length,
+            checkedItems: checkedItems.map((item) => ({
+              itemKey: String(item && item.itemKey ? item.itemKey : item && item.key ? item.key : 'item'),
+              label: String(item && item.label ? item.label : 'รายการ checklist')
+            }))
+          }
+        })
+
+        return {
+          reviewId: String(review && review._id ? review._id : `${review && review.roundNo ? review.roundNo : 1}`),
+          review,
+          fundingTypeLabel: String(parsed.fundingTypeLabel || '-'),
+          checkedCount: normalizedSections.reduce((sum, section) => sum + section.checkedItems.length, 0),
+          totalItems: normalizedSections.reduce((sum, section) => sum + section.totalItems, 0),
+          sections: normalizedSections
+        }
+      })
+    },
     submittedReviews () {
-      return (this.proposalReviews || []).filter(r => r && r.reviewStatus === 'submitted')
+      return this.committeeSubmittedReviews
     },
     assignedCommitteeCount () {
       const ids = this.loadedProposal && Array.isArray(this.loadedProposal.committeeIds)
@@ -2915,6 +3007,49 @@ export default {
       const u = review && review.reviewerUserId ? review.reviewerUserId : null
       if (u && typeof u === 'object') return u.fullName || u.email || '-'
       return String(u || '-')
+    },
+    isReviewSubmitted (review) {
+      return String(review && review.reviewStatus ? review.reviewStatus : '').trim().toLowerCase() === 'submitted'
+    },
+    normalizeReviewerRole (review) {
+      const reviewer = review && review.reviewerUserId
+      if (reviewer && typeof reviewer === 'object' && reviewer.role) {
+        return String(reviewer.role).trim().toLowerCase()
+      }
+      return ''
+    },
+    isChairmanReview (review) {
+      const reviewerRole = this.normalizeReviewerRole(review)
+      if (reviewerRole === 'chairman') return true
+      if (reviewerRole === 'committee') return false
+
+      const reviewerId = review && review.reviewerUserId
+        ? String(review.reviewerUserId && review.reviewerUserId._id ? review.reviewerUserId._id : review.reviewerUserId)
+        : ''
+      return Boolean(reviewerId && this.chairmanReviewedById && reviewerId === this.chairmanReviewedById)
+    },
+    parseChairmanChecklistReview (review) {
+      const items = Array.isArray(review && review.commentItems) ? review.commentItems : []
+      const payloadItem = items.find((item) => item && item.fieldKey === CHAIRMAN_CHECKLIST_FIELD_KEY)
+      if (!payloadItem || !payloadItem.commentText) {
+        return {
+          fundingTypeLabel: '-',
+          sections: []
+        }
+      }
+
+      try {
+        const parsed = JSON.parse(payloadItem.commentText)
+        return {
+          fundingTypeLabel: String(parsed && parsed.fundingTypeLabel ? parsed.fundingTypeLabel : '-'),
+          sections: Array.isArray(parsed && parsed.sections) ? parsed.sections : []
+        }
+      } catch (_) {
+        return {
+          fundingTypeLabel: '-',
+          sections: []
+        }
+      }
     },
     decisionLabel (decision) {
       if (decision === 'approve') return 'อนุมัติ'

@@ -13,7 +13,9 @@
         >
           <CWidgetDropdown class="user-widget-card" color="gradient-primary" :header="String(stats.all || 0)" text="ทั้งหมด">
             <template #footer>
-              <div class="widget-footer-spacer"></div>
+              <div class="widget-footer-chart">
+                <CChartLine :datasets="[{ data: chartData.all, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+              </div>
             </template>
           </CWidgetDropdown>
         </div>
@@ -30,7 +32,9 @@
         >
           <CWidgetDropdown class="user-widget-card" color="gradient-info" :header="String(stats.inProgress || 0)" text="กำลังดำเนินการ">
             <template #footer>
-              <div class="widget-footer-spacer"></div>
+              <div class="widget-footer-chart">
+                <CChartLine :datasets="[{ data: chartData.inProgress, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
+              </div>
             </template>
           </CWidgetDropdown>
         </div>
@@ -47,7 +51,9 @@
         >
           <CWidgetDropdown class="user-widget-card" color="gradient-success" :header="String(stats.approved || 0)" text="อนุมัติ">
             <template #footer>
-              <div class="widget-footer-spacer"></div>
+              <div class="widget-footer-chart">
+                <CChartBar :datasets="[{ data: chartData.approved, backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'transparent' }]" :options="chartOptions"/>
+              </div>
             </template>
           </CWidgetDropdown>
         </div>
@@ -64,7 +70,9 @@
         >
           <CWidgetDropdown class="user-widget-card" color="gradient-danger" :header="String(stats.rejected || 0)" text="ไม่อนุมัติ">
             <template #footer>
-              <div class="widget-footer-spacer"></div>
+              <div class="widget-footer-chart">
+                <CChartLine :datasets="[{ data: chartData.rejected, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.6)' }]" :options="chartOptions"/>
+              </div>
             </template>
           </CWidgetDropdown>
         </div>
@@ -239,6 +247,7 @@
 
 <script>
 import Service from '@/service/api'
+import { CChartLine, CChartBar } from '@coreui/vue-chartjs'
 import Swal from 'sweetalert2'
 import {
   APPROVED_PROPOSAL_STATUSES,
@@ -268,6 +277,10 @@ import {
 
 export default {
   name: "UserDashboard",
+  components: {
+    CChartLine,
+    CChartBar,
+  },
   data() {
     return {
       allProjects: [],
@@ -313,6 +326,29 @@ export default {
         rejected: ['rejected'],
       },
       workflowSteps: [],
+      chartData: {
+        all: [72, 68, 83, 77, 86, 91, 88],
+        inProgress: [35, 49, 60, 71, 80, 90, 75],
+        approved: [10, 20, 30, 25, 35, 45, 40],
+        rejected: [6, 4, 5, 3, 4, 2, 1],
+      },
+      chartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        legend: { display: false },
+        scales: {
+          xAxes: [{ display: false }],
+          yAxes: [{ display: false }]
+        },
+        elements: {
+          line: { borderWidth: 2, tension: 0.4 },
+          point: { radius: 0 }
+        }
+      },
+      fundingBudgetConfig: createDefaultFundingBudgetConfig(),
+      rolePageAccessConfig: createDefaultRolePageAccessConfig()
+    };
+  },
 
   async mounted() {
     await loadResearchFormRuntimeConfigs()
@@ -946,7 +982,7 @@ export default {
 .widget-click-area .user-widget-card ::v-deep(.text-value-lg) {
   font-size: clamp(2.5rem, 3.1vw, 3.5rem);
   line-height: 0.9;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.02em;
   margin-bottom: 0.34rem;
   font-variant-numeric: tabular-nums;
@@ -981,12 +1017,23 @@ export default {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='36' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 46l28 28M74 46L46 74' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-opacity='0.24'/%3E%3Ccircle cx='60' cy='60' r='46' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
 }
 
-.widget-footer-spacer {
+.widget-footer-chart {
   position: relative;
   z-index: 2;
   height: 70px;
   width: 100%;
+  max-width: 100%;
+  padding-right: 8px;
+  overflow: hidden;
   border-radius: inherit;
+}
+
+.widget-footer-chart ::v-deep(canvas),
+.widget-footer-chart ::v-deep(svg) {
+  display: block;
+  width: 100% !important;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 @media (max-width: 991.98px) {
@@ -1679,4 +1726,3 @@ body.c-dark-theme .clear-filter-btn:hover {
 }
 
 </style>
-
