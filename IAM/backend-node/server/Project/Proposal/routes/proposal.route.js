@@ -19,9 +19,9 @@ router.get('/admin/dashboard-summary', authenticate, requireRole('admin', 'chair
 router.get('/researcher-users', authenticate, controller.listResearcherUsers);
 router.get('/committee-users', authenticate, requireRole('admin', 'chairman'), controller.listCommitteeUsers);
 router.get('/reviews/me', authenticate, requireRole('committee', 'chairman', 'admin'), controller.myReviews);
-router.get('/reviews/by-proposal/:id', authenticate, requireRole('admin', 'chairman'), controller.listProposalReviews);
+router.get('/reviews/by-proposal/:id', authenticate, requireRole('admin', 'chairman', 'researcher', 'committee'), controller.listProposalReviews);
 router.get('/:id/reviews/me', authenticate, requireRole('committee', 'chairman', 'admin'), controller.myReview);
-router.get('/:id/reviews', authenticate, requireRole('admin', 'chairman'), controller.listProposalReviews);
+router.get('/:id/reviews', authenticate, requireRole('admin', 'chairman', 'researcher', 'committee'), controller.listProposalReviews);
 router.get('/:id/feedback', authenticate, controller.proposalFeedback);
 router.get('/collaboration-consent/view', controller.renderCollaborationConsentPage);
 router.post('/collaboration-consent/respond', controller.respondCollaborationConsent);

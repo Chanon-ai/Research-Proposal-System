@@ -124,6 +124,17 @@
           <strong>สรุป Checklist จากประธาน (Read Only)</strong>
         </div>
         <div class="card-body">
+          <div class="d-flex flex-wrap align-items-center mb-3 text-muted small" style="gap: 16px;">
+            <div class="d-inline-flex align-items-center">
+              <CIcon name="cil-check-circle" class="text-success mr-1" />
+              <span>เขียว = ผ่าน</span>
+            </div>
+            <div class="d-inline-flex align-items-center">
+              <CIcon name="cil-x-circle" class="text-danger mr-1" />
+              <span>แดง = ไม่ผ่าน</span>
+            </div>
+          </div>
+
           <div v-if="readonlyChairmanChecklistLoading" class="text-center py-3">
             <CSpinner size="sm" color="primary" />
             <span class="text-muted ml-2">กำลังโหลดผลการประเมินจากประธาน...</span>
@@ -157,20 +168,25 @@
                   >
                     <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
                       <div class="font-weight-bold">{{ section.sectionLabel }}</div>
-                      <CBadge color="warning" class="chairman-review-card__badge">{{ section.checkedItems.length }}/{{ section.totalItems }} ข้อ</CBadge>
+                      <CBadge color="warning" class="chairman-review-card__badge">{{ section.checkedCount }}/{{ section.totalItems }} ข้อ</CBadge>
                     </div>
-                    <div v-if="section.checkedItems.length" class="mt-2">
+                    <div v-if="section.items.length" class="mt-2">
                       <ul class="mb-0 pl-3 chairman-review-card__list">
                         <li
-                          v-for="item in section.checkedItems"
+                          v-for="item in section.items"
                           :key="'readonly-chairman-' + card.reviewId + '-' + section.sectionKey + '-' + item.itemKey"
+                          class="chairman-review-card__list-item"
                         >
+                          <CIcon
+                            :name="item.checked ? 'cil-check-circle' : 'cil-x-circle'"
+                            :class="item.checked ? 'text-success mr-2' : 'text-danger mr-2'"
+                          />
                           {{ item.label }}
                         </li>
                       </ul>
                     </div>
                     <div v-else class="text-muted small mt-2">
-                      ไม่มีรายการที่ติ๊กในหัวข้อนี้
+                      ไม่มีรายการ checklist ในหัวข้อนี้
                     </div>
                   </div>
                 </div>
@@ -1317,15 +1333,17 @@ export default {
         const sections = Array.isArray(parsed.sections) ? parsed.sections : []
         const normalizedSections = sections.map((section) => {
           const items = Array.isArray(section && section.items) ? section.items : []
-          const checkedItems = items.filter(item => Boolean(item && item.checked))
+          const normalizedItems = items.map((item) => ({
+            itemKey: String(item && item.itemKey ? item.itemKey : item && item.key ? item.key : 'item'),
+            label: String(item && item.label ? item.label : 'รายการ checklist'),
+            checked: Boolean(item && item.checked)
+          }))
           return {
             sectionKey: String(section && section.sectionKey ? section.sectionKey : 'section'),
             sectionLabel: String(section && section.sectionLabel ? section.sectionLabel : 'หัวข้อประเมิน'),
             totalItems: items.length,
-            checkedItems: checkedItems.map((item) => ({
-              itemKey: String(item && item.itemKey ? item.itemKey : item && item.key ? item.key : 'item'),
-              label: String(item && item.label ? item.label : 'รายการ checklist')
-            }))
+            checkedCount: normalizedItems.filter(item => item.checked).length,
+            items: normalizedItems
           }
         })
 
@@ -1333,7 +1351,7 @@ export default {
           reviewId: String(review && review._id ? review._id : `${review && review.roundNo ? review.roundNo : 1}`),
           review,
           fundingTypeLabel: String(parsed.fundingTypeLabel || '-'),
-          checkedCount: normalizedSections.reduce((sum, section) => sum + section.checkedItems.length, 0),
+          checkedCount: normalizedSections.reduce((sum, section) => sum + section.checkedCount, 0),
           totalItems: normalizedSections.reduce((sum, section) => sum + section.totalItems, 0),
           sections: normalizedSections
         }
@@ -1348,13 +1366,8 @@ export default {
     },
     showReadonlyChairmanChecklistCard () {
       if (!this.viewProposalId) return false
-      if (this.isChairmanDetailRoute) return false
       if (this.chairmanReviewCards.length > 0) return true
       return Boolean(this.readonlyChairmanChecklistLoading || this.readonlyChairmanChecklistError)
-    },
-    isChairmanDetailRoute () {
-      const path = String((this.$route && this.$route.path) || '').trim().toLowerCase()
-      return path.indexOf('/chairman/') !== -1
     },
     submittedReviews () {
       return this.committeeSubmittedReviews
@@ -5035,8 +5048,10 @@ export default {
 
         this.setStoredDraftId('')
         await this.showAlert({
-          title: 'ส่งคำขอเรียบร้อย',
-          text: 'รอการยืนยันจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
+          title: requiresCollaborationConfirmation ? 'ส่งคำขอเรียบร้อย' : 'ยื่นสำเร็จ',
+          text: requiresCollaborationConfirmation
+            ? 'รอการยืนยันจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ'
+            : 'กำลังส่งให้ประธานสำนักพิจารณา',
           icon: 'success',
           confirmButtonText: 'ตกลง'
         })
