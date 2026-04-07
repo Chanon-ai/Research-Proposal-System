@@ -181,11 +181,8 @@
                         <div class="editor-card__title">Item {{ itemIndex + 1 }}</div>
                         <CButton size="sm" color="danger" variant="outline" @click="removeChairmanItem(chairmanSelectedFundingTemplateIndex, sectionIndex, itemIndex)">ลบ Item</CButton>
                       </div>
-                      <CRow>
-                        <CCol md="4"><CInput label="Item Key" v-model="item.itemKey" /></CCol>
-                        <CCol md="8"><CInput label="Label" v-model="item.label" /></CCol>
-                      </CRow>
-                      <CTextarea label="Description" rows="2" v-model="item.description" />
+                      <div class="text-muted small mb-2">Item Key: {{ item.itemKey }}</div>
+                      <CTextarea label="Label" rows="3" v-model="item.label" />
                     </div>
                   </div>
                 </div>
@@ -471,6 +468,31 @@ export default {
     cloneValue (value) {
       return JSON.parse(JSON.stringify(value))
     },
+    normalizeChairmanSectionItems (section) {
+      const targetSection = section && typeof section === 'object' ? section : null
+      if (!targetSection) return targetSection
+      const items = Array.isArray(targetSection.items) ? targetSection.items : []
+      targetSection.items = items.map((item, index) => ({
+        ...(item || {}),
+        itemKey: `item_${index + 1}`,
+        label: item && item.label ? item.label : '',
+        description: item && item.description ? item.description : ''
+      }))
+      return targetSection
+    },
+    normalizeChairmanFundingTemplateItems (template) {
+      const targetTemplate = template && typeof template === 'object' ? template : null
+      if (!targetTemplate) return targetTemplate
+      const sections = Array.isArray(targetTemplate.sections) ? targetTemplate.sections : []
+      targetTemplate.sections = sections.map((section) => this.normalizeChairmanSectionItems(section))
+      return targetTemplate
+    },
+    normalizeChairmanEditorForm (form) {
+      const nextForm = this.cloneValue(form || getDefaultChairmanChecklistConfig())
+      const templates = Array.isArray(nextForm.fundingTemplates) ? nextForm.fundingTemplates : []
+      nextForm.fundingTemplates = templates.map((template) => this.normalizeChairmanFundingTemplateItems(template))
+      return nextForm
+    },
     resetTemplateImportDefaults () {
       const firstFundingTemplate = this.chairmanParsedConfig && this.chairmanParsedConfig.fundingTemplates && this.chairmanParsedConfig.fundingTemplates[0]
       this.templateImport.fundingTypeKey = firstFundingTemplate ? firstFundingTemplate.fundingTypeKey : 'new-researcher'
@@ -536,7 +558,7 @@ export default {
         return
       }
 
-      this.chairmanForm = this.cloneValue(normalizeChairmanChecklistConfig(this.templateImport.preview.draftConfig))
+      this.chairmanForm = this.normalizeChairmanEditorForm(normalizeChairmanChecklistConfig(this.templateImport.preview.draftConfig))
       this.chairmanPreviewFundingType = this.templateImport.fundingTypeKey || (this.chairmanForm && this.chairmanForm.fundingTemplates && this.chairmanForm.fundingTemplates[0]
         ? this.chairmanForm.fundingTemplates[0].fundingTypeKey
         : 'new-researcher')
@@ -578,7 +600,7 @@ export default {
       const chairmanConfig = normalizeChairmanChecklistConfig(this.parseSettingValue(this.settingsMap[CHAIRMAN_CHECKLIST_SETTING_KEY], getDefaultChairmanChecklistConfig()))
       const committeeConfig = normalizeCommitteeRubricConfig(this.parseSettingValue(this.settingsMap[COMMITTEE_RUBRIC_SETTING_KEY], getDefaultCommitteeRubricConfig()))
 
-      this.chairmanForm = this.cloneValue(chairmanConfig)
+      this.chairmanForm = this.normalizeChairmanEditorForm(chairmanConfig)
       this.committeeForm = this.cloneValue(committeeConfig)
       this.chairmanPreviewFundingType = chairmanConfig && chairmanConfig.fundingTemplates && chairmanConfig.fundingTemplates[0]
         ? chairmanConfig.fundingTemplates[0].fundingTypeKey
@@ -621,10 +643,11 @@ export default {
         items: []
       }
     },
-    createChairmanItem () {
+    createChairmanItem (section) {
+      const nextIndex = Array.isArray(section && section.items) ? section.items.length + 1 : 1
       return {
-        itemKey: `item_${Date.now()}`,
-        label: 'รายการใหม่',
+        itemKey: `item_${nextIndex}`,
+        label: '',
         description: ''
       }
     },
@@ -648,26 +671,30 @@ export default {
       this.chairmanForm.fundingTemplates[fundingIndex].sections.splice(sectionIndex, 1)
     },
     addChairmanItem (fundingIndex, sectionIndex) {
-      this.chairmanForm.fundingTemplates[fundingIndex].sections[sectionIndex].items.push(this.createChairmanItem())
+      const section = this.chairmanForm.fundingTemplates[fundingIndex].sections[sectionIndex]
+      section.items.push(this.createChairmanItem(section))
+      this.normalizeChairmanSectionItems(section)
     },
     removeChairmanItem (fundingIndex, sectionIndex, itemIndex) {
-      this.chairmanForm.fundingTemplates[fundingIndex].sections[sectionIndex].items.splice(itemIndex, 1)
+      const section = this.chairmanForm.fundingTemplates[fundingIndex].sections[sectionIndex]
+      section.items.splice(itemIndex, 1)
+      this.normalizeChairmanSectionItems(section)
     },
     resetChairmanTemplate () {
       const config = getDefaultChairmanChecklistConfig()
       this.chairmanTemplateError = ''
-      this.chairmanForm = this.cloneValue(config)
+      this.chairmanForm = this.normalizeChairmanEditorForm(config)
       this.chairmanPreviewFundingType = config && config.fundingTemplates && config.fundingTemplates[0]
         ? config.fundingTemplates[0].fundingTypeKey
         : 'new-researcher'
     },
     async saveChairmanTemplate () {
-      const parsed = normalizeChairmanChecklistConfig(this.cloneValue(this.chairmanForm))
+      const parsed = normalizeChairmanChecklistConfig(this.normalizeChairmanEditorForm(this.chairmanForm))
       this.chairmanTemplateError = ''
       try {
         await this.upsertSetting(CHAIRMAN_CHECKLIST_SETTING_KEY, parsed, 'Chairman checklist templates for ResearchFormRS')
         setChairmanChecklistRuntimeConfig(parsed)
-        this.chairmanForm = this.cloneValue(parsed)
+        this.chairmanForm = this.normalizeChairmanEditorForm(parsed)
         await this.loadTemplates()
         await Swal.fire({ icon: 'success', title: 'บันทึก template ประธานสำเร็จ', timer: 1400, showConfirmButton: false })
       } catch (error) {
