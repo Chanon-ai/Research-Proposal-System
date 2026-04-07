@@ -2,79 +2,17 @@
   <div class="page-content">
 
     <CRow class="mb-4">
-      <CCol sm="6" lg="3">
+      <CCol sm="6" lg="3" class="mb-3" v-for="card in summaryCards" :key="card.key">
         <div
-          class="widget-click-area widget-all"
-          @click="clearFilter"
-          :class="{
-            'is-active': !activeFilter,
-            'is-dimmed': Boolean(activeFilter)
-          }"
+          class="summary-card"
+          :class="[card.toneClass, { active: card.isActive, 'is-dimmed': card.isDimmed }]"
+          @click="onSummaryCardClick(card.filterKey)"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-primary" :header="String(stats.all || 0)" text="ทั้งหมด">
-            <template #footer>
-              <div class="widget-footer-chart">
-                <CChartLine :datasets="[{ data: chartData.all, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
-              </div>
-            </template>
-          </CWidgetDropdown>
-        </div>
-      </CCol>
-
-      <CCol sm="6" lg="3">
-        <div
-          class="widget-click-area widget-in-progress"
-          @click="setFilter('in_progress')"
-          :class="{
-            'is-active': activeFilter === 'in_progress',
-            'is-dimmed': activeFilter && activeFilter !== 'in_progress'
-          }"
-        >
-          <CWidgetDropdown class="user-widget-card" color="gradient-info" :header="String(stats.inProgress || 0)" text="กำลังดำเนินการ">
-            <template #footer>
-              <div class="widget-footer-chart">
-                <CChartLine :datasets="[{ data: chartData.inProgress, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.55)' }]" :options="chartOptions"/>
-              </div>
-            </template>
-          </CWidgetDropdown>
-        </div>
-      </CCol>
-
-      <CCol sm="6" lg="3">
-        <div
-          class="widget-click-area widget-approved"
-          @click="setFilter('approved')"
-          :class="{
-            'is-active': activeFilter === 'approved',
-            'is-dimmed': activeFilter && activeFilter !== 'approved'
-          }"
-        >
-          <CWidgetDropdown class="user-widget-card" color="gradient-success" :header="String(stats.approved || 0)" text="อนุมัติ">
-            <template #footer>
-              <div class="widget-footer-chart">
-                <CChartBar :datasets="[{ data: chartData.approved, backgroundColor: 'rgba(255,255,255,0.3)', borderColor: 'transparent' }]" :options="chartOptions"/>
-              </div>
-            </template>
-          </CWidgetDropdown>
-        </div>
-      </CCol>
-
-      <CCol sm="6" lg="3">
-        <div
-          class="widget-click-area widget-rejected"
-          @click="setFilter('rejected')"
-          :class="{
-            'is-active': activeFilter === 'rejected',
-            'is-dimmed': activeFilter && activeFilter !== 'rejected'
-          }"
-        >
-          <CWidgetDropdown class="user-widget-card" color="gradient-danger" :header="String(stats.rejected || 0)" text="ไม่อนุมัติ">
-            <template #footer>
-              <div class="widget-footer-chart">
-                <CChartLine :datasets="[{ data: chartData.rejected, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.6)' }]" :options="chartOptions"/>
-              </div>
-            </template>
-          </CWidgetDropdown>
+          <div class="summary-card-bg" aria-hidden="true"></div>
+          <div class="summary-card-content">
+            <small class="summary-label">{{ card.label }}</small>
+            <div class="summary-number">{{ card.count }}</div>
+          </div>
         </div>
       </CCol>
     </CRow>
@@ -247,7 +185,6 @@
 
 <script>
 import Service from '@/service/api'
-import { CChartLine, CChartBar } from '@coreui/vue-chartjs'
 import Swal from 'sweetalert2'
 import {
   APPROVED_PROPOSAL_STATUSES,
@@ -279,10 +216,6 @@ import {
 
 export default {
   name: "UserDashboard",
-  components: {
-    CChartLine,
-    CChartBar,
-  },
   data() {
     return {
       allProjects: [],
@@ -328,25 +261,6 @@ export default {
         rejected: ['rejected'],
       },
       workflowSteps: [],
-      chartData: {
-        all: [72, 68, 83, 77, 86, 91, 88],
-        inProgress: [35, 49, 60, 71, 80, 90, 75],
-        approved: [10, 20, 30, 25, 35, 45, 40],
-        rejected: [6, 4, 5, 3, 4, 2, 1],
-      },
-      chartOptions: {
-        responsive: true,
-        maintainAspectRatio: false,
-        legend: { display: false },
-        scales: {
-          xAxes: [{ display: false }],
-          yAxes: [{ display: false }]
-        },
-        elements: {
-          line: { borderWidth: 2, tension: 0.4 },
-          point: { radius: 0 }
-        }
-      },
       fundingBudgetConfig: createDefaultFundingBudgetConfig(),
       rolePageAccessConfig: createDefaultRolePageAccessConfig()
     };
@@ -407,6 +321,47 @@ export default {
         approved: all.filter(p => APPROVED_PROPOSAL_STATUSES.includes(String(p.currentStatus || '').toLowerCase())).length,
         rejected: all.filter(p => String(p.currentStatus || '').toLowerCase() === 'rejected').length,
       };
+    },
+
+    summaryCards() {
+      return [
+        {
+          key: 'all',
+          label: 'ทั้งหมด',
+          count: String(this.stats.all || 0),
+          toneClass: 'summary-tone-submitted',
+          filterKey: null,
+          isActive: !this.activeFilter,
+          isDimmed: Boolean(this.activeFilter)
+        },
+        {
+          key: 'in_progress',
+          label: 'กำลังดำเนินการ',
+          count: String(this.stats.inProgress || 0),
+          toneClass: 'summary-tone-checking',
+          filterKey: 'in_progress',
+          isActive: this.activeFilter === 'in_progress',
+          isDimmed: Boolean(this.activeFilter && this.activeFilter !== 'in_progress')
+        },
+        {
+          key: 'approved',
+          label: 'อนุมัติ',
+          count: String(this.stats.approved || 0),
+          toneClass: 'summary-tone-approved',
+          filterKey: 'approved',
+          isActive: this.activeFilter === 'approved',
+          isDimmed: Boolean(this.activeFilter && this.activeFilter !== 'approved')
+        },
+        {
+          key: 'rejected',
+          label: 'ไม่อนุมัติ',
+          count: String(this.stats.rejected || 0),
+          toneClass: 'summary-tone-rejected',
+          filterKey: 'rejected',
+          isActive: this.activeFilter === 'rejected',
+          isDimmed: Boolean(this.activeFilter && this.activeFilter !== 'rejected')
+        }
+      ]
     },
 
     filteredProposals() {
@@ -497,6 +452,14 @@ export default {
       } else {
         this.activeFilter = filterKey;
       }
+    },
+
+    onSummaryCardClick(filterKey) {
+      if (!filterKey) {
+        this.clearFilter()
+        return
+      }
+      this.setFilter(filterKey)
     },
 
     clearFilter() {
@@ -931,127 +894,113 @@ export default {
   border-radius: 0;
 }
 
-/* Widget cards: keep CoreUI look and clip decorative background inside card */
-.widget-click-area {
+.summary-card {
   position: relative;
   cursor: pointer;
   border-radius: 0.5rem;
   transform: scale(1);
-  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 14px 16px;
+  min-height: 108px;
 }
 
-.widget-click-area.is-active {
-  transform: scale(1.03);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85);
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
 }
 
-.widget-click-area.is-dimmed {
+.summary-card.active {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 10px 24px rgba(15, 23, 42, 0.24);
+}
+
+.summary-card.is-dimmed {
   opacity: 0.6;
 }
 
-.widget-click-area .user-widget-card {
-  border: 0;
-  border-radius: 0.5rem;
+.summary-card-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   overflow: hidden;
-  margin-bottom: 0;
-  position: relative;
-  isolation: isolate;
+  z-index: 1;
+  background: linear-gradient(135deg, var(--summary-start, #4f46e5), var(--summary-end, #3730a3));
 }
 
-.widget-click-area .user-widget-card::before {
+.summary-card-bg::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
+  background-image: var(--summary-graphic);
   background-repeat: no-repeat;
-  background-size: 128px 128px;
-  background-position: calc(100% + 8px) -10px;
-  opacity: 0.23;
-  z-index: 1;
+  background-size: 122px 122px;
+  background-position: calc(100% + 10px) -12px;
+  opacity: 0.22;
   pointer-events: none;
 }
 
-.widget-click-area .user-widget-card ::v-deep(.card-body),
-.widget-click-area .user-widget-card ::v-deep(.card-footer) {
-  position: relative;
-  z-index: 2;
-}
-
-.widget-click-area .user-widget-card ::v-deep(.card-body) {
-  padding: 1.25rem 1.3rem 0;
-}
-
-.widget-click-area .user-widget-card ::v-deep(.text-value-lg) {
-  font-size: clamp(2.5rem, 3.1vw, 3.5rem);
-  line-height: 0.9;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.34rem;
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
-}
-
-.widget-click-area .user-widget-card ::v-deep(.text-value-lg + div) {
-  font-size: clamp(1.1rem, 1.2vw, 1.24rem);
-  line-height: 1.3;
-  font-weight: 700;
-  opacity: 0.96;
-}
-
-.widget-click-area .user-widget-card ::v-deep(.card-footer) {
-  border-radius: 0 0 0.5rem 0.5rem;
-  overflow: hidden;
-}
-
-.widget-all .user-widget-card::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='26' y='18' width='68' height='84' rx='10' fill='white' fill-opacity='0.9'/%3E%3Crect x='38' y='38' width='44' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='52' width='40' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='66' width='33' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Cpath d='M84 18v20h20' fill='white' fill-opacity='0.72'/%3E%3C/svg%3E");
-}
-
-.widget-in-progress .user-widget-card::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='36' cy='36' r='11' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='84' cy='60' r='11' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='44' cy='88' r='11' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M44 36h28M75 41l8-5-8-5M75 84l8 5-8 5M54 83l23-16' stroke='%23000000' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
-}
-
-.widget-approved .user-widget-card::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
-}
-
-.widget-rejected .user-widget-card::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='36' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 46l28 28M74 46L46 74' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-opacity='0.24'/%3E%3Ccircle cx='60' cy='60' r='46' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
-}
-
-.widget-footer-chart {
-  position: relative;
-  z-index: 2;
-  height: 70px;
-  width: 100%;
-  max-width: 100%;
-  padding-right: 8px;
-  overflow: hidden;
+.summary-card-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 60%);
+  pointer-events: none;
 }
 
-.widget-footer-chart ::v-deep(canvas),
-.widget-footer-chart ::v-deep(svg) {
-  display: block;
-  width: 100% !important;
-  max-width: 100%;
-  overflow: hidden;
+.summary-card-content {
+  position: relative;
+  z-index: 2;
 }
+
+.summary-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.summary-number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #ffffff;
+  margin-top: 6px;
+}
+
+.summary-tone-submitted {
+  --summary-start: #0ea5e9;
+  --summary-end: #0369a1;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='36' cy='36' r='11' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='84' cy='60' r='11' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='44' cy='88' r='11' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M44 36h28M75 41l8-5-8-5M75 84l8 5-8 5M54 83l23-16' stroke='%23000000' stroke-width='4' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
+}
+
+.summary-tone-checking {
+  --summary-start: #0f766e;
+  --summary-end: #115e59;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='20' width='70' height='84' rx='12' fill='white' fill-opacity='0.9'/%3E%3Crect x='36' y='40' width='38' height='5' rx='2.5' fill='%23000000' fill-opacity='0.18'/%3E%3Crect x='36' y='54' width='30' height='5' rx='2.5' fill='%23000000' fill-opacity='0.18'/%3E%3Ccircle cx='79' cy='74' r='12' fill='white' fill-opacity='0.85'/%3E%3Cpath d='M88 84l10 10' stroke='%23000000' stroke-width='4' stroke-linecap='round' stroke-opacity='0.22'/%3E%3C/svg%3E");
+}
+
+.summary-tone-approved {
+  --summary-start: #16a34a;
+  --summary-end: #15803d;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
+}
+
+.summary-tone-rejected {
+  --summary-start: #dc2626;
+  --summary-end: #b91c1c;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 46l28 28M74 46L46 74' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-opacity='0.24' fill='none'/%3E%3C/svg%3E");
+}
+
 
 @media (max-width: 991.98px) {
-  .widget-click-area {
+  .summary-card {
     margin-bottom: 0.25rem;
   }
 
-  .widget-click-area .user-widget-card ::v-deep(.text-value-lg) {
-    font-size: clamp(2.2rem, 5.6vw, 2.9rem);
-  }
-
-  .widget-click-area .user-widget-card ::v-deep(.text-value-lg + div) {
-    font-size: 1.08rem;
-  }
-
-  .widget-click-area .user-widget-card::before {
+  .summary-card-bg::before {
     background-size: 104px 104px;
     background-position: calc(100% + 4px) -8px;
     opacity: 0.2;
@@ -1063,16 +1012,8 @@ export default {
     padding: 18px 14px;
   }
 
-  .widget-click-area.is-active {
+  .summary-card.active {
     transform: scale(1.01);
-  }
-
-  .widget-click-area .user-widget-card ::v-deep(.text-value-lg) {
-    font-size: 2.25rem;
-  }
-
-  .widget-click-area .user-widget-card ::v-deep(.text-value-lg + div) {
-    font-size: 1.02rem;
   }
 }
 
