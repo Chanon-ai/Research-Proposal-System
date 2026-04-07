@@ -247,7 +247,7 @@ export default {
       if (this.isEnglishLocale) {
         return `Maximum budget ${amount.toLocaleString('en-US')} THB`
       }
-      return `???????????? ${amount.toLocaleString('th-TH')} ???`
+      return `วงเงินสูงสุด ${amount.toLocaleString('th-TH')} บาท`
     },
     focusSubStepIfNeeded(fundingType) {
       const option = (Array.isArray(this.fundingTypeOptions) ? this.fundingTypeOptions : [])
