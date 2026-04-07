@@ -1,469 +1,243 @@
 <template>
   <div class="page-wrapper">
-
     <div id="report-area" ref="reportContainer" class="report-container">
-
       <div class="first-page">
-        <!-- ประเภททุน -->
         <div class="checkbox-line">
-
-          <span class="checkbox-item">
-            {{ check(form.budgetType === 'new') }} ทุนนักวิจัยใหม่
+          <span
+            v-for="option in fundingTypeDisplayOptions"
+            :key="option.value"
+            class="checkbox-item"
+          >
+            {{ check(form.budgetType === option.value) }} {{ option.label }}
           </span>
-
-          <span class="checkbox-item">
-            {{ check(form.budgetType === 'dev') }} ทุนพัฒนานักวิจัย
-          </span>
-
-          <span class="checkbox-item">
-            {{ check(form.budgetType === 'strategic') }}
-            ทุนที่สอดคล้องกับยุทธศาสตร์การวิจัย
-          </span>
-
-          <span class="checkbox-item">
-            {{ check(form.budgetType === 'industrial') }}
-            ทุนต่อยอดสู่ภาคอุตสาหกรรมและนวัตกรรม ภายใต้กรอบวิจัยยุทธศาสตร์ชาติ
-          </span>
-
         </div>
 
-
-        <!-- 1 -->
         <div class="section">
-          <div class="section-title">1. ชื่อโครงการ</div>
+          <div class="section-title">{{ reportText.section1Title }}</div>
           <div class="group-title">
-            <div><strong>(ภาษาไทย)</strong>
+            <div>
+              <strong>{{ reportText.languageThai }}</strong>
               <div class="line">{{ form.titleTH }}</div>
             </div>
-            <div><strong>(ภาษาอังกฤษ)</strong>
+            <div>
+              <strong>{{ reportText.languageEnglish }}</strong>
               <div class="line">{{ form.titleEN }}</div>
             </div>
           </div>
         </div>
 
-        <!-- 2 -->
         <div class="section">
-          <div class="section-title">
-            2. ระบุความสอดคล้องของโครงการวิจัยกับประเด็นยุทธศาสตร์การวิจัยมหาวิทยาลัยแม่ฟ้าหลวง
-          </div>
-          <!-- 2.1 -->
-          <div class="group-title">
-            1. ประเภททุนนักวิจัยใหม่
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedStrategy === '2_1') }}</span>
-            1. โครงการวิจัยที่เสนอสอดคล้องกับคุณวุฒิ หรือสาขาวิชา หรือภาระงาน
-          </div>
-
-          <!-- 2.2 -->
-          <div class="group-title">
-            2. ประเภททุนพัฒนานักวิจัย และทุนที่สอดคล้องกับยุทธศาสตร์การวิจัยและนวัตกรรมภายใต้กรอบวิจัยยุทธศาสตร์ชาติ
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedStrategy === '2_2_1') }}</span>
-            1. การพัฒนาเศรษฐกิจไทยด้วยเศรษฐกิจสร้างคุณค่าและเศรษฐกิจสร้างสรรค์
-            ให้มีความสามารถในการแข่งขันและพึ่งพาตนเองได้อย่างยั่งยืน พร้อมสู่อนาคต
-            โดยใช้วิทยาศาสตร์ การวิจัยและนวัตกรรม
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedStrategy === '2_2_2') }}</span>
-            2. การยกระดับสังคมและสิ่งแวดล้อม ให้มีการพัฒนาอย่างยั่งยืน
-            สามารถแก้ไขปัญหาท้าทายและปรับตัวได้ทันต่อพลวัตการเปลี่ยนแปลงของโลก
-            โดยใช้วิทยาศาสตร์ การวิจัยและนวัตกรรม
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedStrategy === '2_2_3') }}</span>
-            3. การพัฒนาวิทยาศาสตร์ เทคโนโลยี การวิจัยและนวัตกรรม
-            ระดับขั้นแนวหน้าที่ก้าวหน้าล้ำยุค เพื่อสร้างโอกาสใหม่และความพร้อม
-            ของประเทศในอนาคต
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedStrategy === '2_2_4') }}</span>
-            4. การพัฒนากำลังคนและสถาบัน ด้านวิทยาศาสตร์ วิจัยและนวัตกรรม
-            ให้เป็นฐานการขับเคลื่อนการพัฒนาเศรษฐกิจและสังคมของประเทศแบบก้าวกระโดด
-            และอย่างยั่งยืน โดยใช้วิทยาศาสตร์ การวิจัยและนวัตกรรม
-          </div>
-
-          <!-- 2.3 -->
-          <div class="group-title">
-            3. ประเภททุนต่อยอดสู่อุตสาหกรรม
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedStrategy === '2_3_1') }}</span>
-            1. การวิจัยและสร้างนวัตกรรมเพื่อเพิ่มขีดความสามารถการแข่งขัน
-          </div>
+          <div class="section-title">{{ reportText.section2Title }}</div>
+          <template v-for="group in strategySections">
+            <div :key="`${group.key}-title`" class="group-title">{{ group.title }}</div>
+            <div
+              v-for="option in group.options"
+              :key="`${group.key}-${option.value}`"
+              class="option"
+            >
+              <span>{{ check(form.selectedStrategy === option.value) }}</span>
+              {{ option.label }}
+            </div>
+          </template>
         </div>
-
       </div>
 
       <div class="other-pages">
-        <!-- ส่วน ก -->
         <div class="section">
-          <div class="section-title">
-            ส่วน ก : สาระสำคัญของข้อเสนอโครงการวิจัย
-          </div>
+          <div class="section-title">{{ reportText.partATitle }}</div>
+          <div class="sub-title">{{ reportText.researchTeamTitle }}</div>
 
-          <div class="sub-title">1. คณะผู้วิจัย</div>
-
-          <!-- 1.1 หัวหน้าโครงการ -->
-          <div class="field-line">1.1 หัวหน้าโครงการวิจัย</div>
+          <div class="field-line">{{ reportText.mainResearcherTitle }}</div>
           <div class="field-line">
-            ชื่อ-สกุล
-            <span class="dot-line">
-              {{ form.researchers.mainResearcher.name }}
-            </span>
+            {{ reportText.nameLabel }}
+            <span class="dot-line">{{ researchers.mainResearcher.name }}</span>
           </div>
-
           <div class="field-line">
-            สังกัดหน่วยงาน
-            <span class="dot-line">
-              {{ form.researchers.mainResearcher.affiliation }}
-            </span>
+            {{ reportText.affiliationLabel }}
+            <span class="dot-line">{{ researchers.mainResearcher.affiliation }}</span>
           </div>
-
           <div class="field-line">
-            เบอร์โทรศัพท์ที่ติดต่อได้
-            <span class="dot-line">
-              {{ form.researchers.mainResearcher.phone }}
-            </span>
+            {{ reportText.phoneLabel }}
+            <span class="dot-line">{{ researchers.mainResearcher.phone }}</span>
           </div>
-
           <div class="field-line">
-            E-mail address
-            <span class="dot-line">
-              {{ form.researchers.mainResearcher.email }}
-            </span>
+            {{ reportText.emailLabel }}
+            <span class="dot-line">{{ researchers.mainResearcher.email }}</span>
           </div>
-
           <div class="field-line">
-            คิดเป็นสัดส่วนการวิจัยร้อยละ
-            <span class="dot-line">
-              {{ form.researchers.mainResearcher.code }}
-            </span>
+            {{ reportText.workloadPercentLabel }}
+            <span class="dot-line">{{ researchers.mainResearcher.code }}</span>
           </div>
 
-          <!-- 1.2 ผู้ร่วมวิจัย -->
-          <div v-for="(co, index) in form.researchers.coResearchers" :key="index">
+          <div v-for="(co, index) in researchers.coResearchers" :key="`co-${index}`">
+            <div class="field-line">{{ coResearcherTitle(index) }}</div>
             <div class="field-line">
-              1.{{ index + 2 }} ผู้ร่วมโครงการวิจัย
-            </div>
-
-            <div class="field-line">
-              ชื่อ-สกุล
+              {{ reportText.nameLabel }}
               <span class="dot-line">{{ co.name }}</span>
             </div>
-
             <div class="field-line">
-              สังกัดหน่วยงาน
+              {{ reportText.affiliationLabel }}
               <span class="dot-line">{{ co.affiliation }}</span>
             </div>
-
             <div class="field-line">
-              เบอร์โทรศัพท์ที่ติดต่อได้
+              {{ reportText.phoneLabel }}
               <span class="dot-line">{{ co.phone }}</span>
             </div>
-
             <div class="field-line">
-              E-mail address
+              {{ reportText.emailLabel }}
               <span class="dot-line">{{ co.email }}</span>
             </div>
-
             <div class="field-line">
-              คิดเป็นสัดส่วนการวิจัยร้อยละ
+              {{ reportText.workloadPercentLabel }}
               <span class="dot-line">{{ co.code }}</span>
             </div>
           </div>
-        <div class="section">
-          <div class="sub-title">2. ที่ปรึกษาโครงการวิจัย</div>
 
-          <div v-for="(advisor, index) in form.researchers.advisors" :key="index">
-
-            <div class="field-line">
-              ชื่อ-สกุล
-              <span class="dot-line">{{ advisor.name }}</span>
+          <div class="section">
+            <div class="sub-title">{{ reportText.advisorTitle }}</div>
+            <div v-for="(advisor, index) in researchers.advisors" :key="`advisor-${index}`">
+              <div class="field-line">
+                {{ reportText.nameLabel }}
+                <span class="dot-line">{{ advisor.name }}</span>
+              </div>
+              <div class="field-line">
+                {{ reportText.affiliationLabel }}
+                <span class="dot-line">{{ advisor.affiliation }}</span>
+              </div>
+              <div class="field-line">
+                {{ reportText.phoneLabel }}
+                <span class="dot-line">{{ advisor.phone }}</span>
+              </div>
+              <div class="field-line">
+                {{ reportText.emailLabel }}
+                <span class="dot-line">{{ advisor.email }}</span>
+              </div>
             </div>
-
-            <div class="field-line">
-              สังกัดหน่วยงาน
-              <span class="dot-line">{{ advisor.affiliation }}</span>
-            </div>
-
-            <div class="field-line">
-              เบอร์โทรศัพท์ที่ติดต่อได้
-              <span class="dot-line">{{ advisor.phone }}</span>
-            </div>
-
-            <div class="field-line">
-              E-mail address
-              <span class="dot-line">{{ advisor.email }}</span>
-            </div>
-
-          </div>
-        </div>
-        </div>
-
-
-        <!-- 3 -->
-        <div class="section">
-          <div class="sub-title">3. หน่วยงานที่ร่วมมือ</div>
-          <div class="field-line">
-            {{ form.cooperationDetail || '-' }}
           </div>
         </div>
 
         <div class="section">
-          <div class="sub-title">4. ประเภทของงานวิจัย</div>
-          <div class="field-line">
-            {{ form.researchType }}
-          </div>
+          <div class="sub-title">{{ reportText.section3Title }}</div>
+          <div class="field-line">{{ form.cooperationDetail || '-' }}</div>
         </div>
 
+        <div class="section">
+          <div class="sub-title">{{ reportText.section4Title }}</div>
+          <div class="field-line">{{ displayResearchType }}</div>
+        </div>
 
-        <!-- 4-11 -->
-        <div class="section" v-for="(field, index) in contentSections" :key="index">
-          <div class="sub-title ">{{ field.title }}</div>
+        <div class="section" v-for="field in contentSections" :key="field.model">
+          <div class="sub-title">{{ field.title }}</div>
           <div class="field-line" v-html="form[field.model]"></div>
         </div>
 
-        <!-- 12 -->
         <div class="section" v-if="form.activities && form.activities.length">
-          <div class="sub-title">12. แผนการดำเนินงาน</div>
-          <div class="group-title ms-3">ระยะเวลาที่ทำการวิจัย {{ maxMonths }} เดือน</div>
+          <div class="sub-title">{{ reportText.section12Title }}</div>
+          <div class="group-title ms-3">{{ researchDurationText }}</div>
           <table class="gantt-print-table">
             <thead>
               <tr>
-                <!-- ซ้าย -->
-                <th class="col-activity" rowspan="2">กิจกรรมวิจัย</th>
-                <!-- กลาง -->
-                <th :colspan="maxMonths">
-                  เดือนที่ ({{ totalYearsText }})
-                </th>
-                <!-- ขวา -->
-                <th class="col-owner" rowspan="2">ผู้รับผิดชอบ</th>
+                <th class="col-activity" rowspan="2">{{ reportText.activityHeader }}</th>
+                <th :colspan="maxMonths">{{ reportText.monthHeader }} ({{ totalYearsText }})</th>
+                <th class="col-owner" rowspan="2">{{ reportText.ownerHeader }}</th>
               </tr>
               <tr>
-                <!-- เดือน 1 - maxMonths -->
-                <th v-for="m in maxMonths" :key="m" :style="{ width: monthWidth + 'px' }">
-                  {{ m }}
-                </th>
+                <th v-for="m in maxMonths" :key="m" :style="{ width: monthWidth + 'px' }">{{ m }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(act, index) in form.activities" :key="index">
-                <td class="col-activity">
-                  {{ act.name }}
-                </td>
-                <td v-for="(month, i) in act.months" :key="i" :style="{
-                  width: monthWidth + 'px',
-                  backgroundColor: month ? '#444' : 'transparent'
-                }">
-                </td>
-                <td class="col-owner">
-                  {{ act.owner }}
-                </td>
+                <td class="col-activity">{{ act.name }}</td>
+                <td
+                  v-for="(month, i) in act.months"
+                  :key="i"
+                  :style="{ width: monthWidth + 'px', backgroundColor: month ? '#444' : 'transparent' }"
+                />
+                <td class="col-owner">{{ act.owner }}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-
-        <!-- 13 -->
         <div class="section">
-          <div class="sub-title">13. ผลงานตามระยะเวลาการรายงานความก้าวหน้าของงานวิจัย</div>
+          <div class="sub-title">{{ reportText.section13Title }}</div>
           <div class="field-line" v-html="form.progressReport"></div>
         </div>
 
-        <!-- 14 -->
         <div class="section">
-          <div class="sub-title">14. ผลลัพธ์ที่คาดว่าจะได้รับ</div>
-
-          <!-- 14.1 -->
-          <div class="group-title">14.1 ทุนนักวิจัยรุ่นใหม่</div>
-          <div class="option">
-            <span>{{ check(form.selectedOutcomes && form.selectedOutcomes.includes('14_1_fullpaper')) }}</span>
-            นำเสนอในการประชุมวิชาการระดับนานาชาติ โดยต้องเป็นบทความฉบับสมบูรณ์ (Full paper)
-            ที่ได้รับการตีพิมพ์ในรายงานสืบเนื่องจากการประชุม (Proceedings) หรือ
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedOutcomes && form.selectedOutcomes.includes('14_1_tci')) }}</span>
-            ตีพิมพ์ในวารสารทางวิชาการที่มีรายชื่ออยู่ในฐานข้อมูล ตามประกาศ ก.พ.อ.
-            เรื่องหลักเกณฑ์การพิจารณาวารสารทางวิชาการ สำหรับการเผยแพร่ผลงานทางวิชาการ พ.ศ.2562 หรือ
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedOutcomes && form.selectedOutcomes.includes('14_1_international')) }}</span>
-            ตีพิมพ์วารสารทางวิชาการระดับชาติ ต้องเป็นวารสารทางวิชาการที่ปรากฏในฐานข้อมูล
-            TCI กลุ่มที่ 1 หรือ กลุ่มที่ 2 หรือ
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedOutcomes && form.selectedOutcomes.includes('14_1_patent')) }}</span>
-            อนุสิทธิบัตร/สิทธิบัตร (มีเลขคำขอ)
-          </div>
-
-
-          <!-- 14.2 -->
-          <div class="group-title">14.2 ทุนพัฒนานักวิจัย</div>
-
-          <div class="option">
-            <span>{{ check(form.selectedOutcomes && form.selectedOutcomes.includes('14_2_international')) }}</span>
-            ตีพิมพ์ในวารสารทางวิชาการระดับนานาชาติที่มีรายชื่ออยู่ในฐานข้อมูล
-            ตามประกาศ ก.พ.อ. เรื่องหลักเกณฑ์การพิจารณาวารสารทางวิชาการ
-            สำหรับการเผยแพร่ผลงานทางวิชาการ พ.ศ.2562 หรือ
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedOutcomes && form.selectedOutcomes.includes('14_2_tci1')) }}</span>
-            ตีพิมพ์วารสารทางวิชาการระดับชาติ ต้องเป็นวารสารทางวิชาการที่ปรากฏในฐานข้อมูล
-            TCI กลุ่มที่ 1 เท่านั้น หรือ
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedOutcomes && form.selectedOutcomes.includes('14_2_patent')) }}</span>
-            อนุสิทธิบัตร/สิทธิบัตร (มีเลขคำขอ)
-          </div>
-
-
-          <!-- 14.3 -->
-          <div class="group-title">14.3 ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์</div>
-
-          <div class="option">
-            <span>{{ check(form.selectedOutcomes && form.selectedOutcomes.includes('14_3_international')) }}</span>
-            ตีพิมพ์ในวารสารทางวิชาการระดับนานาชาติที่มีรายชื่ออยู่ในฐานข้อมูล
-            ตามประกาศ ก.พ.อ. เรื่องหลักเกณฑ์การพิจารณาวารสารทางวิชาการ
-            สำหรับการเผยแพร่ผลงานทางวิชาการ พ.ศ.2562 หรือ
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedOutcomes && form.selectedOutcomes.includes('14_3_tci1')) }}</span>
-            ตีพิมพ์วารสารทางวิชาการระดับชาติ ต้องเป็นวารสารทางวิชาการที่ปรากฏในฐานข้อมูล
-            TCI กลุ่มที่ 1 เท่านั้น หรือ
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.selectedOutcomes && form.selectedOutcomes.includes('14_3_patent')) }}</span>
-            อนุสิทธิบัตร/สิทธิบัตร (มีเลขคำขอ)
-          </div>
-
-
-          <!-- 14.4 -->
-          <div class="group-title">14.4 ทุนต่อยอดสู่ภาคอุตสาหกรรม</div>
-
-          <div class="option">
-            <span>{{ check(form.selectedOutcomes && form.selectedOutcomes.includes('14_4_ip')) }}</span>
-            การยื่นจดทะเบียนทรัพย์สินทางปัญญา (มีเลขคำขอ)
-          </div>
+          <div class="sub-title">{{ reportText.section14Title }}</div>
+          <template v-for="group in expectedOutcomeGroups">
+            <div :key="`${group.key}-title`" class="group-title">{{ group.title }}</div>
+            <div
+              v-for="option in group.options"
+              :key="`${group.key}-${option.value}`"
+              class="option"
+            >
+              <span>{{ check(hasSelectedOutcome(option.value)) }}</span>
+              {{ option.label }}
+            </div>
+          </template>
         </div>
 
-
-
-        <!-- 15 -->
         <div class="section">
-          <div class="sub-title">15. การบูรณาการงานวิจัย</div>
+          <div class="sub-title">{{ reportText.section15Title }}</div>
           <div class="field-line" v-html="form.integration"></div>
         </div>
 
-        <!-- 16 -->
         <div class="section">
-          <div class="sub-title">
-            16. ระดับการถ่ายทอดสู่สังคม
+          <div class="sub-title">{{ reportText.section16Title }}</div>
+          <div v-for="option in socialTransferOptions" :key="option.value" class="option">
+            <span>{{ check(form.socialTransfer === option.value) }}</span>
+            {{ option.label }}
           </div>
-
-          <div class="option">
-            <span>{{ check(form.socialTransfer === '16_1') }}</span>
-            สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้ในระดับภูมิภาค ประเทศ หรือ นานาชาติ
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.socialTransfer === '16_2') }}</span>
-            สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้เฉพาะกลุ่มอาชีพ ชุมชน หรือจังหวัด
-          </div>
-
-          <div class="option">
-            <span>{{ check(form.socialTransfer === '16_3') }}</span>
-            ไม่มีการนำไปถ่ายทอดสู่สังคม
-          </div>
-
         </div>
 
-
-        <!-- 17 -->
         <div class="section budget-section budget-section-page">
-              <div class="sub-title">17. งบประมาณ</div>
-              <div v-if="form.budgetData && form.budgetData.categories && form.budgetData.categories.length" class="budget-table-section mt-4">
-                <table class="budget-print-table budget-report-table">
-                  <thead>
-                    <tr>
-                      <th>หมวด</th>
-                      <th>รายการ</th>
-                      <th>รายละเอียดตัวคูณ</th>
-                      <th>รวม (บาท)</th>
-                      <th>งวด 1</th>
-                      <th>งวด 2</th>
-                      <th>งวด 3</th>
-                    </tr>
-                  </thead>
-                  <tbody
-                    v-for="(cat, ci) in form.budgetData.categories"
-                    :key="'budget-cat-' + ci"
-                  >
-                      <tr v-for="(row, ri) in cat.rows" :key="'budget-row-' + ci + '-' + ri">
-                        <td>{{ cat.title }}</td>
-                        <td>{{ ri + 1 }}. {{ row.name }}</td>
-                        <td class="text-start multiplier-cell">
-                          <div v-if="row.multipliers && row.multipliers.length">
-                            <div
-                              v-for="(multiplier, mi) in row.multipliers"
-                              :key="'budget-multiplier-' + ci + '-' + ri + '-' + mi"
-                            >
-                              {{ formatMultiplier(multiplier) }}
-                            </div>
-                          </div>
-                          <span v-else>-</span>
-                        </td>
-                        <td class="text-end fw-bold">{{ Number(row.total || 0).toLocaleString() }}</td>
-                        <td class="text-end">{{ Number(row.p1 || 0).toLocaleString() }}</td>
-                        <td class="text-end">{{ Number(row.p2 || 0).toLocaleString() }}</td>
-                        <td class="text-end">{{ Number(row.p3 || 0).toLocaleString() }}</td>
-                      </tr>
-                  </tbody>
-                </table>
-                <div class="budget-grand-total mt-3">
-                  รวมทั้งสิ้น {{ form.budgetData.grandTotal.toLocaleString() }} บาท
-                </div>
-              </div>
+          <div class="sub-title">{{ reportText.section17Title }}</div>
+          <div v-if="form.budgetData && form.budgetData.categories && form.budgetData.categories.length" class="budget-table-section mt-4">
+            <table class="budget-print-table budget-report-table">
+              <thead>
+                <tr>
+                  <th v-for="header in budgetTableHeaders" :key="header">{{ header }}</th>
+                </tr>
+              </thead>
+              <tbody v-for="(cat, ci) in form.budgetData.categories" :key="`budget-cat-${ci}`">
+                <tr v-for="(row, ri) in cat.rows" :key="`budget-row-${ci}-${ri}`">
+                  <td>{{ cat.title }}</td>
+                  <td>{{ ri + 1 }}. {{ row.name }}</td>
+                  <td class="text-start multiplier-cell">
+                    <div v-if="row.multipliers && row.multipliers.length">
+                      <div v-for="(multiplier, mi) in row.multipliers" :key="`budget-multiplier-${ci}-${ri}-${mi}`">
+                        {{ formatMultiplier(multiplier) }}
+                      </div>
+                    </div>
+                    <span v-else>-</span>
+                  </td>
+                  <td class="text-end fw-bold">{{ formatNumber(row.total) }}</td>
+                  <td class="text-end">{{ formatNumber(row.p1) }}</td>
+                  <td class="text-end">{{ formatNumber(row.p2) }}</td>
+                  <td class="text-end">{{ formatNumber(row.p3) }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="budget-grand-total mt-3">
+              {{ reportText.grandTotalLabel }} {{ formatNumber(form.budgetData.grandTotal) }} {{ reportText.currencyUnit }}
+            </div>
+          </div>
         </div>
 
-
-        <!-- 18 -->
         <div class="section">
-          <div class="sub-title">
-            {{ researchStandardText.sectionTitle }}
-          </div>
-
+          <div class="sub-title">{{ researchStandardText.sectionTitle }}</div>
           <div class="option">
             <span>{{ check(isResearchStandardNoneSelected) }}</span>
             {{ researchStandardText.noneMessage }}
           </div>
-
           <template v-for="group in researchStandardReportItems">
             <div :key="`${group.key}-title`" class="option">
               <span>{{ check(group.enabled) }}</span>
               {{ group.title }}
             </div>
-
-            <div
-              v-for="option in group.options"
-              :key="`${group.key}-${option.value}`"
-              class="sub-option"
-            >
+            <div v-for="option in group.options" :key="`${group.key}-${option.value}`" class="sub-option">
               <span>{{ check(group.status === option.value) }}</span>
               {{ option.label }}
               <template v-if="group.status === option.value && option.value === researchStandardStatuses.pending">
@@ -474,53 +248,40 @@
         </div>
 
         <div class="section">
-          <div class="sub-title">19. หมายเหตุ</div>
+          <div class="sub-title">{{ reportText.section19Title }}</div>
           <div class="field-line" v-html="form.remark || '-'"></div>
         </div>
 
-        <!-- 20 -->
         <div class="section">
-          <div class="sub-title">การลงนามยืนยันข้อมูลและคำรับรอง</div>
+          <div class="sub-title">{{ reportText.section20Title }}</div>
           <div class="signature-page-in-section">
             <div class="signature-row">
               <div class="signature-box">
-                <div class="sign-label">ลงชื่อ (หัวหน้าโครงการวิจัย)</div>
-                <img v-if="form.researchers.mainResearcher.signature" :src="form.researchers.mainResearcher.signature"
-                  class="sign-img" />
-                <div class="dot-line-sign">
-                  ({{ form.researchers.mainResearcher.name || '................................................' }})
-                </div>
-                <div>วันที่ {{ form.researchers.mainResearcher.signatureDate || '................................' }}
-                </div>
+                <div class="sign-label">{{ reportText.mainResearcherSignatureLabel }}</div>
+                <img v-if="researchers.mainResearcher.signature" :src="researchers.mainResearcher.signature" class="sign-img" />
+                <div class="dot-line-sign">({{ researchers.mainResearcher.name || reportText.signaturePlaceholder }})</div>
+                <div>{{ reportText.dateLabel }} {{ researchers.mainResearcher.signatureDate || reportText.datePlaceholder }}</div>
               </div>
 
-              <div class="signature-box" v-if="form.researchers.advisors.length">
-                <div class="sign-label">ลงชื่อ (ที่ปรึกษาโครงการวิจัย)</div>
-                <img v-if="form.researchers.advisors[0].signature" :src="form.researchers.advisors[0].signature"
-                  class="sign-img" />
-                <div class="dot-line-sign">
-                  ({{ form.researchers.advisors[0].name || '................................................' }})
-                </div>
-                <div>วันที่ {{ form.researchers.advisors[0].signatureDate || '................................' }}</div>
+              <div class="signature-box" v-if="researchers.advisors.length">
+                <div class="sign-label">{{ reportText.advisorSignatureLabel }}</div>
+                <img v-if="researchers.advisors[0].signature" :src="researchers.advisors[0].signature" class="sign-img" />
+                <div class="dot-line-sign">({{ researchers.advisors[0].name || reportText.signaturePlaceholder }})</div>
+                <div>{{ reportText.dateLabel }} {{ researchers.advisors[0].signatureDate || reportText.datePlaceholder }}</div>
               </div>
             </div>
 
-            <div class="signature-row" v-for="(co, index) in form.researchers.coResearchers"
-              :key="'report-co-' + index">
+            <div class="signature-row" v-for="(co, index) in researchers.coResearchers" :key="`report-co-${index}`">
               <div class="signature-box">
-                <div class="sign-label">ลงชื่อ (ผู้ร่วมโครงการวิจัย คนที่ {{ index + 1 }})</div>
+                <div class="sign-label">{{ coResearcherSignatureLabel(index) }}</div>
                 <img v-if="co.signature" :src="co.signature" class="sign-img" />
-                <div class="dot-line-sign">
-                  ({{ co.name || '................................................' }})
-                </div>
-                <div>วันที่ {{ co.signatureDate || '................................' }}</div>
+                <div class="dot-line-sign">({{ co.name || reportText.signaturePlaceholder }})</div>
+                <div>{{ reportText.dateLabel }} {{ co.signatureDate || reportText.datePlaceholder }}</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-
     </div>
   </div>
 </template>
@@ -529,6 +290,8 @@
 import {
   RESEARCH_STANDARD_STATUSES,
   RESEARCH_STANDARD_TEXT,
+  RESEARCH_STANDARD_TEXT_EN,
+  RESEARCH_STANDARD_GROUPS_EN,
   getResearchStandardGroupList,
   getResearchStandardGroupMeta,
   normalizeResearchStandardStatus
@@ -536,7 +299,7 @@ import {
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
 export default {
-  name: "ResearchReport",
+  name: 'ResearchReport',
   props: {
     form: {
       type: Object,
@@ -545,19 +308,9 @@ export default {
   },
   data() {
     return {
-      runtimeConfigVersion: 0,
-      contentSections: [
-        { title: "5. คำสำคัญ (Keywords)", model: "keywords" },
-        { title: "6. ความสำคัญของปัญหาและแนวคิด", model: "importance" },
-        { title: "7. วัตถุประสงค์", model: "objective" },
-        { title: "8. ทบทวนวรรณกรรม", model: "literature" },
-        { title: "9. เอกสารอ้างอิง", model: "reference" },
-        { title: "10. วิธีดำเนินการวิจัย", model: "methodology" },
-        { title: "11. ขอบเขตการวิจัย", model: "scope" }
-      ]
-    };
-  }
-  ,
+      runtimeConfigVersion: 0
+    }
+  },
   async created() {
     await loadResearchFormRuntimeConfigs()
     this.runtimeConfigVersion += 1
@@ -566,22 +319,26 @@ export default {
     check(condition) {
       return condition ? '☑' : '☐'
     },
+    formatNumber(value) {
+      return Number(value || 0).toLocaleString(this.reportLocale)
+    },
     formatMultiplier(multiplier) {
       var rawValue = multiplier && multiplier.value !== undefined ? multiplier.value : (multiplier && multiplier.val)
       var value = rawValue !== undefined && rawValue !== null && rawValue !== '' ? rawValue : 0
       var label = multiplier && multiplier.label ? multiplier.label : ''
       if (label) {
-        return label + ': ' + Number(value || 0).toLocaleString()
+        return label + ': ' + this.formatNumber(value)
       }
-      return Number(value || 0).toLocaleString()
+      return this.formatNumber(value)
     },
     formatMultipliers(multipliers) {
       if (!Array.isArray(multipliers) || !multipliers.length) return ''
-      return multipliers
-        .map(this.formatMultiplier)
-        .join(' x ')
+      return multipliers.map(this.formatMultiplier).join(' x ')
     },
     researchStandardGroupMeta(groupKey) {
+      if (this.isEnglishLocale) {
+        return RESEARCH_STANDARD_GROUPS_EN[String(groupKey || '').trim()] || null
+      }
       return getResearchStandardGroupMeta(groupKey)
     },
     normalizeResearchStandardDate(value) {
@@ -612,8 +369,8 @@ export default {
 
       let status = normalizeResearchStandardStatus(currentSection.status || source[meta.legacy.statusKey])
       if (!status) {
-        if (legacyDetail && legacyDetail.hasCert) status = RESEARCH_STANDARD_STATUSES.approved
-        else if (legacyDetail && legacyDetail.isPending) status = RESEARCH_STANDARD_STATUSES.pending
+        if (legacyDetail && legacyDetail.hasCert) status = this.researchStandardStatuses.approved
+        else if (legacyDetail && legacyDetail.isPending) status = this.researchStandardStatuses.pending
       }
 
       const submittedDate = this.normalizeResearchStandardDate(
@@ -637,7 +394,7 @@ export default {
     },
     buildPrintableHtml(reportHtml, title, styleNodes) {
       return `<!doctype html>
-<html lang="th">
+<html lang="${this.reportHtmlLang}">
   <head>
     <meta charset="utf-8" />
     <title>${title}</title>
@@ -754,21 +511,21 @@ export default {
         throw new Error('Report container is not ready')
       }
 
-      if (button) button.style.display = "none";
-      element.classList.add("export-mode");
+      if (button) button.style.display = 'none'
+      element.classList.add('export-mode')
 
       try {
-        await this.$nextTick();
+        await this.$nextTick()
 
-        const images = element.querySelectorAll("img");
+        const images = element.querySelectorAll('img')
         await Promise.all(
           Array.from(images).map(img => {
-            if (img.complete) return Promise.resolve();
+            if (img.complete) return Promise.resolve()
             return new Promise(resolve => {
-              img.onload = img.onerror = resolve;
-            });
+              img.onload = img.onerror = resolve
+            })
           })
-        );
+        )
 
         const styleNodes = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
           .map(node => node.outerHTML)
@@ -788,26 +545,342 @@ export default {
           }
         }
       } finally {
-        if (button) button.style.display = "block";
-        element.classList.remove("export-mode");
+        if (button) button.style.display = 'block'
+        element.classList.remove('export-mode')
       }
+    },
+    hasSelectedOutcome(value) {
+      return Array.isArray(this.form.selectedOutcomes) && this.form.selectedOutcomes.includes(value)
+    },
+    coResearcherTitle(index) {
+      return this.isEnglishLocale
+        ? `1.${index + 2} Co-researcher`
+        : `1.${index + 2} ผู้ร่วมโครงการวิจัย`
+    },
+    coResearcherSignatureLabel(index) {
+      return this.isEnglishLocale
+        ? `Signature (Co-researcher ${index + 1})`
+        : `ลงชื่อ (ผู้ร่วมโครงการวิจัย คนที่ ${index + 1})`
     }
-
   },
   computed: {
+    isEnglishLocale() {
+      const locale = String((this.$i18n && this.$i18n.locale) || '').trim().toLowerCase()
+      return locale.startsWith('en')
+    },
+    reportLocale() {
+      return this.isEnglishLocale ? 'en-US' : 'th-TH'
+    },
+    reportHtmlLang() {
+      return this.isEnglishLocale ? 'en' : 'th'
+    },
+    researchers() {
+      const source = this.form && this.form.researchers && typeof this.form.researchers === 'object'
+        ? this.form.researchers
+        : {}
+      return {
+        mainResearcher: source.mainResearcher || {},
+        coResearchers: Array.isArray(source.coResearchers) ? source.coResearchers : [],
+        advisors: Array.isArray(source.advisors) ? source.advisors : []
+      }
+    },
+    reportText() {
+      if (this.isEnglishLocale) {
+        return {
+          section1Title: '1. Project Title',
+          languageThai: '(Thai)',
+          languageEnglish: '(English)',
+          section2Title: '2. Alignment of the research project with Mae Fah Luang University research strategies',
+          partATitle: 'Part A: Summary of the research proposal',
+          researchTeamTitle: '1. Research Team',
+          mainResearcherTitle: '1.1 Principal Investigator',
+          advisorTitle: '2. Project Advisor',
+          nameLabel: 'Name',
+          affiliationLabel: 'Affiliation',
+          phoneLabel: 'Contact phone number',
+          emailLabel: 'E-mail address',
+          workloadPercentLabel: 'Research workload percentage',
+          section3Title: '3. Collaborating Organization',
+          section4Title: '4. Research Type',
+          section12Title: '12. Work Plan',
+          researchDurationPrefix: 'Research duration',
+          researchDurationSuffix: 'months',
+          activityHeader: 'Research Activity',
+          monthHeader: 'Month',
+          ownerHeader: 'Responsible Person',
+          section13Title: '13. Outputs by the research progress-reporting period',
+          section14Title: '14. Expected Outcomes',
+          section15Title: '15. Research Integration',
+          section16Title: '16. Level of Social Transfer',
+          section17Title: '17. Budget',
+          grandTotalLabel: 'Grand total',
+          currencyUnit: 'THB',
+          section19Title: '19. Remarks',
+          section20Title: 'Certification and Signature',
+          mainResearcherSignatureLabel: 'Signature (Principal Investigator)',
+          advisorSignatureLabel: 'Signature (Project Advisor)',
+          dateLabel: 'Date',
+          signaturePlaceholder: '................................................',
+          datePlaceholder: '................................'
+        }
+      }
+      return {
+        section1Title: '1. ชื่อโครงการ',
+        languageThai: '(ภาษาไทย)',
+        languageEnglish: '(ภาษาอังกฤษ)',
+        section2Title: '2. ระบุความสอดคล้องของโครงการวิจัยกับประเด็นยุทธศาสตร์การวิจัยมหาวิทยาลัยแม่ฟ้าหลวง',
+        partATitle: 'ส่วน ก : สาระสำคัญของข้อเสนอโครงการวิจัย',
+        researchTeamTitle: '1. คณะผู้วิจัย',
+        mainResearcherTitle: '1.1 หัวหน้าโครงการวิจัย',
+        advisorTitle: '2. ที่ปรึกษาโครงการวิจัย',
+        nameLabel: 'ชื่อ-สกุล',
+        affiliationLabel: 'สังกัดหน่วยงาน',
+        phoneLabel: 'เบอร์โทรศัพท์ที่ติดต่อได้',
+        emailLabel: 'E-mail address',
+        workloadPercentLabel: 'คิดเป็นสัดส่วนการวิจัยร้อยละ',
+        section3Title: '3. หน่วยงานที่ร่วมมือ',
+        section4Title: '4. ประเภทของงานวิจัย',
+        section12Title: '12. แผนการดำเนินงาน',
+        researchDurationPrefix: 'ระยะเวลาที่ทำการวิจัย',
+        researchDurationSuffix: 'เดือน',
+        activityHeader: 'กิจกรรมวิจัย',
+        monthHeader: 'เดือนที่',
+        ownerHeader: 'ผู้รับผิดชอบ',
+        section13Title: '13. ผลงานตามระยะเวลาการรายงานความก้าวหน้าของงานวิจัย',
+        section14Title: '14. ผลลัพธ์ที่คาดว่าจะได้รับ',
+        section15Title: '15. การบูรณาการงานวิจัย',
+        section16Title: '16. ระดับการถ่ายทอดสู่สังคม',
+        section17Title: '17. งบประมาณ',
+        grandTotalLabel: 'รวมทั้งสิ้น',
+        currencyUnit: 'บาท',
+        section19Title: '19. หมายเหตุ',
+        section20Title: 'การลงนามยืนยันข้อมูลและคำรับรอง',
+        mainResearcherSignatureLabel: 'ลงชื่อ (หัวหน้าโครงการวิจัย)',
+        advisorSignatureLabel: 'ลงชื่อ (ที่ปรึกษาโครงการวิจัย)',
+        dateLabel: 'วันที่',
+        signaturePlaceholder: '................................................',
+        datePlaceholder: '................................'
+      }
+    },
+    fundingTypeDisplayOptions() {
+      if (this.isEnglishLocale) {
+        return [
+          { value: 'new', label: 'New Researcher Grant' },
+          { value: 'dev', label: 'Researcher Development Grant' },
+          { value: 'strategic', label: 'Strategic Research Grant' },
+          { value: 'industrial', label: 'Industry and Innovation Extension Grant under the National Strategic Research Framework' }
+        ]
+      }
+      return [
+        { value: 'new', label: 'ทุนนักวิจัยใหม่' },
+        { value: 'dev', label: 'ทุนพัฒนานักวิจัย' },
+        { value: 'strategic', label: 'ทุนที่สอดคล้องกับยุทธศาสตร์การวิจัย' },
+        { value: 'industrial', label: 'ทุนต่อยอดสู่ภาคอุตสาหกรรมและนวัตกรรม ภายใต้กรอบวิจัยยุทธศาสตร์ชาติ' }
+      ]
+    },
+    strategySections() {
+      if (this.isEnglishLocale) {
+        return [
+          {
+            key: 'new',
+            title: '1. New Researcher Grant',
+            options: [
+              { value: '2_1', label: '1. The proposed research project aligns with the researcher\'s qualifications, discipline, or workload.' }
+            ]
+          },
+          {
+            key: 'development',
+            title: '2. Researcher Development Grant and strategic research and innovation grants under the national strategic framework',
+            options: [
+              { value: '2_2_1', label: '1. Development of the Thai economy through a value-based and creative economy with competitiveness and sustainable self-reliance, powered by science, research, and innovation.' },
+              { value: '2_2_2', label: '2. Advancement of society and the environment toward sustainable development and resilience to global change, powered by science, research, and innovation.' },
+              { value: '2_2_3', label: '3. Advancement of frontier science, technology, research, and innovation to create new opportunities and future readiness for the country.' },
+              { value: '2_2_4', label: '4. Development of human capital and institutions in science, research, and innovation as a strong and sustainable foundation for national economic and social development.' }
+            ]
+          },
+          {
+            key: 'industry',
+            title: '3. Industry Extension Grant',
+            options: [
+              { value: '2_3_1', label: '1. Research and innovation to improve competitiveness.' }
+            ]
+          }
+        ]
+      }
+      return [
+        {
+          key: 'new',
+          title: '1. ประเภททุนนักวิจัยใหม่',
+          options: [
+            { value: '2_1', label: '1. โครงการวิจัยที่เสนอสอดคล้องกับคุณวุฒิ หรือสาขาวิชา หรือภาระงาน' }
+          ]
+        },
+        {
+          key: 'development',
+          title: '2. ประเภททุนพัฒนานักวิจัย และทุนที่สอดคล้องกับยุทธศาสตร์การวิจัยและนวัตกรรมภายใต้กรอบวิจัยยุทธศาสตร์ชาติ',
+          options: [
+            { value: '2_2_1', label: '1. การพัฒนาเศรษฐกิจไทยด้วยเศรษฐกิจสร้างคุณค่าและเศรษฐกิจสร้างสรรค์ ให้มีความสามารถในการแข่งขันและพึ่งพาตนเองได้อย่างยั่งยืน พร้อมสู่อนาคต โดยใช้วิทยาศาสตร์ การวิจัยและนวัตกรรม' },
+            { value: '2_2_2', label: '2. การยกระดับสังคมและสิ่งแวดล้อม ให้มีการพัฒนาอย่างยั่งยืน สามารถแก้ไขปัญหาท้าทายและปรับตัวได้ทันต่อพลวัตการเปลี่ยนแปลงของโลก โดยใช้วิทยาศาสตร์ การวิจัยและนวัตกรรม' },
+            { value: '2_2_3', label: '3. การพัฒนาวิทยาศาสตร์ เทคโนโลยี การวิจัยและนวัตกรรม ระดับขั้นแนวหน้าที่ก้าวหน้าล้ำยุค เพื่อสร้างโอกาสใหม่และความพร้อม ของประเทศในอนาคต' },
+            { value: '2_2_4', label: '4. การพัฒนากำลังคนและสถาบัน ด้านวิทยาศาสตร์ วิจัยและนวัตกรรม ให้เป็นฐานการขับเคลื่อนการพัฒนาเศรษฐกิจและสังคมของประเทศแบบก้าวกระโดด และอย่างยั่งยืน โดยใช้วิทยาศาสตร์ การวิจัยและนวัตกรรม' }
+          ]
+        },
+        {
+          key: 'industry',
+          title: '3. ประเภททุนต่อยอดสู่อุตสาหกรรม',
+          options: [
+            { value: '2_3_1', label: '1. การวิจัยและสร้างนวัตกรรมเพื่อเพิ่มขีดความสามารถการแข่งขัน' }
+          ]
+        }
+      ]
+    },
+    contentSections() {
+      if (this.isEnglishLocale) {
+        return [
+          { title: '5. Keywords', model: 'keywords' },
+          { title: '6. Problem significance and concept', model: 'importance' },
+          { title: '7. Objectives', model: 'objective' },
+          { title: '8. Literature review', model: 'literature' },
+          { title: '9. References', model: 'reference' },
+          { title: '10. Research methodology', model: 'methodology' },
+          { title: '11. Research scope', model: 'scope' }
+        ]
+      }
+      return [
+        { title: '5. คำสำคัญ (Keywords)', model: 'keywords' },
+        { title: '6. ความสำคัญของปัญหาและแนวคิด', model: 'importance' },
+        { title: '7. วัตถุประสงค์', model: 'objective' },
+        { title: '8. ทบทวนวรรณกรรม', model: 'literature' },
+        { title: '9. เอกสารอ้างอิง', model: 'reference' },
+        { title: '10. วิธีดำเนินการวิจัย', model: 'methodology' },
+        { title: '11. ขอบเขตการวิจัย', model: 'scope' }
+      ]
+    },
+    expectedOutcomeGroups() {
+      if (this.isEnglishLocale) {
+        return [
+          {
+            key: '14_1',
+            title: '14.1 New Researcher Grant',
+            options: [
+              { value: '14_1_fullpaper', label: 'Presentation at an international academic conference with a full paper published in the proceedings.' },
+              { value: '14_1_tci', label: 'Publication in an academic journal listed in the database recognized by the OHEC announcement on academic journal criteria B.E. 2562.' },
+              { value: '14_1_international', label: 'Publication in a national academic journal indexed in TCI Group 1 or Group 2.' },
+              { value: '14_1_patent', label: 'Petty patent / patent application (with application number).' }
+            ]
+          },
+          {
+            key: '14_2',
+            title: '14.2 Researcher Development Grant',
+            options: [
+              { value: '14_2_international', label: 'Publication in an international academic journal listed in the database recognized by the OHEC announcement on academic journal criteria B.E. 2562.' },
+              { value: '14_2_tci1', label: 'Publication in a national academic journal indexed in TCI Group 1 only.' },
+              { value: '14_2_patent', label: 'Petty patent / patent application (with application number).' }
+            ]
+          },
+          {
+            key: '14_3',
+            title: '14.3 Strategic Research Grant',
+            options: [
+              { value: '14_3_international', label: 'Publication in an international academic journal listed in the database recognized by the OHEC announcement on academic journal criteria B.E. 2562.' },
+              { value: '14_3_tci1', label: 'Publication in a national academic journal indexed in TCI Group 1 only.' },
+              { value: '14_3_patent', label: 'Petty patent / patent application (with application number).' }
+            ]
+          },
+          {
+            key: '14_4',
+            title: '14.4 Industry Extension Grant',
+            options: [
+              { value: '14_4_ip', label: 'Intellectual property registration filing (with application number).' }
+            ]
+          }
+        ]
+      }
+      return [
+        {
+          key: '14_1',
+          title: '14.1 ทุนนักวิจัยรุ่นใหม่',
+          options: [
+            { value: '14_1_fullpaper', label: 'นำเสนอในการประชุมวิชาการระดับนานาชาติ โดยต้องเป็นบทความฉบับสมบูรณ์ (Full paper) ที่ได้รับการตีพิมพ์ในรายงานสืบเนื่องจากการประชุม (Proceedings) หรือ' },
+            { value: '14_1_tci', label: 'ตีพิมพ์ในวารสารทางวิชาการที่มีรายชื่ออยู่ในฐานข้อมูล ตามประกาศ ก.พ.อ. เรื่องหลักเกณฑ์การพิจารณาวารสารทางวิชาการ สำหรับการเผยแพร่ผลงานทางวิชาการ พ.ศ.2562 หรือ' },
+            { value: '14_1_international', label: 'ตีพิมพ์วารสารทางวิชาการระดับชาติ ต้องเป็นวารสารทางวิชาการที่ปรากฏในฐานข้อมูล TCI กลุ่มที่ 1 หรือ กลุ่มที่ 2 หรือ' },
+            { value: '14_1_patent', label: 'อนุสิทธิบัตร/สิทธิบัตร (มีเลขคำขอ)' }
+          ]
+        },
+        {
+          key: '14_2',
+          title: '14.2 ทุนพัฒนานักวิจัย',
+          options: [
+            { value: '14_2_international', label: 'ตีพิมพ์ในวารสารทางวิชาการระดับนานาชาติที่มีรายชื่ออยู่ในฐานข้อมูล ตามประกาศ ก.พ.อ. เรื่องหลักเกณฑ์การพิจารณาวารสารทางวิชาการ สำหรับการเผยแพร่ผลงานทางวิชาการ พ.ศ.2562 หรือ' },
+            { value: '14_2_tci1', label: 'ตีพิมพ์วารสารทางวิชาการระดับชาติ ต้องเป็นวารสารทางวิชาการที่ปรากฏในฐานข้อมูล TCI กลุ่มที่ 1 เท่านั้น หรือ' },
+            { value: '14_2_patent', label: 'อนุสิทธิบัตร/สิทธิบัตร (มีเลขคำขอ)' }
+          ]
+        },
+        {
+          key: '14_3',
+          title: '14.3 ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์',
+          options: [
+            { value: '14_3_international', label: 'ตีพิมพ์ในวารสารทางวิชาการระดับนานาชาติที่มีรายชื่ออยู่ในฐานข้อมูล ตามประกาศ ก.พ.อ. เรื่องหลักเกณฑ์การพิจารณาวารสารทางวิชาการ สำหรับการเผยแพร่ผลงานทางวิชาการ พ.ศ.2562 หรือ' },
+            { value: '14_3_tci1', label: 'ตีพิมพ์วารสารทางวิชาการระดับชาติ ต้องเป็นวารสารทางวิชาการที่ปรากฏในฐานข้อมูล TCI กลุ่มที่ 1 เท่านั้น หรือ' },
+            { value: '14_3_patent', label: 'อนุสิทธิบัตร/สิทธิบัตร (มีเลขคำขอ)' }
+          ]
+        },
+        {
+          key: '14_4',
+          title: '14.4 ทุนต่อยอดสู่ภาคอุตสาหกรรม',
+          options: [
+            { value: '14_4_ip', label: 'การยื่นจดทะเบียนทรัพย์สินทางปัญญา (มีเลขคำขอ)' }
+          ]
+        }
+      ]
+    },
+    socialTransferOptions() {
+      if (this.isEnglishLocale) {
+        return [
+          { value: '16_1', label: 'Can be transferred as a model or guideline at the regional, national, or international level.' },
+          { value: '16_2', label: 'Can be transferred as a model or guideline for occupational groups, communities, or provinces only.' },
+          { value: '16_3', label: 'No social transfer yet.' }
+        ]
+      }
+      return [
+        { value: '16_1', label: 'สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้ในระดับภูมิภาค ประเทศ หรือ นานาชาติ' },
+        { value: '16_2', label: 'สามารถนำไปถ่ายทอดเป็นต้นแบบและแนวทางได้เฉพาะกลุ่มอาชีพ ชุมชน หรือจังหวัด' },
+        { value: '16_3', label: 'ไม่มีการนำไปถ่ายทอดสู่สังคม' }
+      ]
+    },
+    budgetTableHeaders() {
+      if (this.isEnglishLocale) {
+        return ['Category', 'Item', 'Multiplier Details', 'Total (THB)', 'Period 1', 'Period 2', 'Period 3']
+      }
+      return ['หมวด', 'รายการ', 'รายละเอียดตัวคูณ', 'รวม (บาท)', 'งวด 1', 'งวด 2', 'งวด 3']
+    },
+    displayResearchType() {
+      const value = String(this.form.researchType || '').trim()
+      const map = this.isEnglishLocale
+        ? {
+            'science-technology': 'Science and Technology',
+            'health-science': 'Health Sciences',
+            'social-humanities': 'Social Sciences and Humanities'
+          }
+        : {
+            'science-technology': 'ด้านวิทยาศาสตร์และเทคโนโลยี',
+            'health-science': 'ด้านวิทยาศาสตร์สุขภาพ',
+            'social-humanities': 'ด้านสังคมศาสตร์และมนุษยศาสตร์'
+          }
+      return map[value] || value || '-'
+    },
     researchStandardStatuses() {
       this.runtimeConfigVersion
       return RESEARCH_STANDARD_STATUSES
     },
     researchStandardText() {
       this.runtimeConfigVersion
-      return RESEARCH_STANDARD_TEXT
+      return this.isEnglishLocale ? RESEARCH_STANDARD_TEXT_EN : RESEARCH_STANDARD_TEXT
     },
     researchStandardReportItems() {
       this.runtimeConfigVersion
-      return getResearchStandardGroupList()
-        .map(group => this.buildResearchStandardGroupState(group.key))
-        .filter(Boolean)
+      const groupKeys = this.isEnglishLocale ? Object.keys(RESEARCH_STANDARD_GROUPS_EN) : getResearchStandardGroupList().map(group => group.key)
+      return groupKeys.map(groupKey => this.buildResearchStandardGroupState(groupKey)).filter(Boolean)
     },
     isResearchStandardNoneSelected() {
       const source = this.form && typeof this.form === 'object' ? this.form : {}
@@ -815,10 +888,9 @@ export default {
       if (legacySelection.includes('none')) return true
       return !this.researchStandardReportItems.some(item => item.enabled)
     },
-    currentThaiDate() {
-      return new Date().toLocaleDateString("th-TH");
+    currentLocaleDate() {
+      return new Date().toLocaleDateString(this.reportLocale)
     },
-
     maxMonths() {
       if (!this.form.activities || !this.form.activities.length) return 0
       return this.form.activities[0].months.length
@@ -830,15 +902,18 @@ export default {
     },
     totalYearsText() {
       if (!this.maxMonths) return ''
-      if (this.maxMonths === 6) return 'ครึ่งปี'
-      if (this.maxMonths === 12) return '1 ปี'
-      if (this.maxMonths === 24) return '2 ปี'
-
-      return (this.maxMonths / 24).toFixed(1) + ' ปี'
+      if (this.maxMonths === 6) return this.isEnglishLocale ? 'Half year' : 'ครึ่งปี'
+      if (this.maxMonths === 12) return this.isEnglishLocale ? '1 year' : '1 ปี'
+      if (this.maxMonths === 24) return this.isEnglishLocale ? '2 years' : '2 ปี'
+      return this.isEnglishLocale
+        ? `${(this.maxMonths / 24).toFixed(1)} years`
+        : `${(this.maxMonths / 24).toFixed(1)} ปี`
+    },
+    researchDurationText() {
+      return `${this.reportText.researchDurationPrefix} ${this.maxMonths} ${this.reportText.researchDurationSuffix}`
     }
   }
-
-};
+}
 </script>
 
 
