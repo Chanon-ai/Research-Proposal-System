@@ -1297,23 +1297,23 @@ export default {
       const budgetValidation = this.getBudgetValidationResult()
 
       return [
-        { key: 'research-team', label: 'ข้อมูลคณะผู้วิจัย', ok: teamOk },
-        { key: 'section-1', label: '1. ชื่อโครงการ', ok: hasText(form.projectNameThai) && hasText(form.projectNameEnglish) },
-        { key: 'section-2', label: '2. ประเภททุน', ok: Boolean(fundingType) && (!requiresFundingSubType || hasText(form.fundingSubType)) },
-        { key: 'section-4', label: '4. ประเภทงานวิจัย', ok: hasText(form.researchType) },
-        { key: 'section-5', label: '5. คำสำคัญ', ok: hasText(form.keywords) },
-        { key: 'section-6', label: '6. ความสำคัญของปัญหาและแนวคิด', ok: hasText(form.problemSignificance) },
-        { key: 'section-7', label: '7. วัตถุประสงค์', ok: hasText(form.objectives) },
-        { key: 'section-8', label: '8. ทบทวนวรรณกรรม', ok: hasText(form.literatureReview) },
-        { key: 'section-9', label: '9. เอกสารอ้างอิง', ok: hasText(form.references) },
-        { key: 'section-10', label: '10. วิธีดำเนินการวิจัย', ok: hasText(form.researchMethodology) },
-        { key: 'section-11', label: '11. ขอบเขตการวิจัย', ok: hasText(form.researchScope) },
-        { key: 'section-12', label: '12. แผนการดำเนินงาน', ok: this.hasWorkPlanData(form.workPlan) },
-        { key: 'section-13', label: '13. ผลงานตามระยะเวลาการรายงาน', ok: hasText(form.milestones) },
-        { key: 'section-14', label: '14. ผลลัพธ์ที่คาดว่าจะได้รับ', ok: !requiresExpectedOutcome || hasText(form.selectedOutcome) },
-        { key: 'section-15', label: '15. การบูรณาการงานวิจัย', ok: hasText(form.integration) },
-        { key: 'section-16', label: '16. ระดับการถ่ายทอดสู่สังคม', ok: hasText(form.transferLevel) },
-        { key: 'section-17', label: '17. งบประมาณโครงการ', ok: Boolean(budgetCompleteness && budgetCompleteness.ok) && Boolean(budgetValidation && budgetValidation.ok) }
+        { key: 'research-team', label: this.$t('budgetStickyOverlay.checklistItems.researchTeam'), ok: teamOk },
+        { key: 'section-1', label: this.$t('budgetStickyOverlay.checklistItems.section1'), ok: hasText(form.projectNameThai) && hasText(form.projectNameEnglish) },
+        { key: 'section-2', label: this.$t('budgetStickyOverlay.checklistItems.section2'), ok: Boolean(fundingType) && (!requiresFundingSubType || hasText(form.fundingSubType)) },
+        { key: 'section-4', label: this.$t('budgetStickyOverlay.checklistItems.section4'), ok: hasText(form.researchType) },
+        { key: 'section-5', label: this.$t('budgetStickyOverlay.checklistItems.section5'), ok: hasText(form.keywords) },
+        { key: 'section-6', label: this.$t('budgetStickyOverlay.checklistItems.section6'), ok: hasText(form.problemSignificance) },
+        { key: 'section-7', label: this.$t('budgetStickyOverlay.checklistItems.section7'), ok: hasText(form.objectives) },
+        { key: 'section-8', label: this.$t('budgetStickyOverlay.checklistItems.section8'), ok: hasText(form.literatureReview) },
+        { key: 'section-9', label: this.$t('budgetStickyOverlay.checklistItems.section9'), ok: hasText(form.references) },
+        { key: 'section-10', label: this.$t('budgetStickyOverlay.checklistItems.section10'), ok: hasText(form.researchMethodology) },
+        { key: 'section-11', label: this.$t('budgetStickyOverlay.checklistItems.section11'), ok: hasText(form.researchScope) },
+        { key: 'section-12', label: this.$t('budgetStickyOverlay.checklistItems.section12'), ok: this.hasWorkPlanData(form.workPlan) },
+        { key: 'section-13', label: this.$t('budgetStickyOverlay.checklistItems.section13'), ok: hasText(form.milestones) },
+        { key: 'section-14', label: this.$t('budgetStickyOverlay.checklistItems.section14'), ok: !requiresExpectedOutcome || hasText(form.selectedOutcome) },
+        { key: 'section-15', label: this.$t('budgetStickyOverlay.checklistItems.section15'), ok: hasText(form.integration) },
+        { key: 'section-16', label: this.$t('budgetStickyOverlay.checklistItems.section16'), ok: hasText(form.transferLevel) },
+        { key: 'section-17', label: this.$t('budgetStickyOverlay.checklistItems.section17'), ok: Boolean(budgetCompleteness && budgetCompleteness.ok) && Boolean(budgetValidation && budgetValidation.ok) }
       ]
     },
     stickyOverlaySummaryModel () {
@@ -3617,10 +3617,26 @@ export default {
       next.selectedOutcome = String(selectedOutcome || '')
       this.$set(this.feedbackSectionDrafts, sectionKey, next)
     },
+    researchTypeLabel (value) {
+      const thaiMap = {
+        'science-technology': 'ด้านวิทยาศาสตร์และเทคโนโลยี',
+        'health-science': 'ด้านวิทยาศาสตร์สุขภาพ',
+        'social-humanities': 'ด้านสังคมศาสตร์และมนุษยศาสตร์'
+      }
+      const englishMap = {
+        'science-technology': 'Science and Technology',
+        'health-science': 'Health Sciences',
+        'social-humanities': 'Social Sciences and Humanities'
+      }
+      const normalized = String(value || '').trim()
+      if (!normalized) return '-'
+      const map = this.isEnglishLocale ? englishMap : thaiMap
+      return map[normalized] || normalized
+    },
     transferLevelPreview (value) {
-      if (value === 'national-international') return 'ระดับภูมิภาค/ประเทศ/นานาชาติ'
-      if (value === 'community-provincial') return 'ระดับกลุ่มอาชีพ/ชุมชน/จังหวัด'
-      if (value === 'none') return 'ไม่มีการถ่ายทอดสู่สังคม'
+      if (value === 'national-international') return this.isEnglishLocale ? 'Regional/National/International Level' : 'ระดับภูมิภาค/ประเทศ/นานาชาติ'
+      if (value === 'community-provincial') return this.isEnglishLocale ? 'Professional Group/Community/Provincial Level' : 'ระดับกลุ่มอาชีพ/ชุมชน/จังหวัด'
+      if (value === 'none') return this.isEnglishLocale ? 'No social transfer yet' : 'ไม่มีการถ่ายทอดสู่สังคม'
       return '-'
     },
     hasWorkPlanDraftContent (value) {
@@ -5461,7 +5477,7 @@ export default {
 
       if (!hasText(form.projectNameThai) || !hasText(form.projectNameEnglish)) missingSections.push('1. ชื่อโครงการ')
       if (!fundingType || (requiresFundingSubType && !hasText(form.fundingSubType))) missingSections.push('2. ประเภททุน')
-      if (!hasText(form.researchType)) missingSections.push('4. ประเภทงานวิจัย')
+      if (!hasText(form.researchType)) missingSections.push(this.$t('budgetStickyOverlay.checklistItems.section4'))
       if (!hasText(form.keywords)) missingSections.push('5. คำสำคัญ (Keywords)')
       if (!hasText(form.problemSignificance)) missingSections.push('6. ความสำคัญของปัญหาและแนวคิด')
       if (!hasText(form.objectives)) missingSections.push('7. วัตถุประสงค์')
@@ -5473,7 +5489,7 @@ export default {
       if (!hasText(form.milestones)) missingSections.push('13. ผลงานตามระยะเวลาการรายงาน')
       if (requiresExpectedOutcome && !hasText(form.selectedOutcome)) missingSections.push('14. ผลลัพธ์ที่คาดว่าจะได้รับ')
       if (!hasText(form.integration)) missingSections.push('15. การบูรณาการงานวิจัย')
-      if (!hasText(form.transferLevel)) missingSections.push('16. ระดับการถ่ายทอดสู่สังคม')
+      if (!hasText(form.transferLevel)) missingSections.push(this.$t('budgetStickyOverlay.checklistItems.section16'))
 
       if (missingSections.length > 0) {
         return {
@@ -5697,12 +5713,7 @@ export default {
       return ''
     },
     reportResearchTypeLabel (researchType) {
-      const map = {
-        'science-technology': 'ด้านวิทยาศาสตร์และเทคโนโลยี',
-        'health-science': 'ด้านวิทยาศาสตร์สุขภาพ',
-        'social-humanities': 'ด้านสังคมศาสตร์และมนุษยศาสตร์'
-      }
-      return map[researchType] || researchType || '-'
+      return this.researchTypeLabel(researchType)
     },
     reportSelectedOutcomes (fundingType, selectedOutcome) {
       const map = {

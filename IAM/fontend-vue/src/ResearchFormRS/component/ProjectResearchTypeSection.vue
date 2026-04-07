@@ -1,7 +1,7 @@
 <template>
   <div class="research-type-section" :class="{ 'is-dark': isDarkTheme }">
     <div class="funding-options research-type-selector">
-      <div class="research-type-selector__intro">เลือก 1 ประเภทงานวิจัยที่สอดคล้องกับโครงการ</div>
+      <div class="research-type-selector__intro">{{ text.intro }}</div>
 
       <div class="research-type-selector__grid">
         <article
@@ -43,8 +43,8 @@
         aria-live="polite"
       >
         <span class="research-type-summary__icon" aria-hidden="true">{{ isResearchTypeSelected ? '✓' : 'i' }}</span>
-        <span v-if="isResearchTypeSelected">เลือกแล้ว: {{ selectedResearchTypeLabel }}</span>
-        <span v-else>กรุณาเลือก 1 ประเภทงานวิจัย</span>
+        <span v-if="isResearchTypeSelected">{{ text.selectedPrefix }} {{ selectedResearchTypeLabel }}</span>
+        <span v-else>{{ text.emptySelection }}</span>
       </div>
     </div>
   </div>
@@ -77,6 +77,26 @@ export default {
     isDarkTheme: {
       type: Boolean,
       default: false
+    }
+  },
+  computed: {
+    isEnglishLocale() {
+      const locale = String((this.$i18n && this.$i18n.locale) || '')
+      return locale.toLowerCase().startsWith('en')
+    },
+    text() {
+      if (this.isEnglishLocale) {
+        return {
+          intro: 'Select 1 research type that matches the project.',
+          selectedPrefix: 'Selected:',
+          emptySelection: 'Please select 1 research type.'
+        }
+      }
+      return {
+        intro: 'เลือก 1 ประเภทงานวิจัยที่สอดคล้องกับโครงการ',
+        selectedPrefix: 'เลือกแล้ว:',
+        emptySelection: 'กรุณาเลือก 1 ประเภทงานวิจัย'
+      }
     }
   }
 }

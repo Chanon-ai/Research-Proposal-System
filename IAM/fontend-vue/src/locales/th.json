@@ -640,5 +640,42 @@
       },
       "importPlaceholderFallback": "พื้นที่ checklist ยังเว้นไว้สำหรับ import จาก backend ในขั้นถัดไป"
     }
+  },
+  "budgetStickyOverlay": {
+    "title": "สรุปงบประมาณ",
+    "jumpToError": "ไปจุดผิด",
+    "collapseTitle": "ย่อสรุปงบ",
+    "expandTitle": "ขยายสรุปงบ",
+    "used": "ใช้ไปแล้ว",
+    "remaining": "คงเหลือ",
+    "totalBudget": "งบรวม",
+    "period": "งวด {number}",
+    "checklistTitle": "Checklist ข้อมูลที่ต้องกรอก",
+    "collapseChecklist": "ยุบ Checklist",
+    "expandChecklist": "กาง Checklist",
+    "status": {
+      "empty": "ยังไม่มีข้อมูล",
+      "valid": "ถูกต้อง",
+      "invalid": "ไม่ถูกต้อง"
+    },
+    "checklistItems": {
+      "researchTeam": "ข้อมูลคณะผู้วิจัย",
+      "section1": "1. ชื่อโครงการ",
+      "section2": "2. ประเภททุน",
+      "section4": "4. ประเภทงานวิจัย",
+      "section5": "5. คำสำคัญ",
+      "section6": "6. ความสำคัญของปัญหาและแนวคิด",
+      "section7": "7. วัตถุประสงค์",
+      "section8": "8. ทบทวนวรรณกรรม",
+      "section9": "9. เอกสารอ้างอิง",
+      "section10": "10. วิธีดำเนินการวิจัย",
+      "section11": "11. ขอบเขตการวิจัย",
+      "section12": "12. แผนการดำเนินงาน",
+      "section13": "13. ผลงานตามระยะเวลาการรายงาน",
+      "section14": "14. ผลลัพธ์ที่คาดว่าจะได้รับ",
+      "section15": "15. การบูรณาการงานวิจัย",
+      "section16": "16. ระดับการถ่ายทอดสู่สังคม",
+      "section17": "17. งบประมาณโครงการ"
+    }
   }
 }

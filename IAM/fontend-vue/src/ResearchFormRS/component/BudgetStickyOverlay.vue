@@ -15,7 +15,7 @@
         >
         <CCardHeader class="budget-floating-summary-header d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center">
-            <span class="budget-floating-summary-title">สรุปงบประมาณ</span>
+            <span class="budget-floating-summary-title">{{ $t('budgetStickyOverlay.title') }}</span>
             <span class="budget-floating-summary-status-pill ml-2" :class="normalizedSummary.pillClass">
               {{ normalizedSummary.pillLabel }}
             </span>
@@ -28,13 +28,13 @@
               class="budget-floating-summary-action"
               @click="$emit('jump-to-error')"
             >
-              ไปจุดผิด
+              {{ $t('budgetStickyOverlay.jumpToError') }}
             </CButton>
             <CButton
               size="sm"
               color="light"
               class="budget-floating-summary-action"
-              title="ย่อสรุปงบ"
+              :title="$t('budgetStickyOverlay.collapseTitle')"
               @click="collapseToIcon"
             >
               <CIcon :name="isMobileViewport ? 'cil-chevron-bottom' : 'cil-x'" />
@@ -45,14 +45,14 @@
         <CCardBody class="p-3">
           <div class="budget-summary-stat-grid">
             <div class="budget-summary-stat-item is-used">
-              <div class="budget-summary-stat-label">[ ใช้ไปแล้ว ]</div>
+              <div class="budget-summary-stat-label">[ {{ $t('budgetStickyOverlay.used') }} ]</div>
               <div class="budget-summary-stat-value text-danger">{{ formatNumber(normalizedSummary.grandTotal) }}</div>
               <div class="budget-summary-stat-meta" :class="normalizedSummary.hasBudgetLimit ? 'text-muted' : 'text-transparent'">
                 ({{ normalizedSummary.budgetUsedPercent }}%)
               </div>
             </div>
             <div class="budget-summary-stat-item is-remaining">
-              <div class="budget-summary-stat-label">[ คงเหลือ ]</div>
+              <div class="budget-summary-stat-label">[ {{ $t('budgetStickyOverlay.remaining') }} ]</div>
               <div
                 class="budget-summary-stat-value"
                 :class="normalizedSummary.summaryRemainingAmount >= 0 ? 'text-success' : 'text-danger'"
@@ -64,7 +64,7 @@
               </div>
             </div>
             <div class="budget-summary-stat-item is-total">
-              <div class="budget-summary-stat-label">[ งบรวม ]</div>
+              <div class="budget-summary-stat-label">[ {{ $t('budgetStickyOverlay.totalBudget') }} ]</div>
               <div class="budget-summary-stat-value text-dark">{{ formatNumber(normalizedSummary.summaryTotalBudget) }}</div>
               <div class="budget-summary-stat-meta text-transparent">(0%)</div>
             </div>
@@ -74,7 +74,7 @@
 
           <div class="budget-summary-period-list">
             <div class="budget-summary-period-row">
-              <span class="budget-summary-period-label">งวด 1</span>
+              <span class="budget-summary-period-label">{{ $t('budgetStickyOverlay.period', { number: 1 }) }}</span>
               <div class="budget-summary-period-bar">
                 <span
                   class="budget-summary-period-fill"
@@ -91,7 +91,7 @@
               </span>
             </div>
             <div class="budget-summary-period-row">
-              <span class="budget-summary-period-label">งวด 2</span>
+              <span class="budget-summary-period-label">{{ $t('budgetStickyOverlay.period', { number: 2 }) }}</span>
               <div class="budget-summary-period-bar">
                 <span
                   class="budget-summary-period-fill"
@@ -108,7 +108,7 @@
               </span>
             </div>
             <div class="budget-summary-period-row">
-              <span class="budget-summary-period-label">งวด 3</span>
+              <span class="budget-summary-period-label">{{ $t('budgetStickyOverlay.period', { number: 3 }) }}</span>
               <div class="budget-summary-period-bar">
                 <span
                   class="budget-summary-period-fill"
@@ -137,12 +137,12 @@
           </ul>
           <div v-if="normalizedSummary.checklistItems.length" class="budget-summary-checklist">
             <div class="budget-summary-checklist-header">
-              <div class="budget-summary-checklist-title">Checklist ข้อมูลที่ต้องกรอก</div>
+              <div class="budget-summary-checklist-title">{{ $t('budgetStickyOverlay.checklistTitle') }}</div>
               <button
                 type="button"
                 class="budget-summary-checklist-toggle"
-                :title="isChecklistExpanded ? 'ยุบ Checklist' : 'กาง Checklist'"
-                :aria-label="isChecklistExpanded ? 'ยุบ Checklist' : 'กาง Checklist'"
+                :title="isChecklistExpanded ? $t('budgetStickyOverlay.collapseChecklist') : $t('budgetStickyOverlay.expandChecklist')"
+                :aria-label="isChecklistExpanded ? $t('budgetStickyOverlay.collapseChecklist') : $t('budgetStickyOverlay.expandChecklist')"
                 @click="toggleChecklistExpanded"
               >
                 <CIcon :name="isChecklistExpanded ? 'cil-chevron-top' : 'cil-chevron-bottom'" />
@@ -171,15 +171,15 @@
       >
         <div class="budget-floating-summary-compact-content">
           <span class="budget-floating-summary-compact-item">
-            ใช้ไป {{ formatNumber(normalizedSummary.grandTotal) }}
+            {{ $t('budgetStickyOverlay.used') }} {{ formatNumber(normalizedSummary.grandTotal) }}
           </span>
           <span class="budget-floating-summary-compact-sep">|</span>
           <span class="budget-floating-summary-compact-item">
-            เหลือ {{ formatNumber(Math.abs(normalizedSummary.summaryRemainingAmount)) }}
+            {{ $t('budgetStickyOverlay.remaining') }} {{ formatNumber(Math.abs(normalizedSummary.summaryRemainingAmount)) }}
           </span>
           <span class="budget-floating-summary-compact-sep">|</span>
           <span class="budget-floating-summary-compact-item">
-            งบรวม {{ formatNumber(normalizedSummary.summaryTotalBudget) }}
+            {{ $t('budgetStickyOverlay.totalBudget') }} {{ formatNumber(normalizedSummary.summaryTotalBudget) }}
           </span>
           <span class="budget-floating-summary-compact-sep">|</span>
           <span
@@ -192,8 +192,8 @@
         <button
           type="button"
           class="budget-floating-summary-compact-toggle"
-          title="Expand budget summary"
-          aria-label="Expand budget summary"
+          :title="$t('budgetStickyOverlay.expandTitle')"
+          :aria-label="$t('budgetStickyOverlay.expandTitle')"
           @click="expandFromIcon"
         >
           <span class="budget-floating-summary-compact-caret">^</span>
@@ -252,6 +252,10 @@ export default {
     }
   },
   computed: {
+    isEnglishLocale() {
+      const locale = this.$i18n && this.$i18n.locale ? String(this.$i18n.locale) : 'th'
+      return locale.toLowerCase().startsWith('en')
+    },
     overlayStyle() {
       const defaultDesktopTop = Number(this.top || 82)
       const viewportHeight = Number(this.viewportHeight || 0)
@@ -297,8 +301,10 @@ export default {
       return this.isMobileViewport ? 'budget-mobile-toggle-slide' : 'budget-panel-fade'
     },
     compactStatusText() {
-      if (this.normalizedSummary.pillClass === 'is-empty') return 'ยังไม่มีข้อมูล'
-      return this.normalizedSummary.pillClass === 'is-valid' ? 'ถูกต้อง' : 'ไม่ถูกต้อง'
+      if (this.normalizedSummary.pillClass === 'is-empty') return this.$t('budgetStickyOverlay.status.empty')
+      return this.normalizedSummary.pillClass === 'is-valid'
+        ? this.$t('budgetStickyOverlay.status.valid')
+        : this.$t('budgetStickyOverlay.status.invalid')
     },
     compactStatusEmoji() {
       if (this.normalizedSummary.pillClass === 'is-empty') return '\u26AA'
@@ -332,9 +338,9 @@ export default {
         isPeriod3Valid: Boolean(src.isPeriod3Valid),
         canJumpToError: Boolean(src.canJumpToError),
         pillClass: String(src.budgetSummaryStatePillClass || 'is-empty'),
-        pillLabel: String(src.budgetSummaryPillLabel || 'ยังไม่มีข้อมูล'),
+        pillLabel: String(src.budgetSummaryPillLabel || this.$t('budgetStickyOverlay.status.empty')),
         statusClass: String(src.budgetSummaryStatusClass || 'text-muted'),
-        statusText: String(src.budgetSummaryStatusText || 'ยังไม่มีข้อมูล'),
+        statusText: String(src.budgetSummaryStatusText || this.$t('budgetStickyOverlay.status.empty')),
         feedbackDetails: details,
         checklistItems
       }
@@ -374,7 +380,7 @@ export default {
       this.isChecklistExpanded = !this.isChecklistExpanded
     },
     formatNumber(num) {
-      return Number(num || 0).toLocaleString('th-TH')
+      return Number(num || 0).toLocaleString(this.isEnglishLocale ? 'en-US' : 'th-TH')
     }
   }
 }

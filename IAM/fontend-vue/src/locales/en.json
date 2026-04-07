@@ -640,5 +640,42 @@
       },
       "importPlaceholderFallback": "The checklist area is still reserved for backend import in the next step"
     }
+  },
+  "budgetStickyOverlay": {
+    "title": "Budget Summary",
+    "jumpToError": "Go to issue",
+    "collapseTitle": "Collapse budget summary",
+    "expandTitle": "Expand budget summary",
+    "used": "Used",
+    "remaining": "Remaining",
+    "totalBudget": "Total Budget",
+    "period": "Period {number}",
+    "checklistTitle": "Required Information Checklist",
+    "collapseChecklist": "Collapse checklist",
+    "expandChecklist": "Expand checklist",
+    "status": {
+      "empty": "No data yet",
+      "valid": "Valid",
+      "invalid": "Invalid"
+    },
+    "checklistItems": {
+      "researchTeam": "Research Team Information",
+      "section1": "1. Project Title",
+      "section2": "2. Funding Type",
+      "section4": "4. Research Type",
+      "section5": "5. Keywords",
+      "section6": "6. Problem Significance and Concept",
+      "section7": "7. Objectives",
+      "section8": "8. Literature Review",
+      "section9": "9. References",
+      "section10": "10. Research Methodology",
+      "section11": "11. Research Scope",
+      "section12": "12. Work Plan",
+      "section13": "13. Milestones by Reporting Period",
+      "section14": "14. Expected Outcomes",
+      "section15": "15. Research Integration",
+      "section16": "16. Social Transfer Level",
+      "section17": "17. Project Budget"
+    }
   }
 }

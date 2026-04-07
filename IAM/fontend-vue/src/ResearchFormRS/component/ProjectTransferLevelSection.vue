@@ -1,7 +1,7 @@
 <template>
   <div class="transfer-level-section" :class="{ 'is-dark': isDarkTheme }">
     <div class="funding-options transfer-level-selector">
-      <div class="transfer-level-selector__intro">เลือก 1 ระดับการถ่ายทอดสู่สังคมที่สอดคล้องกับผลลัพธ์โครงการ</div>
+      <div class="transfer-level-selector__intro">{{ text.intro }}</div>
 
       <div class="transfer-level-selector__grid">
         <article
@@ -43,8 +43,8 @@
         aria-live="polite"
       >
         <span class="transfer-level-summary__icon" aria-hidden="true">{{ isTransferLevelSelected ? '✓' : 'i' }}</span>
-        <span v-if="isTransferLevelSelected">เลือกแล้ว: {{ selectedTransferLevelLabel }}</span>
-        <span v-else>กรุณาเลือก 1 ระดับการถ่ายทอดสู่สังคม</span>
+        <span v-if="isTransferLevelSelected">{{ text.selectedPrefix }} {{ selectedTransferLevelLabel }}</span>
+        <span v-else>{{ text.emptySelection }}</span>
       </div>
     </div>
   </div>
@@ -77,6 +77,26 @@ export default {
     isDarkTheme: {
       type: Boolean,
       default: false
+    }
+  },
+  computed: {
+    isEnglishLocale() {
+      const locale = String((this.$i18n && this.$i18n.locale) || '')
+      return locale.toLowerCase().startsWith('en')
+    },
+    text() {
+      if (this.isEnglishLocale) {
+        return {
+          intro: 'Select 1 level of social transfer that matches the project outcomes.',
+          selectedPrefix: 'Selected:',
+          emptySelection: 'Please select 1 level of social transfer.'
+        }
+      }
+      return {
+        intro: 'เลือก 1 ระดับการถ่ายทอดสู่สังคมที่สอดคล้องกับผลลัพธ์โครงการ',
+        selectedPrefix: 'เลือกแล้ว:',
+        emptySelection: 'กรุณาเลือก 1 ระดับการถ่ายทอดสู่สังคม'
+      }
     }
   }
 }

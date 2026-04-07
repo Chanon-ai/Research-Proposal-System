@@ -88,7 +88,7 @@
                     {{ subOption.shortName }}
                   </label>
                 </div>
-                <span class="funding-subtype-card__marker" :class="{ 'is-active': fundingSubType === subOption.value }" aria-hidden="true">?</span>
+                <span class="funding-subtype-card__marker" :class="{ 'is-active': fundingSubType === subOption.value }" aria-hidden="true">{{ selectedMarker }}</span>
               </div>
 
               <p class="funding-subtype-card__description mb-0">{{ subOption.shortDescription }}</p>
@@ -120,8 +120,8 @@
         <div class="funding-selection-summary__path">
           {{ selectedFundingTypeLabel }}
           <template v-if="selectedFundingTypeOption && selectedFundingTypeOption.subOptions.length">
-            <span v-if="selectedFundingSubTypeLabel"> ? {{ selectedFundingSubTypeLabel }}</span>
-            <span v-else> ? {{ pendingSelectionText }}</span>
+            <span v-if="selectedFundingSubTypeLabel"> {{ selectionPathSeparator }} {{ selectedFundingSubTypeLabel }}</span>
+            <span v-else> {{ selectionPathSeparator }} {{ pendingSelectionText }}</span>
           </template>
         </div>
         <div v-if="selectedFundingTypeOption && hasBudgetLimit(selectedFundingTypeOption.budgetLimit)" class="funding-selection-summary__budget">
@@ -194,47 +194,83 @@ export default {
       const locale = String((this.$i18n && this.$i18n.locale) || '')
       return locale.toLowerCase().startsWith('en')
     },
+    text() {
+      if (this.isEnglishLocale) {
+        return {
+          step1Title: 'Step 1: Select the main funding type',
+          step1Description: 'Choose the funding type that matches the project before selecting any sub-option.',
+          subOptionBadge: 'Has sub-options',
+          moreDetailsText: '+ More details',
+          hideDetailsText: '- Hide details',
+          requiredText: 'You must select 1 item',
+          stepContextPrefix: 'Research framework for:',
+          subStepDescription: 'This step is required to confirm the selected funding type.',
+          summaryLabel: 'Selection Summary',
+          incompleteSummaryText: 'Research framework not selected yet',
+          completeSummaryText: 'Complete',
+          pendingSelectionText: '(not selected yet)',
+          budgetLimitText: 'Maximum budget',
+          budgetLimitUnit: 'THB'
+        }
+      }
+      return {
+        step1Title: 'ขั้นตอนที่ 1: เลือกประเภทแหล่งทุน',
+        step1Description: 'เลือกประเภทแหล่งทุนที่ตรงกับโครงการ ก่อนเลือกตัวเลือกย่อย (ถ้ามี)',
+        subOptionBadge: 'มีตัวเลือกย่อย',
+        moreDetailsText: '+ รายละเอียดเพิ่มเติม',
+        hideDetailsText: '- ซ่อนรายละเอียด',
+        requiredText: 'กรุณาเลือก 1 รายการ',
+        stepContextPrefix: 'กรอบงานวิจัยสำหรับ:',
+        subStepDescription: 'ขั้นตอนนี้จำเป็นเพื่อยืนยันประเภทแหล่งทุนที่เลือก',
+        summaryLabel: 'สรุปการเลือก',
+        incompleteSummaryText: 'ยังไม่ได้เลือกกรอบงานวิจัย',
+        completeSummaryText: 'สมบูรณ์',
+        pendingSelectionText: '(ยังไม่ได้เลือก)',
+        budgetLimitText: 'วงเงินสูงสุด',
+        budgetLimitUnit: 'บาท'
+      }
+    },
     step1Title() {
-      return this.isEnglishLocale ? 'Step 1: Select the main funding type' : 'ขั้นตอนที่ 1: เลือกประเภทแหล่งทุน'
+      return this.text.step1Title
     },
     step1Description() {
-      return this.isEnglishLocale
-        ? 'Choose the funding type that matches the project before selecting any sub-option.'
-        : 'เลือกประเภทแหล่งทุนที่ตรงกับโครงการ ก่อนเลือกตัวเลือกย่อย (ถ้ามี)'
+      return this.text.step1Description
     },
     subOptionBadge() {
-      return this.isEnglishLocale ? 'Has sub-options' : 'มีตัวเลือกย่อย'
+      return this.text.subOptionBadge
     },
     moreDetailsText() {
-      return this.isEnglishLocale ? '+ More details' : '+ รายละเอียดเพิ่มเติม'
+      return this.text.moreDetailsText
     },
     hideDetailsText() {
-      return this.isEnglishLocale ? '- Hide details' : '- ซ่อนรายละเอียด'
+      return this.text.hideDetailsText
     },
     requiredText() {
-      return this.isEnglishLocale ? 'You must select 1 item' : 'กรุณาเลือก 1 รายการ'
+      return this.text.requiredText
     },
     stepContextText() {
-      return this.isEnglishLocale
-        ? `Research framework for: ${this.selectedFundingTypeLabel}`
-        : `กรอบงานวิจัยสำหรับ: ${this.selectedFundingTypeLabel}`
+      return `${this.text.stepContextPrefix} ${this.selectedFundingTypeLabel}`
     },
     subStepDescription() {
-      return this.isEnglishLocale
-        ? 'This step is required to confirm the selected funding type.'
-        : 'ขั้นตอนนี้จำเป็นเพื่อยืนยันประเภทแหล่งทุนที่เลือก'
+      return this.text.subStepDescription
     },
     summaryLabel() {
-      return this.isEnglishLocale ? 'Selection Summary' : 'สรุปการเลือก'
+      return this.text.summaryLabel
     },
     incompleteSummaryText() {
-      return this.isEnglishLocale ? 'Research framework not selected yet' : 'ยังไม่ได้เลือกกรอบงานวิจัย'
+      return this.text.incompleteSummaryText
     },
     completeSummaryText() {
-      return this.isEnglishLocale ? 'Complete' : 'สมบูรณ์'
+      return this.text.completeSummaryText
     },
     pendingSelectionText() {
-      return this.isEnglishLocale ? '(not selected yet)' : '(ยังไม่ได้เลือก)'
+      return this.text.pendingSelectionText
+    },
+    selectionPathSeparator() {
+      return '>'
+    },
+    selectedMarker() {
+      return '✓'
     }
   },
   methods: {
@@ -244,10 +280,7 @@ export default {
     budgetLimitText(value) {
       const amount = Number(value)
       if (!Number.isFinite(amount) || amount <= 0) return '-'
-      if (this.isEnglishLocale) {
-        return `Maximum budget ${amount.toLocaleString('en-US')} THB`
-      }
-      return `วงเงินสูงสุด ${amount.toLocaleString('th-TH')} บาท`
+      return `${this.text.budgetLimitText} ${amount.toLocaleString(this.isEnglishLocale ? 'en-US' : 'th-TH')} ${this.text.budgetLimitUnit}`
     },
     focusSubStepIfNeeded(fundingType) {
       const option = (Array.isArray(this.fundingTypeOptions) ? this.fundingTypeOptions : [])
