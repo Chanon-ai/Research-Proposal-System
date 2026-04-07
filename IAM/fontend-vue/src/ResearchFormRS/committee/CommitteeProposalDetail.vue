@@ -416,7 +416,14 @@ export default {
       try {
         const res = await Service.proposal.getMyReview(encodeURIComponent(pid), { roundNo: this.activeRoundNo })
         const review = res && res.data && res.data.data ? res.data.data : null
-        if (!review) return
+        const reviewStatus = review && review.reviewStatus ? String(review.reviewStatus).toLowerCase() : ''
+        const isLockedReview = reviewStatus === 'submitted' || reviewStatus === 'certified'
+        if (!review) {
+          this.clearLocalSubmissionLock()
+          this.isEvaluationLocked = false
+          this.submittedBannerVisible = false
+          return
+        }
 
         const nextScores = { ...this.form.rubricScores }
         ;(review.scoreItems || []).forEach(item => {
@@ -434,13 +441,22 @@ export default {
           decision: review.decision === 'revise' ? 'revision' : (review.decision || this.form.decision)
         }
 
-        if (review.reviewStatus === 'submitted') {
+        if (isLockedReview) {
           this.isEvaluationLocked = true
           this.submittedBannerVisible = true
+        } else {
+          this.clearLocalSubmissionLock()
+          this.isEvaluationLocked = false
+          this.submittedBannerVisible = false
         }
       } catch (e) {
         const status = e && e.response ? e.response.status : null
-        if (status === 404) return
+        if (status === 404) {
+          this.clearLocalSubmissionLock()
+          this.isEvaluationLocked = false
+          this.submittedBannerVisible = false
+          return
+        }
         console.warn('Load saved review failed:', e)
       }
     },
@@ -466,6 +482,11 @@ export default {
       const pid = this.proposal ? (this.proposal._id || this.proposal.id) : ''
       const uid = this.currentUserId || 'unknown'
       return pid ? `committeeSubmission:${pid}:round:${this.activeRoundNo}:user:${uid}` : ''
+    },
+    clearLocalSubmissionLock() {
+      try {
+        localStorage.removeItem(this.submissionKey())
+      } catch (e) { void e }
     },
     loadDraft() {
       try {

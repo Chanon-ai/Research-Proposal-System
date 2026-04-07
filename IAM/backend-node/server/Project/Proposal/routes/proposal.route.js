@@ -22,6 +22,8 @@ router.get('/reviews/me', authenticate, requireRole('committee', 'chairman', 'ad
 router.get('/reviews/by-proposal/:id', authenticate, requireRole('admin', 'chairman', 'researcher', 'committee'), controller.listProposalReviews);
 router.get('/:id/reviews/me', authenticate, requireRole('committee', 'chairman', 'admin'), controller.myReview);
 router.get('/:id/reviews', authenticate, requireRole('admin', 'chairman', 'researcher', 'committee'), controller.listProposalReviews);
+router.post('/:id/reviews/:reviewId/accept', authenticate, requireRole('admin'), controller.acceptProposalReview);
+router.post('/:id/reviews/:reviewId/reject', authenticate, requireRole('admin'), controller.rejectProposalReview);
 router.get('/:id/feedback', authenticate, controller.proposalFeedback);
 router.get('/collaboration-consent/view', controller.renderCollaborationConsentPage);
 router.post('/collaboration-consent/respond', controller.respondCollaborationConsent);

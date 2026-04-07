@@ -316,7 +316,7 @@ export default {
         const proposalId = p._id ? String(p._id) : null
         const review = proposalId ? this.reviewMap[proposalId] : null
         const reviewStatus = review && review.reviewStatus ? String(review.reviewStatus).toLowerCase() : ''
-        const isReviewed = reviewStatus === 'submitted'
+        const isReviewed = this.isCommitteeReviewSubmitted(reviewStatus)
         const decisionCode = review && review.decision ? String(review.decision).toLowerCase() : ''
         const decisionDisplay = this.decisionLabel(decisionCode, isReviewed)
         const roundNo = this.deriveRoundNo(p)
@@ -703,7 +703,8 @@ export default {
       return 1
     },
     isCommitteeReviewSubmitted (reviewStatus) {
-      return String(reviewStatus || '').toLowerCase() === 'submitted'
+      const normalized = String(reviewStatus || '').toLowerCase()
+      return normalized === 'submitted' || normalized === 'certified'
     },
     getAssignedChairmanIds (proposal) {
       const assignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'

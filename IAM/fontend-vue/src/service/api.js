@@ -239,6 +239,8 @@ export default {
     assignCommittee: (id, data) => instance.post(`/api/v1/proposals/${id}/assign-committee`, data),
     assignChairman: (id, data) => instance.post(`/api/v1/proposals/${id}/assign-chairman`, data),
     saveReview: (id, data) => instance.post(`/api/v1/proposals/${id}/reviews`, data),
+    acceptReview: (id, reviewId) => instance.post(`/api/v1/proposals/${id}/reviews/${reviewId}/accept`),
+    rejectReview: (id, reviewId) => instance.post(`/api/v1/proposals/${id}/reviews/${reviewId}/reject`),
     getMyReview: (id, params) => instance.get(`/api/v1/proposals/${id}/reviews/me`, { params }),
     getReviewsByProposal: (id, params) => instance.get(`/api/v1/proposals/${id}/reviews`, { params }),
     getReviewsByProposalAlt: (id, params) => instance.get(`/api/v1/proposals/reviews/by-proposal/${id}`, { params }),

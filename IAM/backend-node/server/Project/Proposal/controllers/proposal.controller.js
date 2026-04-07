@@ -458,6 +458,50 @@ exports.saveReview = async (req, res, next) => {
   }
 };
 
+exports.acceptProposalReview = async (req, res, next) => {
+  try {
+    const user = getUserFromReq(req);
+    const review = await service.acceptProposalReview(req.params.id, req.params.reviewId, user);
+    return jsonResponse(res, { success: true, message: 'Review accepted', data: review });
+  } catch (err) {
+    if (err && err.message === 'REVIEW_NOT_FOUND') {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+    if (err && err.message === 'REVIEW_NOT_PENDING_ADMIN') {
+      return res.status(400).json({ success: false, message: 'Review is not waiting for admin acceptance' });
+    }
+    if (err && err.message === 'Forbidden') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    if (err && err.message === 'Unauthorized') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    next(err);
+  }
+};
+
+exports.rejectProposalReview = async (req, res, next) => {
+  try {
+    const user = getUserFromReq(req);
+    const review = await service.rejectProposalReview(req.params.id, req.params.reviewId, user);
+    return jsonResponse(res, { success: true, message: 'Review rejected', data: review });
+  } catch (err) {
+    if (err && err.message === 'REVIEW_NOT_FOUND') {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+    if (err && err.message === 'REVIEW_NOT_PENDING_ADMIN') {
+      return res.status(400).json({ success: false, message: 'Review is not waiting for admin acceptance' });
+    }
+    if (err && err.message === 'Forbidden') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    if (err && err.message === 'Unauthorized') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    next(err);
+  }
+};
+
 exports.myReview = async (req, res, next) => {
   try {
     const user = getUserFromReq(req);

@@ -338,7 +338,7 @@ export default {
         const fundTypeLabel = this.fundTypeLabel(p)
         const proposalId = p && p._id ? String(p._id) : ''
         const review = proposalId ? this.reviewMap[proposalId] : null
-        const isReviewed = Boolean(review && review.reviewStatus === 'submitted')
+        const isReviewed = this.isCommitteeReviewSubmitted(review && review.reviewStatus)
 
         if (this.filterRound !== 'all') {
           const target = Number(this.filterRound)
@@ -508,7 +508,7 @@ export default {
       const reviewed = (this.filteredAssignedProposals || []).filter(p => {
         const pid = p && p._id ? String(p._id) : ''
         const review = pid ? this.reviewMap[pid] : null
-        return Boolean(review && review.reviewStatus === 'submitted')
+        return this.isCommitteeReviewSubmitted(review && review.reviewStatus)
       })
       const total = reviewed.length
       const countBy = (key) => reviewed.filter(p => {
@@ -534,7 +534,7 @@ export default {
       const reviewed = (this.filteredAssignedProposals || []).map(p => {
         const pid = p && p._id ? String(p._id) : ''
         const review = pid ? this.reviewMap[pid] : null
-        return review && review.reviewStatus === 'submitted' ? review : null
+        return this.isCommitteeReviewSubmitted(review && review.reviewStatus) ? review : null
       }).filter(Boolean)
       const percents = reviewed
         .map(r => {
@@ -623,7 +623,8 @@ export default {
       return review && review.reviewStatus ? String(review.reviewStatus).toLowerCase() : ''
     },
     isCommitteeReviewSubmitted(reviewStatus) {
-      return String(reviewStatus || '').toLowerCase() === 'submitted'
+      const normalized = String(reviewStatus || '').toLowerCase()
+      return normalized === 'submitted' || normalized === 'certified'
     },
     getCommitteeStatusKey(statusOrProposal, explicitReviewStatus = null) {
       const proposal = statusOrProposal && typeof statusOrProposal === 'object' ? statusOrProposal : null
