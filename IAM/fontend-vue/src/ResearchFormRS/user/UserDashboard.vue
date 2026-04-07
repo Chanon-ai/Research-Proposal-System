@@ -326,8 +326,6 @@ export default {
         rejected: ['rejected'],
       },
       workflowSteps: [],
-<<<<<<< HEAD
-=======
       chartData: {
         all: [72, 68, 83, 77, 86, 91, 88],
         inProgress: [35, 49, 60, 71, 80, 90, 75],
@@ -347,7 +345,6 @@ export default {
           point: { radius: 0 }
         }
       },
->>>>>>> 7bbc0efcaf6f695e3506f233cb68f9191815d05d
       fundingBudgetConfig: createDefaultFundingBudgetConfig(),
       rolePageAccessConfig: createDefaultRolePageAccessConfig()
     };
