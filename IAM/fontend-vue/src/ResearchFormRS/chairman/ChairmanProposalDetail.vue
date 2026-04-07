@@ -409,7 +409,14 @@ export default {
       try {
         const response = await Service.proposal.getMyReview(encodeURIComponent(proposalId), { roundNo: this.activeRoundNo })
         const review = response && response.data && response.data.data ? response.data.data : null
-        if (!review) return
+        const reviewStatus = review && review.reviewStatus ? String(review.reviewStatus).toLowerCase() : ''
+        const isLockedReview = reviewStatus === 'submitted' || reviewStatus === 'certified'
+        if (!review) {
+          this.clearLocalSubmissionLock()
+          this.isEvaluationLocked = false
+          this.submittedBannerVisible = false
+          return
+        }
 
         this.form = {
           ...this.form,
@@ -418,13 +425,22 @@ export default {
           decision: review.decision === 'reject' ? 'reject' : 'approve'
         }
 
-        if (review.reviewStatus === 'submitted') {
+        if (isLockedReview) {
           this.isEvaluationLocked = true
           this.submittedBannerVisible = true
+        } else {
+          this.clearLocalSubmissionLock()
+          this.isEvaluationLocked = false
+          this.submittedBannerVisible = false
         }
       } catch (error) {
         const status = error && error.response ? error.response.status : null
-        if (status === 404) return
+        if (status === 404) {
+          this.clearLocalSubmissionLock()
+          this.isEvaluationLocked = false
+          this.submittedBannerVisible = false
+          return
+        }
         console.warn('Load saved chairman review failed:', error)
       }
     },
@@ -451,6 +467,14 @@ export default {
       const proposalId = this.proposal ? (this.proposal._id || this.proposal.id) : ''
       const userId = this.currentUserId || 'unknown'
       return proposalId ? `chairmanSubmission:${proposalId}:round:${this.activeRoundNo}:user:${userId}` : ''
+    },
+    clearLocalSubmissionLock () {
+      try {
+        localStorage.removeItem(this.submissionKey())
+      } catch (_) {
+        return undefined
+      }
+      return undefined
     },
     loadDraft () {
       try {

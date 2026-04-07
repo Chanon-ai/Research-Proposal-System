@@ -71,7 +71,7 @@
                 :no-items-view="{ noItems: $t('admin.table.noItems'), noResults: $t('admin.table.noResults') }"
               >
                 <template #projectTitleTh="{ item }">
-                  <td>
+                  <td class="project-title-cell">
                     <div class="font-weight-bold">{{ item.projectTitleTh || '-' }}</div>
                     <small class="text-muted" v-if="item.projectTitleEn">{{ item.projectTitleEn }}</small>
                   </td>
@@ -105,9 +105,6 @@
                   <td class="text-nowrap">
                     <div class="admin-actions">
                       <CButton v-if="canAccessResearchForm" color="primary" variant="outline" size="sm" class="admin-action-btn" @click="viewDetail(item)"><CIcon name="cil-folder-open" class="mr-1" /> {{ $t('admin.actions.viewDetail') }}</CButton>
-                      <div v-if="getChairmanStatusText(item)" class="small text-muted mt-1">
-                        {{ getChairmanStatusText(item) }}
-                      </div>
                     </div>
                   </td>
                 </template>
@@ -527,7 +524,7 @@ export default {
     tableFields () {
       return [
         { key: 'proposalCode', label: this.$t('admin.table.proposalCode') },
-        { key: 'projectTitleTh', label: this.$t('admin.table.projectTitleTh') },
+        { key: 'projectTitleTh', label: this.$t('admin.table.projectTitleTh'), _classes: 'project-title-cell', _style: 'text-align:left;' },
         { key: 'currentStatus', label: this.$t('admin.table.currentStatus'), _style: 'width:360px; text-align:center;' },
         { key: 'currentRound', label: this.$t('admin.table.currentRound') },
         { key: 'latestStatusUpdatedAt', label: this.$t('admin.table.updatedAt') },
@@ -1635,6 +1632,15 @@ export default {
 .mfu-table-surface >>> .table tbody td:last-child,
 .mfu-table-surface::v-deep .table tbody td:last-child {
   border-right: 0;
+}
+
+.mfu-table-surface /deep/ .table thead th.project-title-cell,
+.mfu-table-surface >>> .table thead th.project-title-cell,
+.mfu-table-surface::v-deep .table thead th.project-title-cell,
+.mfu-table-surface /deep/ .table tbody td.project-title-cell,
+.mfu-table-surface >>> .table tbody td.project-title-cell,
+.mfu-table-surface::v-deep .table tbody td.project-title-cell {
+  text-align: left !important;
 }
 
 .current-status-cell {

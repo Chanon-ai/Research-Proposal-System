@@ -119,6 +119,114 @@
         </div>
       </div>
 
+      <div v-if="showReadonlyChairmanChecklistCard" class="card mt-3 mb-3 review-summary-card" style="background: #fffaf0; border-color: #f3d19a;">
+        <div class="card-header">
+          <strong>สรุป Checklist จากประธาน (Read Only)</strong>
+        </div>
+        <div class="card-body">
+          <div class="d-flex flex-wrap align-items-center mb-3 text-muted small" style="gap: 16px;">
+            <div class="d-inline-flex align-items-center">
+              <CIcon name="cil-check-circle" class="text-success mr-1" />
+              <span>เขียว = ผ่าน</span>
+            </div>
+            <div class="d-inline-flex align-items-center">
+              <CIcon name="cil-x-circle" class="text-danger mr-1" />
+              <span>แดง = ไม่ผ่าน</span>
+            </div>
+          </div>
+
+          <div v-if="readonlyChairmanChecklistLoading" class="text-center py-3">
+            <CSpinner size="sm" color="primary" />
+            <span class="text-muted ml-2">กำลังโหลดผลการประเมินจากประธาน...</span>
+          </div>
+
+          <CAlert v-else-if="readonlyChairmanChecklistError" color="warning" show>
+            ไม่สามารถโหลดผลการประเมินได้: {{ readonlyChairmanChecklistError }}
+          </CAlert>
+
+          <div v-else>
+            <div
+              v-for="card in chairmanReviewCards"
+              :key="'readonly-chairman-' + card.reviewId"
+              class="card mb-2 chairman-review-card"
+            >
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6 mb-1"><strong>ผู้ประเมิน:</strong> {{ reviewerName(card.review) }}</div>
+                  <div class="col-md-6 mb-1"><strong>วันที่ส่ง:</strong> {{ formatReviewDateTime(card.review.submittedAt || card.review.updatedAt) }}</div>
+                  <div class="col-md-6 mb-1"><strong>ผลการพิจารณา:</strong> {{ decisionLabel(card.review.decision) }}</div>
+                  <div class="col-md-6 mb-1"><strong>Checklist ที่เลือก:</strong> {{ card.checkedCount }}/{{ card.totalItems }} ข้อ</div>
+                  <div class="col-md-6 mb-1">
+                    <strong>สถานะผลประเมิน:</strong>
+                    <CBadge :color="reviewModerationColor(card.review)" class="ml-1">{{ reviewModerationLabel(card.review) }}</CBadge>
+                  </div>
+                  <div class="col-md-12 mb-2"><strong>ประเภททุนอ้างอิง:</strong> {{ card.fundingTypeLabel }}</div>
+                  <div class="col-12 mb-2"><strong>สรุปข้อเสนอแนะ:</strong> {{ card.review.summaryComment || '-' }}</div>
+                </div>
+
+                <div
+                  v-if="isAdminView && isReviewPendingAdminAcceptance(card.review)"
+                  class="d-flex justify-content-end flex-wrap mb-3"
+                  style="gap: 8px;"
+                >
+                  <CButton
+                    size="sm"
+                    color="success"
+                    :disabled="isReviewModerationBusy(card.review)"
+                    @click="acceptProposalReview(card.review)"
+                  >
+                    <CIcon name="cil-check-circle" class="mr-1" /> {{ isReviewModerationBusy(card.review) ? 'กำลังบันทึก...' : 'รับผลประเมิน' }}
+                  </CButton>
+                  <CButton
+                    size="sm"
+                    color="danger"
+                    variant="outline"
+                    :disabled="isReviewModerationBusy(card.review)"
+                    @click="rejectProposalReview(card.review)"
+                  >
+                    <CIcon name="cil-x-circle" class="mr-1" /> ไม่รับผลประเมิน
+                  </CButton>
+                </div>
+
+                <div v-if="card.sections.length" class="chairman-review-card__sections">
+                  <div
+                    v-for="section in card.sections"
+                    :key="'readonly-chairman-' + card.reviewId + '-' + section.sectionKey"
+                    class="chairman-review-card__section"
+                  >
+                    <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
+                      <div class="font-weight-bold">{{ section.sectionLabel }}</div>
+                      <CBadge color="warning" class="chairman-review-card__badge">{{ section.checkedCount }}/{{ section.totalItems }} ข้อ</CBadge>
+                    </div>
+                    <div v-if="section.items.length" class="mt-2">
+                      <ul class="mb-0 pl-3 chairman-review-card__list">
+                        <li
+                          v-for="item in section.items"
+                          :key="'readonly-chairman-' + card.reviewId + '-' + section.sectionKey + '-' + item.itemKey"
+                          class="chairman-review-card__list-item"
+                        >
+                          <CIcon
+                            :name="item.checked ? 'cil-check-circle' : 'cil-x-circle'"
+                            :class="item.checked ? 'text-success mr-2' : 'text-danger mr-2'"
+                          />
+                          {{ item.label }}
+                        </li>
+                      </ul>
+                    </div>
+                    <div v-else class="text-muted small mt-2">
+                      ไม่มีรายการ checklist ในหัวข้อนี้
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-muted small">
+                  ไม่พบ payload checklist จากผลประเมินของประธาน
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div v-if="isAdminView" ref="committeeReviewsSection" class="card mt-3 mb-5">
         <div class="card-header">
           <strong>ผลการประเมินจากคณะกรรมการ</strong>
@@ -139,7 +247,8 @@
                 <h6 class="mb-3">Admin Review Summary</h6>
                 <div class="row">
                   <div class="col-md-4 mb-1"><strong>จำนวนกรรมการทั้งหมด:</strong> {{ assignedCommitteeCount }}</div>
-                  <div class="col-md-4 mb-1"><strong>ส่งผลประเมินแล้ว:</strong> {{ submittedReviewCount }}</div>
+                  <div class="col-md-4 mb-1"><strong>รับผลประเมินแล้ว:</strong> {{ submittedReviewCount }}</div>
+                  <div class="col-md-4 mb-1"><strong>รอแอดมินรับผล:</strong> {{ pendingAdminCommitteeReviewCount }}</div>
                   <div class="col-md-4 mb-1"><strong>รอการประเมิน:</strong> {{ pendingReviewCount }}</div>
                   <div class="col-md-4 mb-1"><strong>ค่าเฉลี่ยคะแนนรวม:</strong> {{ averageSubmittedScore }}</div>
                   <div class="col-md-4 mb-1"><strong>อนุมัติ:</strong> {{ approveCount }}</div>
@@ -216,57 +325,6 @@
               </div>
             </div>
 
-            <div v-if="chairmanReviewCards.length" class="card mb-3 review-summary-card" style="background: #fffaf0; border-color: #f3d19a;">
-              <div class="card-body">
-                <h6 class="mb-3">สรุป Checklist จากประธาน</h6>
-                <div
-                  v-for="card in chairmanReviewCards"
-                  :key="card.reviewId"
-                  class="card mb-2 chairman-review-card"
-                >
-                  <div class="card-body">
-                    <div class="row">
-                      <div class="col-md-6 mb-1"><strong>ผู้ประเมิน:</strong> {{ reviewerName(card.review) }}</div>
-                      <div class="col-md-6 mb-1"><strong>วันที่ส่ง:</strong> {{ formatReviewDateTime(card.review.submittedAt || card.review.updatedAt) }}</div>
-                      <div class="col-md-6 mb-1"><strong>ผลการพิจารณา:</strong> {{ decisionLabel(card.review.decision) }}</div>
-                      <div class="col-md-6 mb-1"><strong>Checklist ที่เลือก:</strong> {{ card.checkedCount }}/{{ card.totalItems }} ข้อ</div>
-                      <div class="col-md-12 mb-2"><strong>ประเภททุนอ้างอิง:</strong> {{ card.fundingTypeLabel }}</div>
-                      <div class="col-12 mb-2"><strong>สรุปข้อเสนอแนะ:</strong> {{ card.review.summaryComment || '-' }}</div>
-                    </div>
-
-                    <div v-if="card.sections.length" class="chairman-review-card__sections">
-                      <div
-                        v-for="section in card.sections"
-                        :key="card.reviewId + '-' + section.sectionKey"
-                        class="chairman-review-card__section"
-                      >
-                        <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
-                          <div class="font-weight-bold">{{ section.sectionLabel }}</div>
-                          <CBadge color="warning" class="chairman-review-card__badge">{{ section.checkedItems.length }}/{{ section.totalItems }} ข้อ</CBadge>
-                        </div>
-                        <div v-if="section.checkedItems.length" class="mt-2">
-                          <ul class="mb-0 pl-3 chairman-review-card__list">
-                            <li
-                              v-for="item in section.checkedItems"
-                              :key="card.reviewId + '-' + section.sectionKey + '-' + item.itemKey"
-                            >
-                              {{ item.label }}
-                            </li>
-                          </ul>
-                        </div>
-                        <div v-else class="text-muted small mt-2">
-                          ไม่มีรายการที่ติ๊กในหัวข้อนี้
-                        </div>
-                      </div>
-                    </div>
-                    <div v-else class="text-muted small">
-                      ไม่พบ payload checklist จากผลประเมินของประธาน
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div v-if="!groupedReviews.length" class="text-muted">
               ยังไม่มีผลการประเมินจากคณะกรรมการ
             </div>
@@ -281,7 +339,34 @@
                       <div class="col-md-6 mb-1"><strong>คะแนนรวม:</strong> {{ review.totalScore !== null && review.totalScore !== undefined ? review.totalScore : '-' }}</div>
                       <div class="col-md-6 mb-1"><strong>ผลการพิจารณา:</strong> {{ decisionLabel(review.decision) }}</div>
                       <div class="col-md-6 mb-1"><strong>วันที่ส่ง:</strong> {{ formatReviewDateTime(review.submittedAt || review.updatedAt) }}</div>
+                      <div class="col-md-6 mb-1">
+                        <strong>สถานะผลประเมิน:</strong>
+                        <CBadge :color="reviewModerationColor(review)" class="ml-1">{{ reviewModerationLabel(review) }}</CBadge>
+                      </div>
                       <div class="col-12 mb-1"><strong>สรุปข้อเสนอแนะ:</strong> {{ review.summaryComment || '-' }}</div>
+                    </div>
+                    <div
+                      v-if="isReviewPendingAdminAcceptance(review)"
+                      class="d-flex justify-content-end flex-wrap mt-2"
+                      style="gap: 8px;"
+                    >
+                      <CButton
+                        size="sm"
+                        color="success"
+                        :disabled="isReviewModerationBusy(review)"
+                        @click="acceptProposalReview(review)"
+                      >
+                        <CIcon name="cil-check-circle" class="mr-1" /> {{ isReviewModerationBusy(review) ? 'กำลังบันทึก...' : 'รับผลประเมิน' }}
+                      </CButton>
+                      <CButton
+                        size="sm"
+                        color="danger"
+                        variant="outline"
+                        :disabled="isReviewModerationBusy(review)"
+                        @click="rejectProposalReview(review)"
+                      >
+                        <CIcon name="cil-x-circle" class="mr-1" /> ไม่รับผลประเมิน
+                      </CButton>
                     </div>
                   </div>
                 </div>
@@ -984,6 +1069,7 @@ export default {
       reviewsLoading: false,
       reviewsError: null,
       proposalReviews: [],
+      reviewModerationBusyMap: {},
       feedbackLoading: false,
       feedbackError: null,
       userFeedback: null,
@@ -1101,6 +1187,9 @@ export default {
           await this.scrollToReviewsIfRequested()
         }
       } else {
+        if (!this.isDraftStatus) {
+          await this.fetchProposalReviews(id)
+        }
         if (this.isRevisionRequested) {
           await this.scrollToFeedbackIfNeeded({ behavior: 'auto' })
           await this.fetchUserFeedback(id)
@@ -1345,21 +1434,29 @@ export default {
     committeeSubmittedReviews () {
       return (this.proposalReviews || []).filter(review => !this.isChairmanReview(review) && this.isReviewSubmitted(review))
     },
+    acceptedCommitteeReviews () {
+      return this.committeeSubmittedReviews.filter(review => this.isReviewAccepted(review))
+    },
+    pendingCommitteeReviews () {
+      return this.committeeSubmittedReviews.filter(review => this.isReviewPendingAdminAcceptance(review))
+    },
     chairmanReviewCards () {
       return this.chairmanSubmittedReviews.map((review) => {
         const parsed = this.parseChairmanChecklistReview(review)
         const sections = Array.isArray(parsed.sections) ? parsed.sections : []
         const normalizedSections = sections.map((section) => {
           const items = Array.isArray(section && section.items) ? section.items : []
-          const checkedItems = items.filter(item => Boolean(item && item.checked))
+          const normalizedItems = items.map((item) => ({
+            itemKey: String(item && item.itemKey ? item.itemKey : item && item.key ? item.key : 'item'),
+            label: String(item && item.label ? item.label : 'รายการ checklist'),
+            checked: Boolean(item && item.checked)
+          }))
           return {
             sectionKey: String(section && section.sectionKey ? section.sectionKey : 'section'),
             sectionLabel: String(section && section.sectionLabel ? section.sectionLabel : 'หัวข้อประเมิน'),
             totalItems: items.length,
-            checkedItems: checkedItems.map((item) => ({
-              itemKey: String(item && item.itemKey ? item.itemKey : item && item.key ? item.key : 'item'),
-              label: String(item && item.label ? item.label : 'รายการ checklist')
-            }))
+            checkedCount: normalizedItems.filter(item => item.checked).length,
+            items: normalizedItems
           }
         })
 
@@ -1367,14 +1464,26 @@ export default {
           reviewId: String(review && review._id ? review._id : `${review && review.roundNo ? review.roundNo : 1}`),
           review,
           fundingTypeLabel: String(parsed.fundingTypeLabel || '-'),
-          checkedCount: normalizedSections.reduce((sum, section) => sum + section.checkedItems.length, 0),
+          checkedCount: normalizedSections.reduce((sum, section) => sum + section.checkedCount, 0),
           totalItems: normalizedSections.reduce((sum, section) => sum + section.totalItems, 0),
           sections: normalizedSections
         }
       })
     },
+    readonlyChairmanChecklistLoading () {
+      return !this.isAdminView && this.reviewsLoading
+    },
+    readonlyChairmanChecklistError () {
+      if (this.isAdminView) return ''
+      return this.reviewsError || ''
+    },
+    showReadonlyChairmanChecklistCard () {
+      if (!this.viewProposalId) return false
+      if (this.chairmanReviewCards.length > 0) return true
+      return Boolean(this.readonlyChairmanChecklistLoading || this.readonlyChairmanChecklistError)
+    },
     submittedReviews () {
-      return this.committeeSubmittedReviews
+      return this.acceptedCommitteeReviews
     },
     assignedCommitteeCount () {
       const ids = this.loadedProposal && Array.isArray(this.loadedProposal.committeeIds)
@@ -1386,7 +1495,10 @@ export default {
       return this.submittedReviews.length
     },
     pendingReviewCount () {
-      return Math.max(this.assignedCommitteeCount - this.submittedReviewCount, 0)
+      return Math.max(this.assignedCommitteeCount - this.committeeSubmittedReviews.length, 0)
+    },
+    pendingAdminCommitteeReviewCount () {
+      return this.pendingCommitteeReviews.length
     },
     averageSubmittedScore () {
       const nums = this.submittedReviews
@@ -1413,7 +1525,7 @@ export default {
       const rows = this.userFeedback && Array.isArray(this.userFeedback.committeeReviews)
         ? this.userFeedback.committeeReviews
         : []
-      return rows.filter(r => r && r.reviewStatus === 'submitted')
+      return rows.filter(r => this.isReviewAccepted(r))
     },
     feedbackReviewGroups () {
       const groups = {}
@@ -1754,6 +1866,9 @@ export default {
               await this.scrollToReviewsIfRequested()
             }
           } else {
+            if (!this.isDraftStatus) {
+              await this.fetchProposalReviews(newId)
+            }
             if (this.isRevisionRequested) {
               await this.scrollToFeedbackIfNeeded({ behavior: 'auto' })
               await this.fetchUserFeedback(newId)
@@ -3058,8 +3173,96 @@ export default {
       if (u && typeof u === 'object') return u.fullName || u.email || '-'
       return String(u || '-')
     },
+    normalizeReviewStatus (review) {
+      return String(review && review.reviewStatus ? review.reviewStatus : '').trim().toLowerCase()
+    },
     isReviewSubmitted (review) {
-      return String(review && review.reviewStatus ? review.reviewStatus : '').trim().toLowerCase() === 'submitted'
+      const status = this.normalizeReviewStatus(review)
+      return status === 'submitted' || status === 'certified'
+    },
+    isReviewAccepted (review) {
+      return this.normalizeReviewStatus(review) === 'certified'
+    },
+    isReviewPendingAdminAcceptance (review) {
+      return this.normalizeReviewStatus(review) === 'submitted'
+    },
+    reviewModerationLabel (review) {
+      if (this.isReviewAccepted(review)) return 'รับผลประเมินแล้ว'
+      if (this.isReviewPendingAdminAcceptance(review)) return 'รอแอดมินรับผล'
+      return 'ฉบับร่าง'
+    },
+    reviewModerationColor (review) {
+      if (this.isReviewAccepted(review)) return 'success'
+      if (this.isReviewPendingAdminAcceptance(review)) return 'warning'
+      return 'secondary'
+    },
+    reviewModerationBusyKey (review) {
+      return String(review && review._id ? review._id : '')
+    },
+    isReviewModerationBusy (review) {
+      const key = this.reviewModerationBusyKey(review)
+      return Boolean(key && this.reviewModerationBusyMap[key])
+    },
+    setReviewModerationBusy (review, value) {
+      const key = this.reviewModerationBusyKey(review)
+      if (!key) return
+      this.$set(this.reviewModerationBusyMap, key, Boolean(value))
+    },
+    async acceptProposalReview (review) {
+      if (!this.isAdminView || !this.viewProposalId || !review || !review._id) return
+
+      this.setReviewModerationBusy(review, true)
+      try {
+        await Service.proposal.acceptReview(encodeURIComponent(this.viewProposalId), encodeURIComponent(review._id))
+        await this.loadProposalById(this.viewProposalId)
+        await this.fetchProposalReviews(this.viewProposalId)
+        await this.showAlert({
+          icon: 'success',
+          title: 'รับผลประเมินสำเร็จ',
+          text: 'ระบบได้บันทึกผลการประเมินเข้าระบบเรียบร้อยแล้ว'
+        })
+      } catch (err) {
+        await this.showAlert({
+          icon: 'error',
+          title: 'รับผลประเมินไม่สำเร็จ',
+          text: (err && err.response && err.response.data && err.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+        })
+      } finally {
+        this.setReviewModerationBusy(review, false)
+      }
+    },
+    async rejectProposalReview (review) {
+      if (!this.isAdminView || !this.viewProposalId || !review || !review._id) return
+
+      const result = await this.showAlert({
+        icon: 'warning',
+        title: 'ยืนยันไม่รับผลประเมิน',
+        text: 'เมื่อไม่รับผลประเมิน ระบบจะลบผลประเมินนี้ออก และผู้ประเมินต้องทำใหม่อีกครั้ง',
+        showCancelButton: true,
+        confirmButtonText: 'ไม่รับผลประเมิน',
+        cancelButtonText: 'ยกเลิก'
+      })
+      if (!result || !result.isConfirmed) return
+
+      this.setReviewModerationBusy(review, true)
+      try {
+        await Service.proposal.rejectReview(encodeURIComponent(this.viewProposalId), encodeURIComponent(review._id))
+        await this.loadProposalById(this.viewProposalId)
+        await this.fetchProposalReviews(this.viewProposalId)
+        await this.showAlert({
+          icon: 'success',
+          title: 'ตีกลับผลประเมินสำเร็จ',
+          text: 'ระบบได้ลบผลประเมินนี้ออกแล้ว และผู้ประเมินต้องส่งใหม่อีกครั้ง'
+        })
+      } catch (err) {
+        await this.showAlert({
+          icon: 'error',
+          title: 'ไม่สามารถตีกลับผลประเมินได้',
+          text: (err && err.response && err.response.data && err.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+        })
+      } finally {
+        this.setReviewModerationBusy(review, false)
+      }
     },
     normalizeReviewerRole (review) {
       const reviewer = review && review.reviewerUserId
@@ -5049,8 +5252,10 @@ export default {
 
         this.setStoredDraftId('')
         await this.showAlert({
-          title: 'ส่งคำขอเรียบร้อย',
-          text: 'รอการยืนยันจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
+          title: requiresCollaborationConfirmation ? 'ส่งคำขอเรียบร้อย' : 'ยื่นสำเร็จ',
+          text: requiresCollaborationConfirmation
+            ? 'รอการยืนยันจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ'
+            : 'กำลังส่งให้ประธานสำนักพิจารณา',
           icon: 'success',
           confirmButtonText: 'ตกลง'
         })

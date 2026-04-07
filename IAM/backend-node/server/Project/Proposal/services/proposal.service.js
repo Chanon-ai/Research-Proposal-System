@@ -49,6 +49,13 @@ const FUNDING_LABELS = Object.freeze({
 
 const REVIEWER_ROLE_SET = new Set(['committee', 'chairman']);
 
+const REVIEW_STATUS = Object.freeze({
+  PENDING: 'pending',
+  IN_PROGRESS: 'in_progress',
+  SUBMITTED: 'submitted',
+  CERTIFIED: 'certified'
+});
+
 const CHAIRMAN_REVIEW_STATUS = Object.freeze({
   IDLE: 'idle',
   PENDING: 'pending',
@@ -62,6 +69,24 @@ function isReviewerRole(role) {
 
 function isChairmanRole(role) {
   return String(role || '').trim().toLowerCase() === 'chairman';
+}
+
+function normalizeReviewStatus(status) {
+  const normalized = String(status || '').trim().toLowerCase();
+  return Object.values(REVIEW_STATUS).includes(normalized) ? normalized : '';
+}
+
+function isReviewAccepted(status) {
+  return normalizeReviewStatus(status) === REVIEW_STATUS.CERTIFIED;
+}
+
+function isReviewAwaitingAdminDecision(status) {
+  return normalizeReviewStatus(status) === REVIEW_STATUS.SUBMITTED;
+}
+
+function isReviewLockedStatus(status) {
+  const normalized = normalizeReviewStatus(status);
+  return normalized === REVIEW_STATUS.SUBMITTED || normalized === REVIEW_STATUS.CERTIFIED;
 }
 
 function getAssignedChairmanIdsFromProposal(proposal = {}) {
@@ -381,12 +406,12 @@ function dedupeCommitteeIds(committeeIds = []) {
   return result;
 }
 
-async function getSubmittedReviewsForRound(proposalId, roundNo) {
+async function getAcceptedReviewsForRound(proposalId, roundNo) {
   const targetRound = normalizeRoundNo(roundNo, 1);
   return ProposalReview.find({
     proposalId,
     roundNo: targetRound,
-    reviewStatus: 'submitted'
+    reviewStatus: REVIEW_STATUS.CERTIFIED
   })
     .select('totalScore reviewerUserId roundNo reviewStatus')
     .lean();
@@ -411,15 +436,15 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
   const reviewStatuses = [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.SECOND_ROUND_REVIEW];
   if (!reviewStatuses.includes(fromStatus)) return proposal;
 
-  const submittedReviews = await getSubmittedReviewsForRound(proposal._id, activeRound);
-  const submittedCount = submittedReviews.length;
-  if (submittedCount <= 0) return proposal;
+  const acceptedReviews = await getAcceptedReviewsForRound(proposal._id, activeRound);
+  const acceptedCount = acceptedReviews.length;
+  if (acceptedCount <= 0) return proposal;
 
   const workflowPolicy = await systemSettingService.getWorkflowApprovalPolicy();
   const requiredCount = getRequiredCommitteeReviewCount(workflowPolicy, proposal.committeeIds);
 
   let toStatus = null;
-  if (submittedCount >= requiredCount) {
+  if (acceptedCount >= requiredCount) {
     toStatus = STATUS.MEETING_COMPLETED;
   } else if (fromStatus === STATUS.ASSIGNED_TO_COMMITTEE) {
     toStatus = STATUS.UNDER_REVIEW;
@@ -892,7 +917,7 @@ async function changeProposalStatus(id, toStatus, remark, user) {
   let allowed = ALLOWED_TRANSITIONS[fromStatus] || [];
   const submittedReviewCount = await ProposalReview.countDocuments({
     proposalId: proposal._id,
-    reviewStatus: 'submitted'
+    reviewStatus: REVIEW_STATUS.CERTIFIED
   });
 
   console.log('[Proposal.changeStatus] transition check', {
@@ -918,7 +943,7 @@ async function changeProposalStatus(id, toStatus, remark, user) {
   // Do not hard-stop by maxRounds here.
 
   if (toStatus === STATUS.APPROVED) {
-    const submittedRoundReviews = await getSubmittedReviewsForRound(proposal._id, currentRound);
+    const submittedRoundReviews = await getAcceptedReviewsForRound(proposal._id, currentRound);
     const submittedCountForCurrentRound = submittedRoundReviews.length;
 
     if (submittedCountForCurrentRound < workflowPolicy.minCommittee) {
@@ -1255,6 +1280,9 @@ async function applyChairmanReviewOutcome(proposalId, review, payload = {}, user
 
   const decision = String(payload && payload.decision ? payload.decision : '').trim().toLowerCase();
   const now = new Date();
+  const reviewerId = review && review.reviewerUserId
+    ? String(review.reviewerUserId && review.reviewerUserId._id ? review.reviewerUserId._id : review.reviewerUserId)
+    : '';
 
   const chairmanAssignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
     ? proposal.chairmanAssignment
@@ -1291,7 +1319,7 @@ async function applyChairmanReviewOutcome(proposalId, review, payload = {}, user
     assignedAt: chairmanAssignment.assignedAt || null,
     assignedBy: chairmanAssignment.assignedBy || null,
     reviewedAt: now,
-    reviewedBy: user._id,
+    reviewedBy: reviewerId || user._id,
     summaryComment: payload && payload.summaryComment ? payload.summaryComment : ''
   }));
   await proposal.save();
@@ -1374,14 +1402,14 @@ async function saveReview(proposalId, payload, user) {
   }
 
   const existing = await ProposalReview.findOne(filter).select('_id reviewStatus submittedAt').lean();
-  if (existing && existing.reviewStatus === 'submitted') {
+  if (existing && isReviewLockedStatus(existing.reviewStatus)) {
     // One submission per reviewer per proposal/round (no resubmission).
     throw new Error('REVIEW_ALREADY_SUBMITTED');
   }
 
   const nextStatus = isSubmit === true
-    ? 'submitted'
-    : (existing && existing.reviewStatus ? existing.reviewStatus : 'in_progress');
+    ? REVIEW_STATUS.SUBMITTED
+    : (existing && existing.reviewStatus ? existing.reviewStatus : REVIEW_STATUS.IN_PROGRESS);
 
   const update = {
     proposalId,
@@ -1395,29 +1423,123 @@ async function saveReview(proposalId, payload, user) {
     reviewStatus: nextStatus
   };
 
-  if (nextStatus === 'submitted') {
+  if (nextStatus === REVIEW_STATUS.SUBMITTED) {
     update.submittedAt = new Date();
   }
 
   const review = await ProposalReview.findOneAndUpdate(filter, update, { upsert: true, new: true });
 
-  if (nextStatus === 'submitted' && !isChairmanRole(reviewerRole)) {
+  return review;
+}
+
+async function acceptProposalReview(proposalId, reviewId, user) {
+  if (!user || !user._id) throw new Error('Unauthorized');
+
+  const review = await ProposalReview.findOne({ _id: reviewId, proposalId })
+    .populate('reviewerUserId', 'fullName email role');
+  if (!review) throw new Error('REVIEW_NOT_FOUND');
+  if (!isReviewAwaitingAdminDecision(review.reviewStatus)) {
+    throw new Error('REVIEW_NOT_PENDING_ADMIN');
+  }
+
+  review.reviewStatus = REVIEW_STATUS.CERTIFIED;
+  review.certifiedAt = new Date();
+  await review.save();
+
+  const reviewer = review.reviewerUserId || null;
+  const reviewerRole = reviewer && reviewer.role ? String(reviewer.role).trim().toLowerCase() : '';
+
+  if (isChairmanRole(reviewerRole)) {
+    await applyChairmanReviewOutcome(proposalId, review, review, user);
+  } else {
     try {
-      await syncProposalStatusWithSubmittedReviews(proposalId, round, user);
+      await syncProposalStatusWithSubmittedReviews(proposalId, review.roundNo, user);
     } catch (err) {
-      console.warn('[Proposal.saveReview] Failed to sync proposal.currentStatus after review submission:', {
+      console.warn('[Proposal.acceptProposalReview] Failed to sync proposal.currentStatus after review acceptance:', {
         proposalId: String(proposalId),
-        roundNo: round,
+        reviewId: String(reviewId),
+        roundNo: review.roundNo,
         error: err && err.message ? err.message : err
       });
     }
   }
 
-  if (nextStatus === 'submitted' && isChairmanRole(reviewerRole)) {
-    await applyChairmanReviewOutcome(proposalId, review, payload, user);
+  if (reviewer && reviewer._id) {
+    try {
+      await Notification.create({
+        userId: reviewer._id,
+        proposalId,
+        channel: 'in_app',
+        eventKey: 'review_certified',
+        title: 'แอดมินรับผลการประเมินแล้ว',
+        message: 'ผลการประเมินของคุณถูกแอดมินรับเข้าระบบเรียบร้อยแล้ว',
+        payload: {
+          reviewId: review._id,
+          roundNo: review.roundNo || 1,
+          reviewStatus: review.reviewStatus
+        },
+        isRead: false,
+        sentAt: new Date()
+      });
+    } catch (err) {
+      console.warn('[Proposal.acceptProposalReview] Failed to create review acceptance notification:', {
+        proposalId: String(proposalId),
+        reviewId: String(reviewId),
+        error: err && err.message ? err.message : err
+      });
+    }
   }
 
   return review;
+}
+
+async function rejectProposalReview(proposalId, reviewId, user) {
+  if (!user || !user._id) throw new Error('Unauthorized');
+
+  const review = await ProposalReview.findOne({ _id: reviewId, proposalId })
+    .populate('reviewerUserId', 'fullName email role');
+  if (!review) throw new Error('REVIEW_NOT_FOUND');
+  if (!isReviewAwaitingAdminDecision(review.reviewStatus)) {
+    throw new Error('REVIEW_NOT_PENDING_ADMIN');
+  }
+
+  const reviewer = review.reviewerUserId || null;
+  const response = {
+    _id: review._id,
+    proposalId,
+    reviewerUserId: reviewer,
+    roundNo: review.roundNo || 1,
+    deleted: true
+  };
+
+  await ProposalReview.deleteOne({ _id: review._id });
+
+  if (reviewer && reviewer._id) {
+    try {
+      await Notification.create({
+        userId: reviewer._id,
+        proposalId,
+        channel: 'in_app',
+        eventKey: 'review_rejected_by_admin',
+        title: 'แอดมินไม่รับผลการประเมิน',
+        message: 'ผลการประเมินของคุณถูกตีกลับ กรุณาประเมินใหม่อีกครั้ง',
+        payload: {
+          reviewId: review._id,
+          roundNo: review.roundNo || 1
+        },
+        isRead: false,
+        sentAt: new Date()
+      });
+    } catch (err) {
+      console.warn('[Proposal.rejectProposalReview] Failed to create review rejection notification:', {
+        proposalId: String(proposalId),
+        reviewId: String(reviewId),
+        error: err && err.message ? err.message : err
+      });
+    }
+  }
+
+  return response;
 }
 
 async function getMyReview(proposalId, roundNo = 1, user) {
@@ -1513,7 +1635,7 @@ async function getProposalFeedback(proposalId, user) {
     ProposalReview.find({
       proposalId,
       roundNo: activeRoundNo,
-      reviewStatus: 'submitted'
+      reviewStatus: REVIEW_STATUS.CERTIFIED
     })
       .populate('reviewerUserId', 'fullName email role')
       .sort({ submittedAt: -1, updatedAt: -1 })
@@ -1753,6 +1875,8 @@ module.exports = {
   assignCommittee,
   assignChairman,
   saveReview,
+  acceptProposalReview,
+  rejectProposalReview,
   getMyReview,
   getMyReviews,
   getProposalReviews,

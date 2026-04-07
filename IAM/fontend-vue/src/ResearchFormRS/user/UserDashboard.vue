@@ -286,6 +286,25 @@ export default {
         rejected: ['rejected'],
       },
       workflowSteps: [],
+      chartData: {
+        all: [72, 68, 83, 77, 86, 91, 88],
+        inProgress: [35, 49, 60, 71, 80, 90, 75],
+        approved: [10, 20, 30, 25, 35, 45, 40],
+        rejected: [6, 4, 5, 3, 4, 2, 1],
+      },
+      chartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        legend: { display: false },
+        scales: {
+          xAxes: [{ display: false }],
+          yAxes: [{ display: false }]
+        },
+        elements: {
+          line: { borderWidth: 2, tension: 0.4 },
+          point: { radius: 0 }
+        }
+      },
       fundingBudgetConfig: createDefaultFundingBudgetConfig(),
       rolePageAccessConfig: createDefaultRolePageAccessConfig()
     };

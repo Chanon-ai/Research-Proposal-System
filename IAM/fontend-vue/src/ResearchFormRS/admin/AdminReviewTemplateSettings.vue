@@ -133,8 +133,7 @@
                   <CCol md="4"><CInput label="Reviewer Label" v-model="chairmanForm.reviewerLabel" /></CCol>
                 </CRow>
                 <CRow>
-                  <CCol md="4"><CInput label="Import Status" v-model="chairmanForm.importStatus" /></CCol>
-                  <CCol md="8"><CTextarea label="หมายเหตุ" rows="3" v-model="chairmanForm.note" /></CCol>
+                  <CCol md="12"><CTextarea label="หมายเหตุ" rows="3" v-model="chairmanForm.note" /></CCol>
                 </CRow>
 
                 <div class="template-section-header mt-3">
@@ -150,10 +149,7 @@
                     <div class="editor-card__title">ประเภททุน {{ chairmanSelectedFundingTemplateIndex + 1 }}</div>
                     <CButton size="sm" color="danger" variant="outline" @click="removeChairmanFundingTemplate(chairmanSelectedFundingTemplateIndex)">ลบประเภททุน</CButton>
                   </div>
-                  <CRow>
-                    <CCol md="4"><CInput label="Funding Type Key" v-model="chairmanSelectedFundingTemplate.fundingTypeKey" /></CCol>
-                    <CCol md="8"><CInput label="Funding Type Label" v-model="chairmanSelectedFundingTemplate.fundingTypeLabel" /></CCol>
-                  </CRow>
+                  <CInput label="Funding Type Label" v-model="chairmanSelectedFundingTemplate.fundingTypeLabel" />
 
                   <div class="template-section-header template-section-header--inner">
                     <div class="template-section-title">Sections</div>
@@ -165,10 +161,7 @@
                       <div class="editor-card__title">Section {{ sectionIndex + 1 }}</div>
                       <CButton size="sm" color="danger" variant="outline" @click="removeChairmanSection(chairmanSelectedFundingTemplateIndex, sectionIndex)">ลบ Section</CButton>
                     </div>
-                    <CRow>
-                      <CCol md="4"><CInput label="Section Key" v-model="section.sectionKey" /></CCol>
-                      <CCol md="8"><CInput label="Section Label" v-model="section.sectionLabel" /></CCol>
-                    </CRow>
+                    <CInput label="Section Label" v-model="section.sectionLabel" />
                     <CTextarea label="Section Description" rows="2" v-model="section.description" />
 
                     <div class="template-section-header template-section-header--inner">
@@ -181,11 +174,7 @@
                         <div class="editor-card__title">Item {{ itemIndex + 1 }}</div>
                         <CButton size="sm" color="danger" variant="outline" @click="removeChairmanItem(chairmanSelectedFundingTemplateIndex, sectionIndex, itemIndex)">ลบ Item</CButton>
                       </div>
-                      <CRow>
-                        <CCol md="4"><CInput label="Item Key" v-model="item.itemKey" /></CCol>
-                        <CCol md="8"><CInput label="Label" v-model="item.label" /></CCol>
-                      </CRow>
-                      <CTextarea label="Description" rows="2" v-model="item.description" />
+                      <CTextarea label="Label" rows="3" v-model="item.label" />
                     </div>
                   </div>
                 </div>
@@ -471,6 +460,42 @@ export default {
     cloneValue (value) {
       return JSON.parse(JSON.stringify(value))
     },
+    normalizeChairmanSectionItems (section) {
+      const targetSection = section && typeof section === 'object' ? section : null
+      if (!targetSection) return targetSection
+      const items = Array.isArray(targetSection.items) ? targetSection.items : []
+      targetSection.items = items.map((item, index) => ({
+        ...(item || {}),
+        itemKey: `item_${index + 1}`,
+        label: item && item.label ? item.label : '',
+        description: item && item.description ? item.description : ''
+      }))
+      return targetSection
+    },
+    normalizeChairmanFundingTemplateItems (template) {
+      const targetTemplate = template && typeof template === 'object' ? template : null
+      if (!targetTemplate) return targetTemplate
+      const sections = Array.isArray(targetTemplate.sections) ? targetTemplate.sections : []
+      targetTemplate.sections = sections.map((section, index) => {
+        const normalizedSection = this.normalizeChairmanSectionItems(section)
+        normalizedSection.sectionKey = `section_${index + 1}`
+        normalizedSection.sectionLabel = normalizedSection.sectionLabel || ''
+        normalizedSection.description = normalizedSection.description || ''
+        return normalizedSection
+      })
+      return targetTemplate
+    },
+    normalizeChairmanEditorForm (form) {
+      const nextForm = this.cloneValue(form || getDefaultChairmanChecklistConfig())
+      const templates = Array.isArray(nextForm.fundingTemplates) ? nextForm.fundingTemplates : []
+      nextForm.fundingTemplates = templates.map((template, index) => {
+        const normalizedTemplate = this.normalizeChairmanFundingTemplateItems(template)
+        normalizedTemplate.fundingTypeKey = `funding_${index + 1}`
+        normalizedTemplate.fundingTypeLabel = normalizedTemplate.fundingTypeLabel || ''
+        return normalizedTemplate
+      })
+      return nextForm
+    },
     resetTemplateImportDefaults () {
       const firstFundingTemplate = this.chairmanParsedConfig && this.chairmanParsedConfig.fundingTemplates && this.chairmanParsedConfig.fundingTemplates[0]
       this.templateImport.fundingTypeKey = firstFundingTemplate ? firstFundingTemplate.fundingTypeKey : 'new-researcher'
@@ -536,7 +561,7 @@ export default {
         return
       }
 
-      this.chairmanForm = this.cloneValue(normalizeChairmanChecklistConfig(this.templateImport.preview.draftConfig))
+      this.chairmanForm = this.normalizeChairmanEditorForm(normalizeChairmanChecklistConfig(this.templateImport.preview.draftConfig))
       this.chairmanPreviewFundingType = this.templateImport.fundingTypeKey || (this.chairmanForm && this.chairmanForm.fundingTemplates && this.chairmanForm.fundingTemplates[0]
         ? this.chairmanForm.fundingTemplates[0].fundingTypeKey
         : 'new-researcher')
@@ -578,7 +603,7 @@ export default {
       const chairmanConfig = normalizeChairmanChecklistConfig(this.parseSettingValue(this.settingsMap[CHAIRMAN_CHECKLIST_SETTING_KEY], getDefaultChairmanChecklistConfig()))
       const committeeConfig = normalizeCommitteeRubricConfig(this.parseSettingValue(this.settingsMap[COMMITTEE_RUBRIC_SETTING_KEY], getDefaultCommitteeRubricConfig()))
 
-      this.chairmanForm = this.cloneValue(chairmanConfig)
+      this.chairmanForm = this.normalizeChairmanEditorForm(chairmanConfig)
       this.committeeForm = this.cloneValue(committeeConfig)
       this.chairmanPreviewFundingType = chairmanConfig && chairmanConfig.fundingTemplates && chairmanConfig.fundingTemplates[0]
         ? chairmanConfig.fundingTemplates[0].fundingTypeKey
@@ -608,23 +633,24 @@ export default {
     },
     createChairmanFundingTemplate () {
       return {
-        fundingTypeKey: `funding_${Date.now()}`,
+        fundingTypeKey: 'funding_1',
         fundingTypeLabel: 'ประเภททุนใหม่',
         sections: []
       }
     },
     createChairmanSection () {
       return {
-        sectionKey: `section_${Date.now()}`,
+        sectionKey: 'section_1',
         sectionLabel: 'Section ใหม่',
         description: '',
         items: []
       }
     },
-    createChairmanItem () {
+    createChairmanItem (section) {
+      const nextIndex = Array.isArray(section && section.items) ? section.items.length + 1 : 1
       return {
-        itemKey: `item_${Date.now()}`,
-        label: 'รายการใหม่',
+        itemKey: `item_${nextIndex}`,
+        label: '',
         description: ''
       }
     },
@@ -642,32 +668,40 @@ export default {
       }
     },
     addChairmanSection (fundingIndex) {
-      this.chairmanForm.fundingTemplates[fundingIndex].sections.push(this.createChairmanSection())
+      const template = this.chairmanForm.fundingTemplates[fundingIndex]
+      template.sections.push(this.createChairmanSection())
+      this.normalizeChairmanFundingTemplateItems(template)
     },
     removeChairmanSection (fundingIndex, sectionIndex) {
-      this.chairmanForm.fundingTemplates[fundingIndex].sections.splice(sectionIndex, 1)
+      const template = this.chairmanForm.fundingTemplates[fundingIndex]
+      template.sections.splice(sectionIndex, 1)
+      this.normalizeChairmanFundingTemplateItems(template)
     },
     addChairmanItem (fundingIndex, sectionIndex) {
-      this.chairmanForm.fundingTemplates[fundingIndex].sections[sectionIndex].items.push(this.createChairmanItem())
+      const section = this.chairmanForm.fundingTemplates[fundingIndex].sections[sectionIndex]
+      section.items.push(this.createChairmanItem(section))
+      this.normalizeChairmanSectionItems(section)
     },
     removeChairmanItem (fundingIndex, sectionIndex, itemIndex) {
-      this.chairmanForm.fundingTemplates[fundingIndex].sections[sectionIndex].items.splice(itemIndex, 1)
+      const section = this.chairmanForm.fundingTemplates[fundingIndex].sections[sectionIndex]
+      section.items.splice(itemIndex, 1)
+      this.normalizeChairmanSectionItems(section)
     },
     resetChairmanTemplate () {
       const config = getDefaultChairmanChecklistConfig()
       this.chairmanTemplateError = ''
-      this.chairmanForm = this.cloneValue(config)
+      this.chairmanForm = this.normalizeChairmanEditorForm(config)
       this.chairmanPreviewFundingType = config && config.fundingTemplates && config.fundingTemplates[0]
         ? config.fundingTemplates[0].fundingTypeKey
         : 'new-researcher'
     },
     async saveChairmanTemplate () {
-      const parsed = normalizeChairmanChecklistConfig(this.cloneValue(this.chairmanForm))
+      const parsed = normalizeChairmanChecklistConfig(this.normalizeChairmanEditorForm(this.chairmanForm))
       this.chairmanTemplateError = ''
       try {
         await this.upsertSetting(CHAIRMAN_CHECKLIST_SETTING_KEY, parsed, 'Chairman checklist templates for ResearchFormRS')
         setChairmanChecklistRuntimeConfig(parsed)
-        this.chairmanForm = this.cloneValue(parsed)
+        this.chairmanForm = this.normalizeChairmanEditorForm(parsed)
         await this.loadTemplates()
         await Swal.fire({ icon: 'success', title: 'บันทึก template ประธานสำเร็จ', timer: 1400, showConfirmButton: false })
       } catch (error) {
