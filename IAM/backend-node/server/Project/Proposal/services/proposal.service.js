@@ -598,13 +598,38 @@ async function getProposalList(query = {}, user) {
   const page = parseInt(query.page, 10) || 1;
   const limit = parseInt(query.limit, 10) || 20;
   const skip = (page - 1) * limit;
+  const sortBy = String(query.sortBy || '').trim();
+  const sortOrder = String(query.sortOrder || query.order || '').trim().toLowerCase() === 'asc' ? 'asc' : 'desc';
+  const sortDirection = sortOrder === 'asc' ? 1 : -1;
+
+  const buildActivityTimestamp = (proposal) => {
+    const values = [
+      proposal && proposal.lastStatusActionAt,
+      proposal && proposal.currentStatusUpdatedAt,
+      proposal && proposal.statusUpdatedAt,
+      proposal && proposal.updatedAt,
+      proposal && proposal.createdAt
+    ];
+    return values.reduce((latest, value) => {
+      const ts = value ? new Date(value).getTime() : 0;
+      return Number.isFinite(ts) && ts > latest ? ts : latest;
+    }, 0);
+  };
+
+  const shouldSortByLatestStatus = sortBy === 'latestStatusUpdatedAt';
 
   const [data, total] = await Promise.all([
-    Proposal.find(filter)
-      .populate('applicantUserId', 'fullName email')
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 }),
+    (() => {
+      const proposalQuery = Proposal.find(filter)
+        .populate('applicantUserId', 'fullName email')
+        .sort({ createdAt: -1 });
+
+      if (!shouldSortByLatestStatus) {
+        proposalQuery.skip(skip).limit(limit);
+      }
+
+      return proposalQuery;
+    })(),
     Proposal.countDocuments(filter)
   ]);
 
@@ -654,10 +679,24 @@ async function getProposalList(query = {}, user) {
     return plain;
   });
 
+  const finalData = shouldSortByLatestStatus
+    ? enrichedData
+      .slice()
+      .sort((left, right) => {
+        const leftTs = buildActivityTimestamp(left);
+        const rightTs = buildActivityTimestamp(right);
+        if (leftTs === rightTs) {
+          return String(left && left.proposalCode ? left.proposalCode : '').localeCompare(String(right && right.proposalCode ? right.proposalCode : ''));
+        }
+        return (leftTs - rightTs) * sortDirection;
+      })
+      .slice(skip, skip + limit)
+    : enrichedData;
+
   return {
-    proposals: enrichedData,
-    data: enrichedData,
-    items: enrichedData,
+    proposals: finalData,
+    data: finalData,
+    items: finalData,
     total,
     page,
     limit,

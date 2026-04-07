@@ -149,7 +149,8 @@
             :fields="tableFields"
             :items-per-page="perPage"
             :active-page="activePage"
-            sorter
+            :sorter="{ resetable: false }"
+            :sorter-value.sync="sorterValue"
             hover
             striped
           >
@@ -289,6 +290,7 @@ export default {
       perPage: 5,
       perPageOptions: [5, 10, 20, 50],
       activePage: 1,
+      sorterValue: { column: 'latestStatusUpdatedAt', asc: false },
       deletingProposalIds: {},
       tableFields: [
         {
@@ -426,8 +428,9 @@ export default {
 
     displayItems() {
       const q = String(this.searchQuery || '').trim().toLowerCase();
-      if (!q) return this.filteredProposals;
-      return this.filteredProposals.filter(item => {
+      const filteredItems = !q
+        ? this.filteredProposals
+        : this.filteredProposals.filter(item => {
         const haystack = [
           item.projectTitleTh,
           item.projectTitleEn,
@@ -439,6 +442,8 @@ export default {
         ].filter(Boolean).join(' ').toLowerCase();
         return haystack.includes(q);
       });
+
+      return this.sortItemsByLatestStatus(filteredItems);
     },
 
     pageCount() {
@@ -500,7 +505,12 @@ export default {
       this.loading = true;
       this.fetchError = null;
       try {
-        const response = await Service.research.list();
+        const response = await Service.research.list({
+          page: 1,
+          limit: 300,
+          sortBy: 'latestStatusUpdatedAt',
+          sortOrder: this.sorterValue && this.sorterValue.asc === false ? 'desc' : 'asc'
+        });
         const payload = response && response.data ? response.data : null;
         let data = [];
         if (Array.isArray(payload)) {
@@ -539,6 +549,34 @@ export default {
 
     retryFetch() {
       this.fetchResearch();
+    },
+
+    sortItemsByLatestStatus(items) {
+      const rows = Array.isArray(items) ? [...items] : [];
+      const sorter = this.sorterValue && typeof this.sorterValue === 'object' ? this.sorterValue : {};
+      const column = sorter.column || 'latestStatusUpdatedAt';
+      const ascending = sorter.asc === true;
+
+      if (column !== 'latestStatusUpdatedAt') {
+        return rows;
+      }
+
+      const getTimestamp = (item) => {
+        const value = item && (item.lastStatusActionAt || item.latestStatusUpdatedAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt);
+        const ts = value ? new Date(value).getTime() : 0;
+        return Number.isFinite(ts) ? ts : 0;
+      };
+
+      return rows.sort((left, right) => {
+        const leftTs = getTimestamp(left);
+        const rightTs = getTimestamp(right);
+        if (leftTs === rightTs) {
+          const leftCode = String(left && left.proposalCode ? left.proposalCode : '');
+          const rightCode = String(right && right.proposalCode ? right.proposalCode : '');
+          return leftCode.localeCompare(rightCode);
+        }
+        return ascending ? leftTs - rightTs : rightTs - leftTs;
+      });
     },
 
     extractApplicantUserId(item) {

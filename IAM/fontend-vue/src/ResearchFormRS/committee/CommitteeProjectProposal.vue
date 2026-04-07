@@ -57,7 +57,8 @@
                   :fields="fields"
                   :items-per-page="perPage"
                   :active-page="activePage"
-                  sorter
+                  :sorter="{ resetable: false }"
+                  :sorter-value.sync="sorterValue"
                 >
                 <template #decisionDisplay="{ item }">
                   <td class="text-center">
@@ -210,6 +211,7 @@ export default {
       filterStatus: 'all',
       searchQuery: '',
       activePage: 1,
+      sorterValue: { column: 'latestStatusUpdatedAt', asc: false },
       perPage: 5,
       perPageOptions: [5, 10, 20, 50],
       nextMeetings: [],
@@ -388,8 +390,10 @@ export default {
         statusDisplay: this.statusLabel(p.status, p.roundNo, p.reviewStatus),
         bucketStatus: p.committeeStatusKey || this.getCommitteeStatusKey(p.status, p.reviewStatus)
       }))
-      if (this.filterStatus === 'all') return items
-      return items.filter(p => p.bucketStatus === this.filterStatus)
+      const filteredItems = this.filterStatus === 'all'
+        ? items
+        : items.filter(p => p.bucketStatus === this.filterStatus)
+      return this.sortItemsByLatestStatus(filteredItems)
     },
     displayItems () {
       const q = String(this.searchQuery || '').trim().toLowerCase()
@@ -599,7 +603,12 @@ export default {
       this.fetchError = null
       this.myReviewsRaw = []
       try {
-        const proposalRes = await Service.proposal.list({ page: 1, limit: 200 })
+        const proposalRes = await Service.proposal.list({
+          page: 1,
+          limit: 200,
+          sortBy: 'latestStatusUpdatedAt',
+          sortOrder: this.sorterValue && this.sorterValue.asc === false ? 'desc' : 'asc'
+        })
 
         const proposalPayload = proposalRes && proposalRes.data ? proposalRes.data : null
         let proposals = []
@@ -657,6 +666,33 @@ export default {
     setFilter (status) {
       this.filterStatus = status
       this.activePage = 1
+    },
+    sortItemsByLatestStatus (items) {
+      const rows = Array.isArray(items) ? [...items] : []
+      const sorter = this.sorterValue && typeof this.sorterValue === 'object' ? this.sorterValue : {}
+      const column = sorter.column || 'latestStatusUpdatedAt'
+      const ascending = sorter.asc === true
+
+      if (column !== 'latestStatusUpdatedAt') {
+        return rows
+      }
+
+      const getTimestamp = (item) => {
+        const value = item && (item.lastUpdatedAt || item.latestStatusUpdatedAt || item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt)
+        const ts = value ? new Date(value).getTime() : 0
+        return Number.isFinite(ts) ? ts : 0
+      }
+
+      return rows.sort((left, right) => {
+        const leftTs = getTimestamp(left)
+        const rightTs = getTimestamp(right)
+        if (leftTs === rightTs) {
+          const leftCode = String(left && (left.id || left.proposalId) ? (left.id || left.proposalId) : '')
+          const rightCode = String(right && (right.id || right.proposalId) ? (right.id || right.proposalId) : '')
+          return leftCode.localeCompare(rightCode)
+        }
+        return ascending ? leftTs - rightTs : rightTs - leftTs
+      })
     },
     getLatestStatusUpdatedAt (proposal) {
       if (!proposal || typeof proposal !== 'object') return ''

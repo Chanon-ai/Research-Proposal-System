@@ -560,7 +560,31 @@ export default {
       ]
     },
     tableItems () {
-      return this.proposals
+      const items = Array.isArray(this.proposals) ? [...this.proposals] : []
+      const sorter = this.sorterValue && typeof this.sorterValue === 'object' ? this.sorterValue : {}
+      const column = sorter.column || 'latestStatusUpdatedAt'
+      const ascending = sorter.asc === true
+
+      const getTimestamp = (item) => {
+        const value = item && (item.lastStatusActionAt || item.latestStatusUpdatedAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt)
+        const ts = value ? new Date(value).getTime() : 0
+        return Number.isFinite(ts) ? ts : 0
+      }
+
+      if (column === 'latestStatusUpdatedAt') {
+        return items.sort((left, right) => {
+          const leftTs = getTimestamp(left)
+          const rightTs = getTimestamp(right)
+          if (leftTs === rightTs) {
+            const leftCode = String(left && left.proposalCode ? left.proposalCode : '')
+            const rightCode = String(right && right.proposalCode ? right.proposalCode : '')
+            return leftCode.localeCompare(rightCode)
+          }
+          return ascending ? leftTs - rightTs : rightTs - leftTs
+        })
+      }
+
+      return items
     },
     nextStatusOptions () {
       const statuses = this.selectedProposal ? this.getNextStatuses(this.selectedProposal.currentStatus) : []
@@ -986,7 +1010,9 @@ export default {
       try {
         const params = {
           page: this.page,
-          limit: this.limit
+          limit: this.limit,
+          sortBy: 'latestStatusUpdatedAt',
+          sortOrder: this.sorterValue && this.sorterValue.asc === false ? 'desc' : 'asc'
         }
         const activeStatuses = expandStatusesForQuery(this.resolveActiveStatuses())
         if (activeStatuses.length === 1) {
