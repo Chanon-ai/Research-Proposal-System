@@ -133,8 +133,7 @@
                   <CCol md="4"><CInput label="Reviewer Label" v-model="chairmanForm.reviewerLabel" /></CCol>
                 </CRow>
                 <CRow>
-                  <CCol md="4"><CInput label="Import Status" v-model="chairmanForm.importStatus" /></CCol>
-                  <CCol md="8"><CTextarea label="หมายเหตุ" rows="3" v-model="chairmanForm.note" /></CCol>
+                  <CCol md="12"><CTextarea label="หมายเหตุ" rows="3" v-model="chairmanForm.note" /></CCol>
                 </CRow>
 
                 <div class="template-section-header mt-3">
@@ -150,10 +149,7 @@
                     <div class="editor-card__title">ประเภททุน {{ chairmanSelectedFundingTemplateIndex + 1 }}</div>
                     <CButton size="sm" color="danger" variant="outline" @click="removeChairmanFundingTemplate(chairmanSelectedFundingTemplateIndex)">ลบประเภททุน</CButton>
                   </div>
-                  <CRow>
-                    <CCol md="4"><CInput label="Funding Type Key" v-model="chairmanSelectedFundingTemplate.fundingTypeKey" /></CCol>
-                    <CCol md="8"><CInput label="Funding Type Label" v-model="chairmanSelectedFundingTemplate.fundingTypeLabel" /></CCol>
-                  </CRow>
+                  <CInput label="Funding Type Label" v-model="chairmanSelectedFundingTemplate.fundingTypeLabel" />
 
                   <div class="template-section-header template-section-header--inner">
                     <div class="template-section-title">Sections</div>
@@ -165,10 +161,7 @@
                       <div class="editor-card__title">Section {{ sectionIndex + 1 }}</div>
                       <CButton size="sm" color="danger" variant="outline" @click="removeChairmanSection(chairmanSelectedFundingTemplateIndex, sectionIndex)">ลบ Section</CButton>
                     </div>
-                    <CRow>
-                      <CCol md="4"><CInput label="Section Key" v-model="section.sectionKey" /></CCol>
-                      <CCol md="8"><CInput label="Section Label" v-model="section.sectionLabel" /></CCol>
-                    </CRow>
+                    <CInput label="Section Label" v-model="section.sectionLabel" />
                     <CTextarea label="Section Description" rows="2" v-model="section.description" />
 
                     <div class="template-section-header template-section-header--inner">
@@ -181,7 +174,6 @@
                         <div class="editor-card__title">Item {{ itemIndex + 1 }}</div>
                         <CButton size="sm" color="danger" variant="outline" @click="removeChairmanItem(chairmanSelectedFundingTemplateIndex, sectionIndex, itemIndex)">ลบ Item</CButton>
                       </div>
-                      <div class="text-muted small mb-2">Item Key: {{ item.itemKey }}</div>
                       <CTextarea label="Label" rows="3" v-model="item.label" />
                     </div>
                   </div>
@@ -484,13 +476,24 @@ export default {
       const targetTemplate = template && typeof template === 'object' ? template : null
       if (!targetTemplate) return targetTemplate
       const sections = Array.isArray(targetTemplate.sections) ? targetTemplate.sections : []
-      targetTemplate.sections = sections.map((section) => this.normalizeChairmanSectionItems(section))
+      targetTemplate.sections = sections.map((section, index) => {
+        const normalizedSection = this.normalizeChairmanSectionItems(section)
+        normalizedSection.sectionKey = `section_${index + 1}`
+        normalizedSection.sectionLabel = normalizedSection.sectionLabel || ''
+        normalizedSection.description = normalizedSection.description || ''
+        return normalizedSection
+      })
       return targetTemplate
     },
     normalizeChairmanEditorForm (form) {
       const nextForm = this.cloneValue(form || getDefaultChairmanChecklistConfig())
       const templates = Array.isArray(nextForm.fundingTemplates) ? nextForm.fundingTemplates : []
-      nextForm.fundingTemplates = templates.map((template) => this.normalizeChairmanFundingTemplateItems(template))
+      nextForm.fundingTemplates = templates.map((template, index) => {
+        const normalizedTemplate = this.normalizeChairmanFundingTemplateItems(template)
+        normalizedTemplate.fundingTypeKey = `funding_${index + 1}`
+        normalizedTemplate.fundingTypeLabel = normalizedTemplate.fundingTypeLabel || ''
+        return normalizedTemplate
+      })
       return nextForm
     },
     resetTemplateImportDefaults () {
@@ -630,14 +633,14 @@ export default {
     },
     createChairmanFundingTemplate () {
       return {
-        fundingTypeKey: `funding_${Date.now()}`,
+        fundingTypeKey: 'funding_1',
         fundingTypeLabel: 'ประเภททุนใหม่',
         sections: []
       }
     },
     createChairmanSection () {
       return {
-        sectionKey: `section_${Date.now()}`,
+        sectionKey: 'section_1',
         sectionLabel: 'Section ใหม่',
         description: '',
         items: []
@@ -665,10 +668,14 @@ export default {
       }
     },
     addChairmanSection (fundingIndex) {
-      this.chairmanForm.fundingTemplates[fundingIndex].sections.push(this.createChairmanSection())
+      const template = this.chairmanForm.fundingTemplates[fundingIndex]
+      template.sections.push(this.createChairmanSection())
+      this.normalizeChairmanFundingTemplateItems(template)
     },
     removeChairmanSection (fundingIndex, sectionIndex) {
-      this.chairmanForm.fundingTemplates[fundingIndex].sections.splice(sectionIndex, 1)
+      const template = this.chairmanForm.fundingTemplates[fundingIndex]
+      template.sections.splice(sectionIndex, 1)
+      this.normalizeChairmanFundingTemplateItems(template)
     },
     addChairmanItem (fundingIndex, sectionIndex) {
       const section = this.chairmanForm.fundingTemplates[fundingIndex].sections[sectionIndex]
