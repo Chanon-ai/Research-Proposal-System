@@ -54,8 +54,8 @@
           <div class="header-tools">
             <CInput
               class="search-input"
-              :placeholder="$t('userDashboard.search.placeholder')"
-              :aria-label="$t('userDashboard.search.ariaLabel')"
+              :placeholder="dashboardText.searchPlaceholder"
+              :aria-label="dashboardText.searchPlaceholder"
               v-model="searchQuery"
             />
             <CButton
@@ -65,7 +65,7 @@
               class="clear-filter-btn"
               @click="clearFilter"
             >
-              <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('userDashboard.actions.clearFilter') }}
+              <CIcon name="cil-chevron-right" class="mr-1" /> {{ dashboardText.clearFilter }}
             </CButton>
           </div>
         </div>
@@ -73,12 +73,12 @@
       <CCardBody class="card-body-tight">
         <div v-if="loading" class="state-box">
           <div class="spinner"></div>
-          <div class="state-text">{{ $t('userDashboard.states.loading') }}</div>
+          <div class="state-text">{{ dashboardText.loading }}</div>
         </div>
 
         <div v-else-if="fetchError" class="state-box">
-          <div class="state-text">{{ $t('userDashboard.states.loadError', { error: fetchError }) }}</div>
-          <div style="margin-top:10px;"><button class="btn-quick btn-success" @click="retryFetch"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('userDashboard.actions.retry') }}</button></div>
+          <div class="state-text">{{ dashboardText.fetchError }}: {{ fetchError }}</div>
+          <div style="margin-top:10px;"><button class="btn-quick btn-success" @click="retryFetch"><CIcon name="cil-chevron-right" class="mr-1" /> {{ dashboardText.retry }}</button></div>
         </div>
 
         <div v-else class="table-surface">
@@ -146,7 +146,7 @@
                     @click.stop="deleteDocument(item)"
                   >
                     <CIcon name="cil-trash" class="mr-1" />
-                    {{ isDeleting(item) ? $t('userDashboard.actions.deleting') : $t('userDashboard.actions.deleteDocument') }}
+                    {{ isDeleting(item) ? dashboardText.deleting : dashboardText.deleteDocument }}
                   </CButton>
                 </div>
               </td>
@@ -158,11 +158,11 @@
           </div>
           <div class="table-footer">
             <div class="table-footer__left">
-              <span class="table-footer__label">{{ $t('userDashboard.table.perPage') }}</span>
-              <select v-model.number="perPage" class="form-control form-control-sm per-page-select" :aria-label="$t('userDashboard.table.perPage')">
+              <span class="table-footer__label">{{ dashboardText.perPage }}</span>
+              <select v-model.number="perPage" class="form-control form-control-sm per-page-select" :aria-label="dashboardText.perPage">
                 <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
               </select>
-              <span class="table-footer__suffix">{{ $t('userDashboard.table.itemsSuffix') }}</span>
+              <span class="table-footer__suffix">{{ dashboardText.perPageSuffix }}</span>
             </div>
             <div class="table-footer__right">
               <CPagination
@@ -251,6 +251,108 @@ export default {
   },
 
   computed: {
+    isEnglishLocale() {
+      const locale = String((this.$i18n && this.$i18n.locale) || '').trim().toLowerCase()
+      return locale === 'en'
+    },
+
+    dashboardText() {
+      if (this.isEnglishLocale) {
+        return {
+          all: 'All',
+          inProgress: 'In Progress',
+          approved: 'Approved',
+          rejected: 'Not Approved',
+          searchPlaceholder: 'Search...',
+          clearFilter: 'Clear Filter',
+          loading: 'Loading...',
+          fetchError: 'An error occurred while loading data',
+          retry: 'Retry',
+          noTitle: '(No Title)',
+          budgetLabel: 'Proposed Budget',
+          viewDocument: 'View',
+          deleting: 'Deleting...',
+          deleteDocument: 'Delete',
+          noResults: 'No matching records found',
+          perPage: 'Show per page',
+          perPageSuffix: 'items',
+          createNew: 'Create New Project',
+          allProjects: 'All Projects',
+          filteredProjects: 'Filtered Projects',
+          colProposalCode: 'Project Code',
+          colProjectTitle: 'Research Title / Principal Investigator',
+          colStatus: 'Status',
+          filterLabels: {
+            in_progress: 'In Progress',
+            approved: 'Approved',
+            rejected: 'Not Approved'
+          },
+          fundingTypePrefix: 'Funding Type'
+        }
+      }
+      return {
+        all: 'ทั้งหมด',
+        inProgress: 'กำลังดำเนินการ',
+        approved: 'อนุมัติ',
+        rejected: 'ไม่อนุมัติ',
+        searchPlaceholder: 'ค้นหา...',
+        clearFilter: 'ล้างตัวกรอง',
+        loading: 'กำลังโหลดข้อมูล…',
+        fetchError: 'เกิดข้อผิดพลาดในการโหลดข้อมูล',
+        retry: 'ลองอีกครั้ง',
+        noTitle: '(ไม่มีชื่อ)',
+        budgetLabel: 'งบโครงการที่เสนอ',
+        viewDocument: 'ดูเอกสาร',
+        deleting: 'กำลังลบ...',
+        deleteDocument: 'ลบเอกสาร',
+        noResults: 'ไม่พบข้อมูลที่ค้นหา',
+        perPage: 'แสดงต่อหน้า',
+        perPageSuffix: 'รายการ',
+        createNew: 'สร้างโครงการใหม่',
+        allProjects: 'โครงการทั้งหมด',
+        filteredProjects: 'โครงการที่กรอง',
+        colProposalCode: 'รหัสโครงการ',
+        colProjectTitle: 'ชื่อโครงการวิจัย / หัวหน้าโครงการ',
+        colStatus: 'สถานะ',
+        filterLabels: {
+          in_progress: 'กำลังดำเนินการ',
+          approved: 'อนุมัติ',
+          rejected: 'ไม่อนุมัติ'
+        },
+        fundingTypePrefix: 'ประเภททุน'
+      }
+    },
+
+    tableFields() {
+      return [
+        {
+          key: 'proposalCode',
+          label: this.dashboardText.colProposalCode,
+          _style: 'width:170px; text-align:center;',
+          _classes: 'proposal-code-column'
+        },
+        {
+          key: 'projectTitleTh',
+          label: this.dashboardText.colProjectTitle,
+          _style: 'min-width:260px;',
+          _classes: 'project-info-column'
+        },
+        {
+          key: 'currentStatus',
+          label: this.dashboardText.colStatus,
+          _style: 'width:360px; text-align:center;'
+        },
+        {
+          key: 'action',
+          label: 'Action',
+          _style: 'width:220px; text-align:center;',
+          _classes: 'action-column',
+          sorter: false,
+          filter: false
+        },
+      ]
+    },
+
     currentResearchRole() {
       const storeRole = this.$store && this.$store.getters
         ? this.$store.getters['Authentication/userRole']
@@ -346,11 +448,7 @@ export default {
     },
 
     filterLabel() {
-      const labels = {
-        in_progress: this.$t('userDashboard.cards.inProgress'),
-        approved: this.$t('userDashboard.cards.approved'),
-        rejected: this.$t('userDashboard.cards.rejected'),
-      };
+      const labels = this.dashboardText.filterLabels
       return this.activeFilter
         ? this.$t('userDashboard.filters.filteredProjects', { label: labels[this.activeFilter] || '-' })
         : this.$t('userDashboard.filters.allProjects');
@@ -835,6 +933,7 @@ export default {
       const id = item && item._id ? String(item._id) : '';
       if (!id) return;
 
+      const en = this.isEnglishLocale;
       if (!this.canDeleteDocument(item)) {
         await Swal.fire({
           icon: 'warning',
