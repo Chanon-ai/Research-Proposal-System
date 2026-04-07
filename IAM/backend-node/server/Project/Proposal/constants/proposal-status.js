@@ -6,6 +6,7 @@ const STATUS = {
   SUBMITTED: 'submitted',
   FACULTY_REVIEW_PENDING: 'faculty_review_pending',
   FACULTY_APPROVED: 'faculty_approved',
+  FACULTY_REJECTED: 'faculty_rejected',
   OFFICE_RECEIVED: 'office_received',
   DOCUMENT_CHECKING: 'document_checking',
   ASSIGNED_TO_COMMITTEE: 'assigned_to_committee',

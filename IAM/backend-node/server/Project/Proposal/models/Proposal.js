@@ -84,6 +84,40 @@ const proposalSchema = new mongoose.Schema(
       ref: 'User',
       default: []
     },
+    chairmanAssignment: {
+      assignedChairmanIds: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'User',
+        default: []
+      },
+      status: {
+        type: String,
+        enum: ['idle', 'pending', 'approved', 'rejected'],
+        default: 'idle'
+      },
+      assignedAt: {
+        type: Date,
+        default: null
+      },
+      assignedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+      },
+      reviewedAt: {
+        type: Date,
+        default: null
+      },
+      reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+      },
+      summaryComment: {
+        type: String,
+        default: ''
+      }
+    },
     requiresRevision: {
       type: Boolean,
       default: false

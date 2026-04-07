@@ -25,6 +25,26 @@ function asObjectId(id) {
   }
 }
 
+function isChairmanRole(role) {
+  return String(role || '').trim().toLowerCase() === 'chairman';
+}
+
+function hasChairmanProposalAccess(proposal = {}, userId = null) {
+  const normalizedUserId = userId ? String(userId) : '';
+  if (!normalizedUserId) return false;
+
+  const assignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+    ? proposal.chairmanAssignment
+    : {};
+  const assignedChairmanIds = Array.isArray(assignment.assignedChairmanIds)
+    ? assignment.assignedChairmanIds.map(String)
+    : [];
+  if (assignedChairmanIds.includes(normalizedUserId)) return true;
+
+  const reviewedBy = assignment && assignment.reviewedBy ? String(assignment.reviewedBy) : '';
+  return reviewedBy === normalizedUserId;
+}
+
 async function requireProposalAccess(proposalId, user) {
   if (!user || !user._id) throw new Error('Unauthorized');
 
@@ -42,12 +62,13 @@ async function requireProposalAccess(proposalId, user) {
 
   const role = user.role;
   const uid = String(user._id);
-  const isAdmin = role === 'admin' || role === 'chairman';
+  const isAdmin = role === 'admin';
   const isOwner = proposal.applicantUserId && String(proposal.applicantUserId) === uid;
   const isCommittee =
     Array.isArray(proposal.committeeIds) && proposal.committeeIds.map(String).includes(uid);
+  const isChairman = isChairmanRole(role) && hasChairmanProposalAccess(proposal, uid);
 
-  if (!isAdmin && !isOwner && !isCommittee) throw new Error('Forbidden');
+  if (!isAdmin && !isOwner && !isCommittee && !isChairman) throw new Error('Forbidden');
   return proposal;
 }
 

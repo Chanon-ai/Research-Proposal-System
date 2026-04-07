@@ -105,6 +105,9 @@
                   <td class="text-nowrap">
                     <div class="admin-actions">
                       <CButton v-if="canAccessResearchForm" color="primary" variant="outline" size="sm" class="admin-action-btn" @click="viewDetail(item)"><CIcon name="cil-folder-open" class="mr-1" /> {{ $t('admin.actions.viewDetail') }}</CButton>
+                      <div v-if="getChairmanStatusText(item)" class="small text-muted mt-1">
+                        {{ getChairmanStatusText(item) }}
+                      </div>
                     </div>
                   </td>
                 </template>
@@ -180,6 +183,48 @@
           <CButton color="secondary" class="mr-2" @click="closeStatusModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('admin.actions.cancel') }}</CButton>
           <CButton color="primary" :disabled="!newStatus || submittingStatus" @click="confirmChangeStatus">
             <CIcon name="cil-check-circle" class="mr-1" /> {{ submittingStatus ? $t('admin.actions.saving') : $t('admin.actions.confirm') }}
+          </CButton>
+        </div>
+      </template>
+    </CModal>
+
+    <CModal
+      :show.sync="showChairmanModal"
+      :close-on-backdrop="false"
+      centered
+      :title="$t('admin.assignChairman.title')"
+    >
+      <template #body-wrapper>
+        <div v-if="selectedProposal" class="status-modal-body" style="padding: 20px 24px 8px;">
+          <div class="status-modal-proposal">
+            <div class="status-modal-meta"><strong>{{ $t('admin.assignChairman.proposalCode') }}</strong> {{ selectedProposal.proposalCode || '-' }}</div>
+            <div class="status-modal-meta"><strong>{{ $t('admin.assignChairman.projectTitle') }}</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
+          </div>
+
+          <div v-if="chairmanUsersLoading" class="text-center py-3">
+            <CSpinner size="sm" color="primary" />
+            <small class="text-muted ml-2">{{ $t('admin.assignChairman.loadingUsers') }}</small>
+          </div>
+
+          <CAlert v-else-if="chairmanUsersError" color="warning" show>
+            {{ chairmanUsersError }}
+          </CAlert>
+
+          <CSelect
+            v-else
+            :label="$t('admin.assignChairman.selectLabel')"
+            :value="selectedChairmanId"
+            :options="chairmanOptions"
+            @change="onChairmanChange"
+          />
+        </div>
+      </template>
+
+      <template #footer-wrapper>
+        <div class="status-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
+          <CButton color="secondary" class="mr-2" @click="closeChairmanModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('admin.actions.cancel') }}</CButton>
+          <CButton color="warning" :disabled="!selectedChairmanId || sendingChairman" @click="confirmAssignChairman">
+            <CIcon name="cil-check-circle" class="mr-1" /> {{ sendingChairman ? $t('admin.actions.saving') : $t('admin.assignChairman.confirm') }}
           </CButton>
         </div>
       </template>
@@ -432,6 +477,12 @@ export default {
       committeeUsersLoading: false,
       committeeUsersError: null,
       committeeUsers: [],
+      chairmanUsersLoading: false,
+      chairmanUsersError: null,
+      chairmanUsers: [],
+      showChairmanModal: false,
+      selectedChairmanId: '',
+      sendingChairman: false,
       committeeSearch: '',
       selectedCommitteeIds: [],
       committeeFilterMode: 'all',
@@ -563,6 +614,15 @@ export default {
       const n = Number(this.workflowApprovalPolicy && this.workflowApprovalPolicy.minCommittee)
       if (!Number.isFinite(n) || n < 1) return 1
       return Math.floor(n)
+    },
+    chairmanOptions () {
+      return [
+        { value: '', label: this.$t('admin.assignChairman.selectPlaceholder') },
+        ...(this.chairmanUsers || []).map(user => ({
+          value: user && user._id ? String(user._id) : '',
+          label: user && user.fullName ? `${user.fullName}${user.department ? ` (${user.department})` : ''}` : '-'
+        }))
+      ]
     }
   },
   async mounted () {
@@ -592,6 +652,49 @@ export default {
       } catch (error) {
         void error
       }
+    },
+    getChairmanAssignment (proposal) {
+      return proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+        ? proposal.chairmanAssignment
+        : {}
+    },
+    getAssignedChairmanIds (proposal) {
+      const assignment = this.getChairmanAssignment(proposal)
+      return Array.isArray(assignment.assignedChairmanIds) ? assignment.assignedChairmanIds.map(String) : []
+    },
+    getChairmanNames (proposal) {
+      const ids = this.getAssignedChairmanIds(proposal)
+      if (!ids.length) return ''
+      const byId = new Map((this.chairmanUsers || []).map(user => [String(user._id), user]))
+      const names = ids
+        .map(id => byId.get(String(id)))
+        .filter(Boolean)
+        .map(user => user.fullName || '')
+        .filter(Boolean)
+      if (names.length > 0) return names.join(', ')
+      return `${ids.length} คน`
+    },
+    getChairmanStatusText (proposal) {
+      const assignment = this.getChairmanAssignment(proposal)
+      const status = String(assignment.status || '').trim().toLowerCase()
+      const names = this.getChairmanNames(proposal)
+      if (status === 'pending') return names ? this.$t('admin.actions.sentToChairmanWithName', { name: names }) : this.$t('admin.actions.sentToChairman')
+      if (status === 'approved') return names ? this.$t('admin.actions.chairmanApprovedWithName', { name: names }) : this.$t('admin.actions.chairmanApproved')
+      if (status === 'rejected') return names ? this.$t('admin.actions.chairmanRejectedWithName', { name: names }) : this.$t('admin.actions.chairmanRejected')
+      return ''
+    },
+    getChairmanActionLabel (proposal) {
+      const status = String(this.getChairmanAssignment(proposal).status || '').trim().toLowerCase()
+      if (status === 'pending') return this.$t('admin.actions.sentToChairman')
+      if (status === 'rejected') return this.$t('admin.actions.resendToChairman')
+      if (status === 'approved') return this.$t('admin.actions.chairmanApproved')
+      return this.$t('admin.actions.sendToChairman')
+    },
+    canOpenChairmanAssign (proposal) {
+      const currentStatus = normalizeProposalStatus(proposal && proposal.currentStatus)
+      const status = String(this.getChairmanAssignment(proposal).status || '').trim().toLowerCase()
+      if (status === 'pending' || status === 'approved') return false
+      return currentStatus === 'submitted'
     },
     hasAssignedCommittee (proposal) {
       return Array.isArray(proposal && proposal.committeeIds) && proposal.committeeIds.length > 0
@@ -686,6 +789,23 @@ export default {
         this.committeeUsersLoading = false
       }
     },
+    async fetchChairmanUsers () {
+      this.chairmanUsersLoading = true
+      this.chairmanUsersError = null
+      try {
+        const response = await Service.proposal.getCommitteeUsers({ role: 'chairman', limit: 100 })
+        const payload = response && response.data ? response.data : null
+        const wrapped = payload && payload.data && !Array.isArray(payload.data) ? payload.data : null
+        this.chairmanUsers = wrapped && Array.isArray(wrapped.items)
+          ? wrapped.items
+          : (payload && Array.isArray(payload.data) ? payload.data : [])
+      } catch (error) {
+        this.chairmanUsers = []
+        this.chairmanUsersError = (error && error.response && error.response.data && error.response.data.message) || error.message || 'Unknown error'
+      } finally {
+        this.chairmanUsersLoading = false
+      }
+    },
     getSummaryCountByStatuses (statuses) {
       return (statuses || []).reduce((sum, status) => sum + (Number(this.summary[status]) || 0), 0)
     },
@@ -733,15 +853,20 @@ export default {
     getProgressLabel (itemOrStatus) {
       const item = itemOrStatus && typeof itemOrStatus === 'object' ? itemOrStatus : null
       const key = normalizeProposalStatus(item ? item.currentStatus : itemOrStatus)
+      const chairmanStatus = String(this.getChairmanAssignment(item).status || '').trim().toLowerCase()
       const roundNo = deriveProposalRoundNo(item, key)
       const researcherName = item && item.projectLeaderName ? String(item.projectLeaderName).trim() : ''
       const ownerName = researcherName || 'นักวิจัย'
+      if (chairmanStatus === 'pending') return 'ประธานสำนัก : กำลังพิจารณา'
+      if (chairmanStatus === 'approved') return 'ประธานสำนัก : อนุมัติแล้ว'
+      if (chairmanStatus === 'rejected') return 'ประธานสำนัก : ไม่อนุมัติ'
       const statusOwnerMap = {
         draft: `${ownerName} : กำลังกรอกข้อมูล`,
         pending_confirm: 'คณะวิจัย : รอการยินยอมจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
         submitted: 'ส่วนบริหารโครงการ : กำลังพิจารณา',
-        faculty_review_pending: 'ประธานคณะ : กำลังพิจารณา',
+        faculty_review_pending: 'ประธานกำลังพิจารณา',
         faculty_approved: 'ส่วนบริหารโครงการ : รอรับเรื่อง',
+        faculty_rejected: 'ส่วนบริหารโครงการ : รอปิดผลไม่อนุมัติ',
         office_received: 'ส่วนบริหารโครงการ : รับเรื่องแล้ว กำลังดำเนินการ',
         document_checking: 'ส่วนบริหารโครงการ : กำลังตรวจสอบเอกสาร',
         assigned_to_committee: 'ส่วนบริหารโครงการ : กำลังมอบหมายคณะผู้ทรงคุณวุฒิ',
@@ -945,6 +1070,47 @@ export default {
       this.newStatus = ''
       this.statusRemark = ''
       this.showStatusModal = true
+    },
+    async openChairmanModal (proposal) {
+      this.selectedProposal = proposal
+      this.selectedChairmanId = ''
+      this.showChairmanModal = true
+      if (!(this.chairmanUsers || []).length) {
+        await this.fetchChairmanUsers()
+      }
+    },
+    closeChairmanModal () {
+      this.showChairmanModal = false
+      this.selectedProposal = null
+      this.selectedChairmanId = ''
+    },
+    onChairmanChange (val) {
+      this.selectedChairmanId = this.getSelectValue(val)
+    },
+    async confirmAssignChairman () {
+      if (!this.selectedProposal || !this.selectedProposal._id || !this.selectedChairmanId) return
+
+      this.sendingChairman = true
+      try {
+        await Service.proposal.assignChairman(this.selectedProposal._id, {
+          chairmanIds: [this.selectedChairmanId]
+        })
+
+        this.closeChairmanModal()
+        await this.fetchSummary()
+        await this.fetchProposals()
+        await Swal.fire({
+          icon: 'success',
+          title: this.$t('admin.assignChairman.successTitle'),
+          timer: 1500,
+          showConfirmButton: false
+        })
+      } catch (error) {
+        const message = (error && error.response && error.response.data && error.response.data.message) || this.$t('admin.assignChairman.errorText')
+        await Swal.fire(this.$t('admin.assignChairman.errorTitle'), message, 'error')
+      } finally {
+        this.sendingChairman = false
+      }
     },
     closeStatusModal () {
       this.showStatusModal = false

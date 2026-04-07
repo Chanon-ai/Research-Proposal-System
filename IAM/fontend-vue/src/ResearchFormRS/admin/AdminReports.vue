@@ -393,7 +393,7 @@ export default {
       return Number(this.reportSummary.rejected) || 0
     },
     pendingCount () {
-      const keys = ['submitted', 'faculty_review_pending', 'document_checking', 'assigned_to_committee', 'under_review', 'committee_valuated']
+      const keys = ['submitted', 'faculty_review_pending', 'faculty_approved', 'faculty_rejected', 'document_checking', 'assigned_to_committee', 'under_review', 'committee_valuated']
       return keys.reduce((sum, key) => sum + (Number(this.reportSummary[key]) || 0), 0)
     },
     approvalRate () {

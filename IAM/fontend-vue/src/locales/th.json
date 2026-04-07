@@ -40,8 +40,9 @@
   "status": {
     "draft": "แบบร่าง",
     "submitted": "ยื่นแล้ว",
-    "faculty_review_pending": "รอประธานพิจารณา",
+    "faculty_review_pending": "ประธานกำลังพิจารณา",
     "faculty_approved": "ประธานอนุมัติ",
+    "faculty_rejected": "ประธานไม่อนุมัติ",
     "office_received": "ส่วนบริหารรับแล้ว",
     "document_checking": "ตรวจสอบเอกสาร",
     "assigned_to_committee": "มอบหมายกรรมการแล้ว",
@@ -84,6 +85,14 @@
     "actions": {
       "reset": "รีเซ็ต",
       "viewDetail": "ดูรายละเอียด",
+      "sendToChairman": "ส่งให้ประธาน",
+      "resendToChairman": "ส่งให้ประธานอีกครั้ง",
+      "sentToChairman": "ส่งให้ประธานแล้ว",
+      "sentToChairmanWithName": "ส่งให้ประธานแล้ว: {name}",
+      "chairmanApproved": "ประธานอนุมัติ",
+      "chairmanApprovedWithName": "ประธานอนุมัติ: {name}",
+      "chairmanRejected": "ประธานไม่อนุมัติ",
+      "chairmanRejectedWithName": "ประธานไม่อนุมัติ: {name}",
       "cancel": "ยกเลิก",
       "saving": "กำลังบันทึก...",
       "confirm": "ยืนยัน"
@@ -117,6 +126,18 @@
       "noUsers": "ไม่พบรายชื่อกรรมการ",
       "recommendedBadge": "แนะนำจากหน่วยงานโครงการ",
       "note": "ตรวจสอบจำนวนขั้นต่ำตามนโยบายระบบก่อนยืนยัน"
+    },
+    "assignChairman": {
+      "title": "ส่งเอกสารให้ประธาน",
+      "proposalCode": "รหัสโครงการ:",
+      "projectTitle": "ชื่อโครงการ:",
+      "selectLabel": "เลือกประธาน",
+      "selectPlaceholder": "เลือกประธาน",
+      "loadingUsers": "กำลังโหลดรายชื่อประธาน...",
+      "confirm": "ยืนยันส่งให้ประธาน",
+      "successTitle": "ส่งให้ประธานสำเร็จ",
+      "errorTitle": "ส่งให้ประธานไม่สำเร็จ",
+      "errorText": "กรุณาลองใหม่อีกครั้ง"
     }
   }
 }

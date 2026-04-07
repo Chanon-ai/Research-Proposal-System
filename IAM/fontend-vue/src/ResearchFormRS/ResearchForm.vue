@@ -382,6 +382,9 @@
               <CButton color="success" size="sm" @click="openAdminCommitteeModal">
                 <CIcon name="cil-user-follow" class="mr-1" /> {{ adminHasAssignedCommittee ? 'เปลี่ยนคณะกรรมการ' : 'มอบหมายคณะกรรมการ' }}
               </CButton>
+              <CButton v-if="adminCanShowChairmanAction" color="warning" variant="outline" size="sm" @click="openAdminChairmanModal">
+                <CIcon name="cil-user-follow" class="mr-1" /> ส่งเอกสารให้ประธาน
+              </CButton>
               <CButton size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage"><CIcon name="cil-group" :content="$options.icons.cilPeople" class="mr-1" /> จัดการประชุม</CButton>
             </template>
             <button
@@ -444,6 +447,46 @@
             <CButton color="secondary" class="mr-2" @click="closeAdminStatusModal"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
             <CButton color="primary" :disabled="!adminNewStatus || adminSubmittingStatus" @click="confirmAdminChangeStatus">
               <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingStatus ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+            </CButton>
+          </div>
+        </template>
+      </CModal>
+
+      <CModal
+        :show.sync="adminShowChairmanModal"
+        :close-on-backdrop="false"
+        centered
+        title="ส่งเอกสารให้ประธาน"
+      >
+        <template #body-wrapper>
+          <div v-if="loadedProposal" class="status-modal-body" style="padding: 20px 24px 8px;">
+            <div class="status-modal-proposal">
+              <div class="status-modal-meta"><strong>รหัสโครงการ:</strong> {{ loadedProposal.proposalCode || '-' }}</div>
+              <div class="status-modal-meta"><strong>ชื่อโครงการ:</strong> {{ loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || '-' }}</div>
+            </div>
+
+            <div v-if="adminChairmanUsersLoading" class="text-center py-3">
+              <CSpinner size="sm" color="primary" />
+              <span class="text-muted ml-2">กำลังโหลดรายชื่อประธาน...</span>
+            </div>
+            <CAlert v-else-if="adminChairmanUsersError" color="warning" show>
+              ไม่สามารถโหลดรายชื่อประธานได้: {{ adminChairmanUsersError }}
+            </CAlert>
+            <CSelect
+              v-else
+              label="เลือกประธาน"
+              :value="adminSelectedChairmanId"
+              :options="adminChairmanOptions"
+              @change="onAdminChairmanChange"
+            />
+          </div>
+        </template>
+
+        <template #footer-wrapper>
+          <div class="status-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
+            <CButton color="secondary" class="mr-2" @click="closeAdminChairmanModal"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
+            <CButton color="warning" :disabled="!adminSelectedChairmanId || adminSubmittingChairman" @click="confirmAdminAssignChairman">
+              <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingChairman ? 'กำลังบันทึก...' : 'ยืนยัน' }}
             </CButton>
           </div>
         </template>
@@ -843,6 +886,12 @@ export default {
       adminCommitteeUsers: [],
       adminCommitteeSearch: '',
       adminSelectedCommitteeIds: [],
+      adminShowChairmanModal: false,
+      adminSubmittingChairman: false,
+      adminChairmanUsersLoading: false,
+      adminChairmanUsersError: null,
+      adminChairmanUsers: [],
+      adminSelectedChairmanId: '',
       workflowApprovalPolicy: {
         minScore: 60,
         minCommittee: 3,
@@ -1121,6 +1170,9 @@ export default {
       if (!this.isAdminView) return false
       return String(this.currentStatus || '').trim().toLowerCase() === 'resubmitted'
     },
+    adminCanShowChairmanAction () {
+      return this.isAdminView && String(normalizeProposalStatus(this.currentStatus)).trim().toLowerCase() === 'submitted'
+    },
     adminHasAssignedCommittee () {
       return Array.isArray(this.loadedProposal && this.loadedProposal.committeeIds) && this.loadedProposal.committeeIds.length > 0
     },
@@ -1155,6 +1207,15 @@ export default {
       const n = Number(this.workflowApprovalPolicy && this.workflowApprovalPolicy.minCommittee)
       if (!Number.isFinite(n) || n < 1) return 1
       return Math.floor(n)
+    },
+    adminChairmanOptions () {
+      return [
+        { value: '', label: 'เลือกประธาน' },
+        ...(this.adminChairmanUsers || []).map(user => ({
+          value: user && user._id ? String(user._id) : '',
+          label: user && user.fullName ? `${user.fullName}${user.department ? ` (${user.department})` : ''}` : '-'
+        }))
+      ]
     },
     shouldDisableProjectTitleSection () {
       return String(this.currentStatus || '').toLowerCase() !== 'draft'
@@ -2189,6 +2250,19 @@ export default {
       this.adminCommitteeSearch = ''
       this.adminSelectedCommitteeIds = []
     },
+    async openAdminChairmanModal () {
+      if (!this.isAdminView || !this.viewProposalId || !this.adminCanShowChairmanAction) return
+      this.adminSelectedChairmanId = ''
+      this.adminShowChairmanModal = true
+      await this.fetchAdminChairmanUsers()
+    },
+    closeAdminChairmanModal () {
+      this.adminShowChairmanModal = false
+      this.adminSelectedChairmanId = ''
+    },
+    onAdminChairmanChange (val) {
+      this.adminSelectedChairmanId = this.adminGetSelectValue(val)
+    },
     isAdminSelectedCommittee (id) {
       const key = String(id)
       return (this.adminSelectedCommitteeIds || []).map(String).includes(key)
@@ -2246,6 +2320,44 @@ export default {
           || 'Unknown error'
       } finally {
         this.adminCommitteeUsersLoading = false
+      }
+    },
+    async fetchAdminChairmanUsers () {
+      this.adminChairmanUsersLoading = true
+      this.adminChairmanUsersError = null
+      try {
+        const proposalId = String(this.viewProposalId || '')
+        const res = await Service.proposal.getCommitteeUsers({ role: 'chairman', limit: 100, proposalId })
+        const payload = res && res.data ? res.data : null
+        if (payload && payload.data && !Array.isArray(payload.data)) {
+          const wrapped = payload.data
+          this.adminChairmanUsers = Array.isArray(wrapped.items) ? wrapped.items : []
+        } else if (payload && Array.isArray(payload.data)) {
+          this.adminChairmanUsers = payload.data
+        } else {
+          this.adminChairmanUsers = []
+        }
+      } catch (err) {
+        this.adminChairmanUsers = []
+        this.adminChairmanUsersError = (err && err.response && err.response.data && err.response.data.message)
+          || err.message
+          || 'Unknown error'
+      } finally {
+        this.adminChairmanUsersLoading = false
+      }
+    },
+    async confirmAdminAssignChairman () {
+      if (!this.isAdminView || !this.viewProposalId || !this.adminSelectedChairmanId) return
+      this.adminSubmittingChairman = true
+      try {
+        await Service.proposal.assignChairman(this.viewProposalId, { chairmanIds: [this.adminSelectedChairmanId] })
+        await this.loadProposalById(this.viewProposalId)
+        this.adminShowChairmanModal = false
+        await Swal.fire({ icon: 'success', title: 'ส่งให้ประธานสำเร็จ', timer: 1500, showConfirmButton: false })
+      } catch (err) {
+        await Swal.fire('ส่งให้ประธานไม่สำเร็จ', (err && err.response && err.response.data && err.response.data.message) || 'ลองใหม่อีกครั้ง', 'error')
+      } finally {
+        this.adminSubmittingChairman = false
       }
     },
     async confirmAdminAssignCommittee () {
@@ -4465,7 +4577,7 @@ export default {
         await this.maybeShowSubmittedSuccessAlert(proposal._id || proposalId, proposal.currentStatus)
 
         const nonEditableStatuses = [
-          'pending_confirm', 'submitted', 'faculty_review_pending', 'faculty_approved',
+          'pending_confirm', 'submitted', 'faculty_review_pending', 'faculty_approved', 'faculty_rejected',
           'office_received', 'document_checking', 'assigned_to_committee',
           'under_review', 'committee_valuated', 'resubmitted', 'second_round_review',
           'approved', 'rejected', 'announced'

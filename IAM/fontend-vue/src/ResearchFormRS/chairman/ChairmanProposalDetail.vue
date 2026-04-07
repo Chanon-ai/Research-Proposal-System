@@ -67,6 +67,14 @@
               >
                 บันทึกฉบับร่างแล้ว
               </CAlert>
+              <CAlert
+                color="warning"
+                v-if="reviewAvailabilityMessage"
+                show
+                class="evaluation-alert evaluation-alert--status"
+              >
+                {{ reviewAvailabilityMessage }}
+              </CAlert>
 
               <CCard class="rubric-card mb-3">
                 <CCardHeader class="rubric-card__header">
@@ -199,8 +207,7 @@ export default {
       evaluationFileName: '',
       decisionOptions: [
         { value: 'approve', label: 'อนุมัติ' },
-        { value: 'reject', label: 'ไม่อนุมัติ' },
-        { value: 'revision', label: 'ขอแก้ไขเพิ่มเติม' }
+        { value: 'reject', label: 'ไม่อนุมัติ' }
       ],
       form: {
         checklistValues: {},
@@ -262,7 +269,18 @@ export default {
       return note || 'พื้นที่ checklist ยังเว้นไว้สำหรับ import จาก backend ในขั้นถัดไป'
     },
     canSubmit () {
-      return !!this.proposal && !this.isEvaluationLocked
+      return !!this.proposal && !this.isEvaluationLocked && this.isPendingChairmanReview
+    },
+    isPendingChairmanReview () {
+      const status = String(this.proposal && this.proposal.currentStatus ? this.proposal.currentStatus : '').trim().toLowerCase()
+      return status === 'faculty_review_pending'
+    },
+    reviewAvailabilityMessage () {
+      if (!this.proposal || this.isPendingChairmanReview || this.submittedBannerVisible) return ''
+      const status = String(this.proposal.currentStatus || '').trim().toLowerCase()
+      if (status === 'faculty_approved') return 'รายการนี้ถูกประธานอนุมัติแล้ว จึงไม่สามารถแก้ไขผลการพิจารณาได้'
+      if (status === 'faculty_rejected' || status === 'rejected') return 'รายการนี้ถูกประธานไม่อนุมัติแล้ว จึงไม่สามารถแก้ไขผลการพิจารณาได้'
+      return 'รายการนี้ไม่ได้อยู่ในสถานะรอการพิจารณาของประธานแล้ว'
     },
     decisionLabel () {
       const match = (this.decisionOptions || []).find(option => option && option.value === (this.form && this.form.decision))
@@ -369,6 +387,9 @@ export default {
         const response = await Service.proposal.getById(encodeURIComponent(id))
         const proposal = response && response.data && response.data.data ? response.data.data : (response ? response.data : null)
         this.proposal = proposal || null
+        if (this.proposal && !this.isPendingChairmanReview) {
+          this.isEvaluationLocked = true
+        }
       } catch (error) {
         this.error = (error && error.response && error.response.data && error.response.data.message) || error.message || 'Unknown error'
         this.proposal = null
@@ -394,7 +415,7 @@ export default {
           ...this.form,
           checklistValues: this.extractChecklistValues(review),
           comments: review.summaryComment || '',
-          decision: review.decision === 'revise' ? 'revision' : (review.decision || this.form.decision)
+          decision: review.decision === 'reject' ? 'reject' : 'approve'
         }
 
         if (review.reviewStatus === 'submitted') {
@@ -478,12 +499,19 @@ export default {
         })
         return
       }
+      if (!this.isPendingChairmanReview) {
+        await this.showAlert({
+          icon: 'warning',
+          title: 'ไม่สามารถส่งผลการพิจารณาได้',
+          text: this.reviewAvailabilityMessage || 'รายการนี้ไม่ได้อยู่ในสถานะรอการพิจารณาของประธานแล้ว'
+        })
+        return
+      }
 
       const proposalId = this.proposal._id || this.proposal.id
       const decisionMap = {
         approve: 'approve',
-        reject: 'reject',
-        revision: 'revise'
+        reject: 'reject'
       }
 
       const payload = {

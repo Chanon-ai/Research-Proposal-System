@@ -5,6 +5,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
@@ -22,6 +23,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
@@ -34,6 +36,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
@@ -49,6 +52,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
@@ -62,8 +66,9 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     draft: ['pending_confirm'],
     pending_confirm: ['submitted'],
     submitted: ['faculty_review_pending'],
-    faculty_review_pending: ['faculty_approved'],
+    faculty_review_pending: ['faculty_approved', 'rejected'],
     faculty_approved: ['office_received'],
+    faculty_rejected: ['rejected'],
     office_received: ['document_checking'],
     document_checking: ['assigned_to_committee'],
     assigned_to_committee: ['under_review'],
@@ -81,6 +86,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     submitted: 2,
     faculty_review_pending: 3,
     faculty_approved: 4,
+    faculty_rejected: 4,
     office_received: 5,
     document_checking: 6,
     assigned_to_committee: 7,
@@ -98,8 +104,9 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       draft: 'แบบร่าง',
       pending_confirm: 'รอการยืนยัน',
       submitted: 'ยื่นแล้ว',
-      faculty_review_pending: 'รอประธานพิจารณา',
+      faculty_review_pending: 'ประธานกำลังพิจารณา',
       faculty_approved: 'ประธานอนุมัติ',
+      faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'ส่วนบริหารรับแล้ว',
       document_checking: 'ตรวจสอบเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
@@ -116,8 +123,9 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       draft: 'แบบร่าง',
       pending_confirm: 'รอยืนยันผู้ร่วมโครงการ',
       submitted: 'ยื่นแล้ว',
-      faculty_review_pending: 'รอประธานพิจารณา',
+      faculty_review_pending: 'ประธานกำลังพิจารณา',
       faculty_approved: 'ประธานอนุมัติ',
+      faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'ส่วนบริหารรับแล้ว',
       document_checking: 'ตรวจสอบเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
@@ -134,8 +142,9 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       draft: 'ร่าง',
       pending_confirm: 'รอการยืนยัน',
       submitted: 'ยื่นแล้ว',
-      faculty_review_pending: 'รอคณะพิจารณา (คณะ)',
-      faculty_approved: 'ผ่านการพิจารณา (คณะ)',
+      faculty_review_pending: 'ประธานกำลังพิจารณา',
+      faculty_approved: 'ประธานอนุมัติ',
+      faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'สำนักงานรับเรื่องแล้ว',
       document_checking: 'ตรวจเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
@@ -156,6 +165,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       submitted: '#3B82F6',
       faculty_review_pending: '#3B82F6',
       faculty_approved: '#34D399',
+      faculty_rejected: '#F87171',
       office_received: '#38BDF8',
       document_checking: '#FACC15',
       assigned_to_committee: '#A78BFA',
@@ -173,6 +183,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       submitted: '#17a2b8',
       faculty_review_pending: '#ffc107',
       faculty_approved: '#007bff',
+      faculty_rejected: '#dc3545',
       office_received: '#17a2b8',
       document_checking: '#fd7e14',
       assigned_to_committee: '#007bff',
@@ -192,6 +203,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
         submitted: 'info',
         faculty_review_pending: 'warning',
         faculty_approved: 'primary',
+        faculty_rejected: 'danger',
         office_received: 'primary',
         document_checking: 'warning',
         assigned_to_committee: 'info',
@@ -210,6 +222,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
         submitted: 'info',
         faculty_review_pending: 'warning',
         faculty_approved: 'primary',
+        faculty_rejected: 'danger',
         office_received: 'primary',
         document_checking: 'warning',
         assigned_to_committee: 'info',
@@ -228,6 +241,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
         submitted: 'info',
         faculty_review_pending: 'warning',
         faculty_approved: 'primary',
+        faculty_rejected: 'danger',
         office_received: 'primary',
         document_checking: 'warning',
         assigned_to_committee: 'info',
@@ -309,6 +323,10 @@ function toStringList(value, fallback) {
   return list.map(item => normalizeStatusKey(item)).filter(Boolean)
 }
 
+function mergeUniqueStatusList(source, fallback) {
+  return Array.from(new Set([...toStringList(fallback, fallback), ...toStringList(source, fallback)]))
+}
+
 function normalizeStatusKeyedObject(value) {
   const source = toObject(value, {})
   return Object.keys(source).reduce((acc, key) => {
@@ -348,8 +366,10 @@ function normalizeAllowedTransitions(transitions, fallback) {
   const source = normalizeStatusKeyedObject(toObject(transitions, fallback))
   return Object.keys(fallback).reduce((acc, key) => {
     const normalizedKey = normalizeStatusKey(key)
-    const sourceValue = source[normalizedKey] !== undefined ? source[normalizedKey] : fallback[key]
-    acc[normalizedKey] = toStringList(sourceValue, fallback[key])
+    const sourceValue = source[normalizedKey]
+    acc[normalizedKey] = sourceValue !== undefined
+      ? mergeUniqueStatusList(sourceValue, fallback[key])
+      : toStringList(fallback[key], fallback[key])
     return acc
   }, {})
 }
@@ -363,11 +383,11 @@ function buildNormalizedWorkflowConfig(rawConfig = {}) {
   const committeeDashboardColors = toObject(committeeDashboard.colors, {})
 
   return {
-    statuses: toStringList(source.statuses, defaults.statuses),
-    inProgressStatuses: toStringList(source.inProgressStatuses, defaults.inProgressStatuses),
-    filterInProgressStatuses: toStringList(source.filterInProgressStatuses, defaults.filterInProgressStatuses),
-    approvedStatuses: toStringList(source.approvedStatuses, defaults.approvedStatuses),
-    readOnlyStatuses: toStringList(source.readOnlyStatuses, defaults.readOnlyStatuses),
+    statuses: mergeUniqueStatusList(source.statuses, defaults.statuses),
+    inProgressStatuses: mergeUniqueStatusList(source.inProgressStatuses, defaults.inProgressStatuses),
+    filterInProgressStatuses: mergeUniqueStatusList(source.filterInProgressStatuses, defaults.filterInProgressStatuses),
+    approvedStatuses: mergeUniqueStatusList(source.approvedStatuses, defaults.approvedStatuses),
+    readOnlyStatuses: mergeUniqueStatusList(source.readOnlyStatuses, defaults.readOnlyStatuses),
     allowedTransitions: normalizeAllowedTransitions(source.allowedTransitions, defaults.allowedTransitions),
     stepMap: normalizeStepMap(source.stepMap, defaults.stepMap),
     labels: {
@@ -385,9 +405,9 @@ function buildNormalizedWorkflowConfig(rawConfig = {}) {
       }
     },
     committeeDashboard: {
-      flowStatuses: toStringList(committeeDashboard.flowStatuses, defaults.committeeDashboard.flowStatuses),
-      pendingStatuses: toStringList(committeeDashboard.pendingStatuses, defaults.committeeDashboard.pendingStatuses),
-      reviewedStatuses: toStringList(committeeDashboard.reviewedStatuses, defaults.committeeDashboard.reviewedStatuses),
+      flowStatuses: mergeUniqueStatusList(committeeDashboard.flowStatuses, defaults.committeeDashboard.flowStatuses),
+      pendingStatuses: mergeUniqueStatusList(committeeDashboard.pendingStatuses, defaults.committeeDashboard.pendingStatuses),
+      reviewedStatuses: mergeUniqueStatusList(committeeDashboard.reviewedStatuses, defaults.committeeDashboard.reviewedStatuses),
       labels: normalizeLabels(committeeDashboard.labels, defaults.committeeDashboard.labels),
       colors: {
         background: normalizeColorMap(committeeDashboardColors.background, defaults.committeeDashboard.colors.background),
