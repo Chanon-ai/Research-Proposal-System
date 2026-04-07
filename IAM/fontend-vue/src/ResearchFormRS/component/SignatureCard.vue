@@ -2,23 +2,21 @@
   <div class="signature-card" :class="{ 'is-dark': isDarkTheme }">
     <div class="card">
       <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">ลงลายเซ็นต์</h5>
+        <h5 class="mb-0">{{ text.title }}</h5>
       </div>
       <div class="card-body">
-        
         <div class="row mb-5">
           <div class="col-12">
-            <h6 class="section-title">หัวหน้าโครงการวิจัย</h6>
+            <h6 class="section-title">{{ text.projectLeaderRole }}</h6>
           </div>
           <div class="col-md-4">
             <div class="signature-box">
-              <p class="text-center mb-2">ลงชื่อ</p>
-              
+              <p class="text-center mb-2">{{ text.signLabel }}</p>
+
               <div class="signature-area mb-3">
                 <div v-if="!signatures.projectLeader.completed">
-                  
                   <div v-if="isReadOnly" class="upload-container text-center p-3 border rounded bg-light text-muted d-flex align-items-center justify-content-center" style="min-height: 150px;">
-                    - ไม่มีลายเซ็น -
+                    {{ text.noSignature }}
                   </div>
 
                   <div
@@ -26,19 +24,19 @@
                     class="upload-container signature-locked-note text-center p-3 border rounded bg-light text-muted d-flex align-items-center justify-content-center"
                     style="min-height: 150px;"
                   >
-                    ลงนามได้เฉพาะผู้มีชื่อในช่องนี้เท่านั้น
+                    {{ text.lockedNote }}
                   </div>
 
                   <div v-else>
                     <div class="btn-group w-100 mb-2" role="group">
-                      <button type="button" class="btn btn-sm" :class="signatures.projectLeader.mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('projectLeader', 'draw')"><CIcon name="cil-pen-nib" class="mr-1" /> วาดลายเซ็น</button>
-                      <button type="button" class="btn btn-sm" :class="signatures.projectLeader.mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('projectLeader', 'upload')"><CIcon name="cil-satelite" class="mr-1" /> แนบรูปภาพ</button>
+                      <button type="button" class="btn btn-sm" :class="signatures.projectLeader.mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('projectLeader', 'draw')"><CIcon name="cil-pen-nib" class="mr-1" /> {{ text.drawSignature }}</button>
+                      <button type="button" class="btn btn-sm" :class="signatures.projectLeader.mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('projectLeader', 'upload')"><CIcon name="cil-satelite" class="mr-1" /> {{ text.uploadImage }}</button>
                     </div>
 
                     <div v-if="signatures.projectLeader.mode === 'draw'">
                       <div class="signature-canvas-container">
-                        <canvas 
-                          ref="canvas-leader" 
+                        <canvas
+                          ref="canvas-leader"
                           class="signature-canvas"
                           @mousedown="startDrawing('projectLeader', $event)"
                           @mousemove="draw('projectLeader', $event)"
@@ -53,7 +51,7 @@
 
                     <div v-if="signatures.projectLeader.mode === 'upload'" class="upload-container text-center p-3 border rounded bg-white">
                       <input type="file" accept="image/*" class="form-control form-control-sm mb-2" @change="handleFileUpload('projectLeader', $event)">
-                      <small class="text-muted">รองรับไฟล์ภาพ (PNG, JPG)</small>
+                      <small class="text-muted">{{ text.imageSupport }}</small>
                     </div>
                   </div>
                 </div>
@@ -64,16 +62,16 @@
               </div>
 
               <p class="text-center mb-1">( {{ projectLeader.name || '....................................................' }} )</p>
-              <p class="text-center mb-1">หัวหน้าโครงการวิจัย</p>
-              <p class="text-center text-muted small mb-3">วันที่ {{ signatures.projectLeader.timestamp || '....................................' }}</p>
+              <p class="text-center mb-1">{{ text.projectLeaderRole }}</p>
+              <p class="text-center text-muted small mb-3">{{ text.dateLabel }} {{ signatures.projectLeader.timestamp || '....................................' }}</p>
 
               <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly && canEditSignature('projectLeader')">
                 <template v-if="!signatures.projectLeader.completed">
-                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('projectLeader')" v-if="signatures.projectLeader.mode === 'draw'"><CIcon name="cil-trash" class="mr-1" /> ลบ</button>
-                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('projectLeader')" v-if="signatures.projectLeader.mode === 'draw'"><CIcon name="cil-save" class="mr-1" /> บันทึก</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('projectLeader')" v-if="signatures.projectLeader.mode === 'draw'"><CIcon name="cil-trash" class="mr-1" /> {{ text.delete }}</button>
+                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('projectLeader')" v-if="signatures.projectLeader.mode === 'draw'"><CIcon name="cil-save" class="mr-1" /> {{ text.save }}</button>
                 </template>
                 <template v-else>
-                  <button @click="editSignature('projectLeader')" class="btn btn-sm btn-outline-primary"><i class="cil-pencil"></i> แก้ไข</button>
+                  <button @click="editSignature('projectLeader')" class="btn btn-sm btn-outline-primary"><i class="cil-pencil"></i> {{ text.edit }}</button>
                 </template>
               </div>
             </div>
@@ -82,17 +80,16 @@
 
         <div class="row mb-5" v-if="coResearchers && coResearchers.length > 0">
           <div class="col-12">
-            <h6 class="section-title">ผู้ร่วมโครงการวิจัย</h6>
+            <h6 class="section-title">{{ text.coResearcherRole }}</h6>
           </div>
           <div class="col-md-4 mb-4" v-for="(researcher, index) in coResearchers" :key="'co-' + index">
             <div class="signature-box" v-if="signatures['coResearcher-' + index]">
-              <p class="text-center mb-2">ลงชื่อ</p>
-              
+              <p class="text-center mb-2">{{ text.signLabel }}</p>
+
               <div class="signature-area mb-3">
                 <div v-if="!signatures['coResearcher-' + index].completed">
-                  
                   <div v-if="isReadOnly" class="upload-container text-center p-3 border rounded bg-light text-muted d-flex align-items-center justify-content-center" style="min-height: 150px;">
-                    - ไม่มีลายเซ็น -
+                    {{ text.noSignature }}
                   </div>
 
                   <div
@@ -100,19 +97,19 @@
                     class="upload-container signature-locked-note text-center p-3 border rounded bg-light text-muted d-flex align-items-center justify-content-center"
                     style="min-height: 150px;"
                   >
-                    ลงนามได้เฉพาะผู้มีชื่อในช่องนี้เท่านั้น
+                    {{ text.lockedNote }}
                   </div>
 
                   <div v-else>
                     <div class="btn-group w-100 mb-2" role="group">
-                      <button type="button" class="btn btn-sm" :class="signatures['coResearcher-' + index].mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('coResearcher-' + index, 'draw')"><CIcon name="cil-pen-nib" class="mr-1" /> วาด</button>
-                      <button type="button" class="btn btn-sm" :class="signatures['coResearcher-' + index].mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('coResearcher-' + index, 'upload')"><CIcon name="cil-satelite" class="mr-1" /> แนบรูป</button>
+                      <button type="button" class="btn btn-sm" :class="signatures['coResearcher-' + index].mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('coResearcher-' + index, 'draw')"><CIcon name="cil-pen-nib" class="mr-1" /> {{ text.draw }}</button>
+                      <button type="button" class="btn btn-sm" :class="signatures['coResearcher-' + index].mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('coResearcher-' + index, 'upload')"><CIcon name="cil-satelite" class="mr-1" /> {{ text.attachImage }}</button>
                     </div>
 
                     <div v-if="signatures['coResearcher-' + index].mode === 'draw'">
                       <div class="signature-canvas-container">
-                        <canvas 
-                          :ref="'canvas-co-' + index" 
+                        <canvas
+                          :ref="'canvas-co-' + index"
                           class="signature-canvas"
                           @mousedown="startDrawing('coResearcher-' + index, $event)"
                           @mousemove="draw('coResearcher-' + index, $event)"
@@ -127,6 +124,7 @@
 
                     <div v-if="signatures['coResearcher-' + index].mode === 'upload'" class="upload-container text-center p-3 border rounded bg-white">
                       <input type="file" accept="image/*" class="form-control form-control-sm mb-2" @change="handleFileUpload('coResearcher-' + index, $event)">
+                      <small class="text-muted">{{ text.imageSupport }}</small>
                     </div>
                   </div>
                 </div>
@@ -137,16 +135,16 @@
               </div>
 
               <p class="text-center mb-1">( {{ researcher.name || '....................................................' }} )</p>
-              <p class="text-center mb-1">ผู้ร่วมโครงการวิจัย</p>
-              <p class="text-center text-muted small mb-3">วันที่ {{ signatures['coResearcher-' + index].timestamp || '....................................' }}</p>
+              <p class="text-center mb-1">{{ text.coResearcherRole }}</p>
+              <p class="text-center text-muted small mb-3">{{ text.dateLabel }} {{ signatures['coResearcher-' + index].timestamp || '....................................' }}</p>
 
               <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly && canEditSignature('coResearcher-' + index)">
                 <template v-if="!signatures['coResearcher-' + index].completed">
-                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('coResearcher-' + index)" v-if="signatures['coResearcher-' + index].mode === 'draw'"><CIcon name="cil-trash" class="mr-1" /> ลบ</button>
-                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('coResearcher-' + index)" v-if="signatures['coResearcher-' + index].mode === 'draw'"><CIcon name="cil-save" class="mr-1" /> บันทึก</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('coResearcher-' + index)" v-if="signatures['coResearcher-' + index].mode === 'draw'"><CIcon name="cil-trash" class="mr-1" /> {{ text.delete }}</button>
+                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('coResearcher-' + index)" v-if="signatures['coResearcher-' + index].mode === 'draw'"><CIcon name="cil-save" class="mr-1" /> {{ text.save }}</button>
                 </template>
                 <template v-else>
-                  <button @click="editSignature('coResearcher-' + index)" class="btn btn-sm btn-outline-primary"><i class="cil-pencil"></i> แก้ไข</button>
+                  <button @click="editSignature('coResearcher-' + index)" class="btn btn-sm btn-outline-primary"><i class="cil-pencil"></i> {{ text.edit }}</button>
                 </template>
               </div>
             </div>
@@ -155,17 +153,16 @@
 
         <div class="row mb-4" v-if="advisors && advisors.length > 0">
           <div class="col-12">
-            <h6 class="section-title">ที่ปรึกษาโครงการวิจัย</h6>
+            <h6 class="section-title">{{ text.advisorRole }}</h6>
           </div>
           <div class="col-md-4 mb-4" v-for="(advisor, index) in advisors" :key="'advisor-' + index">
             <div class="signature-box" v-if="signatures['advisor-' + index]">
-              <p class="text-center mb-2">ลงชื่อ</p>
-              
+              <p class="text-center mb-2">{{ text.signLabel }}</p>
+
               <div class="signature-area mb-3">
                 <div v-if="!signatures['advisor-' + index].completed">
-                  
                   <div v-if="isReadOnly" class="upload-container text-center p-3 border rounded bg-light text-muted d-flex align-items-center justify-content-center" style="min-height: 150px;">
-                    - ไม่มีลายเซ็น -
+                    {{ text.noSignature }}
                   </div>
 
                   <div
@@ -173,19 +170,19 @@
                     class="upload-container signature-locked-note text-center p-3 border rounded bg-light text-muted d-flex align-items-center justify-content-center"
                     style="min-height: 150px;"
                   >
-                    ลงนามได้เฉพาะผู้มีชื่อในช่องนี้เท่านั้น
+                    {{ text.lockedNote }}
                   </div>
 
                   <div v-else>
                     <div class="btn-group w-100 mb-2" role="group">
-                      <button type="button" class="btn btn-sm" :class="signatures['advisor-' + index].mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('advisor-' + index, 'draw')"><CIcon name="cil-pen-nib" class="mr-1" /> วาด</button>
-                      <button type="button" class="btn btn-sm" :class="signatures['advisor-' + index].mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('advisor-' + index, 'upload')"><CIcon name="cil-satelite" class="mr-1" /> แนบรูป</button>
+                      <button type="button" class="btn btn-sm" :class="signatures['advisor-' + index].mode === 'draw' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('advisor-' + index, 'draw')"><CIcon name="cil-pen-nib" class="mr-1" /> {{ text.draw }}</button>
+                      <button type="button" class="btn btn-sm" :class="signatures['advisor-' + index].mode === 'upload' ? 'btn-primary' : 'btn-outline-primary'" @click="setSignatureMode('advisor-' + index, 'upload')"><CIcon name="cil-satelite" class="mr-1" /> {{ text.attachImage }}</button>
                     </div>
 
                     <div v-if="signatures['advisor-' + index].mode === 'draw'">
                       <div class="signature-canvas-container">
-                        <canvas 
-                          :ref="'canvas-advisor-' + index" 
+                        <canvas
+                          :ref="'canvas-advisor-' + index"
                           class="signature-canvas"
                           @mousedown="startDrawing('advisor-' + index, $event)"
                           @mousemove="draw('advisor-' + index, $event)"
@@ -200,6 +197,7 @@
 
                     <div v-if="signatures['advisor-' + index].mode === 'upload'" class="upload-container text-center p-3 border rounded bg-white">
                       <input type="file" accept="image/*" class="form-control form-control-sm mb-2" @change="handleFileUpload('advisor-' + index, $event)">
+                      <small class="text-muted">{{ text.imageSupport }}</small>
                     </div>
                   </div>
                 </div>
@@ -210,16 +208,16 @@
               </div>
 
               <p class="text-center mb-1">( {{ advisor.name || '....................................................' }} )</p>
-              <p class="text-center mb-1">ที่ปรึกษาโครงการวิจัย</p>
-              <p class="text-center text-muted small mb-3">วันที่ {{ signatures['advisor-' + index].timestamp || '....................................' }}</p>
+              <p class="text-center mb-1">{{ text.advisorRole }}</p>
+              <p class="text-center text-muted small mb-3">{{ text.dateLabel }} {{ signatures['advisor-' + index].timestamp || '....................................' }}</p>
 
               <div class="d-flex justify-content-center mt-auto" style="gap: 7px;" v-if="!isReadOnly && canEditSignature('advisor-' + index)">
                 <template v-if="!signatures['advisor-' + index].completed">
-                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('advisor-' + index)" v-if="signatures['advisor-' + index].mode === 'draw'"><CIcon name="cil-trash" class="mr-1" /> ลบ</button>
-                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('advisor-' + index)" v-if="signatures['advisor-' + index].mode === 'draw'"><CIcon name="cil-save" class="mr-1" /> บันทึก</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary me-2" @click="clearSignature('advisor-' + index)" v-if="signatures['advisor-' + index].mode === 'draw'"><CIcon name="cil-trash" class="mr-1" /> {{ text.delete }}</button>
+                  <button type="button" class="btn btn-sm btn-success text-white" @click="saveSignature('advisor-' + index)" v-if="signatures['advisor-' + index].mode === 'draw'"><CIcon name="cil-save" class="mr-1" /> {{ text.save }}</button>
                 </template>
                 <template v-else>
-                  <button @click="editSignature('advisor-' + index)" class="btn btn-sm btn-outline-primary"><i class="cil-pencil"></i> แก้ไข</button>
+                  <button @click="editSignature('advisor-' + index)" class="btn btn-sm btn-outline-primary"><i class="cil-pencil"></i> {{ text.edit }}</button>
                 </template>
               </div>
             </div>
@@ -231,12 +229,11 @@
             <div class="alert alert-info mb-0">
               <small>
                 <i class="cil-info-circle me-2"></i>
-                หมายเหตุ: ให้ผู้วิจัยทุกคนลงนามในช่องที่กำหนดเพื่อยืนยันการเข้าร่วมโครงการวิจัย
+                {{ text.note }}
               </small>
             </div>
           </div>
         </div>
-        
       </div>
     </div>
   </div>
@@ -266,49 +263,48 @@ export default {
       type: Array,
       default: () => []
     },
-    // เพิ่ม props isReadOnly 
     isReadOnly: {
       type: Boolean,
       default: false
     }
   },
-  data() {
+  data () {
     return {
       suppressEmit: false,
       signatures: {
         projectLeader: { data: null, completed: false, timestamp: null, mode: 'draw' }
       },
-      isDrawing: {},
+      isDrawing: {}
     }
   },
-  mounted() {
-    this.initializeSignatures();
+  mounted () {
+    this.initializeSignatures()
     this.applyModelValue(this.modelValue)
     this.$nextTick(() => {
-      this.setupCanvases();
-    });
+      this.setupCanvases()
+    })
   },
   watch: {
     modelValue: {
       immediate: false,
       deep: true,
-      handler(val) {
+      handler (val) {
         this.applyModelValue(val)
       }
     },
     coResearchers: {
-      handler() {
-        this.initializeSignatures();
+      handler () {
+        this.initializeSignatures()
         this.applyModelValue(this.modelValue)
-        this.$nextTick(() => this.setupCanvases());
+        this.$nextTick(() => this.setupCanvases())
       },
       deep: true
     },
     advisors: {
-      handler() {
-        this.initializeSignatures();
+      handler () {
+        this.initializeSignatures()
         this.applyModelValue(this.modelValue)
-        this.$nextTick(() => this.setupCanvases());
+        this.$nextTick(() => this.setupCanvases())
       },
       deep: true
     }
@@ -316,6 +312,53 @@ export default {
   computed: {
     isDarkTheme () {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+    isEnglishLocale () {
+      const locale = this.$i18n && this.$i18n.locale ? String(this.$i18n.locale) : 'th'
+      return locale.toLowerCase().startsWith('en')
+    },
+    text () {
+      if (this.isEnglishLocale) {
+        return {
+          title: 'Signatures',
+          projectLeaderRole: 'Project Leader',
+          coResearcherRole: 'Co-Researcher',
+          advisorRole: 'Research Advisor',
+          signLabel: 'Signature',
+          noSignature: '- No signature -',
+          lockedNote: 'Only the assigned person can sign in this area.',
+          drawSignature: 'Draw Signature',
+          uploadImage: 'Upload Image',
+          draw: 'Draw',
+          attachImage: 'Attach Image',
+          imageSupport: 'Supported image files: PNG, JPG',
+          dateLabel: 'Date',
+          delete: 'Delete',
+          save: 'Save',
+          edit: 'Edit',
+          note: 'Note: Every researcher must sign in the designated area to confirm participation in the research project.'
+        }
+      }
+
+      return {
+        title: 'ลงลายเซ็นต์',
+        projectLeaderRole: 'หัวหน้าโครงการวิจัย',
+        coResearcherRole: 'ผู้ร่วมโครงการวิจัย',
+        advisorRole: 'ที่ปรึกษาโครงการวิจัย',
+        signLabel: 'ลงชื่อ',
+        noSignature: '- ไม่มีลายเซ็น -',
+        lockedNote: 'ลงนามได้เฉพาะผู้มีชื่อในช่องนี้เท่านั้น',
+        drawSignature: 'วาดลายเซ็น',
+        uploadImage: 'แนบรูปภาพ',
+        draw: 'วาด',
+        attachImage: 'แนบรูป',
+        imageSupport: 'รองรับไฟล์ภาพ (PNG, JPG)',
+        dateLabel: 'วันที่',
+        delete: 'ลบ',
+        save: 'บันทึก',
+        edit: 'แก้ไข',
+        note: 'หมายเหตุ: ให้ผู้วิจัยทุกคนลงนามในช่องที่กำหนดเพื่อยืนยันการเข้าร่วมโครงการวิจัย'
+      }
     },
     currentUser () {
       const user = this.$store && this.$store.getters
@@ -392,27 +435,23 @@ export default {
       if (personId && this.currentUserId && personId === this.currentUserId) return true
       if (personEmail && this.currentUserEmail && personEmail === this.currentUserEmail) return true
 
-      // Backward compatibility: older project leader records may not persist identity fields yet.
       if (signatureId === 'projectLeader' && !personId && !personEmail) {
         return Boolean(this.currentUserId || this.currentUserEmail)
       }
 
       return false
     },
-    cloneSignatures(payload) {
-      // Break shared references between parent (v-model) and internal state.
-      // Safe here because signatures only contain plain objects + base64 strings.
+    cloneSignatures (payload) {
       try {
         return JSON.parse(JSON.stringify(payload || {}))
       } catch (e) {
         return payload ? { ...payload } : {}
       }
     },
-    applyModelValue(val) {
+    applyModelValue (val) {
       if (!val || typeof val !== 'object') return
       this.suppressEmit = true
 
-      // Ensure required keys exist before merging.
       this.initializeSignatures()
 
       const incomingAll = this.cloneSignatures(val)
@@ -427,195 +466,184 @@ export default {
         this.suppressEmit = false
       })
     },
-    emitModelValue() {
+    emitModelValue () {
       if (this.suppressEmit) return
       if (this.isReadOnly) return
       this.$emit('update:modelValue', this.cloneSignatures(this.signatures))
     },
-    initializeSignatures() {
+    initializeSignatures () {
       if (!this.signatures.projectLeader) {
-        this.$set(this.signatures, 'projectLeader', { data: null, completed: false, timestamp: null, mode: 'draw' });
+        this.$set(this.signatures, 'projectLeader', { data: null, completed: false, timestamp: null, mode: 'draw' })
       }
-      
+
       this.coResearchers.forEach((_, index) => {
-        const key = 'coResearcher-' + index;
+        const key = 'coResearcher-' + index
         if (!this.signatures[key]) {
-          this.$set(this.signatures, key, { data: null, completed: false, timestamp: null, mode: 'draw' });
+          this.$set(this.signatures, key, { data: null, completed: false, timestamp: null, mode: 'draw' })
         }
-      });
-      
+      })
+
       this.advisors.forEach((_, index) => {
-        const key = 'advisor-' + index;
+        const key = 'advisor-' + index
         if (!this.signatures[key]) {
-          this.$set(this.signatures, key, { data: null, completed: false, timestamp: null, mode: 'draw' });
+          this.$set(this.signatures, key, { data: null, completed: false, timestamp: null, mode: 'draw' })
         }
-      });
+      })
     },
-    
-    setSignatureMode(signatureId, mode) {
-      if (!this.canEditSignature(signatureId)) return;
-      if (!this.signatures[signatureId]) return;
-      this.signatures[signatureId].mode = mode;
+    setSignatureMode (signatureId, mode) {
+      if (!this.canEditSignature(signatureId)) return
+      if (!this.signatures[signatureId]) return
+      this.signatures[signatureId].mode = mode
       if (mode === 'draw') {
         this.$nextTick(() => {
-          this.setupCanvas(signatureId);
-        });
+          this.setupCanvas(signatureId)
+        })
       }
     },
+    handleFileUpload (signatureId, event) {
+      if (!this.canEditSignature(signatureId)) return
+      if (!this.signatures[signatureId]) return
+      const file = event.target.files[0]
+      if (!file) return
 
-    handleFileUpload(signatureId, event) {
-      if (!this.canEditSignature(signatureId)) return;
-      if (!this.signatures[signatureId]) return;
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onload = (e) => {
-        this.signatures[signatureId].data = e.target.result;
-        this.signatures[signatureId].completed = true;
-        this.signatures[signatureId].timestamp = this.getThaiTimestamp();
-        this.emitModelValue();
-      };
-      reader.readAsDataURL(file);
-    },
-
-    getThaiTimestamp() {
-      const now = new Date();
-      return now.toLocaleDateString('th-TH', {
-        year: 'numeric', month: 'short', day: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      });
-    },
-
-    getCanvasElement(signatureId) {
-      let refName = '';
-      if (signatureId === 'projectLeader') {
-        refName = 'canvas-leader';
-      } else if (signatureId.startsWith('coResearcher-')) {
-        refName = 'canvas-co-' + signatureId.split('-')[1];
-      } else if (signatureId.startsWith('advisor-')) {
-        refName = 'canvas-advisor-' + signatureId.split('-')[1];
+        this.signatures[signatureId].data = e.target.result
+        this.signatures[signatureId].completed = true
+        this.signatures[signatureId].timestamp = this.getLocalizedTimestamp()
+        this.emitModelValue()
       }
-      
-      const ref = this.$refs[refName];
-      if (!ref) return null;
-      return Array.isArray(ref) ? ref[0] : ref;
+      reader.readAsDataURL(file)
     },
+    getLocalizedTimestamp () {
+      const now = new Date()
+      return now.toLocaleDateString(this.isEnglishLocale ? 'en-US' : 'th-TH', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    },
+    getCanvasElement (signatureId) {
+      let refName = ''
+      if (signatureId === 'projectLeader') {
+        refName = 'canvas-leader'
+      } else if (signatureId.startsWith('coResearcher-')) {
+        refName = 'canvas-co-' + signatureId.split('-')[1]
+      } else if (signatureId.startsWith('advisor-')) {
+        refName = 'canvas-advisor-' + signatureId.split('-')[1]
+      }
 
-    setupCanvases() {
-      if (this.isReadOnly) return;
+      const ref = this.$refs[refName]
+      if (!ref) return null
+      return Array.isArray(ref) ? ref[0] : ref
+    },
+    setupCanvases () {
+      if (this.isReadOnly) return
       if (
         this.canEditSignature('projectLeader') &&
         !this.signatures.projectLeader.completed &&
         this.signatures.projectLeader.mode === 'draw'
-      ) this.setupCanvas('projectLeader');
-      
+      ) this.setupCanvas('projectLeader')
+
       this.coResearchers.forEach((_, index) => {
-        const signatureId = 'coResearcher-' + index;
-        const signature = this.signatures[signatureId];
-        if (!signature) return;
-        if (!this.canEditSignature(signatureId)) return;
-        if (!signature.completed && signature.mode === 'draw') this.setupCanvas(signatureId);
-      });
-      
+        const signatureId = 'coResearcher-' + index
+        const signature = this.signatures[signatureId]
+        if (!signature) return
+        if (!this.canEditSignature(signatureId)) return
+        if (!signature.completed && signature.mode === 'draw') this.setupCanvas(signatureId)
+      })
+
       this.advisors.forEach((_, index) => {
-        const signatureId = 'advisor-' + index;
-        const signature = this.signatures[signatureId];
-        if (!signature) return;
-        if (!this.canEditSignature(signatureId)) return;
-        if (!signature.completed && signature.mode === 'draw') this.setupCanvas(signatureId);
-      });
+        const signatureId = 'advisor-' + index
+        const signature = this.signatures[signatureId]
+        if (!signature) return
+        if (!this.canEditSignature(signatureId)) return
+        if (!signature.completed && signature.mode === 'draw') this.setupCanvas(signatureId)
+      })
     },
-    
-    setupCanvas(signatureId) {
-      const canvas = this.getCanvasElement(signatureId);
+    setupCanvas (signatureId) {
+      const canvas = this.getCanvasElement(signatureId)
       if (canvas) {
-        const ctx = canvas.getContext('2d');
-        canvas.width = canvas.parentElement.offsetWidth - 20; 
-        canvas.height = 150;
-        
-        ctx.strokeStyle = this.isDarkTheme ? '#e6edf7' : '#000000';
-        ctx.lineWidth = 2.5;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        const ctx = canvas.getContext('2d')
+        canvas.width = canvas.parentElement.offsetWidth - 20
+        canvas.height = 150
+
+        ctx.strokeStyle = this.isDarkTheme ? '#e6edf7' : '#000000'
+        ctx.lineWidth = 2.5
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
       }
     },
-    
-    getCoordinates(canvas, event) {
-      const rect = canvas.getBoundingClientRect();
-      const clientX = event.clientX || (event.touches && event.touches[0].clientX);
-      const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+    getCoordinates (canvas, event) {
+      const rect = canvas.getBoundingClientRect()
+      const clientX = event.clientX || (event.touches && event.touches[0].clientX)
+      const clientY = event.clientY || (event.touches && event.touches[0].clientY)
       return {
         x: clientX - rect.left,
         y: clientY - rect.top
-      };
+      }
     },
+    startDrawing (signatureId, event) {
+      if (!this.canEditSignature(signatureId)) return
+      this.$set(this.isDrawing, signatureId, true)
+      const canvas = event.target
+      const ctx = canvas.getContext('2d')
+      const pos = this.getCoordinates(canvas, event)
 
-    startDrawing(signatureId, event) {
-      if (!this.canEditSignature(signatureId)) return;
-      this.$set(this.isDrawing, signatureId, true);
-      const canvas = event.target;
-      const ctx = canvas.getContext('2d');
-      const pos = this.getCoordinates(canvas, event);
-      
-      ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y);
+      ctx.beginPath()
+      ctx.moveTo(pos.x, pos.y)
     },
-    
-    draw(signatureId, event) {
-      if (!this.canEditSignature(signatureId)) return;
-      if (!this.isDrawing[signatureId]) return;
-      const canvas = event.target;
-      const ctx = canvas.getContext('2d');
-      const pos = this.getCoordinates(canvas, event);
-      
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
+    draw (signatureId, event) {
+      if (!this.canEditSignature(signatureId)) return
+      if (!this.isDrawing[signatureId]) return
+      const canvas = event.target
+      const ctx = canvas.getContext('2d')
+      const pos = this.getCoordinates(canvas, event)
+
+      ctx.lineTo(pos.x, pos.y)
+      ctx.stroke()
     },
-    
-    stopDrawing(signatureId) {
-      this.$set(this.isDrawing, signatureId, false);
+    stopDrawing (signatureId) {
+      this.$set(this.isDrawing, signatureId, false)
     },
-    
-    clearSignature(signatureId) {
-      if (!this.canEditSignature(signatureId)) return;
-      const canvas = this.getCanvasElement(signatureId);
+    clearSignature (signatureId) {
+      if (!this.canEditSignature(signatureId)) return
+      const canvas = this.getCanvasElement(signatureId)
       if (canvas) {
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const ctx = canvas.getContext('2d')
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
       }
     },
-    
-    saveSignature(signatureId) {
-      if (!this.canEditSignature(signatureId)) return;
-      if (!this.signatures[signatureId]) return;
-      const canvas = this.getCanvasElement(signatureId);
+    saveSignature (signatureId) {
+      if (!this.canEditSignature(signatureId)) return
+      if (!this.signatures[signatureId]) return
+      const canvas = this.getCanvasElement(signatureId)
       if (canvas) {
-        const dataURL = canvas.toDataURL('image/png');
-        this.signatures[signatureId].data = dataURL;
-        this.signatures[signatureId].completed = true;
-        this.signatures[signatureId].timestamp = this.getThaiTimestamp();
-        this.emitModelValue();
+        const dataURL = canvas.toDataURL('image/png')
+        this.signatures[signatureId].data = dataURL
+        this.signatures[signatureId].completed = true
+        this.signatures[signatureId].timestamp = this.getLocalizedTimestamp()
+        this.emitModelValue()
       }
     },
-    
-    editSignature(signatureId) {
-      if (!this.canEditSignature(signatureId)) return;
-      if (!this.signatures[signatureId]) return;
-      this.signatures[signatureId].completed = false;
-      this.signatures[signatureId].data = null;
-      this.signatures[signatureId].timestamp = null;
-      this.emitModelValue();
-      
+    editSignature (signatureId) {
+      if (!this.canEditSignature(signatureId)) return
+      if (!this.signatures[signatureId]) return
+      this.signatures[signatureId].completed = false
+      this.signatures[signatureId].data = null
+      this.signatures[signatureId].timestamp = null
+      this.emitModelValue()
+
       if (this.signatures[signatureId].mode === 'draw') {
         this.$nextTick(() => {
-          this.setupCanvas(signatureId);
-        });
+          this.setupCanvas(signatureId)
+        })
       }
     },
-
-    getAllSignatures() {
-      return this.signatures;
+    getAllSignatures () {
+      return this.signatures
     }
   }
 }

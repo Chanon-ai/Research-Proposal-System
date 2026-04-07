@@ -2,22 +2,22 @@
   <div class="research-team-form" :class="{ 'research-team-form--dark': isDarkTheme }">
     <div class="card">
       <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">คณะผู้วิจัย</h5>
+        <h5 class="mb-0">{{ teamText.cardTitle }}</h5>
       </div>
       <div class="card-body">
         
         <div ref="research_team" :class="[sectionClass('research_team'), 'project-leader-section']">
-          <h6 class="section-title">หัวหน้าโครงการวิจัย</h6>
+          <h6 class="section-title">{{ teamText.projectLeaderTitle }}</h6>
           <div class="row">
             <div class="col-md-6">
               <div class="form-group">
-                <label>ชื่อ-สกุล <span v-if="!isReadOnly" class="text-danger">*</span></label>
+                <label>{{ teamText.fullNameLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
                 <input v-model="projectLeader.name" type="text" class="form-control" required :readonly="shouldAutoFillProjectLeader" :disabled="isReadOnly">
               </div>
             </div>
             <div class="col-md-6">
               <div class="form-group">
-                <label>สังกัดหน่วยงาน <span v-if="!isReadOnly" class="text-danger">*</span></label>
+                <label>{{ teamText.affiliationLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
                 <input v-model="projectLeader.affiliation" type="text" class="form-control" required :readonly="shouldAutoFillProjectLeader" :disabled="isReadOnly">
               </div>
             </div>
@@ -25,7 +25,7 @@
           <div class="row">
             <div class="col-md-4">
               <div class="form-group">
-                <label>เบอร์โทรศัพท์ <span v-if="!isReadOnly" class="text-danger">*</span></label>
+                <label>{{ teamText.phoneLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
                 <input v-model="projectLeader.phone" type="text" class="form-control" required :readonly="shouldAutoFillProjectLeader" :disabled="isReadOnly">
               </div>
             </div>
@@ -37,17 +37,17 @@
             </div>
             <div class="col-md-4">
               <div class="form-group">
-                <label>สัดส่วนการวิจัย (%) <span v-if="!isReadOnly" class="text-danger">*</span></label>
-                <input v-model="projectLeader.proportion" type="number" min="1" max="100" class="form-control bg-light" readonly required title="คำนวณอัตโนมัติจากสัดส่วนของผู้ร่วมโครงการ" :disabled="isReadOnly">
+                <label>{{ teamText.proportionLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
+                <input v-model="projectLeader.proportion" type="number" min="1" max="100" class="form-control bg-light" readonly required :title="teamText.autoCalculatedTitle" :disabled="isReadOnly">
               </div>
             </div>
           </div>
         </div>
 
         <div class="section mb-4">
-          <h6 class="section-title">ผู้ร่วมโครงการวิจัย (ถ้ามี)</h6>
+          <h6 class="section-title">{{ teamText.coResearchersTitle }}</h6>
           <div v-if="coResearchers.length === 0" class="text-muted text-center py-3">
-            -- ยังไม่มีข้อมูลผู้ร่วมโครงการ --
+            {{ teamText.noCoResearchers }}
           </div>
           <div v-for="(researcher, index) in coResearchers" :key="index" class="co-researcher-item mb-3">
             <div class="card">
@@ -55,7 +55,7 @@
                 <div class="row">
                   <div class="col-md-6">
                     <div class="form-group">
-                      <label>ชื่อ-สกุล <span v-if="!isReadOnly" class="text-danger">*</span></label>
+                      <label>{{ teamText.fullNameLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
                       <input
                         v-model="researcher.name"
                         type="text"
@@ -69,7 +69,7 @@
                   </div>
                   <div class="col-md-6">
                     <div class="form-group">
-                      <label>สังกัดหน่วยงาน <span v-if="!isReadOnly" class="text-danger">*</span></label>
+                      <label>{{ teamText.affiliationLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
                       <input
                         v-model="researcher.affiliation"
                         type="text"
@@ -85,7 +85,7 @@
                 <div class="row">
                   <div class="col-md-4">
                     <div class="form-group">
-                      <label>เบอร์โทรศัพท์ <span v-if="!isReadOnly" class="text-danger">*</span></label>
+                      <label>{{ teamText.phoneLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
                       <input
                         v-model="researcher.phone"
                         type="text"
@@ -113,7 +113,7 @@
                   </div>
                   <div :class="isReadOnly ? 'col-md-4' : 'col-md-2'">
                     <div class="form-group">
-                      <label>สัดส่วนการวิจัย (%) <span v-if="!isReadOnly" class="text-danger">*</span></label>
+                      <label>{{ teamText.proportionLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
                       <input 
                         v-model="researcher.proportion" 
                         @input="validateProportion(index)"
@@ -130,9 +130,9 @@
                   <div class="col-md-2" v-if="!isReadOnly">
                     <div class="form-group">
                       <label>&nbsp;</label>
-                      <button type="button" @click="removeCoResearcher(index)" title="ลบผู้ร่วมโครงการวิจัย" class="btn btn-outline-danger form-control delete-action-btn">
+                      <button type="button" @click="removeCoResearcher(index)" :title="teamText.removeCoResearcherTitle" class="btn btn-outline-danger form-control delete-action-btn">
                         <CIcon name="cil-trash" class="mr-1"/>
-                        <span>ลบ</span>
+                        <span>{{ teamText.removeButton }}</span>
                       </button>
                     </div>
                   </div>
@@ -142,7 +142,7 @@
           </div>
           
           <button v-if="!isReadOnly" @click="openCoResearcherPicker" class="btn btn-outline-primary w-100 mb-3">
-            <CIcon name="cil-plus" class="mr-2" /> เพิ่มผู้ร่วม
+            <CIcon name="cil-plus" class="mr-2" /> {{ teamText.addCoResearcherButton }}
           </button>
 
           <CModal
@@ -150,11 +150,11 @@
             centered
             :close-on-backdrop="false"
             class="co-researcher-modal"
-            title="เพิ่มผู้ร่วมโครงการ"
+            :title="teamText.addCoResearcherModalTitle"
           >
             <template #body-wrapper>
               <div class="co-researcher-picker">
-                <label class="co-researcher-picker-label">ค้นหา / เลือกผู้ร่วมโครงการ (เลือกได้หลายคน)</label>
+                <label class="co-researcher-picker-label">{{ teamText.coResearcherPickerLabel }}</label>
                 <multiselect
                   v-model="selectedCoResearcherOptions"
                   :options="coResearcherOptions"
@@ -167,7 +167,7 @@
                   :loading="coResearcherOptionsLoading"
                   label="searchText"
                   track-by="_optionKey"
-                  placeholder="ค้นหาชื่อ อีเมล หรือหน่วยงาน"
+                  :placeholder="teamText.coResearcherSearchPlaceholder"
                   :custom-label="formatCoResearcherOptionLabel"
                 >
                   <template slot="option" slot-scope="{ option }">
@@ -184,14 +184,14 @@
             </template>
             <template #footer-wrapper>
               <div class="d-flex justify-content-end w-100 co-researcher-modal-actions">
-                <button type="button" class="btn btn-outline-danger co-researcher-action-btn" @click="closeCoResearcherPicker"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</button>
+                <button type="button" class="btn btn-outline-danger co-researcher-action-btn" @click="closeCoResearcherPicker"><CIcon name="cil-x" class="mr-1" /> {{ teamText.cancelButton }}</button>
                 <button
                   type="button"
                   class="btn btn-primary co-researcher-action-btn"
                   :disabled="coResearcherOptionsLoading || selectedCoResearcherOptions.length === 0"
                   @click="confirmAddCoResearchers"
                 >
-                  <CIcon name="cil-plus" class="mr-1" /> เพิ่มผู้ร่วม
+                  <CIcon name="cil-plus" class="mr-1" /> {{ teamText.addCoResearcherButton }}
                 </button>
               </div>
             </template>
@@ -202,18 +202,18 @@
             :class="totalProportion === 100 ? 'alert-success' : 'alert-danger'"
             role="alert"
           >
-            <strong>รวมสัดส่วนการวิจัยทั้งหมด: {{ totalProportion }}%</strong> 
+            <strong>{{ teamText.totalProportionLabel }}: {{ totalProportion }}%</strong> 
             <span v-if="totalProportion !== 100 && !isReadOnly" class="ml-2">
-               (สัดส่วนการวิจัยรวมกันต้องเท่ากับ 100% พอดี)
+               ({{ teamText.proportionHint }})
             </span>
-            <span v-else-if="totalProportion === 100" class="ml-2"><i class="cil-check-circle"></i> สัดส่วนถูกต้อง</span>
+            <span v-else-if="totalProportion === 100" class="ml-2"><i class="cil-check-circle"></i> {{ teamText.proportionValid }}</span>
           </div>
         </div>
 
         <div class="section">
-          <h6 class="section-title">ที่ปรึกษาโครงการวิจัย (ถ้ามี)</h6>
+          <h6 class="section-title">{{ teamText.advisorsTitle }}</h6>
           <div v-if="advisors.length === 0" class="text-muted text-center py-3">
-            -- ยังไม่มีข้อมูลที่ปรึกษาโครงการ --
+            {{ teamText.noAdvisors }}
           </div>
           <div v-for="(advisor, index) in advisors" :key="index" class="advisor-item mb-3">
             <div class="card">
@@ -221,13 +221,13 @@
                 <div class="row">
                   <div class="col-md-6">
                     <div class="form-group">
-                      <label>ชื่อ-สกุล <span v-if="!isReadOnly" class="text-danger">*</span></label>
+                      <label>{{ teamText.fullNameLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
                       <input v-model="advisor.name" type="text" class="form-control" required :disabled="isReadOnly">
                     </div>
                   </div>
                   <div class="col-md-6">
                     <div class="form-group">
-                      <label>สังกัดหน่วยงาน <span v-if="!isReadOnly" class="text-danger">*</span></label>
+                      <label>{{ teamText.affiliationLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
                       <input v-model="advisor.affiliation" type="text" class="form-control" required :disabled="isReadOnly">
                     </div>
                   </div>
@@ -235,7 +235,7 @@
                 <div class="row">
                   <div :class="isReadOnly ? 'col-md-6' : 'col-md-4'">
                     <div class="form-group">
-                      <label>เบอร์โทรศัพท์ <span v-if="!isReadOnly" class="text-danger">*</span></label>
+                      <label>{{ teamText.phoneLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
                       <input v-model="advisor.phone" type="text" class="form-control" required :disabled="isReadOnly">
                     </div>
                   </div>
@@ -248,9 +248,9 @@
                   <div class="col-md-2" v-if="!isReadOnly">
                     <div class="form-group">
                       <label>&nbsp;</label>
-                      <button type="button" @click="removeAdvisor(index)" title="ลบที่ปรึกษาโครงการวิจัย" class="btn btn-outline-danger form-control delete-action-btn">
+                      <button type="button" @click="removeAdvisor(index)" :title="teamText.removeAdvisorTitle" class="btn btn-outline-danger form-control delete-action-btn">
                         <CIcon name="cil-trash" class="mr-1" />
-                        <span>ลบ</span>
+                        <span>{{ teamText.removeButton }}</span>
                       </button>
                     </div>
                   </div>
@@ -259,7 +259,7 @@
             </div>
           </div>
           <button v-if="!isReadOnly" @click="addAdvisor" class="btn btn-outline-primary w-100">
-            <CIcon name="cil-plus" class="mr-2" /> เพิ่มที่ปรึกษา
+            <CIcon name="cil-plus" class="mr-2" /> {{ teamText.addAdvisorButton }}
           </button>
         </div>
 
@@ -356,6 +356,64 @@ export default {
         total += Number(researcher.proportion) || 0;
       });
       return total;
+    },
+    isEnglishLocale() {
+      const locale = String((this.$i18n && this.$i18n.locale) || '').trim().toLowerCase()
+      return locale === 'en'
+    },
+    teamText() {
+      if (this.isEnglishLocale) {
+        return {
+          cardTitle: 'Research Team',
+          projectLeaderTitle: 'Principal Investigator',
+          fullNameLabel: 'Full name',
+          affiliationLabel: 'Affiliation',
+          phoneLabel: 'Phone number',
+          proportionLabel: 'Research proportion (%)',
+          autoCalculatedTitle: 'Calculated automatically from co-researcher proportions',
+          coResearchersTitle: 'Co-researchers (if any)',
+          noCoResearchers: '-- No co-researcher records --',
+          removeCoResearcherTitle: 'Remove co-researcher',
+          removeButton: 'Remove',
+          addCoResearcherButton: 'Add Co-researcher',
+          addCoResearcherModalTitle: 'Add co-researchers',
+          coResearcherPickerLabel: 'Search / select co-researchers (multiple selection allowed)',
+          coResearcherSearchPlaceholder: 'Search by name, email, or affiliation',
+          cancelButton: 'Cancel',
+          totalProportionLabel: 'Total research proportion',
+          proportionHint: 'The total research proportion must equal exactly 100%',
+          proportionValid: 'Valid proportion',
+          advisorsTitle: 'Project Advisors (if any)',
+          noAdvisors: '-- No advisor records --',
+          removeAdvisorTitle: 'Remove advisor',
+          addAdvisorButton: 'Add Advisor'
+        }
+      }
+      return {
+        cardTitle: '???????????',
+        projectLeaderTitle: '???????????????????',
+        fullNameLabel: '????-????',
+        affiliationLabel: '??????????????',
+        phoneLabel: '?????????????',
+        proportionLabel: '??????????????? (%)',
+        autoCalculatedTitle: '?????????????????????????????????????????',
+        coResearchersTitle: '??????????????????? (?????)',
+        noCoResearchers: '{{ teamText.noCoResearchers }}',
+        removeCoResearcherTitle: '?????????????????????',
+        removeButton: '??',
+        addCoResearcherButton: '????????????',
+        addCoResearcherModalTitle: '???????????????????',
+        coResearcherPickerLabel: '????? / ??????????????????? (??????????????)',
+        coResearcherSearchPlaceholder: '????????? ????? ????????????',
+        cancelButton: '??????',
+        totalProportionLabel: '?????????????????????????',
+        proportionHint: '???????????????????????????????? 100% ????',
+        proportionValid: '??????????????',
+        advisorsTitle: '????????????????????? (?????)',
+        noAdvisors: '{{ teamText.noAdvisors }}',
+        removeAdvisorTitle: '???????????????????????',
+        addAdvisorButton: '??????????????'
+      }
     }
   },
   watch: {
@@ -599,7 +657,7 @@ export default {
       } catch (err) {
         console.error('[ResearchTeamForm] fetch co-researcher options failed:', err)
         this.coResearcherOptions = []
-        this.coResearcherOptionsError = 'Unable to load researcher list'
+        this.coResearcherOptionsError = this.isEnglishLocale ? 'Unable to load researcher list' : '???????????????????????????????'
       } finally {
         this.coResearcherOptionsLoading = false
       }

@@ -66,6 +66,74 @@ const DEFAULT_RESEARCH_STANDARD_CONFIG = Object.freeze({
   }
 })
 
+export const DEFAULT_RESEARCH_STANDARD_CONFIG_EN = Object.freeze({
+  statuses: {
+    approved: 'approved',
+    pending: 'pending'
+  },
+  text: {
+    sectionTitle: '18. Research Standards',
+    hint: 'Select only the relevant items. If nothing is selected, the system will treat this section as not applicable.',
+    noneMessage: 'No human research / no animal research / not related to plant varieties',
+    submittedDateLabel: 'Submission date',
+    attachmentRequiredMessage: 'Please attach the research standards document',
+    minimumSelectionMessage: 'Please complete the research standards section (select Human or Animal when applicable).',
+    resetGroup: 'Reset this section',
+    attachDocument: 'Attach Document',
+    exampleDocument: 'Example Document',
+    selectStatusNote: 'Please select a status before attaching a document',
+    openAttachment: 'Open',
+    removeAttachment: 'Remove',
+    attachmentFallbackName: 'Attachment',
+    validationStatus: 'Please select a status for this section',
+    validationSubmittedDate: 'Please specify the submission date'
+  },
+  groups: {
+    human: {
+      key: 'human',
+      title: 'Human research is involved',
+      pendingNeedsDate: false,
+      exampleDocKey: 'humanEthicsCertificate',
+      options: [
+        { value: 'approved', label: 'Human research ethics approval has been obtained (attach 1 copy).' },
+        { value: 'pending', label: 'Human research ethics approval has not been obtained yet and is currently under committee review.' }
+      ],
+      legacy: { enabledKey: 'isHuman', statusKey: 'humanSubType', submittedDateKey: 'humanSubmittedDate' },
+      slots: { approved: 'humanApproved', pending: 'humanPending' }
+    },
+    animal: {
+      key: 'animal',
+      title: 'Animal research is involved',
+      pendingNeedsDate: false,
+      exampleDocKey: 'animalEthicsCertificate',
+      options: [
+        { value: 'approved', label: 'Animal ethics approval for scientific use has been obtained (attach 1 copy).' },
+        { value: 'pending', label: 'Animal ethics approval for scientific use has not been obtained yet and is currently under committee review.' }
+      ],
+      legacy: { enabledKey: 'isAnimal', statusKey: 'animalSubType', submittedDateKey: 'animalSubmittedDate' },
+      slots: { approved: 'animalApproved', pending: 'animalPending' }
+    },
+    plant: {
+      key: 'plant',
+      title: 'Collection, acquisition, or use of native or wild plant varieties under Section 53 of the Plant Varieties Protection Act B.E. 2542 is involved',
+      pendingNeedsDate: false,
+      exampleDocKey: 'section53Notification',
+      options: [
+        { value: 'approved', label: 'The notification document under Section 53 has been obtained (attach 1 copy).' },
+        { value: 'pending', label: 'The notification document under Section 53 has not been obtained yet and is currently being processed.' }
+      ],
+      legacy: { enabledKey: 'isPlant', statusKey: 'plantSubType', submittedDateKey: 'plantSubmittedDate' },
+      slots: { approved: 'plantApproved', pending: 'plantPending' }
+    }
+  },
+  urls: {
+    section53Notification: 'https://research.mfu.ac.th/rs-variousresearch/rs-plant-species.html',
+    section53FormsPage: 'https://www.doa.go.th/pvp/?page_id=13853',
+    humanEthicsCertificate: 'https://ec.mfu.ac.th/ec-index.html',
+    animalEthicsCertificate: 'https://research.mfu.ac.th/rs-variousresearch/rs-manual-animal.html'
+  }
+})
+
 function clone(value) {
   return JSON.parse(JSON.stringify(value))
 }
@@ -149,6 +217,8 @@ function applyResearchStandardConfig(config) {
 export let RESEARCH_STANDARD_STATUSES = clone(DEFAULT_RESEARCH_STANDARD_CONFIG.statuses)
 export let RESEARCH_STANDARD_TEXT = clone(DEFAULT_RESEARCH_STANDARD_CONFIG.text)
 export let RESEARCH_STANDARD_GROUPS = clone(DEFAULT_RESEARCH_STANDARD_CONFIG.groups)
+export const RESEARCH_STANDARD_TEXT_EN = clone(DEFAULT_RESEARCH_STANDARD_CONFIG_EN.text)
+export const RESEARCH_STANDARD_GROUPS_EN = clone(DEFAULT_RESEARCH_STANDARD_CONFIG_EN.groups)
 export let RESEARCH_STANDARD_GROUP_KEYS = Object.keys(RESEARCH_STANDARD_GROUPS)
 export let RESEARCH_STANDARD_URLS = clone(DEFAULT_RESEARCH_STANDARD_CONFIG.urls)
 

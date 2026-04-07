@@ -122,6 +122,8 @@
 import {
   RESEARCH_STANDARD_STATUSES,
   RESEARCH_STANDARD_TEXT,
+  RESEARCH_STANDARD_TEXT_EN,
+  RESEARCH_STANDARD_GROUPS_EN,
   getResearchStandardExampleDocUrl,
   getResearchStandardGroupList,
   getResearchStandardGroupMeta,
@@ -180,13 +182,20 @@ export default {
     isDarkTheme () {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
     },
+    isEnglishLocale () {
+      const locale = this.$i18n && this.$i18n.locale ? String(this.$i18n.locale) : 'th'
+      return locale.toLowerCase().startsWith('en')
+    },
     groupList () {
       this.runtimeConfigVersion
+      if (this.isEnglishLocale) {
+        return Object.keys(RESEARCH_STANDARD_GROUPS_EN).map(key => RESEARCH_STANDARD_GROUPS_EN[key]).filter(Boolean)
+      }
       return getResearchStandardGroupList()
     },
     sectionText () {
       this.runtimeConfigVersion
-      return RESEARCH_STANDARD_TEXT
+      return this.isEnglishLocale ? RESEARCH_STANDARD_TEXT_EN : RESEARCH_STANDARD_TEXT
     },
     normalizedValue () {
       this.runtimeConfigVersion

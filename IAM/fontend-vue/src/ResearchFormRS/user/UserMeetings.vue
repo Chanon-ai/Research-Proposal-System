@@ -3,9 +3,9 @@
     :read-only="true"
     read-only-cta-tone="dark"
     :my-only="true"
-    hero-eyebrow="Meetings"
-    hero-title="กำหนดการประชุม"
-    hero-subtitle="แสดงเฉพาะการประชุมที่มีชื่อของคุณ"
+    :hero-eyebrow="$t('userMeetings.hero.eyebrow')"
+    :hero-title="$t('userMeetings.hero.title')"
+    :hero-subtitle="$t('userMeetings.hero.subtitle')"
   />
 </template>
 

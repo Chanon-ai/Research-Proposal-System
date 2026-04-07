@@ -2,14 +2,13 @@
   <div class="container-fluid p-0 mt-4 file-management-section" :class="{ 'file-management-section--dark': isDarkTheme }">
     <div class="card shadow-sm border-0">
       <div class="card-body p-4 bg-white">
-
         <div class="file-header d-flex justify-content-between align-items-center mb-3">
           <div>
             <h5 class="mb-1 font-weight-bold text-dark">
-              อัปโหลดเอกสารประกอบ
+              {{ text.title }}
             </h5>
             <div v-if="!isReadOnly" class="small text-muted">
-              เลือกประเภทเอกสารก่อน แล้วอัปโหลดไฟล์ หรือกด Browse
+              {{ text.subtitle }}
             </div>
           </div>
 
@@ -20,7 +19,7 @@
             @click="$refs.fileInput.click()"
           >
             <CIcon name="cil-library-add" class="me-1"/>
-             อัปโหลดไฟล์
+            {{ text.uploadButton }}
           </button>
 
           <input
@@ -37,11 +36,11 @@
           <table class="table table-bordered align-middle mb-0">
             <thead class="thead-custom" >
               <tr>
-                <th style="width:25%">ประเภทเอกสาร</th>
-                <th style="width:25%">ชื่อไฟล์</th>
-                <th style="width:15%">วัน-เวลาที่อัปโหลด</th>
-                <th style="width:20%">หมายเหตุ</th>
-                <th v-if="!isReadOnly" style="width:15%" class="text-center">จัดการ</th>
+                <th style="width:25%">{{ text.documentType }}</th>
+                <th style="width:25%">{{ text.fileName }}</th>
+                <th style="width:15%">{{ text.uploadedAt }}</th>
+                <th style="width:20%">{{ text.note }}</th>
+                <th v-if="!isReadOnly" style="width:15%" class="text-center">{{ text.manage }}</th>
               </tr>
             </thead>
 
@@ -58,13 +57,11 @@
                     :disabled="isReadOnly"
                   >
                     <option disabled value="">
-                      -- เลือกประเภท --
+                      {{ text.selectType }}
                     </option>
-                    <option>หลักฐานการผ่านการอบรมมาตรฐานการวิจัยในมนุษย์</option>
-                    <option>หลักฐานการผ่านการอบรมมาตรฐานความปลอดภัยทางชีวภาพ</option>
-                    <option>หลักฐานการผ่านการอบรมมาตรฐานความปลอดภัยห้องปฏิบัติการ</option>
-                    <option>หลักฐานการผ่านการอบรมมาตรฐานความปลอดภัยการดำเนินการต่อสัตว์ฯ</option>
-                    <option>อื่น ๆ</option>
+                    <option v-for="option in documentTypeOptions" :key="option.th" :value="resolveOptionValue(option, item.type)">
+                      {{ optionLabel(option, item.type) }}
+                    </option>
                   </select>
                 </td>
 
@@ -90,7 +87,7 @@
                     :value="item.note"
                     @input="updateFile(index, 'note', $event.target.value)"
                     class="form-control form-control-sm"
-                    placeholder="พิมพ์หมายเหตุ..."
+                    :placeholder="text.notePlaceholder"
                     :disabled="isReadOnly"
                   />
                 </td>
@@ -102,42 +99,60 @@
                     @click="$emit('remove', { index, item })"
                   >
                     <CIcon name="cil-trash" class="me-1"/>
-                    ลบ
+                    {{ text.remove }}
                   </button>
                 </td>
               </tr>
 
               <tr v-if="files.length === 0">
                 <td :colspan="isReadOnly ? 4 : 5" class="text-center py-5 text-muted italic">
-                  -- ยังไม่มีการอัปโหลดเอกสารประกอบ --
+                  {{ text.empty }}
                 </td>
               </tr>
-
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   </div>
 </template>
 
 <script>
-export default {
-  name: "FileManagement",
+const DOCUMENT_TYPE_OPTIONS = [
+  {
+    th: 'หลักฐานการผ่านการอบรมมาตรฐานการวิจัยในมนุษย์',
+    en: 'Proof of Human Research Ethics Training'
+  },
+  {
+    th: 'หลักฐานการผ่านการอบรมมาตรฐานความปลอดภัยทางชีวภาพ',
+    en: 'Proof of Biosafety Training'
+  },
+  {
+    th: 'หลักฐานการผ่านการอบรมมาตรฐานความปลอดภัยห้องปฏิบัติการ',
+    en: 'Proof of Laboratory Safety Training'
+  },
+  {
+    th: 'หลักฐานการผ่านการอบรมมาตรฐานความปลอดภัยการดำเนินการต่อสัตว์ฯ',
+    en: 'Proof of Animal Research Safety Training'
+  },
+  {
+    th: 'อื่น ๆ',
+    en: 'Other'
+  }
+]
 
+export default {
+  name: 'FileManagement',
   props: {
     files: {
       type: Array,
       default: () => []
     },
-    // รับค่า isReadOnly จาก ResearchForm.vue
     isReadOnly: {
       type: Boolean,
       default: false
     }
   },
-
   emits: [
     'upload',
     'open',
@@ -145,34 +160,84 @@ export default {
     'remove',
     'update:files'
   ],
-
   computed: {
-    isDarkTheme() {
+    isDarkTheme () {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+    isEnglishLocale () {
+      const locale = this.$i18n && this.$i18n.locale ? String(this.$i18n.locale) : 'th'
+      return locale.toLowerCase().startsWith('en')
+    },
+    text () {
+      if (this.isEnglishLocale) {
+        return {
+          title: 'Supporting Documents Upload',
+          subtitle: 'Select the document type first, then upload a file or click Browse.',
+          uploadButton: 'Upload File',
+          documentType: 'Document Type',
+          fileName: 'File Name',
+          uploadedAt: 'Uploaded At',
+          note: 'Note',
+          manage: 'Manage',
+          selectType: '-- Select type --',
+          notePlaceholder: 'Enter a note...',
+          remove: 'Delete',
+          empty: '-- No supporting documents uploaded yet --'
+        }
+      }
+
+      return {
+        title: 'อัปโหลดเอกสารประกอบ',
+        subtitle: 'เลือกประเภทเอกสารก่อน แล้วอัปโหลดไฟล์ หรือกด Browse',
+        uploadButton: 'อัปโหลดไฟล์',
+        documentType: 'ประเภทเอกสาร',
+        fileName: 'ชื่อไฟล์',
+        uploadedAt: 'วัน-เวลาที่อัปโหลด',
+        note: 'หมายเหตุ',
+        manage: 'จัดการ',
+        selectType: '-- เลือกประเภท --',
+        notePlaceholder: 'พิมพ์หมายเหตุ...',
+        remove: 'ลบ',
+        empty: '-- ยังไม่มีการอัปโหลดเอกสารประกอบ --'
+      }
+    },
+    documentTypeOptions () {
+      return DOCUMENT_TYPE_OPTIONS
     }
   },
-
   methods: {
-    updateFile(index, key, value) {
-      if (this.isReadOnly) return; // ป้องกันการอัปเดตไฟล์เมื่อเป็น Read-only
-      
-      const updatedFiles = [...this.files];
+    optionLabel (option, currentValue) {
+      if (!option) return currentValue || ''
+      const isThaiValue = currentValue === option.th
+      const isEnglishValue = currentValue === option.en
+      if (this.isEnglishLocale) return isThaiValue || isEnglishValue ? option.en : option.en
+      return isThaiValue || isEnglishValue ? option.th : option.th
+    },
+    resolveOptionValue (option, currentValue) {
+      if (!option) return currentValue || ''
+      if (currentValue === option.en) return option.en
+      return option.th
+    },
+    updateFile (index, key, value) {
+      if (this.isReadOnly) return
+
+      const updatedFiles = [...this.files]
       updatedFiles[index] = {
         ...updatedFiles[index],
         [key]: value
-      };
+      }
 
-      this.$emit('update:files', updatedFiles);
+      this.$emit('update:files', updatedFiles)
     }
   }
-};
+}
 </script>
 
 <style scoped>
 .card {
   border: 1px solid rgba(234, 223, 206, 0.95);
   border-radius: 14px;
-  overflow: hidden; /* ensure inner white background clips to rounded corners */
+  overflow: hidden;
   background: #ffffff;
 }
 
@@ -181,14 +246,12 @@ export default {
 }
 
 .container-fluid.p-0.mt-4 {
-  /* Override Bootstrap .mt-4 (uses !important) so section spacing is consistent */
   margin-top: 12px !important;
 }
 
 .file-header {
   gap: 12px;
   flex-wrap: wrap;
-  /* Override Bootstrap .mb-3 (uses !important) */
   margin-bottom: 10px !important;
 }
 
@@ -217,7 +280,6 @@ export default {
   vertical-align: middle;
 }
 
-/* Action cell: this <td> currently uses Bootstrap .d-flex which breaks table-cell centering */
 .table td.d-flex.justify-content-center {
   display: table-cell !important;
   vertical-align: middle !important;
@@ -242,7 +304,6 @@ export default {
 }
 
 .table-responsive {
-  /* Fix corner artifacts: clip table header/background to rounded container */
   border-radius: 14px;
   overflow-x: auto;
   overflow-y: hidden;
@@ -252,7 +313,6 @@ export default {
 }
 
 .table.table-bordered {
-  /* Outer border is handled by .table-responsive for clean rounded corners */
   border: 0 !important;
 }
 
@@ -270,13 +330,11 @@ export default {
   white-space: nowrap;
 }
 
-/* Light red header (force override against page-level table styles) */
 .thead-custom th,
 .table thead th {
   background: rgba(139, 18, 18, 0.10) !important;
   color: #111827 !important;
   white-space: nowrap;
-  /* Match gridline color/weight with table body */
   border-color: rgba(139, 18, 18, 0.30) !important;
   border-width: 1.5px !important;
   border-bottom: 1.5px solid rgba(139, 18, 18, 0.30) !important;
@@ -291,7 +349,6 @@ export default {
 }
 
 @media (max-width: 992px) {
-  /* Many phones/tablets are wider than 576px in landscape; still keep spacing tight */
   .container-fluid.p-0.mt-4 {
     margin-top: 12px !important;
   }
@@ -302,7 +359,6 @@ export default {
 }
 
 @media (max-width: 576px) {
-  /* Keep left/right spacing visually balanced on narrow screens */
   .container-fluid.p-0.mt-4 {
     margin-top: 12px !important;
   }
@@ -321,14 +377,12 @@ export default {
 }
 
 @media (max-width: 768px) {
-  /* Force horizontal scroll instead of squeezing columns on small screens */
   .table.table-bordered {
     min-width: 720px;
   }
 }
 
 @media (max-width: 576px) {
-  /* On phones: stack icon + label (2 lines) for better readability */
   td .btn.btn-sm.btn-outline-info,
   td .btn.btn-sm.btn-outline-danger {
     min-width: 64px;
@@ -345,7 +399,7 @@ export default {
   td .btn.btn-sm.btn-outline-danger .c-icon {
     width: 18px;
     height: 18px;
-    margin-right: 0 !important; /* neutralize .me-1 */
+    margin-right: 0 !important;
   }
 }
 

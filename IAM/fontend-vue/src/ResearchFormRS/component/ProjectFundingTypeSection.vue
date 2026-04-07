@@ -2,8 +2,8 @@
   <div class="funding-type-section" :class="{ 'is-dark': isDarkTheme }">
     <div class="funding-options funding-selector">
       <div class="funding-selector__step">
-        <div class="funding-selector__step-title">ขั้นที่ 1: เลือกประเภททุนหลัก</div>
-        <div class="funding-selector__step-description">เลือกประเภททุนที่สอดคล้องกับโครงการ ก่อนเลือกตัวเลือกย่อย (ถ้ามี)</div>
+        <div class="funding-selector__step-title">{{ step1Title }}</div>
+        <div class="funding-selector__step-description">{{ step1Description }}</div>
         <div class="funding-selector__type-grid">
           <article
             v-for="typeOption in fundingTypeOptions"
@@ -26,19 +26,19 @@
                   {{ typeOption.shortName }}
                 </label>
               </div>
-              <span v-if="typeOption.subOptions.length" class="funding-type-card__badge">มีตัวเลือกย่อย</span>
+              <span v-if="typeOption.subOptions.length" class="funding-type-card__badge">{{ subOptionBadge }}</span>
             </div>
 
             <div v-if="hasBudgetLimit(typeOption.budgetLimit)" class="funding-type-card__budget">
-              วงเงินสูงสุด {{ formatBudgetLimit(typeOption.budgetLimit) }} บาท
+              {{ budgetLimitText(typeOption.budgetLimit) }}
             </div>
 
             <p class="funding-type-card__description mb-0">{{ typeOption.shortDescription }}</p>
 
             <details class="funding-detail-disclosure">
               <summary class="funding-detail-toggle">
-                <span class="funding-detail-toggle__collapsed">+ รายละเอียดเพิ่มเติม</span>
-                <span class="funding-detail-toggle__expanded">- ซ่อนรายละเอียด</span>
+                <span class="funding-detail-toggle__collapsed">{{ moreDetailsText }}</span>
+                <span class="funding-detail-toggle__expanded">{{ hideDetailsText }}</span>
               </summary>
               <p class="mb-0">{{ typeOption.officialText }}</p>
             </details>
@@ -56,15 +56,15 @@
           <div class="funding-selector__step-heading">
             <div class="funding-selector__step-title">{{ selectedFundingTypeOption.subSectionTitle }}</div>
             <div class="funding-selector__step-meta">
-              <span class="funding-selector__step-required">จำเป็นต้องเลือก 1 รายการ</span>
+              <span class="funding-selector__step-required">{{ requiredText }}</span>
               <span class="funding-selector__step-status" :class="fundingSubSelectionStatusClass">
                 <span class="funding-selector__step-status-icon" aria-hidden="true">{{ fundingSubSelectionStatusIcon }}</span>
                 {{ fundingSubSelectionStatusText }}
               </span>
             </div>
           </div>
-          <div class="funding-selector__step-context">กรอบการวิจัยของ: {{ selectedFundingTypeLabel }}</div>
-          <div class="funding-selector__step-description">ขั้นตอนนี้เป็นข้อมูลที่จำเป็นสำหรับการยืนยันประเภททุนที่เลือก</div>
+          <div class="funding-selector__step-context">{{ stepContextText }}</div>
+          <div class="funding-selector__step-description">{{ subStepDescription }}</div>
 
           <div class="funding-selector__sub-grid">
             <article
@@ -88,15 +88,15 @@
                     {{ subOption.shortName }}
                   </label>
                 </div>
-                <span class="funding-subtype-card__marker" :class="{ 'is-active': fundingSubType === subOption.value }" aria-hidden="true">✓</span>
+                <span class="funding-subtype-card__marker" :class="{ 'is-active': fundingSubType === subOption.value }" aria-hidden="true">?</span>
               </div>
 
               <p class="funding-subtype-card__description mb-0">{{ subOption.shortDescription }}</p>
 
               <details class="funding-detail-disclosure">
                 <summary class="funding-detail-toggle">
-                  <span class="funding-detail-toggle__collapsed">+ รายละเอียดเพิ่มเติม</span>
-                  <span class="funding-detail-toggle__expanded">- ซ่อนรายละเอียด</span>
+                  <span class="funding-detail-toggle__collapsed">{{ moreDetailsText }}</span>
+                  <span class="funding-detail-toggle__expanded">{{ hideDetailsText }}</span>
                 </summary>
                 <p class="mb-0">{{ subOption.officialText }}</p>
               </details>
@@ -106,7 +106,7 @@
       </transition>
 
       <div v-if="fundingType" class="funding-selection-summary" :class="{ 'is-pulse': isFundingSummaryPulsing }">
-        <div class="funding-selection-summary__label">สรุปการเลือก</div>
+        <div class="funding-selection-summary__label">{{ summaryLabel }}</div>
         <div
           class="funding-selection-summary__status"
           :class="{ 'is-incomplete': !isFundingSubSelectionComplete, 'is-complete': isFundingSubSelectionComplete }"
@@ -114,18 +114,18 @@
           aria-live="polite"
         >
           <span class="funding-selection-summary__status-icon" aria-hidden="true">{{ fundingSubSelectionStatusIcon }}</span>
-          <span v-if="!isFundingSubSelectionComplete">⚠ ยังไม่ได้เลือกกรอบการวิจัย</span>
-          <span v-else>✓ เลือกครบแล้ว</span>
+          <span v-if="!isFundingSubSelectionComplete">{{ incompleteSummaryText }}</span>
+          <span v-else>{{ completeSummaryText }}</span>
         </div>
         <div class="funding-selection-summary__path">
           {{ selectedFundingTypeLabel }}
           <template v-if="selectedFundingTypeOption && selectedFundingTypeOption.subOptions.length">
-            <span v-if="selectedFundingSubTypeLabel"> → {{ selectedFundingSubTypeLabel }}</span>
-            <span v-else> → (ยังไม่ได้เลือก)</span>
+            <span v-if="selectedFundingSubTypeLabel"> ? {{ selectedFundingSubTypeLabel }}</span>
+            <span v-else> ? {{ pendingSelectionText }}</span>
           </template>
         </div>
         <div v-if="selectedFundingTypeOption && hasBudgetLimit(selectedFundingTypeOption.budgetLimit)" class="funding-selection-summary__budget">
-          วงเงินสูงสุด {{ formatBudgetLimit(selectedFundingTypeOption.budgetLimit) }} บาท
+          {{ budgetLimitText(selectedFundingTypeOption.budgetLimit) }}
         </div>
       </div>
     </div>
@@ -170,7 +170,7 @@ export default {
     },
     fundingSubSelectionStatusText: {
       type: String,
-      default: 'ยังไม่ครบ'
+      default: ''
     },
     isFundingSubSelectionComplete: {
       type: Boolean,
@@ -189,14 +189,65 @@ export default {
       default: false
     }
   },
+  computed: {
+    isEnglishLocale() {
+      const locale = String((this.$i18n && this.$i18n.locale) || '')
+      return locale.toLowerCase().startsWith('en')
+    },
+    step1Title() {
+      return this.isEnglishLocale ? 'Step 1: Select the main funding type' : '??????? 1: ??????????????????'
+    },
+    step1Description() {
+      return this.isEnglishLocale
+        ? 'Choose the funding type that matches the project before selecting any sub-option.'
+        : '??????????????????????????????????? ????????????????????? (?????)'
+    },
+    subOptionBadge() {
+      return this.isEnglishLocale ? 'Has sub-options' : '??????????????'
+    },
+    moreDetailsText() {
+      return this.isEnglishLocale ? '+ More details' : '+ ???????????????????'
+    },
+    hideDetailsText() {
+      return this.isEnglishLocale ? '- Hide details' : '- ??????????????'
+    },
+    requiredText() {
+      return this.isEnglishLocale ? 'You must select 1 item' : '??????????????? 1 ??????'
+    },
+    stepContextText() {
+      return this.isEnglishLocale
+        ? `Research framework for: ${this.selectedFundingTypeLabel}`
+        : `???????????????: ${this.selectedFundingTypeLabel}`
+    },
+    subStepDescription() {
+      return this.isEnglishLocale
+        ? 'This step is required to confirm the selected funding type.'
+        : '?????????????????????????????????????????????????????????????'
+    },
+    summaryLabel() {
+      return this.isEnglishLocale ? 'Selection Summary' : '????????????'
+    },
+    incompleteSummaryText() {
+      return this.isEnglishLocale ? 'Research framework not selected yet' : '??????????????????????????'
+    },
+    completeSummaryText() {
+      return this.isEnglishLocale ? 'Complete' : '????????????'
+    },
+    pendingSelectionText() {
+      return this.isEnglishLocale ? '(not selected yet)' : '(??????????????)'
+    }
+  },
   methods: {
     hasBudgetLimit(value) {
       return Number.isFinite(Number(value)) && Number(value) > 0
     },
-    formatBudgetLimit(value) {
+    budgetLimitText(value) {
       const amount = Number(value)
       if (!Number.isFinite(amount) || amount <= 0) return '-'
-      return amount.toLocaleString('th-TH')
+      if (this.isEnglishLocale) {
+        return `Maximum budget ${amount.toLocaleString('en-US')} THB`
+      }
+      return `???????????? ${amount.toLocaleString('th-TH')} ???`
     },
     focusSubStepIfNeeded(fundingType) {
       const option = (Array.isArray(this.fundingTypeOptions) ? this.fundingTypeOptions : [])
@@ -239,125 +290,36 @@ export default {
 }
 
 .funding-selector__step + .funding-selector__step {
-  margin-top: 14px;
-}
-
-.funding-selector__step--child {
-  margin-left: 12px;
-  margin-top: 16px;
-  border: 1px solid #d7e3f4;
-  border-left: 1px solid #d7e3f4;
-  border-radius: 10px;
-  background: #f8fbff;
-  padding: 14px 14px 12px;
-  scroll-margin-top: 92px;
-}
-
-.funding-selector__step--child:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.16);
-}
-
-.funding-step-reveal-enter-active,
-.funding-step-reveal-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.funding-step-reveal-enter,
-.funding-step-reveal-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
+  margin-top: 18px;
 }
 
 .funding-selector__step-title {
-  font-size: 0.96rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #1e293b;
 }
 
-.funding-selector__step-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.funding-selector__step-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
+.funding-selector__step-description,
 .funding-selector__step-context {
-  margin-top: 6px;
-  font-size: 0.84rem;
-  color: #334155;
-  font-weight: 600;
-}
-
-.funding-selector__step-required {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 3px 9px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.funding-selector__step-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  padding: 3px 9px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.funding-selector__step-status-icon {
-  font-size: 0.78rem;
-  line-height: 1;
-}
-
-.funding-selector__step-status.is-complete {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.funding-selector__step-status.is-incomplete {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.funding-selector__step-description {
-  margin-top: 5px;
-  margin-bottom: 12px;
+  margin-top: 4px;
   font-size: 0.82rem;
   color: #64748b;
 }
 
-.funding-selector__type-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
+.funding-selector__type-grid,
 .funding-selector__sub-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  margin-top: 12px;
 }
 
 .funding-type-card,
 .funding-subtype-card {
   border: 1px solid #dbe3ef;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fcfdff;
-  padding: 10px 12px;
+  padding: 12px;
   cursor: pointer;
   transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
 }
@@ -366,14 +328,6 @@ export default {
 .funding-subtype-card:hover {
   border-color: #9eb4ce;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-}
-
-.funding-subtype-card {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding: 10px 12px;
-  background: #ffffff;
 }
 
 .funding-type-card.is-active,
@@ -390,7 +344,8 @@ export default {
 }
 
 .funding-type-card__header,
-.funding-subtype-card__header {
+.funding-subtype-card__header,
+.funding-selector__step-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -424,87 +379,40 @@ export default {
   line-height: 1.35;
 }
 
+.funding-type-card__badge {
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.funding-type-card__budget,
+.funding-selection-summary__budget {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
 .funding-type-card__description,
 .funding-subtype-card__description {
-  margin-top: 6px;
-  font-size: 0.85rem;
+  margin-top: 8px;
+  font-size: 0.84rem;
   color: #475569;
   line-height: 1.45;
 }
 
-.funding-type-card__budget {
-  margin-top: 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #1d4ed8;
-}
-
-.funding-subtype-card__description {
-  margin-top: 6px;
-  margin-left: 0;
-}
-
-.funding-subtype-card__marker {
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  border: 1px solid #b4c4d8;
-  background: #ffffff;
-  color: transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.72rem;
-  font-weight: 700;
-  flex: 0 0 20px;
-  margin-top: 2px;
-}
-
-.funding-subtype-card__marker.is-active {
-  border-color: #2563eb;
-  background: #2563eb;
-  color: #ffffff;
-}
-
-.funding-type-card__badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #8b1212;
-  background: #ffe8e8;
-  flex-shrink: 0;
-}
-
 .funding-detail-disclosure {
-  margin-top: 7px;
-  font-size: 0.82rem;
-}
-
-.funding-subtype-card .funding-detail-disclosure {
-  margin-top: 6px;
-  margin-left: 0;
-  padding-top: 0;
-}
-
-.funding-detail-disclosure summary {
-  cursor: pointer;
-  list-style: none;
-  outline: none;
-}
-
-.funding-detail-disclosure summary::-webkit-details-marker {
-  display: none;
+  margin-top: 10px;
 }
 
 .funding-detail-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #8b1212;
-  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2563eb;
 }
 
 .funding-detail-toggle__expanded {
@@ -519,210 +427,77 @@ export default {
   display: inline;
 }
 
-.funding-detail-disclosure p {
-  margin-top: 6px;
-  color: #475569;
-  line-height: 1.5;
-}
-
-.funding-selection-summary {
-  margin-top: 14px;
-  border: 1px solid #dbe3ef;
-  border-radius: 10px;
-  background: #f8fafc;
-  padding: 11px 12px;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.funding-selection-summary.is-pulse {
-  border-color: #93c5fd;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
-}
-
-.funding-selection-summary__label {
-  font-size: 0.8rem;
+.funding-selector__step-required {
+  font-size: 0.75rem;
   font-weight: 700;
-  color: #334155;
-  margin-bottom: 3px;
+  color: #92400e;
 }
 
+.funding-selector__step-status,
 .funding-selection-summary__status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  padding: 3px 10px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
-.funding-selection-summary__status.is-complete {
-  background: #dcfce7;
-  border-color: #86efac;
-  color: #166534;
-}
-
+.funding-selector__step-status.is-incomplete,
 .funding-selection-summary__status.is-incomplete {
-  background: #fef3c7;
-  border-color: #fcd34d;
-  color: #92400e;
+  color: #b45309;
 }
 
-.funding-selection-summary__status-icon {
-  font-size: 0.84rem;
-  line-height: 1;
+.funding-selector__step-status.is-complete,
+.funding-selection-summary__status.is-complete {
+  color: #15803d;
+}
+
+.funding-subtype-card__marker {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid #b4c4d8;
+  background: #ffffff;
+  color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.74rem;
+  flex: 0 0 auto;
+}
+
+.funding-subtype-card__marker.is-active {
+  border-color: #1d4ed8;
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.funding-selection-summary {
+  margin-top: 16px;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  padding: 12px;
+  background: #f8fbff;
+}
+
+.funding-selection-summary__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .funding-selection-summary__path {
-  margin-top: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #1f2937;
-  line-height: 1.45;
-}
-
-.funding-selection-summary__budget {
-  margin-top: 6px;
-  font-size: 0.84rem;
+  margin-top: 8px;
   font-weight: 700;
-  color: #1d4ed8;
-}
-
-.funding-type-section.is-dark .funding-options {
-  background: #1a2432;
-  border: 1px solid #2f3f52;
-}
-
-.funding-type-section.is-dark .funding-selector {
-  background: #1a2432;
-  border-color: #324458;
-}
-
-.funding-type-section.is-dark .funding-selector__step--child {
-  background: rgba(32, 44, 58, 0.6);
-  border-color: #324458;
-  border-left-color: #324458;
-}
-
-.funding-type-section.is-dark .funding-type-card,
-.funding-type-section.is-dark .funding-subtype-card {
-  background: #202c3a;
-  border-color: #35506a;
-}
-
-.funding-type-section.is-dark .funding-subtype-card:hover {
-  border-color: #557a9d;
-  background: #243243;
-}
-
-.funding-type-section.is-dark .funding-type-card.is-active,
-.funding-type-section.is-dark .funding-subtype-card.is-active {
-  border-color: #6aa7ff;
-  box-shadow: 0 0 0 3px rgba(106, 167, 255, 0.22);
-  background: rgba(29, 78, 216, 0.26);
-}
-
-.funding-type-section.is-dark .funding-selector__step-title,
-.funding-type-section.is-dark .funding-selector__step-context,
-.funding-type-section.is-dark .funding-type-card__title,
-.funding-type-section.is-dark .funding-subtype-card__title,
-.funding-type-section.is-dark .funding-selection-summary__label,
-.funding-type-section.is-dark .funding-selection-summary__path,
-.funding-type-section.is-dark .funding-selection-summary__status {
-  color: #e6edf7;
-}
-
-.funding-type-section.is-dark .funding-selector__step-description,
-.funding-type-section.is-dark .funding-type-card__description,
-.funding-type-section.is-dark .funding-subtype-card__description,
-.funding-type-section.is-dark .funding-detail-disclosure p,
-.funding-type-section.is-dark .funding-detail-toggle {
-  color: #aab9ca;
-}
-
-.funding-type-section.is-dark .funding-type-card__budget,
-.funding-type-section.is-dark .funding-selection-summary__budget {
-  color: #93c5fd;
-}
-
-.funding-type-section.is-dark .funding-selection-summary {
-  background: rgba(32, 44, 58, 0.9);
-  border-color: #35506a;
-}
-
-.funding-type-section.is-dark .funding-selector__step-status.is-complete {
-  background: rgba(34, 197, 94, 0.22);
-  color: #bbf7d0;
-}
-
-.funding-type-section.is-dark .funding-selector__step-status.is-incomplete {
-  background: rgba(245, 158, 11, 0.2);
-  color: #fde68a;
-}
-
-.funding-type-section.is-dark .funding-selector__step-required {
-  background: rgba(197, 155, 58, 0.2);
-  color: #fde68a;
-}
-
-.funding-type-section.is-dark .funding-subtype-card__marker {
-  border-color: #496786;
-  color: #90b2d4;
-  background: #223142;
-}
-
-.funding-type-section.is-dark .funding-subtype-card__marker.is-active {
-  border-color: #7fb6ff;
-  color: #ffffff;
-  background: #4f86db;
-}
-
-.funding-type-section.is-dark .funding-selection-summary__status.is-complete {
-  background: rgba(34, 197, 94, 0.18);
-  border-color: rgba(74, 222, 128, 0.4);
-  color: #bbf7d0;
-}
-
-.funding-type-section.is-dark .funding-selection-summary__status.is-incomplete {
-  background: rgba(245, 158, 11, 0.18);
-  border-color: rgba(251, 191, 36, 0.42);
-  color: #fde68a;
+  color: #0f172a;
 }
 
 @media (max-width: 768px) {
-  .funding-selector {
-    padding: 12px;
-  }
-  .funding-selector__type-grid {
-    grid-template-columns: 1fr;
-  }
+  .funding-selector__type-grid,
   .funding-selector__sub-grid {
     grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  .funding-selector__step--child {
-    margin-left: 0;
-    padding: 12px 10px;
-  }
-  .funding-subtype-card {
-    min-height: auto;
-  }
-  .funding-subtype-card__description,
-  .funding-subtype-card .funding-detail-disclosure {
-    margin-left: 0;
-  }
-  .funding-selector__step-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .funding-selector__step-meta {
-    width: 100%;
-    justify-content: flex-start;
-  }
-  .funding-selection-summary__status {
-    width: 100%;
-    justify-content: flex-start;
   }
 }
 </style>

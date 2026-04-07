@@ -6,10 +6,10 @@
           <CCardBody class="py-2 px-3">
             <div class="budget-mobile-summary-row">
               <span class="budget-mobile-summary-item">
-                ใช้ไป <strong class="text-danger">{{ formatNumber(grandTotal) }}</strong>
+                {{ budgetText.used }} <strong class="text-danger">{{ formatNumber(grandTotal) }}</strong>
               </span>
               <span class="budget-mobile-summary-item">
-                เหลือ
+                {{ budgetText.remaining }}
                 <strong :class="summaryRemainingAmount >= 0 ? 'text-success' : 'text-danger'">
                   {{ formatNumber(Math.abs(summaryRemainingAmount)) }}
                 </strong>
@@ -19,7 +19,7 @@
                 :class="isBudgetSummaryValid ? 'text-success' : 'text-danger'"
               >
                 <span class="budget-summary-status-dot" aria-hidden="true"></span>
-                <span>{{ isBudgetSummaryValid ? 'ถูกต้อง' : 'ไม่ถูกต้อง' }}</span>
+                <span>{{ isBudgetSummaryValid ? budgetText.valid : budgetText.invalid }}</span>
               </span>
             </div>
           </CCardBody>
@@ -36,7 +36,7 @@
           <button
             type="button"
             class="btn btn-light btn-sm budget-expand-toggle mr-2"
-            :title="category.isExpanded ? 'ยุบรายละเอียด' : 'กางรายละเอียด'"
+            :title="category.isExpanded ? budgetText.collapseDetails : budgetText.expandDetails"
             @click="toggleCategory(catIndex)"
           >
             <span aria-hidden="true">{{ category.isExpanded ? '-' : '+' }}</span>
@@ -46,10 +46,10 @@
           </h5>
         </div>
         <div v-if="!isReadOnly && category.isExpanded"> <CButton color="light" size="sm" class="mr-2 text-primary font-weight-bold" @click="addItem(catIndex)">
-            <CIcon name="cil-plus" class="mr-1" />  เพิ่มรายการเอง
+            <CIcon name="cil-plus" class="mr-1" /> {{ budgetText.addManualItem }}
           </CButton>
           <label class="btn btn-light btn-sm mb-0 text-primary font-weight-bold cursor-pointer">
-            <CIcon name="cil-library-add" class="mr-1" /> แนบเอกสาร
+            <CIcon name="cil-library-add" class="mr-1" /> {{ budgetText.attachDocument }}
             <input type="file" style="display: none;" @change="attachDocToCategory($event, catIndex)" multiple>
           </label>
         </div>
@@ -68,18 +68,18 @@
           </colgroup>
           <thead class="bg-primary text-white" :style="tableHeadStyle">
             <tr>
-              <th class="align-middle">รายการ</th>
-              <th class="align-middle">รายละเอียดตัวคูณ</th>
-              <th class="align-middle">งบรวม (บาท)</th>
-              <th class="align-middle">งวด 1</th>
-              <th class="align-middle">งวด 2</th>
-              <th class="align-middle">งวด 3</th>
+              <th class="align-middle">{{ budgetText.item }}</th>
+              <th class="align-middle">{{ budgetText.multiplierDetails }}</th>
+              <th class="align-middle">{{ budgetText.totalBudget }}</th>
+              <th class="align-middle">{{ budgetText.period(1) }}</th>
+              <th class="align-middle">{{ budgetText.period(2) }}</th>
+              <th class="align-middle">{{ budgetText.period(3) }}</th>
               <th class="align-middle">#</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="category.items.length === 0">
-              <td colspan="7" class="text-center py-4 text-muted">ยังไม่มีรายการในหมวดนี้</td>
+              <td colspan="7" class="text-center py-4 text-muted">{{ budgetText.noItemsInCategory }}</td>
             </tr>
 
             <tr v-for="(item, itemIndex) in category.items" :key="item.id" class="bg-light">
@@ -90,7 +90,7 @@
                     class="form-control auto-grow-textarea"
                     :class="{ 'budget-item-name-invalid': Boolean(item.forbiddenItemMessage) }"
                     v-model="item.name" 
-                    placeholder="ระบุชื่อรายการ..."
+                    :placeholder="budgetText.itemPlaceholder"
                     rows="1"
                     @input="handleItemNameInput(catIndex, item, $event)"
                     @blur="handleItemNameBlur(catIndex, item)"
@@ -106,7 +106,7 @@
                       :class="{ 'budget-item-name-invalid': Boolean(item.forbiddenItemMessage) }"
                       v-model="item.name"
                       :list="getItemSearchListId(catIndex)"
-                      placeholder="ค้นหา/ระบุชื่อรายการ..."
+                      :placeholder="budgetText.searchItemPlaceholder"
                       @input="handleItemNameInput(catIndex, item, $event)"
                       @blur="handleItemNameBlur(catIndex, item)"
                       @change="handleItemNameBlur(catIndex, item)"
@@ -148,7 +148,7 @@
                     {{ item.attachment.fileName || item.attachment.name || '-' }}
                   </div>
                   <div class="mb-2">
-                    <small class="text-muted d-block mb-1">เลือกหมวดหมู่เอกสาร:</small>
+                    <small class="text-muted d-block mb-1">{{ budgetText.selectDocumentCategory }}</small>
                     <div class="d-flex align-items-center flex-wrap" style="gap: 6px;">
                       <select
                         class="form-control form-control-sm border-primary"
@@ -157,12 +157,12 @@
                         :disabled="isReadOnly"
                         @change="handleAttachmentDocTypeChange(item)"
                       >
-                        <option value="">-- เลือกหมวดหมู่ --</option>
+                        <option value="">{{ budgetText.selectCategory }}</option>
                         <option value="TOR">TOR (Term of References)</option>
-                        <option value="Quotation">ใบเสนอราคา / Quotation</option>
+                        <option value="Quotation">{{ budgetText.quotationOption }}</option>
                         <option value="Specification">Specification</option>
                         <option value="CV">CV</option>
-                        <option value="ServiceRates">อัตราค่าบริการต่าง ๆ / Service Rates</option>
+                        <option value="ServiceRates">{{ budgetText.serviceRatesOption }}</option>
                       </select>
                       
                       <CButton
@@ -173,7 +173,7 @@
                         class="text-nowrap"
                         @click.stop="openAttachmentExample(item.attachment.docType)"
                       >
-                        <CIcon name="cil-clipboard" class="mr-1" /> <i class="fa fa-file-alt mr-1"></i> ตัวอย่างเอกสาร
+                        <CIcon name="cil-clipboard" class="mr-1" /> <i class="fa fa-file-alt mr-1"></i> {{ budgetText.exampleDocument }}
                       </CButton>
                       
                     </div>
@@ -191,14 +191,14 @@
                                  size="sm"
                                  @click="removeMultiplier(item, mIndex)" 
                                  class="position-absolute remove-mult-btn" 
-                                 title="ลบตัวคูณ">
+                                 :title="budgetText.removeMultiplier">
                           <CIcon name="cil-x" class="m-1"/>
                         </CButton>
                         
                         <input type="text" class="form-control form-control-sm text-center mb-1 text-muted bg-transparent border-1" 
-                               v-model="mult.label" placeholder="ชื่อหน่วย" :readonly="isReadOnly">
+                               v-model="mult.label" :placeholder="budgetText.unitNamePlaceholder" :readonly="isReadOnly">
                         <input type="text" inputmode="numeric" class="form-control text-center" 
-                               v-model="mult.value" placeholder="ตัวเลข" 
+                               v-model="mult.value" :placeholder="budgetText.numberPlaceholder" 
                              :max="getHtmlInputMax(mult.maxValue)"
                                @keypress="isNumber"
                              @input="handleManualMultiplierInput(item, mult)"
@@ -213,7 +213,7 @@
                         x
                       </span>
                     </template>
-                    <CButton v-if="!isReadOnly" color="primary" size="sm" class="mt-4" title="เพิ่มตัวคูณ" @click="addMultiplier(item)" style="height: 38px;">
+                    <CButton v-if="!isReadOnly" color="primary" size="sm" class="mt-4" :title="budgetText.addMultiplier" @click="addMultiplier(item)" style="height: 38px;">
                       <CIcon name="cil-plus" class="m-1"/>
                     </CButton>
                   </template>
@@ -274,7 +274,7 @@
                     'text-success': !item.periodError && isItemPeriodsFullyComplete(item)
                   }">
                     <i v-if="item.periodError" class="fa fa-exclamation-circle"></i> 
-                    {{ item.periodError ? 'เกินงบ!' : 'งวด 1' }}
+                    {{ item.periodError ? budgetText.overBudget : budgetText.period(1) }}
                   </label>
                 </div>
               </td>
@@ -296,7 +296,7 @@
                     'text-success': !item.periodError && isItemPeriodsFullyComplete(item)
                   }">
                     <i v-if="item.periodError" class="fa fa-exclamation-circle"></i> 
-                    {{ item.periodError ? 'เกินงบ!' : 'งวด 2' }}
+                    {{ item.periodError ? budgetText.overBudget : budgetText.period(2) }}
                   </label>
                 </div>
               </td>
@@ -318,14 +318,14 @@
                     'text-success': !item.periodError && isItemPeriodsFullyComplete(item)
                   }">
                     <i v-if="item.periodError" class="fa fa-exclamation-circle"></i> 
-                    {{ item.periodError ? 'เกินงบ!' : 'งวด 3' }}
+                    {{ item.periodError ? budgetText.overBudget : budgetText.period(3) }}
                   </label>
                 </div>
               </td>
 
               <td class="align-middle bg-white" v-if="!isReadOnly">
                 <CButton v-if="category.items.length > 0" color="danger" size="sm" variant="outline" @click="removeItem(catIndex, itemIndex)">
-                  <CIcon name="cil-trash" class="mr-1" /> ลบ
+                  <CIcon name="cil-trash" class="mr-1" /> {{ budgetText.remove }}
                 </CButton>
               </td>
 
@@ -337,37 +337,37 @@
 
       <div v-if="isTravelExceeded || isEquipmentExceeded" class="alert alert-danger shadow-sm mb-4 border-0" style="border-left: 5px solid #e55353 !important; border-radius: 8px;">
         <h6 class="alert-heading font-weight-bold mb-2 budget-warning-heading">
-          <i class="fa fa-exclamation-triangle mr-1"></i> ข้อควรระวัง: สัดส่วนงบประมาณเกินเกณฑ์ที่มหาวิทยาลัยกำหนด
+          <i class="fa fa-exclamation-triangle mr-1"></i> {{ budgetText.warningHeading }}
         </h6>
         <hr class="mt-2 mb-2" style="border-color: rgba(229, 83, 83, 0.2);">
         <ul class="mb-0 text-dark pl-3 budget-warning-details">
           <li v-if="isTravelExceeded" class="mb-1">
-            <strong>หมวดค่าเดินทาง:</strong> เสนอขอ {{ formatNumber(travelTotal) }} บาท 
-            <span class="text-danger">(คิดเป็น {{ ((travelTotal / grandTotal) * 100).toFixed(2) }}% ของงบรวม)</span> 
-            *เกณฑ์กำหนดไม่เกิน 25% หรือ {{ formatNumber(limit25Percent) }} บาท
+            <strong>{{ isEnglishLocale ? 'Travel Costs:' : '??????????????:' }}</strong> {{ isEnglishLocale ? 'requested' : '??????' }} {{ formatNumber(travelTotal) }} {{ isEnglishLocale ? 'THB' : '???' }} 
+            <span class="text-danger">({{ isEnglishLocale ? 'equal to' : '???????' }} {{ ((travelTotal / grandTotal) * 100).toFixed(2) }}% {{ isEnglishLocale ? 'of total budget' : '????????' }})</span> 
+            *{{ isEnglishLocale ? 'limit is not more than 25% or' : '????????????????? 25% ????' }} {{ formatNumber(limit25Percent) }} {{ isEnglishLocale ? 'THB' : '???' }}
           </li>
           <li v-if="isEquipmentExceeded">
-            <strong>หมวดครุภัณฑ์:</strong> เสนอขอ {{ formatNumber(equipmentTotal) }} บาท 
-            <span class="text-danger">(คิดเป็น {{ ((equipmentTotal / grandTotal) * 100).toFixed(2) }}% ของงบรวม)</span> 
-            *เกณฑ์กำหนดไม่เกิน 25% หรือ {{ formatNumber(limit25Percent) }} บาท
+            <strong>{{ isEnglishLocale ? 'Equipment:' : '????????????:' }}</strong> {{ isEnglishLocale ? 'requested' : '??????' }} {{ formatNumber(equipmentTotal) }} {{ isEnglishLocale ? 'THB' : '???' }} 
+            <span class="text-danger">({{ isEnglishLocale ? 'equal to' : '???????' }} {{ ((equipmentTotal / grandTotal) * 100).toFixed(2) }}% {{ isEnglishLocale ? 'of total budget' : '????????' }})</span> 
+            *{{ isEnglishLocale ? 'limit is not more than 25% or' : '????????????????? 25% ????' }} {{ formatNumber(limit25Percent) }} {{ isEnglishLocale ? 'THB' : '???' }}
           </li>
         </ul>
       </div>
 
       <CCard class="mt-3 mb-0 shadow-sm border-0 budget-summary-card" style="background-color: #f8f9fa;">
         <CCardBody class="p-3">
-          <h4 class="mb-3 font-weight-bold text-dark budget-summary-title">งบประมาณโครงการ</h4>
+          <h4 class="mb-3 font-weight-bold text-dark budget-summary-title">{{ budgetText.projectBudget }}</h4>
 
           <div class="budget-summary-stat-grid">
             <div class="budget-summary-stat-item is-used">
-              <div class="budget-summary-stat-label">[ ใช้ไปแล้ว ]</div>
+              <div class="budget-summary-stat-label">[ {{ budgetText.usedAlready }} ]</div>
               <div class="budget-summary-stat-value text-danger">{{ formatNumber(grandTotal) }}</div>
               <div class="budget-summary-stat-meta" :class="hasBudgetLimit ? 'text-muted' : 'text-transparent'">
                 ({{ budgetUsedPercent }}%)
               </div>
             </div>
             <div class="budget-summary-stat-item is-remaining">
-              <div class="budget-summary-stat-label">[ คงเหลือ ]</div>
+              <div class="budget-summary-stat-label">[ {{ budgetText.remainingBudget }} ]</div>
               <div
                 class="budget-summary-stat-value"
                 :class="summaryRemainingAmount >= 0 ? 'text-success' : 'text-danger'"
@@ -379,7 +379,7 @@
               </div>
             </div>
             <div class="budget-summary-stat-item is-total">
-              <div class="budget-summary-stat-label">[ งบรวม ]</div>
+              <div class="budget-summary-stat-label">[ {{ budgetText.totalBudgetShort }} ]</div>
               <div class="budget-summary-stat-value text-dark">{{ formatNumber(summaryTotalBudget) }}</div>
               <div class="budget-summary-stat-meta text-transparent">(0%)</div>
             </div>
@@ -389,7 +389,7 @@
 
           <div class="budget-summary-period-list">
             <div class="budget-summary-period-row">
-              <span class="budget-summary-period-label">งวด 1</span>
+              <span class="budget-summary-period-label">{{ budgetText.period(1) }}</span>
               <div class="budget-summary-period-bar">
                 <span
                   class="budget-summary-period-fill"
@@ -406,7 +406,7 @@
               </span>
             </div>
             <div class="budget-summary-period-row">
-              <span class="budget-summary-period-label">งวด 2</span>
+              <span class="budget-summary-period-label">{{ budgetText.period(2) }}</span>
               <div class="budget-summary-period-bar">
                 <span
                   class="budget-summary-period-fill"
@@ -423,7 +423,7 @@
               </span>
             </div>
             <div class="budget-summary-period-row">
-              <span class="budget-summary-period-label">งวด 3</span>
+              <span class="budget-summary-period-label">{{ budgetText.period(3) }}</span>
               <div class="budget-summary-period-bar">
                 <span
                   class="budget-summary-period-fill"
@@ -1113,6 +1113,80 @@ export default {
     isDarkTheme() {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
     },
+    isEnglishLocale() {
+      const locale = this.$i18n && this.$i18n.locale ? String(this.$i18n.locale) : 'th'
+      return locale.toLowerCase().startsWith('en')
+    },
+    budgetText() {
+      if (this.isEnglishLocale) {
+        return {
+          used: 'Used',
+          remaining: 'Remaining',
+          valid: 'Valid',
+          invalid: 'Invalid',
+          collapseDetails: 'Collapse details',
+          expandDetails: 'Expand details',
+          addManualItem: 'Add Manual Item',
+          attachDocument: 'Attach Document',
+          item: 'Item',
+          multiplierDetails: 'Multiplier Details',
+          totalBudget: 'Total Budget (THB)',
+          period: (index) => `Period ${index}`,
+          noItemsInCategory: 'No items in this category yet',
+          itemPlaceholder: 'Specify the item name...',
+          searchItemPlaceholder: 'Search or enter the item name...',
+          selectDocumentCategory: 'Select document category:',
+          selectCategory: '-- Select category --',
+          quotationOption: 'Quotation',
+          serviceRatesOption: 'Service Rates',
+          exampleDocument: 'Example Document',
+          removeMultiplier: 'Remove multiplier',
+          unitNamePlaceholder: 'Unit name',
+          numberPlaceholder: 'Number',
+          addMultiplier: 'Add multiplier',
+          overBudget: 'Over budget!',
+          remove: 'Remove',
+          warningHeading: 'Warning: Budget allocation exceeds the university criteria',
+          projectBudget: 'Project Budget',
+          usedAlready: 'Used',
+          remainingBudget: 'Remaining',
+          totalBudgetShort: 'Total'
+        }
+      }
+      return {
+        used: '?????',
+        remaining: '?????',
+        valid: '???????',
+        invalid: '??????????',
+        collapseDetails: '?????????????',
+        expandDetails: '?????????????',
+        addManualItem: '??????????????',
+        attachDocument: '?????????',
+        item: '??????',
+        multiplierDetails: '????????????????',
+        totalBudget: '????? (???)',
+        period: (index) => `??? ${index}`,
+        noItemsInCategory: '???????????????????????',
+        itemPlaceholder: '??????????????...',
+        searchItemPlaceholder: '?????/??????????????...',
+        selectDocumentCategory: '???????????????????:',
+        selectCategory: '-- ????????????? --',
+        quotationOption: '?????????? / Quotation',
+        serviceRatesOption: '?????????????????? ? / Service Rates',
+        exampleDocument: '??????????????',
+        removeMultiplier: '????????',
+        unitNamePlaceholder: '?????????',
+        numberPlaceholder: '??????',
+        addMultiplier: '???????????',
+        overBudget: '??????!',
+        remove: '??',
+        warningHeading: '???????????: ???????????????????????????????????????????',
+        projectBudget: '???????????????',
+        usedAlready: '?????????',
+        remainingBudget: '???????',
+        totalBudgetShort: '?????'
+      }
+    },
     categoryHeaderStyle() {
       return 'background-color: #ffffff !important; color: #111827 !important; border-bottom: 1px solid #e5e7eb !important;'
     },
@@ -1208,7 +1282,7 @@ export default {
       return getFundingTypeLabel(
         this.normalizedFundingBudgetConfig,
         this.fundingType,
-        'ไม่ระบุประเภททุน'
+        this.isEnglishLocale ? 'Unspecified funding type' : '????????????????'
       )
     },
     remainingBudget() {
@@ -1241,8 +1315,8 @@ export default {
       return this.isBudgetSummaryValid ? 'valid' : 'invalid'
     },
     budgetSummaryPillLabel() {
-      if (this.budgetSummaryState === 'empty') return 'ยังไม่มีข้อมูล'
-      return this.budgetSummaryState === 'valid' ? 'ถูกต้อง' : 'ต้องแก้ไข'
+      if (this.budgetSummaryState === 'empty') return this.isEnglishLocale ? 'No data yet' : '??????????????'
+      return this.budgetSummaryState === 'valid' ? (this.isEnglishLocale ? 'Valid' : '???????') : (this.isEnglishLocale ? 'Needs attention' : '?????????')
     },
     budgetSummaryStatePillClass() {
       if (this.budgetSummaryState === 'empty') return 'is-empty'
@@ -1278,51 +1352,51 @@ export default {
 
       if (this.isBudgetLimitExceeded) {
         details.push(
-          `งบรวมเกินเพดาน (${this.formatNumber(this.grandTotal)} / ${this.formatNumber(this.budgetLimit)} บาท)`
+          `${this.isEnglishLocale ? 'Total budget exceeds the limit' : '??????????????'} (${this.formatNumber(this.grandTotal)} / ${this.formatNumber(this.budgetLimit)} ${this.isEnglishLocale ? 'THB' : '???'})`
         )
       }
 
       if (this.isTravelExceeded) {
         details.push(
-          `หมวดค่าเดินทางเกินเกณฑ์ 25% (${this.formatNumber(this.travelTotal)} / ${this.formatNumber(this.limit25Percent)} บาท)`
+          `${this.isEnglishLocale ? 'Travel costs exceed the 25% limit' : '??????????????????????? 25%'} (${this.formatNumber(this.travelTotal)} / ${this.formatNumber(this.limit25Percent)} ${this.isEnglishLocale ? 'THB' : '???'})`
         )
       }
 
       if (this.isEquipmentExceeded) {
         details.push(
-          `หมวดครุภัณฑ์เกินเกณฑ์ 25% (${this.formatNumber(this.equipmentTotal)} / ${this.formatNumber(this.limit25Percent)} บาท)`
+          `${this.isEnglishLocale ? 'Equipment costs exceed the 25% limit' : '????????????????????? 25%'} (${this.formatNumber(this.equipmentTotal)} / ${this.formatNumber(this.limit25Percent)} ${this.isEnglishLocale ? 'THB' : '???'})`
         )
       }
 
       if (this.grandTotal > 0 && !this.isPeriod1Valid) {
         details.push(
-          `งวด 1 ต้องเป็น ${this.formatNumber(this.expectedPeriod1)} บาท (ปัจจุบัน ${this.formatNumber(this.totalPeriod1)} บาท)`
+          `${this.budgetText.period(1)} ${this.isEnglishLocale ? 'must equal' : '????????'} ${this.formatNumber(this.expectedPeriod1)} ${this.isEnglishLocale ? 'THB' : '???'} (${this.isEnglishLocale ? 'current' : '????????'} ${this.formatNumber(this.totalPeriod1)} ${this.isEnglishLocale ? 'THB' : '???'})`
         )
       }
 
       if (this.grandTotal > 0 && !this.isPeriod2Valid) {
         details.push(
-          `งวด 2 ต้องเป็น ${this.formatNumber(this.expectedPeriod2)} บาท (ปัจจุบัน ${this.formatNumber(this.totalPeriod2)} บาท)`
+          `${this.budgetText.period(2)} ${this.isEnglishLocale ? 'must equal' : '????????'} ${this.formatNumber(this.expectedPeriod2)} ${this.isEnglishLocale ? 'THB' : '???'} (${this.isEnglishLocale ? 'current' : '????????'} ${this.formatNumber(this.totalPeriod2)} ${this.isEnglishLocale ? 'THB' : '???'})`
         )
       }
 
       if (this.grandTotal > 0 && !this.isPeriod3Valid) {
         details.push(
-          `งวด 3 ต้องเป็น ${this.formatNumber(this.expectedPeriod3)} บาท (ปัจจุบัน ${this.formatNumber(this.totalPeriod3)} บาท)`
+          `${this.budgetText.period(3)} ${this.isEnglishLocale ? 'must equal' : '????????'} ${this.formatNumber(this.expectedPeriod3)} ${this.isEnglishLocale ? 'THB' : '???'} (${this.isEnglishLocale ? 'current' : '????????'} ${this.formatNumber(this.totalPeriod3)} ${this.isEnglishLocale ? 'THB' : '???'})`
         )
       }
 
       return details
     },
     budgetSummaryStatusText() {
-      if (this.isBudgetSummaryEmpty) return 'ยังไม่มีข้อมูล'
-      if (this.isBudgetSummaryValid) return 'งบประมาณถูกต้อง'
-      if (this.isBudgetLimitExceeded) return 'งบประมาณเกินเพดาน'
-      if (this.isTravelExceeded || this.isEquipmentExceeded) return 'สัดส่วนงบประมาณบางหมวดเกินเกณฑ์'
+      if (this.isBudgetSummaryEmpty) return this.isEnglishLocale ? 'No data yet' : '??????????????'
+      if (this.isBudgetSummaryValid) return this.isEnglishLocale ? 'Budget is valid' : '???????????????'
+      if (this.isBudgetLimitExceeded) return this.isEnglishLocale ? 'Budget exceeds the limit' : '?????????????????'
+      if (this.isTravelExceeded || this.isEquipmentExceeded) return this.isEnglishLocale ? 'Some budget categories exceed the allowed ratio' : '???????????????????????????????'
       if (this.grandTotal > 0 && (!this.isPeriod1Valid || !this.isPeriod2Valid || !this.isPeriod3Valid)) {
-        return 'การกระจายงวดไม่ตรงเกณฑ์ 50/40/10'
+        return this.isEnglishLocale ? 'Period allocation does not match 50/40/10' : '??????????????????????? 50/40/10'
       }
-      return 'งบประมาณไม่ถูกต้อง'
+      return this.isEnglishLocale ? 'Budget is invalid' : '??????????????????'
     },
     stickyOverlaySummary() {
       return {
@@ -1412,10 +1486,22 @@ export default {
   },
   beforeDestroy() {
     if (typeof window === 'undefined') return
-    window.removeEventListener('scroll', this.updateBudgetSummaryDisplayState, true)
     window.removeEventListener('resize', this.handleBudgetViewportResize)
   },
   methods: {
+    localizedCategoryName(categoryKey, fallbackName) {
+      if (!this.isEnglishLocale) return fallbackName
+      const labels = {
+        [BUDGET_CATEGORY_KEYS.COMPENSATION]: 'Compensation',
+        [BUDGET_CATEGORY_KEYS.OPERATING]: 'Operating Costs',
+        [BUDGET_CATEGORY_KEYS.TRAVEL]: 'Travel Costs',
+        [BUDGET_CATEGORY_KEYS.MATERIAL]: 'Materials',
+        [BUDGET_CATEGORY_KEYS.UTILITY]: 'Utilities',
+        [BUDGET_CATEGORY_KEYS.EQUIPMENT]: 'Equipment',
+        [BUDGET_CATEGORY_KEYS.OTHER]: 'Other'
+      }
+      return labels[categoryKey] || fallbackName
+    },
     handleBudgetViewportResize() {
       this.syncBudgetViewportMode()
       this.updateBudgetSummaryDisplayState()
@@ -1488,11 +1574,12 @@ export default {
     getCategoryTitle(category) {
       const name = category && category.name ? String(category.name) : ''
       const categoryKey = this.getCategoryKey(category)
+      const displayName = this.localizedCategoryName(categoryKey, name)
       if (categoryKey === BUDGET_CATEGORY_KEYS.TRAVEL || categoryKey === BUDGET_CATEGORY_KEYS.EQUIPMENT) {
         const limitAmount = this.formatNumber(this.limit25Percent)
-        return `${name} (ไม่เกิน ร้อยละ 25 ของงบประมาณ/ไม่เกิน ${limitAmount} บาท)`
+        return `${displayName} (${this.isEnglishLocale ? 'not more than 25% of the total budget / not more than' : '??????? ?????? 25 ???????????/???????'} ${limitAmount} ${this.isEnglishLocale ? 'THB' : '???'})`
       }
-      return name
+      return displayName
     },
     toggleCategory(catIndex) {
       const category = this.categories[catIndex]
