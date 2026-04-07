@@ -603,6 +603,11 @@ export default {
 </script>
 
 <style scoped>
+.evaluation-card {
+  border-radius: 10px;
+  overflow: visible;
+}
+
 .evaluation-sticky {
   position: static;
 }
@@ -610,12 +615,28 @@ export default {
 @media (min-width: 992px) {
   .evaluation-sticky {
     position: sticky;
-    top: 1rem;
+    top: 4.5rem;
+  }
+
+  .evaluation-card {
+    max-height: calc(100vh - 4.5rem - 3.5rem);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .evaluation-card__body {
+    overflow: auto;
+    position: relative;
+    padding-bottom: 4.5rem;
   }
 }
 
 .evaluation-card__header {
   font-weight: 700;
+}
+
+.evaluation-card__body {
+  background: #ffffff;
 }
 
 .evaluation-card__body.evaluation-locked {
