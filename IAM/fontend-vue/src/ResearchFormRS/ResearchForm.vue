@@ -119,6 +119,70 @@
         </div>
       </div>
 
+      <div v-if="showReadonlyChairmanChecklistCard" class="card mt-3 mb-3 review-summary-card" style="background: #fffaf0; border-color: #f3d19a;">
+        <div class="card-header">
+          <strong>สรุป Checklist จากประธาน (Read Only)</strong>
+        </div>
+        <div class="card-body">
+          <div v-if="readonlyChairmanChecklistLoading" class="text-center py-3">
+            <CSpinner size="sm" color="primary" />
+            <span class="text-muted ml-2">กำลังโหลดผลการประเมินจากประธาน...</span>
+          </div>
+
+          <CAlert v-else-if="readonlyChairmanChecklistError" color="warning" show>
+            ไม่สามารถโหลดผลการประเมินได้: {{ readonlyChairmanChecklistError }}
+          </CAlert>
+
+          <div v-else>
+            <div
+              v-for="card in chairmanReviewCards"
+              :key="'readonly-chairman-' + card.reviewId"
+              class="card mb-2 chairman-review-card"
+            >
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6 mb-1"><strong>ผู้ประเมิน:</strong> {{ reviewerName(card.review) }}</div>
+                  <div class="col-md-6 mb-1"><strong>วันที่ส่ง:</strong> {{ formatReviewDateTime(card.review.submittedAt || card.review.updatedAt) }}</div>
+                  <div class="col-md-6 mb-1"><strong>ผลการพิจารณา:</strong> {{ decisionLabel(card.review.decision) }}</div>
+                  <div class="col-md-6 mb-1"><strong>Checklist ที่เลือก:</strong> {{ card.checkedCount }}/{{ card.totalItems }} ข้อ</div>
+                  <div class="col-md-12 mb-2"><strong>ประเภททุนอ้างอิง:</strong> {{ card.fundingTypeLabel }}</div>
+                  <div class="col-12 mb-2"><strong>สรุปข้อเสนอแนะ:</strong> {{ card.review.summaryComment || '-' }}</div>
+                </div>
+
+                <div v-if="card.sections.length" class="chairman-review-card__sections">
+                  <div
+                    v-for="section in card.sections"
+                    :key="'readonly-chairman-' + card.reviewId + '-' + section.sectionKey"
+                    class="chairman-review-card__section"
+                  >
+                    <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
+                      <div class="font-weight-bold">{{ section.sectionLabel }}</div>
+                      <CBadge color="warning" class="chairman-review-card__badge">{{ section.checkedItems.length }}/{{ section.totalItems }} ข้อ</CBadge>
+                    </div>
+                    <div v-if="section.checkedItems.length" class="mt-2">
+                      <ul class="mb-0 pl-3 chairman-review-card__list">
+                        <li
+                          v-for="item in section.checkedItems"
+                          :key="'readonly-chairman-' + card.reviewId + '-' + section.sectionKey + '-' + item.itemKey"
+                        >
+                          {{ item.label }}
+                        </li>
+                      </ul>
+                    </div>
+                    <div v-else class="text-muted small mt-2">
+                      ไม่มีรายการที่ติ๊กในหัวข้อนี้
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-muted small">
+                  ไม่พบ payload checklist จากผลประเมินของประธาน
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div v-if="isAdminView" ref="committeeReviewsSection" class="card mt-3 mb-5">
         <div class="card-header">
           <strong>ผลการประเมินจากคณะกรรมการ</strong>
@@ -212,57 +276,6 @@
                   >
                     <CIcon name="cil-save" class="mr-1" /> {{ savingAdminDecision ? 'กำลังบันทึก...' : 'บันทึกผลการตัดสินใจ' }}
                   </CButton>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="chairmanReviewCards.length" class="card mb-3 review-summary-card" style="background: #fffaf0; border-color: #f3d19a;">
-              <div class="card-body">
-                <h6 class="mb-3">สรุป Checklist จากประธาน</h6>
-                <div
-                  v-for="card in chairmanReviewCards"
-                  :key="card.reviewId"
-                  class="card mb-2 chairman-review-card"
-                >
-                  <div class="card-body">
-                    <div class="row">
-                      <div class="col-md-6 mb-1"><strong>ผู้ประเมิน:</strong> {{ reviewerName(card.review) }}</div>
-                      <div class="col-md-6 mb-1"><strong>วันที่ส่ง:</strong> {{ formatReviewDateTime(card.review.submittedAt || card.review.updatedAt) }}</div>
-                      <div class="col-md-6 mb-1"><strong>ผลการพิจารณา:</strong> {{ decisionLabel(card.review.decision) }}</div>
-                      <div class="col-md-6 mb-1"><strong>Checklist ที่เลือก:</strong> {{ card.checkedCount }}/{{ card.totalItems }} ข้อ</div>
-                      <div class="col-md-12 mb-2"><strong>ประเภททุนอ้างอิง:</strong> {{ card.fundingTypeLabel }}</div>
-                      <div class="col-12 mb-2"><strong>สรุปข้อเสนอแนะ:</strong> {{ card.review.summaryComment || '-' }}</div>
-                    </div>
-
-                    <div v-if="card.sections.length" class="chairman-review-card__sections">
-                      <div
-                        v-for="section in card.sections"
-                        :key="card.reviewId + '-' + section.sectionKey"
-                        class="chairman-review-card__section"
-                      >
-                        <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
-                          <div class="font-weight-bold">{{ section.sectionLabel }}</div>
-                          <CBadge color="warning" class="chairman-review-card__badge">{{ section.checkedItems.length }}/{{ section.totalItems }} ข้อ</CBadge>
-                        </div>
-                        <div v-if="section.checkedItems.length" class="mt-2">
-                          <ul class="mb-0 pl-3 chairman-review-card__list">
-                            <li
-                              v-for="item in section.checkedItems"
-                              :key="card.reviewId + '-' + section.sectionKey + '-' + item.itemKey"
-                            >
-                              {{ item.label }}
-                            </li>
-                          </ul>
-                        </div>
-                        <div v-else class="text-muted small mt-2">
-                          ไม่มีรายการที่ติ๊กในหัวข้อนี้
-                        </div>
-                      </div>
-                    </div>
-                    <div v-else class="text-muted small">
-                      ไม่พบ payload checklist จากผลประเมินของประธาน
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1101,6 +1114,9 @@ export default {
           await this.scrollToReviewsIfRequested()
         }
       } else {
+        if (!this.isDraftStatus) {
+          await this.fetchProposalReviews(id)
+        }
         if (this.isRevisionRequested) {
           await this.scrollToFeedbackIfNeeded({ behavior: 'auto' })
           await this.fetchUserFeedback(id)
@@ -1322,6 +1338,23 @@ export default {
           sections: normalizedSections
         }
       })
+    },
+    readonlyChairmanChecklistLoading () {
+      return !this.isAdminView && this.reviewsLoading
+    },
+    readonlyChairmanChecklistError () {
+      if (this.isAdminView) return ''
+      return this.reviewsError || ''
+    },
+    showReadonlyChairmanChecklistCard () {
+      if (!this.viewProposalId) return false
+      if (this.isChairmanDetailRoute) return false
+      if (this.chairmanReviewCards.length > 0) return true
+      return Boolean(this.readonlyChairmanChecklistLoading || this.readonlyChairmanChecklistError)
+    },
+    isChairmanDetailRoute () {
+      const path = String((this.$route && this.$route.path) || '').trim().toLowerCase()
+      return path.indexOf('/chairman/') !== -1
     },
     submittedReviews () {
       return this.committeeSubmittedReviews
@@ -1704,6 +1737,9 @@ export default {
               await this.scrollToReviewsIfRequested()
             }
           } else {
+            if (!this.isDraftStatus) {
+              await this.fetchProposalReviews(newId)
+            }
             if (this.isRevisionRequested) {
               await this.scrollToFeedbackIfNeeded({ behavior: 'auto' })
               await this.fetchUserFeedback(newId)
