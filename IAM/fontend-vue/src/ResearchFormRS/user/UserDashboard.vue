@@ -313,6 +313,10 @@ export default {
         rejected: ['rejected'],
       },
       workflowSteps: [],
+      fundingBudgetConfig: createDefaultFundingBudgetConfig(),
+      rolePageAccessConfig: createDefaultRolePageAccessConfig()
+    };
+  },
 
   async mounted() {
     await loadResearchFormRuntimeConfigs()
