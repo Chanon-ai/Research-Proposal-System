@@ -1,12 +1,14 @@
 import { instance as axios } from '@/service/api'
 import { setProposalWorkflowRuntimeConfig } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { setCommitteeFeedbackRuntimeConfig } from '@/ResearchFormRS/constants/committeeFeedback'
+import { setCommitteeRubricRuntimeConfig } from '@/ResearchFormRS/constants/committeeRubric'
 import { setChairmanChecklistRuntimeConfig } from '@/ResearchFormRS/constants/chairmanChecklist'
 import { setResearchStandardRuntimeConfig } from '@/ResearchFormRS/constants/researchStandard'
 
 const RESEARCH_CONFIG_CACHE_TTL_MS = 60 * 1000
 const PROPOSAL_WORKFLOW_SETTING_KEY = 'proposal_workflow_config_json'
 const COMMITTEE_FEEDBACK_SETTING_KEY = 'committee_feedback_config_json'
+const COMMITTEE_RUBRIC_SETTING_KEY = 'committee_rubric_config_json'
 const CHAIRMAN_CHECKLIST_SETTING_KEY = 'chairman_checklist_config_json'
 const RESEARCH_STANDARD_SETTING_KEY = 'research_standard_config_json'
 
@@ -52,16 +54,19 @@ export const loadResearchFormRuntimeConfigs = async ({ force = false } = {}) => 
       const settings = parseSettingsPayload(response)
       const workflowSetting = settings.find(item => item && item.key === PROPOSAL_WORKFLOW_SETTING_KEY)
       const committeeFeedbackSetting = settings.find(item => item && item.key === COMMITTEE_FEEDBACK_SETTING_KEY)
+      const committeeRubricSetting = settings.find(item => item && item.key === COMMITTEE_RUBRIC_SETTING_KEY)
       const chairmanChecklistSetting = settings.find(item => item && item.key === CHAIRMAN_CHECKLIST_SETTING_KEY)
       const researchStandardSetting = settings.find(item => item && item.key === RESEARCH_STANDARD_SETTING_KEY)
 
       const workflowValue = parseSettingValue(workflowSetting)
       const committeeFeedbackValue = parseSettingValue(committeeFeedbackSetting)
+      const committeeRubricValue = parseSettingValue(committeeRubricSetting)
       const chairmanChecklistValue = parseSettingValue(chairmanChecklistSetting)
       const researchStandardValue = parseSettingValue(researchStandardSetting)
 
       if (workflowValue) setProposalWorkflowRuntimeConfig(workflowValue)
       if (committeeFeedbackValue) setCommitteeFeedbackRuntimeConfig(committeeFeedbackValue)
+      if (committeeRubricValue) setCommitteeRubricRuntimeConfig(committeeRubricValue)
       if (chairmanChecklistValue) setChairmanChecklistRuntimeConfig(chairmanChecklistValue)
       if (researchStandardValue) setResearchStandardRuntimeConfig(researchStandardValue)
 

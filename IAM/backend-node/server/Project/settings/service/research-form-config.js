@@ -8,6 +8,7 @@ const MANAGED_SETTING_KEYS = Object.freeze({
   FUNDING_BUDGET: 'funding_budget_config_json',
   BUDGET_MULTIPLIER: 'budget_multiplier_config_json',
   COMMITTEE_FEEDBACK: 'committee_feedback_config_json',
+  COMMITTEE_RUBRIC: 'committee_rubric_config_json',
   CHAIRMAN_CHECKLIST: 'chairman_checklist_config_json',
   RESEARCH_STANDARD: 'research_standard_config_json'
 });
@@ -370,6 +371,31 @@ const COMMITTEE_FEEDBACK_DEFAULT = Object.freeze({
   }
 });
 
+const COMMITTEE_RUBRIC_DEFAULT = Object.freeze({
+  templateVersion: 1,
+  reviewerRole: 'committee',
+  reviewerLabel: 'คณะกรรมการ',
+  scoreOptions: [0, 1, 2],
+  fundTypeOptions: [
+    { value: 'new', label: 'ทุนวิจัยใหม่' },
+    { value: 'develop', label: 'ทุนพัฒนา' },
+    { value: 'extension', label: 'ทุนต่อยอด/ทุนอุตสาหกรรม' }
+  ],
+  rubricRows: [
+    { no: 1, title: 'ความสำคัญและความชัดเจนของโจทย์วิจัย/คำถามวิจัย', desc: '0–2', weights: { new: 15, develop: 10, extension: 10 } },
+    { no: 2, title: 'วัตถุประสงค์ของโครงการ', desc: '0–2', weights: { new: 15, develop: 5, extension: 5 } },
+    { no: 3, title: 'การทบทวนวรรณกรรม', desc: '0–2', weights: { new: 15, develop: 5, extension: 5 } },
+    { no: 4, title: 'กระบวนการและวิธีการ', desc: '0–2', weights: { new: 15, develop: 15, extension: 10 } },
+    { no: 5, title: 'แผนการดำเนินงาน', desc: '0–2', weights: { new: 10, develop: 10, extension: 5 } },
+    { no: 6, title: 'ผลลัพธ์ของโครงการวิจัย', desc: '0–2', weights: { new: 10, develop: 15, extension: 15 } },
+    { no: 7, title: 'การบูรณาการงานวิจัย', desc: '0–2', weights: { new: 5, develop: 10, extension: 15 } },
+    { no: 8, title: 'ระดับการถ่ายทอดสังคม', desc: '0–2', weights: { new: null, develop: 10, extension: 15 } },
+    { no: 9, title: 'งบประมาณ', desc: '0–2', weights: { new: 5, develop: 5, extension: 5 } },
+    { no: 10, title: 'คุณสมบัติของคณะผู้วิจัย', desc: '0–2', weights: { new: 5, develop: 5, extension: 5 } },
+    { no: 11, title: 'ความสอดคล้องกับแผนงานที่มหาวิทยาลัยกำหนด', desc: '0–2', weights: { new: 5, develop: 10, extension: 10 } }
+  ]
+});
+
 const CHAIRMAN_CHECKLIST_DEFAULT = Object.freeze({
   templateVersion: 1,
   reviewerRole: 'chairman',
@@ -543,6 +569,11 @@ const MANAGED_DEFAULTS = Object.freeze({
     description: 'Committee feedback section mapping for ResearchFormRS',
     group: RESEARCH_FORM_SETTING_GROUP,
     value: COMMITTEE_FEEDBACK_DEFAULT
+  },
+  [MANAGED_SETTING_KEYS.COMMITTEE_RUBRIC]: {
+    description: 'Committee rubric templates for ResearchFormRS',
+    group: RESEARCH_FORM_SETTING_GROUP,
+    value: COMMITTEE_RUBRIC_DEFAULT
   },
   [MANAGED_SETTING_KEYS.CHAIRMAN_CHECKLIST]: {
     description: 'Chairman checklist templates for ResearchFormRS',
@@ -727,6 +758,8 @@ function normalizeManagedSettingValue(key, rawValue) {
       return normalizeObjectOrDefault(rawValue, PROPOSAL_WORKFLOW_DEFAULT);
     case MANAGED_SETTING_KEYS.COMMITTEE_FEEDBACK:
       return normalizeObjectOrDefault(rawValue, COMMITTEE_FEEDBACK_DEFAULT);
+    case MANAGED_SETTING_KEYS.COMMITTEE_RUBRIC:
+      return normalizeObjectOrDefault(rawValue, COMMITTEE_RUBRIC_DEFAULT);
     case MANAGED_SETTING_KEYS.CHAIRMAN_CHECKLIST:
       return normalizeObjectOrDefault(rawValue, CHAIRMAN_CHECKLIST_DEFAULT);
     case MANAGED_SETTING_KEYS.RESEARCH_STANDARD:

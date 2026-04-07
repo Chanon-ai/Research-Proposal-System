@@ -165,6 +165,16 @@ function buildNormalizedChairmanChecklistConfig(rawConfig = {}) {
 
 let CHAIRMAN_CHECKLIST_CONFIG = buildNormalizedChairmanChecklistConfig(DEFAULT_CHAIRMAN_CHECKLIST_CONFIG)
 
+export const CHAIRMAN_CHECKLIST_SETTING_KEY = 'chairman_checklist_config_json'
+
+export function normalizeChairmanChecklistConfig(rawConfig) {
+  return buildNormalizedChairmanChecklistConfig(rawConfig)
+}
+
+export function getDefaultChairmanChecklistConfig() {
+  return buildNormalizedChairmanChecklistConfig(DEFAULT_CHAIRMAN_CHECKLIST_CONFIG)
+}
+
 export function setChairmanChecklistRuntimeConfig(rawConfig) {
   CHAIRMAN_CHECKLIST_CONFIG = buildNormalizedChairmanChecklistConfig(rawConfig)
 }

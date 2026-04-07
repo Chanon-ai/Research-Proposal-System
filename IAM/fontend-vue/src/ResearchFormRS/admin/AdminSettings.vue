@@ -208,6 +208,11 @@
       </CTab>
 
       <CTab>
+        <template slot="title">Template ประเมิน</template>
+        <AdminReviewTemplateSettings />
+      </CTab>
+
+      <CTab>
         <template slot="title">อีเมล</template>
 
         <CCard class="mt-3">
@@ -366,6 +371,7 @@
 import { instance as axios } from '@/service/api'
 import AdminUsersManagement from '@/components/admin/AdminUsersManagement.vue'
 import AdminFundingBudgetSettings from '@/ResearchFormRS/admin/AdminFundingBudgetSettings.vue'
+import AdminReviewTemplateSettings from '@/ResearchFormRS/admin/AdminReviewTemplateSettings.vue'
 import AdminRolePageAccessSettings from '@/ResearchFormRS/admin/AdminRolePageAccessSettings.vue'
 import Swal from 'sweetalert2'
 import {
@@ -464,15 +470,16 @@ const SETTINGS_TAB_INDEX = {
   funding_budget: 1,
   role_access: 2,
   workflow: 3,
-  email: 4,
-  users: 5
+  review_templates: 4,
+  email: 5,
+  users: 6
 }
 
-const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'funding_budget', 'role_access', 'workflow', 'email', 'users']
+const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'funding_budget', 'role_access', 'workflow', 'review_templates', 'email', 'users']
 
 export default {
   name: 'AdminSettings',
-  components: { AdminUsersManagement, AdminFundingBudgetSettings, AdminRolePageAccessSettings },
+  components: { AdminUsersManagement, AdminFundingBudgetSettings, AdminReviewTemplateSettings, AdminRolePageAccessSettings },
   data () {
     return {
       activeTab: 0,
