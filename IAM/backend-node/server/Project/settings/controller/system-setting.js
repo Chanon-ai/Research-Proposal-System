@@ -1,4 +1,5 @@
 const service = require('../service/system-setting');
+const templateImportService = require('../service/review-template-import');
 const EmailLog = require('../models/email-log.model');
 
 function handleError(res, err, fallbackStatus = 400) {
@@ -45,6 +46,61 @@ exports.bulkUpdate = async (req, res) => {
       message: hasFailures
         ? 'Some settings could not be saved'
         : 'Settings saved successfully'
+    });
+  } catch (err) {
+    return handleError(res, err, 400);
+  }
+};
+
+exports.previewTemplateImport = async (req, res) => {
+  try {
+    const settingMap = await service.getSettingMap();
+    const targetType = String((req.body && req.body.targetType) || '').trim().toLowerCase();
+    const targetDefinition = templateImportService.TEMPLATE_TARGETS[targetType];
+    if (!targetDefinition) {
+      throw new Error('targetType must be chairman or committee');
+    }
+    const preview = await templateImportService.previewImportedTemplate({
+      file: req.file,
+      targetType,
+      fundingTypeKey: req.body && req.body.fundingTypeKey,
+      fundingTypeLabel: req.body && req.body.fundingTypeLabel,
+      currentConfig: settingMap[targetDefinition.settingKey],
+      fundTypeOptions: templateImportService.normalizeFundTypeOptions(
+        (() => {
+          try {
+            return JSON.parse((req.body && req.body.fundTypeOptions) || '[]');
+          } catch (err) {
+            return [];
+          }
+        })()
+      ),
+      scoreOptions: (() => {
+        try {
+          return JSON.parse((req.body && req.body.scoreOptions) || '[]');
+        } catch (err) {
+          return [];
+        }
+      })()
+    });
+
+    return res.json({ success: true, data: preview });
+  } catch (err) {
+    return handleError(res, err, 400);
+  }
+};
+
+exports.applyTemplateImport = async (req, res) => {
+  try {
+    const payload = templateImportService.buildApplyPayload(
+      req.body && req.body.targetType,
+      req.body && req.body.draftConfig
+    );
+    const result = await service.bulkUpsertSettings(payload, req.user);
+    return res.json({
+      success: true,
+      message: 'Imported template applied successfully',
+      data: result
     });
   } catch (err) {
     return handleError(res, err, 400);
