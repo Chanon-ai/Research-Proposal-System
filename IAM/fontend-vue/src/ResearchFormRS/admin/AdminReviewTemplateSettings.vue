@@ -116,6 +116,10 @@
           <CCol lg="8">
             <div class="template-two-pane__editor">
               <div class="template-toolbar mb-3">
+                <div class="template-pane-context" v-if="chairmanSelectedFundingTemplate">
+                  <div class="template-pane-context__label">กำลังแก้ไข</div>
+                  <div class="template-pane-context__value">{{ chairmanSelectedFundingTemplate.fundingTypeLabel || chairmanSelectedFundingTemplate.fundingTypeKey }}</div>
+                </div>
                 <div class="template-toolbar__actions ml-auto">
                   <CButton size="sm" color="warning" variant="outline" @click="resetChairmanTemplate">รีเซ็ตค่าเริ่มต้น</CButton>
                   <CButton size="sm" color="primary" @click="saveChairmanTemplate">บันทึก Template ประธาน</CButton>
@@ -141,25 +145,25 @@
                   <CButton size="sm" color="success" variant="outline" @click="addChairmanFundingTemplate">เพิ่มประเภททุน</CButton>
                 </div>
 
-                <div v-for="(fundingTemplate, fundingIndex) in chairmanForm.fundingTemplates" :key="`funding-${fundingIndex}`" class="editor-card mt-3">
+                <div v-if="chairmanSelectedFundingTemplate" class="editor-card mt-3">
                   <div class="editor-card__header">
-                    <div class="editor-card__title">ประเภททุน {{ fundingIndex + 1 }}</div>
-                    <CButton size="sm" color="danger" variant="outline" @click="removeChairmanFundingTemplate(fundingIndex)">ลบประเภททุน</CButton>
+                    <div class="editor-card__title">ประเภททุน {{ chairmanSelectedFundingTemplateIndex + 1 }}</div>
+                    <CButton size="sm" color="danger" variant="outline" @click="removeChairmanFundingTemplate(chairmanSelectedFundingTemplateIndex)">ลบประเภททุน</CButton>
                   </div>
                   <CRow>
-                    <CCol md="4"><CInput label="Funding Type Key" v-model="fundingTemplate.fundingTypeKey" /></CCol>
-                    <CCol md="8"><CInput label="Funding Type Label" v-model="fundingTemplate.fundingTypeLabel" /></CCol>
+                    <CCol md="4"><CInput label="Funding Type Key" v-model="chairmanSelectedFundingTemplate.fundingTypeKey" /></CCol>
+                    <CCol md="8"><CInput label="Funding Type Label" v-model="chairmanSelectedFundingTemplate.fundingTypeLabel" /></CCol>
                   </CRow>
 
                   <div class="template-section-header template-section-header--inner">
                     <div class="template-section-title">Sections</div>
-                    <CButton size="sm" color="info" variant="outline" @click="addChairmanSection(fundingIndex)">เพิ่ม Section</CButton>
+                    <CButton size="sm" color="info" variant="outline" @click="addChairmanSection(chairmanSelectedFundingTemplateIndex)">เพิ่ม Section</CButton>
                   </div>
 
-                  <div v-for="(section, sectionIndex) in fundingTemplate.sections" :key="`section-${fundingIndex}-${sectionIndex}`" class="editor-card editor-card--nested mt-2">
+                  <div v-for="(section, sectionIndex) in chairmanSelectedFundingTemplate.sections" :key="`section-${chairmanSelectedFundingTemplateIndex}-${sectionIndex}`" class="editor-card editor-card--nested mt-2">
                     <div class="editor-card__header">
                       <div class="editor-card__title">Section {{ sectionIndex + 1 }}</div>
-                      <CButton size="sm" color="danger" variant="outline" @click="removeChairmanSection(fundingIndex, sectionIndex)">ลบ Section</CButton>
+                      <CButton size="sm" color="danger" variant="outline" @click="removeChairmanSection(chairmanSelectedFundingTemplateIndex, sectionIndex)">ลบ Section</CButton>
                     </div>
                     <CRow>
                       <CCol md="4"><CInput label="Section Key" v-model="section.sectionKey" /></CCol>
@@ -169,13 +173,13 @@
 
                     <div class="template-section-header template-section-header--inner">
                       <div class="template-section-title">Items</div>
-                      <CButton size="sm" color="info" variant="outline" @click="addChairmanItem(fundingIndex, sectionIndex)">เพิ่ม Item</CButton>
+                      <CButton size="sm" color="info" variant="outline" @click="addChairmanItem(chairmanSelectedFundingTemplateIndex, sectionIndex)">เพิ่ม Item</CButton>
                     </div>
 
-                    <div v-for="(item, itemIndex) in section.items" :key="`item-${fundingIndex}-${sectionIndex}-${itemIndex}`" class="editor-card editor-card--subnested mt-2">
+                    <div v-for="(item, itemIndex) in section.items" :key="`item-${chairmanSelectedFundingTemplateIndex}-${sectionIndex}-${itemIndex}`" class="editor-card editor-card--subnested mt-2">
                       <div class="editor-card__header">
                         <div class="editor-card__title">Item {{ itemIndex + 1 }}</div>
-                        <CButton size="sm" color="danger" variant="outline" @click="removeChairmanItem(fundingIndex, sectionIndex, itemIndex)">ลบ Item</CButton>
+                        <CButton size="sm" color="danger" variant="outline" @click="removeChairmanItem(chairmanSelectedFundingTemplateIndex, sectionIndex, itemIndex)">ลบ Item</CButton>
                       </div>
                       <CRow>
                         <CCol md="4"><CInput label="Item Key" v-model="item.itemKey" /></CCol>
@@ -236,6 +240,10 @@
           <CCol lg="8">
             <div class="template-two-pane__editor">
               <div class="template-toolbar mb-3">
+                <div class="template-pane-context" v-if="committeeSelectedFundTypeOption">
+                  <div class="template-pane-context__label">กำลังแก้ไข</div>
+                  <div class="template-pane-context__value">{{ committeeSelectedFundTypeOption.label || committeeSelectedFundTypeOption.value }}</div>
+                </div>
                 <div class="template-toolbar__actions ml-auto">
                   <CButton size="sm" color="warning" variant="outline" @click="resetCommitteeTemplate">รีเซ็ตค่าเริ่มต้น</CButton>
                   <CButton size="sm" color="primary" @click="saveCommitteeTemplate">บันทึก Template กรรมการ</CButton>
@@ -257,14 +265,14 @@
                   <CButton size="sm" color="success" variant="outline" @click="addCommitteeFundTypeOption">เพิ่มประเภททุน</CButton>
                 </div>
 
-                <div v-for="(fundType, fundTypeIndex) in committeeForm.fundTypeOptions" :key="`committee-fund-${fundTypeIndex}`" class="editor-card mt-2">
+                <div v-if="committeeSelectedFundTypeOption" class="editor-card mt-2">
                   <div class="editor-card__header">
-                    <div class="editor-card__title">ประเภททุน {{ fundTypeIndex + 1 }}</div>
-                    <CButton size="sm" color="danger" variant="outline" @click="removeCommitteeFundTypeOption(fundTypeIndex)">ลบประเภททุน</CButton>
+                    <div class="editor-card__title">ประเภททุน {{ committeeSelectedFundTypeIndex + 1 }}</div>
+                    <CButton size="sm" color="danger" variant="outline" @click="removeCommitteeFundTypeOption(committeeSelectedFundTypeIndex)">ลบประเภททุน</CButton>
                   </div>
                   <CRow>
-                    <CCol md="4"><CInput label="Value" v-model="fundType.value" /></CCol>
-                    <CCol md="8"><CInput label="Label" v-model="fundType.label" /></CCol>
+                    <CCol md="4"><CInput label="Value" v-model="committeeSelectedFundTypeOption.value" /></CCol>
+                    <CCol md="8"><CInput label="Label" v-model="committeeSelectedFundTypeOption.label" /></CCol>
                   </CRow>
                 </div>
 
@@ -289,12 +297,12 @@
                   </CRow>
 
                   <div class="weights-grid">
-                    <div v-for="fundType in committeeForm.fundTypeOptions" :key="`weight-${rowIndex}-${fundType.value}`" class="weights-grid__item">
+                    <div v-if="committeeSelectedFundTypeOption" :key="`weight-${rowIndex}-${committeeSelectedFundTypeOption.value}`" class="weights-grid__item">
                       <CInput
-                        :label="`น้ำหนัก: ${fundType.label || fundType.value}`"
+                        :label="`น้ำหนัก: ${committeeSelectedFundTypeOption.label || committeeSelectedFundTypeOption.value}`"
                         type="number"
-                        :value="row.weights[fundType.value]"
-                        @input="updateCommitteeWeight(rowIndex, fundType.value, $event)"
+                        :value="row.weights[committeeSelectedFundTypeOption.value]"
+                        @input="updateCommitteeWeight(rowIndex, committeeSelectedFundTypeOption.value, $event)"
                       />
                     </div>
                   </div>
@@ -402,6 +410,15 @@ export default {
         || (config.fundingTemplates || [])[0]
         || null
     },
+    chairmanSelectedFundingTemplateIndex () {
+      const templates = (this.chairmanForm && this.chairmanForm.fundingTemplates) || []
+      const matchedIndex = templates.findIndex((item) => item && item.fundingTypeKey === this.chairmanPreviewFundingType)
+      return matchedIndex >= 0 ? matchedIndex : (templates.length > 0 ? 0 : -1)
+    },
+    chairmanSelectedFundingTemplate () {
+      const templates = (this.chairmanForm && this.chairmanForm.fundingTemplates) || []
+      return this.chairmanSelectedFundingTemplateIndex >= 0 ? templates[this.chairmanSelectedFundingTemplateIndex] : null
+    },
     committeeParsedConfig () {
       return normalizeCommitteeRubricConfig(this.cloneValue(this.committeeForm))
     },
@@ -415,6 +432,15 @@ export default {
     committeePreviewFundTypeLabel () {
       const matched = (this.committeeFundTypeOptions || []).find((option) => option && option.value === this.committeePreviewFundType)
       return matched ? matched.label : this.committeePreviewFundType
+    },
+    committeeSelectedFundTypeIndex () {
+      const options = (this.committeeForm && this.committeeForm.fundTypeOptions) || []
+      const matchedIndex = options.findIndex((option) => option && option.value === this.committeePreviewFundType)
+      return matchedIndex >= 0 ? matchedIndex : (options.length > 0 ? 0 : -1)
+    },
+    committeeSelectedFundTypeOption () {
+      const options = (this.committeeForm && this.committeeForm.fundTypeOptions) || []
+      return this.committeeSelectedFundTypeIndex >= 0 ? options[this.committeeSelectedFundTypeIndex] : null
     }
   },
   mounted () {
@@ -603,10 +629,17 @@ export default {
       }
     },
     addChairmanFundingTemplate () {
-      this.chairmanForm.fundingTemplates.push(this.createChairmanFundingTemplate())
+      const nextTemplate = this.createChairmanFundingTemplate()
+      this.chairmanForm.fundingTemplates.push(nextTemplate)
+      this.chairmanPreviewFundingType = nextTemplate.fundingTypeKey
     },
     removeChairmanFundingTemplate (fundingIndex) {
-      this.chairmanForm.fundingTemplates.splice(fundingIndex, 1)
+      const removed = this.chairmanForm.fundingTemplates.splice(fundingIndex, 1)
+      const removedKey = removed && removed[0] ? removed[0].fundingTypeKey : ''
+      if (removedKey && removedKey === this.chairmanPreviewFundingType) {
+        const nextTemplate = this.chairmanForm.fundingTemplates[fundingIndex] || this.chairmanForm.fundingTemplates[fundingIndex - 1] || this.chairmanForm.fundingTemplates[0] || null
+        this.chairmanPreviewFundingType = nextTemplate ? nextTemplate.fundingTypeKey : ''
+      }
     },
     addChairmanSection (fundingIndex) {
       this.chairmanForm.fundingTemplates[fundingIndex].sections.push(this.createChairmanSection())
@@ -665,6 +698,7 @@ export default {
       this.committeeForm.rubricRows.forEach((row) => {
         this.$set(row.weights, nextOption.value, null)
       })
+      this.committeePreviewFundType = nextOption.value
     },
     removeCommitteeFundTypeOption (fundTypeIndex) {
       const removed = this.committeeForm.fundTypeOptions.splice(fundTypeIndex, 1)
@@ -675,6 +709,10 @@ export default {
             this.$delete(row.weights, removedKey)
           }
         })
+        if (removedKey === this.committeePreviewFundType) {
+          const nextOption = this.committeeForm.fundTypeOptions[fundTypeIndex] || this.committeeForm.fundTypeOptions[fundTypeIndex - 1] || this.committeeForm.fundTypeOptions[0] || null
+          this.committeePreviewFundType = nextOption ? nextOption.value : ''
+        }
       }
     },
     addCommitteeRubricRow () {
@@ -741,6 +779,23 @@ export default {
 .template-import-file {
   min-width: 320px;
   flex: 1 1 320px;
+}
+
+.template-pane-context {
+  min-width: 220px;
+}
+
+.template-pane-context__label {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.2;
+}
+
+.template-pane-context__value {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #3f0d12;
 }
 
 .template-two-pane__preview {
