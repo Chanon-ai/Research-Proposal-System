@@ -24,11 +24,12 @@ const ALLOWED_TRANSITIONS = {
   [STATUS.OFFICE_RECEIVED]: [STATUS.DOCUMENT_CHECKING],
   [STATUS.DOCUMENT_CHECKING]: [STATUS.ASSIGNED_TO_COMMITTEE],
   [STATUS.ASSIGNED_TO_COMMITTEE]: [STATUS.UNDER_REVIEW],
-  [STATUS.UNDER_REVIEW]: [STATUS.MEETING_COMPLETED],
+  [STATUS.UNDER_REVIEW]: [STATUS.COMMITTEE_VALUATED],
+  [STATUS.COMMITTEE_VALUATED]: [STATUS.MEETING_COMPLETED],
   [STATUS.MEETING_COMPLETED]: [STATUS.REVISION_REQUESTED, STATUS.APPROVED, STATUS.REJECTED],
   [STATUS.REVISION_REQUESTED]: [STATUS.RESUBMITTED],
   [STATUS.RESUBMITTED]: [STATUS.SECOND_ROUND_REVIEW],
-  [STATUS.SECOND_ROUND_REVIEW]: [STATUS.MEETING_COMPLETED],
+  [STATUS.SECOND_ROUND_REVIEW]: [STATUS.COMMITTEE_VALUATED],
   [STATUS.APPROVED]: [STATUS.ANNOUNCED],
   [STATUS.REJECTED]: [STATUS.ANNOUNCED]
 };
@@ -417,6 +418,17 @@ async function getAcceptedReviewsForRound(proposalId, roundNo) {
     .lean();
 }
 
+async function getWorkflowSubmittedReviewsForRound(proposalId, roundNo) {
+  const targetRound = normalizeRoundNo(roundNo, 1);
+  return ProposalReview.find({
+    proposalId,
+    roundNo: targetRound,
+    reviewStatus: { $in: [REVIEW_STATUS.SUBMITTED, REVIEW_STATUS.CERTIFIED] }
+  })
+    .select('totalScore reviewerUserId roundNo reviewStatus')
+    .lean();
+}
+
 function getRequiredCommitteeReviewCount(workflowPolicy = {}, committeeIds = []) {
   const minCommittee = Math.max(1, Math.floor(Number(workflowPolicy && workflowPolicy.minCommittee) || 1));
   const assignedCount = Array.isArray(committeeIds) ? committeeIds.length : 0;
@@ -433,19 +445,19 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
   const fromStatusRaw = String(proposal.currentStatus || '').trim();
   const fromStatus = STATUS.normalizeStatus(fromStatusRaw);
   const activeRound = normalizeRoundNo(roundNo, normalizeRoundNo(proposal.currentRound, 1));
-  const reviewStatuses = [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.SECOND_ROUND_REVIEW];
+  const reviewStatuses = [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.COMMITTEE_VALUATED, STATUS.SECOND_ROUND_REVIEW];
   if (!reviewStatuses.includes(fromStatus)) return proposal;
 
-  const acceptedReviews = await getAcceptedReviewsForRound(proposal._id, activeRound);
-  const acceptedCount = acceptedReviews.length;
-  if (acceptedCount <= 0) return proposal;
+  const workflowSubmittedReviews = await getWorkflowSubmittedReviewsForRound(proposal._id, activeRound);
+  const submittedCount = workflowSubmittedReviews.length;
+  if (submittedCount <= 0) return proposal;
 
   const workflowPolicy = await systemSettingService.getWorkflowApprovalPolicy();
   const requiredCount = getRequiredCommitteeReviewCount(workflowPolicy, proposal.committeeIds);
 
   let toStatus = null;
-  if (acceptedCount >= requiredCount) {
-    toStatus = STATUS.MEETING_COMPLETED;
+  if (submittedCount >= requiredCount) {
+    toStatus = STATUS.COMMITTEE_VALUATED;
   } else if (fromStatus === STATUS.ASSIGNED_TO_COMMITTEE) {
     toStatus = STATUS.UNDER_REVIEW;
   }
@@ -477,7 +489,7 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
     recipientIds.add(String(updatedProposal.applicantUserId));
   }
   if (
-    [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.MEETING_COMPLETED].includes(toStatus) &&
+    [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.COMMITTEE_VALUATED, STATUS.MEETING_COMPLETED].includes(toStatus) &&
     Array.isArray(updatedProposal.committeeIds)
   ) {
     updatedProposal.committeeIds.forEach((committeeId) => recipientIds.add(String(committeeId)));
@@ -486,7 +498,8 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
   if (recipientIds.size > 0) {
     const notificationTitleMap = {
       [STATUS.UNDER_REVIEW]: 'โครงการเข้าสู่ขั้นตอนการพิจารณา',
-      [STATUS.MEETING_COMPLETED]: 'กรรมการได้ให้ความเห็นแล้ว'
+      [STATUS.COMMITTEE_VALUATED]: 'กรรมการได้ให้ความเห็นแล้ว',
+      [STATUS.MEETING_COMPLETED]: 'ส่วนบริหารกำลังจัดเตรียมผล'
     };
     const notificationTitle = notificationTitleMap[toStatus] || 'สถานะโครงการมีการเปลี่ยนแปลง';
     const notificationMessage = `โครงการ ${updatedProposal.proposalCode || updatedProposal._id} เปลี่ยนสถานะเป็น ${toStatus}`;
@@ -497,7 +510,9 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
           userId,
           proposalId: updatedProposal._id,
           channel: 'in_app',
-          eventKey: toStatus === STATUS.MEETING_COMPLETED ? 'committee_valuated' : 'status_changed',
+          eventKey: toStatus === STATUS.COMMITTEE_VALUATED
+            ? 'committee_valuated'
+            : (toStatus === STATUS.MEETING_COMPLETED ? 'meeting_completed' : 'status_changed'),
           title: notificationTitle,
           message: notificationMessage,
           payload: {
@@ -511,6 +526,90 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
       );
     } catch (err) {
       console.warn('[Proposal.saveReview] Failed to create status-sync notifications:', {
+        proposalId: String(updatedProposal._id),
+        toStatus,
+        error: err && err.message ? err.message : err
+      });
+    }
+  }
+
+  return updatedProposal;
+}
+
+async function syncProposalStatusWithAcceptedCommitteeReviews(proposalId, roundNo, user) {
+  if (!proposalId || !user || !user._id) return null;
+
+  const proposal = await Proposal.findById(proposalId).select('_id proposalCode applicantUserId committeeIds currentStatus currentRound');
+  if (!proposal) return null;
+
+  const fromStatusRaw = String(proposal.currentStatus || '').trim();
+  const fromStatus = STATUS.normalizeStatus(fromStatusRaw);
+  const activeRound = normalizeRoundNo(roundNo, normalizeRoundNo(proposal.currentRound, 1));
+  const reviewStatuses = [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.SECOND_ROUND_REVIEW];
+  if (!reviewStatuses.includes(fromStatus)) return proposal;
+
+  const acceptedReviews = await getAcceptedReviewsForRound(proposal._id, activeRound);
+  const acceptedCount = acceptedReviews.length;
+  if (acceptedCount <= 0) return proposal;
+
+  const workflowPolicy = await systemSettingService.getWorkflowApprovalPolicy();
+  const requiredCount = getRequiredCommitteeReviewCount(workflowPolicy, proposal.committeeIds);
+  if (acceptedCount < requiredCount) return proposal;
+
+  const toStatus = STATUS.MEETING_COMPLETED;
+  if (toStatus === fromStatus) return proposal;
+
+  const updatedProposal = await Proposal.findOneAndUpdate(
+    { _id: proposal._id, currentStatus: fromStatusRaw },
+    { $set: { currentStatus: toStatus, updatedBy: user._id } },
+    { new: true }
+  );
+
+  if (!updatedProposal) {
+    return Proposal.findById(proposal._id);
+  }
+
+  await createStatusLog({
+    proposalId: updatedProposal._id,
+    fromStatus,
+    toStatus,
+    actionKey: 'status_change',
+    remark: null,
+    roundNo: activeRound,
+    changedBy: user._id
+  });
+
+  const recipientIds = new Set();
+  if (updatedProposal.applicantUserId) {
+    recipientIds.add(String(updatedProposal.applicantUserId));
+  }
+  if (Array.isArray(updatedProposal.committeeIds)) {
+    updatedProposal.committeeIds.forEach((committeeId) => recipientIds.add(String(committeeId)));
+  }
+
+  if (recipientIds.size > 0) {
+    const notificationMessage = `โครงการ ${updatedProposal.proposalCode || updatedProposal._id} เปลี่ยนสถานะเป็น ${toStatus}`;
+
+    try {
+      await Notification.insertMany(
+        Array.from(recipientIds).map((userId) => ({
+          userId,
+          proposalId: updatedProposal._id,
+          channel: 'in_app',
+          eventKey: 'committee_valuated',
+          title: 'ส่วนบริหารกำลังจัดเตรียมผล',
+          message: notificationMessage,
+          payload: {
+            toStatus,
+            fromStatus,
+            roundNo: activeRound
+          },
+          isRead: false,
+          sentAt: new Date()
+        }))
+      );
+    } catch (err) {
+      console.warn('[Proposal.acceptProposalReview] Failed to create status-sync notifications:', {
         proposalId: String(updatedProposal._id),
         toStatus,
         error: err && err.message ? err.message : err
@@ -1022,7 +1121,7 @@ async function changeProposalStatus(id, toStatus, remark, user) {
   }
 
   if (
-    [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.MEETING_COMPLETED].includes(toStatus) &&
+    [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.COMMITTEE_VALUATED, STATUS.MEETING_COMPLETED].includes(toStatus) &&
     Array.isArray(updatedProposal.committeeIds)
   ) {
     updatedProposal.committeeIds.forEach((committeeId) => recipientIds.add(String(committeeId)));
@@ -1037,7 +1136,8 @@ async function changeProposalStatus(id, toStatus, remark, user) {
     [STATUS.ANNOUNCED]: 'มีการประกาศผลโครงการ',
     [STATUS.ASSIGNED_TO_COMMITTEE]: 'มีการมอบหมายคณะกรรมการ',
     [STATUS.UNDER_REVIEW]: 'โครงการเข้าสู่ขั้นตอนการพิจารณา',
-    [STATUS.MEETING_COMPLETED]: 'กรรมการได้ให้ความเห็นแล้ว'
+    [STATUS.COMMITTEE_VALUATED]: 'กรรมการได้ให้ความเห็นแล้ว',
+    [STATUS.MEETING_COMPLETED]: 'ส่วนบริหารกำลังจัดเตรียมผล'
   };
 
   const notificationTitle = notificationTitleMap[toStatus] || 'สถานะโครงการมีการเปลี่ยนแปลง';
@@ -1060,7 +1160,9 @@ async function changeProposalStatus(id, toStatus, remark, user) {
                   ? 'approved'
                   : (toStatus === STATUS.REJECTED
                     ? 'rejected'
-                    : (toStatus === STATUS.MEETING_COMPLETED ? 'committee_valuated' : 'status_changed'))))),
+                    : (toStatus === STATUS.COMMITTEE_VALUATED
+                      ? 'committee_valuated'
+                      : (toStatus === STATUS.MEETING_COMPLETED ? 'meeting_completed' : 'status_changed')))))),
           title: notificationTitle,
           message: notificationMessage,
           payload: {
@@ -1429,6 +1531,22 @@ async function saveReview(proposalId, payload, user) {
 
   const review = await ProposalReview.findOneAndUpdate(filter, update, { upsert: true, new: true });
 
+  if (nextStatus === REVIEW_STATUS.SUBMITTED && !isChairmanRole(reviewerRole)) {
+    try {
+      await syncProposalStatusWithSubmittedReviews(proposalId, round, user);
+    } catch (err) {
+      console.warn('[Proposal.saveReview] Failed to sync proposal.currentStatus after review submission:', {
+        proposalId: String(proposalId),
+        roundNo: round,
+        error: err && err.message ? err.message : err
+      });
+    }
+  }
+
+  if (nextStatus === REVIEW_STATUS.SUBMITTED && isChairmanRole(reviewerRole)) {
+    await applyChairmanReviewOutcome(proposalId, review, payload, user);
+  }
+
   return review;
 }
 
@@ -1447,22 +1565,6 @@ async function acceptProposalReview(proposalId, reviewId, user) {
   await review.save();
 
   const reviewer = review.reviewerUserId || null;
-  const reviewerRole = reviewer && reviewer.role ? String(reviewer.role).trim().toLowerCase() : '';
-
-  if (isChairmanRole(reviewerRole)) {
-    await applyChairmanReviewOutcome(proposalId, review, review, user);
-  } else {
-    try {
-      await syncProposalStatusWithSubmittedReviews(proposalId, review.roundNo, user);
-    } catch (err) {
-      console.warn('[Proposal.acceptProposalReview] Failed to sync proposal.currentStatus after review acceptance:', {
-        proposalId: String(proposalId),
-        reviewId: String(reviewId),
-        roundNo: review.roundNo,
-        error: err && err.message ? err.message : err
-      });
-    }
-  }
 
   if (reviewer && reviewer._id) {
     try {
@@ -1490,7 +1592,85 @@ async function acceptProposalReview(proposalId, reviewId, user) {
     }
   }
 
+  const reviewerRole = reviewer && reviewer.role ? String(reviewer.role).trim().toLowerCase() : '';
+  if (!isChairmanRole(reviewerRole)) {
+    try {
+      await syncProposalStatusWithAcceptedCommitteeReviews(proposalId, review.roundNo, user);
+    } catch (err) {
+      console.warn('[Proposal.acceptProposalReview] Failed to sync proposal.currentStatus after accepting all committee reviews:', {
+        proposalId: String(proposalId),
+        reviewId: String(reviewId),
+        roundNo: review.roundNo,
+        error: err && err.message ? err.message : err
+      });
+    }
+  }
+
   return review;
+}
+
+async function rollbackProposalStatusAfterRejectedReview(proposalId, review, user) {
+  const proposal = await Proposal.findById(proposalId);
+  if (!proposal) throw new Error('Proposal not found');
+
+  const reviewer = review && review.reviewerUserId ? review.reviewerUserId : null;
+  const reviewerRole = reviewer && reviewer.role ? String(reviewer.role).trim().toLowerCase() : '';
+  const now = new Date();
+  const fromStatus = STATUS.normalizeStatus(proposal.currentStatus);
+
+  if (isChairmanRole(reviewerRole)) {
+    const chairmanAssignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+      ? proposal.chairmanAssignment
+      : {};
+    const assignedChairmanIds = getAssignedChairmanIdsFromProposal(chairmanAssignment);
+    const toStatus = STATUS.FACULTY_REVIEW_PENDING;
+
+    if (fromStatus !== toStatus) {
+      proposal.currentStatus = toStatus;
+      proposal.updatedBy = user._id;
+      proposal.set(buildChairmanAssignmentUpdate({
+        assignedChairmanIds,
+        status: CHAIRMAN_REVIEW_STATUS.PENDING,
+        assignedAt: chairmanAssignment.assignedAt || null,
+        assignedBy: chairmanAssignment.assignedBy || null,
+        reviewedAt: null,
+        reviewedBy: null,
+        summaryComment: ''
+      }));
+      await proposal.save();
+
+      await createStatusLog({
+        proposalId: proposal._id,
+        fromStatus,
+        toStatus,
+        actionKey: 'review_rejected_by_admin',
+        remark: 'Admin rejected chairman review submission',
+        roundNo: null,
+        changedBy: user._id
+      });
+    }
+
+    return proposal;
+  }
+
+  const toStatus = STATUS.ASSIGNED_TO_COMMITTEE;
+  if (fromStatus === toStatus) return proposal;
+
+  proposal.currentStatus = toStatus;
+  proposal.updatedBy = user._id;
+  await proposal.save();
+
+  await createStatusLog({
+    proposalId: proposal._id,
+    fromStatus,
+    toStatus,
+    actionKey: 'review_rejected_by_admin',
+    remark: 'Admin rejected committee review submission',
+    roundNo: review && review.roundNo ? review.roundNo : null,
+    changedBy: user._id
+  });
+
+  return proposal;
 }
 
 async function rejectProposalReview(proposalId, reviewId, user) {
@@ -1511,6 +1691,8 @@ async function rejectProposalReview(proposalId, reviewId, user) {
     roundNo: review.roundNo || 1,
     deleted: true
   };
+
+  await rollbackProposalStatusAfterRejectedReview(proposalId, review, user);
 
   await ProposalReview.deleteOne({ _id: review._id });
 

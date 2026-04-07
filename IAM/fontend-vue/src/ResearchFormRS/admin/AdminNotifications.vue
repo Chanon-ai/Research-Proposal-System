@@ -232,7 +232,7 @@ const NOTIFICATION_TYPES = {
   approved: 'โครงการได้รับการอนุมัติ',
   rejected: 'โครงการถูกปฏิเสธ',
   committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
-  meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
+  meeting_completed: 'ส่วนบริหารกำลังจัดเตรียมผล',
   collaboration_confirmation: 'ยืนยันความร่วมมือ',
   meeting_scheduled: 'กำหนดการประชุม',
   document_required: 'ขอเอกสารเพิ่มเติม',

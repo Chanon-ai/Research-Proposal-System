@@ -12,7 +12,7 @@ const STATUS = {
   ASSIGNED_TO_COMMITTEE: 'assigned_to_committee',
   UNDER_REVIEW: 'under_review',
   COMMITTEE_VALUATED: 'committee_valuated',
-  MEETING_COMPLETED: 'committee_valuated',
+  MEETING_COMPLETED: 'meeting_completed',
   LEGACY_MEETING_COMPLETED: 'meeting_completed',
   REVISION_REQUESTED: 'revision_requested',
   RESUBMITTED: 'resubmitted',
@@ -22,9 +22,7 @@ const STATUS = {
   ANNOUNCED: 'announced'
 };
 
-const LEGACY_STATUS_ALIASES = Object.freeze({
-  meeting_completed: STATUS.COMMITTEE_VALUATED
-});
+const LEGACY_STATUS_ALIASES = Object.freeze({});
 
 function normalizeStatus(status) {
   const key = String(status || '').trim().toLowerCase();
