@@ -5,11 +5,12 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'revision_requested',
     'resubmitted',
     'second_round_review',
@@ -22,11 +23,12 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'resubmitted',
     'second_round_review'
   ],
@@ -34,11 +36,12 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'revision_requested',
     'resubmitted',
     'second_round_review'
@@ -49,11 +52,12 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'approved',
     'rejected',
     'announced'
@@ -62,16 +66,17 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     draft: ['pending_confirm'],
     pending_confirm: ['submitted'],
     submitted: ['faculty_review_pending'],
-    faculty_review_pending: ['faculty_approved'],
+    faculty_review_pending: ['faculty_approved', 'rejected'],
     faculty_approved: ['office_received'],
+    faculty_rejected: ['rejected'],
     office_received: ['document_checking'],
     document_checking: ['assigned_to_committee'],
     assigned_to_committee: ['under_review'],
-    under_review: ['meeting_completed'],
-    meeting_completed: ['approved', 'rejected', 'revision_requested'],
+    under_review: ['committee_valuated'],
+    committee_valuated: ['approved', 'rejected', 'revision_requested'],
     revision_requested: ['resubmitted'],
     resubmitted: ['second_round_review'],
-    second_round_review: ['meeting_completed'],
+    second_round_review: ['committee_valuated'],
     approved: ['announced'],
     rejected: ['announced']
   },
@@ -81,11 +86,12 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     submitted: 2,
     faculty_review_pending: 3,
     faculty_approved: 4,
+    faculty_rejected: 4,
     office_received: 5,
     document_checking: 6,
     assigned_to_committee: 7,
     under_review: 8,
-    meeting_completed: 9,
+    committee_valuated: 9,
     revision_requested: 5,
     resubmitted: 6,
     second_round_review: 8,
@@ -98,13 +104,14 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       draft: 'แบบร่าง',
       pending_confirm: 'รอการยืนยัน',
       submitted: 'ยื่นแล้ว',
-      faculty_review_pending: 'รอประธานพิจารณา',
+      faculty_review_pending: 'ประธานกำลังพิจารณา',
       faculty_approved: 'ประธานอนุมัติ',
+      faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'ส่วนบริหารรับแล้ว',
       document_checking: 'ตรวจสอบเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
       under_review: 'พิจารณารอบ 1',
-      meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
+      committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ 2',
@@ -116,13 +123,14 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       draft: 'แบบร่าง',
       pending_confirm: 'รอยืนยันผู้ร่วมโครงการ',
       submitted: 'ยื่นแล้ว',
-      faculty_review_pending: 'รอประธานพิจารณา',
+      faculty_review_pending: 'ประธานกำลังพิจารณา',
       faculty_approved: 'ประธานอนุมัติ',
+      faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'ส่วนบริหารรับแล้ว',
       document_checking: 'ตรวจสอบเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
       under_review: 'พิจารณารอบ 1',
-      meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
+      committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ 2',
@@ -134,13 +142,14 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       draft: 'ร่าง',
       pending_confirm: 'รอการยืนยัน',
       submitted: 'ยื่นแล้ว',
-      faculty_review_pending: 'รอคณะพิจารณา (คณะ)',
-      faculty_approved: 'ผ่านการพิจารณา (คณะ)',
+      faculty_review_pending: 'ประธานกำลังพิจารณา',
+      faculty_approved: 'ประธานอนุมัติ',
+      faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'สำนักงานรับเรื่องแล้ว',
       document_checking: 'ตรวจเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
       under_review: 'พิจารณารอบ 1',
-      meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
+      committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ 2',
@@ -156,11 +165,12 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       submitted: '#3B82F6',
       faculty_review_pending: '#3B82F6',
       faculty_approved: '#34D399',
+      faculty_rejected: '#F87171',
       office_received: '#38BDF8',
       document_checking: '#FACC15',
       assigned_to_committee: '#A78BFA',
       under_review: '#6366F1',
-      meeting_completed: '#10B981',
+        committee_valuated: '#EF4444',
       revision_requested: '#FB923C',
       resubmitted: '#22D3EE',
       second_round_review: '#8B5CF6',
@@ -173,11 +183,12 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       submitted: '#17a2b8',
       faculty_review_pending: '#ffc107',
       faculty_approved: '#007bff',
+      faculty_rejected: '#dc3545',
       office_received: '#17a2b8',
       document_checking: '#fd7e14',
       assigned_to_committee: '#007bff',
       under_review: '#e83e8c',
-      meeting_completed: '#6f42c1',
+        committee_valuated: '#dc3545',
       revision_requested: '#dc3545',
       resubmitted: '#20c997',
       second_round_review: '#fd7e14',
@@ -192,11 +203,12 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
         submitted: 'info',
         faculty_review_pending: 'warning',
         faculty_approved: 'primary',
+        faculty_rejected: 'danger',
         office_received: 'primary',
         document_checking: 'warning',
         assigned_to_committee: 'info',
         under_review: 'danger',
-        meeting_completed: 'primary',
+          committee_valuated: 'danger',
         revision_requested: 'danger',
         resubmitted: 'info',
         second_round_review: 'warning',
@@ -210,11 +222,12 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
         submitted: 'info',
         faculty_review_pending: 'warning',
         faculty_approved: 'primary',
+        faculty_rejected: 'danger',
         office_received: 'primary',
         document_checking: 'warning',
         assigned_to_committee: 'info',
         under_review: 'warning',
-        meeting_completed: 'primary',
+          committee_valuated: 'danger',
         revision_requested: 'danger',
         resubmitted: 'info',
         second_round_review: 'warning',
@@ -228,11 +241,12 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
         submitted: 'info',
         faculty_review_pending: 'warning',
         faculty_approved: 'primary',
+        faculty_rejected: 'danger',
         office_received: 'primary',
         document_checking: 'warning',
         assigned_to_committee: 'info',
         under_review: 'danger',
-        meeting_completed: 'primary',
+          committee_valuated: 'danger',
         revision_requested: 'danger',
         resubmitted: 'info',
         second_round_review: 'warning',
@@ -246,7 +260,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
     flowStatuses: [
       'assigned_to_committee',
       'under_review',
-      'meeting_completed',
+      'committee_valuated',
       'revision_requested',
       'resubmitted',
       'second_round_review',
@@ -258,14 +272,14 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       'second_round_review'
     ],
     reviewedStatuses: [
-      'meeting_completed',
+      'committee_valuated',
       'approved',
       'rejected'
     ],
     labels: {
       assigned_to_committee: 'รอการประเมิน',
       under_review: 'พิจารณารอบ {roundNo}',
-      meeting_completed: 'ส่งผลการประเมินแล้ว',
+      committee_valuated: 'ส่งผลการประเมินแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ {roundNo}',
@@ -275,7 +289,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       background: {
         assigned_to_committee: 'rgba(59, 130, 246, 0.45)',
         under_review: 'rgba(124, 58, 237, 0.45)',
-        meeting_completed: 'rgba(22, 163, 74, 0.45)',
+          committee_valuated: 'rgba(220, 53, 69, 0.45)',
         revision_requested: 'rgba(249, 115, 22, 0.45)',
         resubmitted: 'rgba(6, 182, 212, 0.45)',
         second_round_review: 'rgba(168, 85, 247, 0.45)',
@@ -284,7 +298,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       border: {
         assigned_to_committee: 'rgba(59, 130, 246, 1)',
         under_review: 'rgba(124, 58, 237, 1)',
-        meeting_completed: 'rgba(22, 163, 74, 1)',
+          committee_valuated: 'rgba(220, 53, 69, 1)',
         revision_requested: 'rgba(249, 115, 22, 1)',
         resubmitted: 'rgba(6, 182, 212, 1)',
         second_round_review: 'rgba(168, 85, 247, 1)',
@@ -306,21 +320,56 @@ function toObject(value, fallback) {
 
 function toStringList(value, fallback) {
   const list = Array.isArray(value) ? value : fallback
-  return list.map(item => String(item || '').trim()).filter(Boolean)
+  return list.map(item => normalizeStatusKey(item)).filter(Boolean)
+}
+
+function mergeUniqueStatusList(source, fallback) {
+  return Array.from(new Set([...toStringList(fallback, fallback), ...toStringList(source, fallback)]))
+}
+
+function normalizeStatusKeyedObject(value) {
+  const source = toObject(value, {})
+  return Object.keys(source).reduce((acc, key) => {
+    acc[normalizeStatusKey(key)] = source[key]
+    return acc
+  }, {})
 }
 
 function normalizeLabels(labels, fallback) {
-  const source = toObject(labels, fallback)
+  const source = normalizeStatusKeyedObject(toObject(labels, fallback))
   return Object.keys(fallback).reduce((acc, key) => {
-    acc[key] = String(source[key] !== undefined ? source[key] : fallback[key]).trim() || fallback[key]
+    const normalizedKey = normalizeStatusKey(key)
+    acc[normalizedKey] = String(source[normalizedKey] !== undefined ? source[normalizedKey] : fallback[key]).trim() || fallback[key]
     return acc
   }, {})
 }
 
 function normalizeColorMap(colors, fallback) {
-  const source = toObject(colors, fallback)
+  const source = normalizeStatusKeyedObject(toObject(colors, fallback))
   return Object.keys(fallback).reduce((acc, key) => {
-    acc[key] = String(source[key] !== undefined ? source[key] : fallback[key]).trim() || fallback[key]
+    const normalizedKey = normalizeStatusKey(key)
+    acc[normalizedKey] = String(source[normalizedKey] !== undefined ? source[normalizedKey] : fallback[key]).trim() || fallback[key]
+    return acc
+  }, {})
+}
+
+function normalizeStepMap(stepMap, fallback) {
+  const source = normalizeStatusKeyedObject(toObject(stepMap, fallback))
+  return Object.keys(fallback).reduce((acc, key) => {
+    const normalizedKey = normalizeStatusKey(key)
+    acc[normalizedKey] = Number(source[normalizedKey] !== undefined ? source[normalizedKey] : fallback[key]) || fallback[key]
+    return acc
+  }, {})
+}
+
+function normalizeAllowedTransitions(transitions, fallback) {
+  const source = normalizeStatusKeyedObject(toObject(transitions, fallback))
+  return Object.keys(fallback).reduce((acc, key) => {
+    const normalizedKey = normalizeStatusKey(key)
+    const sourceValue = source[normalizedKey]
+    acc[normalizedKey] = sourceValue !== undefined
+      ? mergeUniqueStatusList(sourceValue, fallback[key])
+      : toStringList(fallback[key], fallback[key])
     return acc
   }, {})
 }
@@ -334,13 +383,13 @@ function buildNormalizedWorkflowConfig(rawConfig = {}) {
   const committeeDashboardColors = toObject(committeeDashboard.colors, {})
 
   return {
-    statuses: toStringList(source.statuses, defaults.statuses),
-    inProgressStatuses: toStringList(source.inProgressStatuses, defaults.inProgressStatuses),
-    filterInProgressStatuses: toStringList(source.filterInProgressStatuses, defaults.filterInProgressStatuses),
-    approvedStatuses: toStringList(source.approvedStatuses, defaults.approvedStatuses),
-    readOnlyStatuses: toStringList(source.readOnlyStatuses, defaults.readOnlyStatuses),
-    allowedTransitions: toObject(source.allowedTransitions, defaults.allowedTransitions),
-    stepMap: toObject(source.stepMap, defaults.stepMap),
+    statuses: mergeUniqueStatusList(source.statuses, defaults.statuses),
+    inProgressStatuses: mergeUniqueStatusList(source.inProgressStatuses, defaults.inProgressStatuses),
+    filterInProgressStatuses: mergeUniqueStatusList(source.filterInProgressStatuses, defaults.filterInProgressStatuses),
+    approvedStatuses: mergeUniqueStatusList(source.approvedStatuses, defaults.approvedStatuses),
+    readOnlyStatuses: mergeUniqueStatusList(source.readOnlyStatuses, defaults.readOnlyStatuses),
+    allowedTransitions: normalizeAllowedTransitions(source.allowedTransitions, defaults.allowedTransitions),
+    stepMap: normalizeStepMap(source.stepMap, defaults.stepMap),
     labels: {
       admin: normalizeLabels(labels.admin, defaults.labels.admin),
       researcher: normalizeLabels(labels.researcher, defaults.labels.researcher),
@@ -356,9 +405,9 @@ function buildNormalizedWorkflowConfig(rawConfig = {}) {
       }
     },
     committeeDashboard: {
-      flowStatuses: toStringList(committeeDashboard.flowStatuses, defaults.committeeDashboard.flowStatuses),
-      pendingStatuses: toStringList(committeeDashboard.pendingStatuses, defaults.committeeDashboard.pendingStatuses),
-      reviewedStatuses: toStringList(committeeDashboard.reviewedStatuses, defaults.committeeDashboard.reviewedStatuses),
+      flowStatuses: mergeUniqueStatusList(committeeDashboard.flowStatuses, defaults.committeeDashboard.flowStatuses),
+      pendingStatuses: mergeUniqueStatusList(committeeDashboard.pendingStatuses, defaults.committeeDashboard.pendingStatuses),
+      reviewedStatuses: mergeUniqueStatusList(committeeDashboard.reviewedStatuses, defaults.committeeDashboard.reviewedStatuses),
       labels: normalizeLabels(committeeDashboard.labels, defaults.committeeDashboard.labels),
       colors: {
         background: normalizeColorMap(committeeDashboardColors.background, defaults.committeeDashboard.colors.background),
@@ -420,11 +469,58 @@ export let COMMITTEE_DASHBOARD_LABELS = clone(DEFAULT_PROPOSAL_WORKFLOW.committe
 export let COMMITTEE_DASHBOARD_BACKGROUND_COLORS = clone(DEFAULT_PROPOSAL_WORKFLOW.committeeDashboard.colors.background)
 export let COMMITTEE_DASHBOARD_BORDER_COLORS = clone(DEFAULT_PROPOSAL_WORKFLOW.committeeDashboard.colors.border)
 
+export const COREUI_COLOR_HEX_MAP = Object.freeze({
+  primary: '#321fdb',
+  secondary: '#9da5b1',
+  success: '#2eb85c',
+  info: '#39f',
+  warning: '#f9b115',
+  danger: '#e55353',
+  light: '#ebedef',
+  dark: '#4f5d73'
+})
+
 export const PROPOSAL_STATUS_ALIASES = Object.freeze({
   admin_review: 'document_checking',
   committee_review: 'under_review',
+  meeting_completed: 'committee_valuated',
   revision_required: 'revision_requested'
 })
+
+function normalizeStatusKey(status) {
+  const key = String(status || '').trim().toLowerCase()
+  return PROPOSAL_STATUS_ALIASES[key] || key
+}
+
+export function getProposalStatusSemanticColor(
+  status,
+  colorMap = PROPOSAL_STATUS_COLORS_COREUI_BADGE,
+  fallbackColor = 'secondary'
+) {
+  const key = normalizeProposalStatus(status)
+  return colorMap[key] || colorMap.submitted || fallbackColor
+}
+
+export function getCoreUiColorHex(colorName, alpha = null) {
+  const hex = COREUI_COLOR_HEX_MAP[String(colorName || '').trim().toLowerCase()] || COREUI_COLOR_HEX_MAP.secondary
+  if (alpha === null || alpha === undefined) return hex
+
+  const normalizedAlpha = Math.max(0, Math.min(1, Number(alpha)))
+  const raw = hex.replace('#', '')
+  const full = raw.length === 3
+    ? raw.split('').map((value) => value + value).join('')
+    : raw
+
+  if (full.length !== 6) return hex
+
+  const r = parseInt(full.slice(0, 2), 16)
+  const g = parseInt(full.slice(2, 4), 16)
+  const b = parseInt(full.slice(4, 6), 16)
+
+  if ([r, g, b].some((value) => Number.isNaN(value))) return hex
+
+  return `rgba(${r}, ${g}, ${b}, ${normalizedAlpha})`
+}
 
 export function setProposalWorkflowRuntimeConfig(rawConfig) {
   const config = buildNormalizedWorkflowConfig(rawConfig)
@@ -433,7 +529,7 @@ export function setProposalWorkflowRuntimeConfig(rawConfig) {
 }
 
 export function normalizeProposalStatus(status) {
-  return String(status || '').trim().toLowerCase()
+  return normalizeStatusKey(status)
 }
 
 export function isProposalReadOnlyStatus(status) {

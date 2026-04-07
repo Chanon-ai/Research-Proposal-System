@@ -215,7 +215,11 @@ export default {
         this.$router.push('/committee/assigned')
         return
       }
-      if (role === 'admin' || role === 'chairman') {
+      if (role === 'chairman') {
+        this.$router.push('/chairman/assigned')
+        return
+      }
+      if (role === 'admin') {
         this.$router.push('/admin/dashboard')
         return
       }

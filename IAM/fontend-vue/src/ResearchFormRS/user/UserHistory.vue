@@ -30,7 +30,7 @@
                 <div class="history-date">ยื่น/อัปเดต {{ proj.date }} • รอบที่ {{ proj.currentRound }}</div>
               </div>
               <div class="history-right">
-                <span class="history-badge" :class="proj.statusClass">{{ proj.status }}</span>
+                <CBadge class="history-badge" :color="getStatusColor(proj.currentStatus)">{{ proj.status }}</CBadge>
               </div>
             </div>
           </div>
@@ -42,7 +42,11 @@
 
 <script>
 import Service from '@/service/api'
-import { isProposalReadOnlyStatus, normalizeProposalStatus } from '@/ResearchFormRS/constants/proposalWorkflow'
+import {
+  PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_COLORS,
+  isProposalReadOnlyStatus,
+  normalizeProposalStatus
+} from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
 export default {
@@ -153,9 +157,8 @@ export default {
         _id: item && item._id,
         code: item && item.proposalCode ? item.proposalCode : '-',
         title: (item && (item.projectTitleTh || item.projectTitleEn)) || '(ไม่มีชื่อโครงการ)',
-        date: this.formatDate(item && (item.submittedAt || item.updatedAt || item.createdAt)),
+        date: this.formatDate(item && (item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt || item.submittedAt)),
         status: this.statusLabel(status),
-        statusClass: this.statusClass(status),
         currentStatus: status,
         currentRound: item && item.currentRound ? item.currentRound : 1,
       }
@@ -171,12 +174,8 @@ export default {
       return 'กำลังพิจารณา'
     },
 
-    statusClass (status) {
-      if (status === 'approved') return 's-approved'
-      if (status === 'rejected') return 's-rejected'
-      if (status === 'revision_requested') return 's-fix'
-      if (status === 'draft' || status === 'pending_confirm' || status === 'submitted') return 's-waiting'
-      return 's-reviewing'
+    getStatusColor (status) {
+      return STATUS_COLORS[normalizeProposalStatus(status)] || 'secondary'
     },
 
     isReadOnlyStatus (status) {
@@ -225,11 +224,6 @@ export default {
 .small-code { font-weight:500; color:#6b7280; margin-left:8px; font-size:13px }
 .history-date { color:#6b7280; font-size:13px; margin-top:6px }
 .history-badge { padding:6px 12px; border-radius:18px; font-weight:700; font-size:13px }
-.s-waiting { background:#fef3c7; color:#92400e }
-.s-fix { background:#fff7ed; color:#92400e }
-.s-approved { background:#fef3c7; color:#8c1515 }
-.s-rejected { background:#fee2e2; color:#b91c1c }
-.s-reviewing { background:#eef2ff; color:#2563eb }
 
 .page-wrapper { padding: 16px; width: 100%; max-width: 1240px; margin: 0 auto; box-sizing: border-box; }
 
@@ -295,31 +289,6 @@ export default {
 
 .history-page.is-dark .history-list {
   background: transparent;
-}
-
-.history-page.is-dark .history-badge.s-waiting {
-  background: rgba(251, 191, 36, 0.18);
-  color: #f6d67a;
-}
-
-.history-page.is-dark .history-badge.s-fix {
-  background: rgba(251, 146, 60, 0.18);
-  color: #fdba74;
-}
-
-.history-page.is-dark .history-badge.s-approved {
-  background: rgba(245, 158, 11, 0.22);
-  color: #fde68a;
-}
-
-.history-page.is-dark .history-badge.s-rejected {
-  background: rgba(248, 113, 113, 0.18);
-  color: #fca5a5;
-}
-
-.history-page.is-dark .history-badge.s-reviewing {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
 }
 
 /* Responsive: mobile adjustments */

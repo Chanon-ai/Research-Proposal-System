@@ -185,26 +185,31 @@
                 <div v-if="index > 0" class="status-flow-divider" />
                 <div class="status-flow-row">
                   <!-- FROM chip -->
-                  <span class="status-chip status-chip--from">
+                  <CBadge class="status-chip" :color="getStatusChipColor(fromStatus)">
                     <component :is="'svg'" v-bind="svgProps" v-html="getStatusIcon(fromStatus)" />
                     {{ getStatusLabel(fromStatus) }}
-                  </span>
+                  </CBadge>
                   <span class="status-flow-arrow">→</span>
                   <!-- TO chips -->
-                  <span
+                  <CBadge
                     v-for="to in toStatuses"
                     :key="`${fromStatus}-${to}`"
                     class="status-chip"
-                    :class="getStatusChipClass(to)"
+                    :color="getStatusChipColor(to)"
                   >
                     <component :is="'svg'" v-bind="svgProps" v-html="getStatusIcon(to)" />
                     {{ getStatusLabel(to) }}
-                  </span>
+                  </CBadge>
                 </div>
               </div>
             </div>
           </CCardBody>
         </CCard>
+      </CTab>
+
+      <CTab>
+        <template slot="title">Template ประเมิน</template>
+        <AdminReviewTemplateSettings />
       </CTab>
 
       <CTab>
@@ -366,9 +371,11 @@
 import { instance as axios } from '@/service/api'
 import AdminUsersManagement from '@/components/admin/AdminUsersManagement.vue'
 import AdminFundingBudgetSettings from '@/ResearchFormRS/admin/AdminFundingBudgetSettings.vue'
+import AdminReviewTemplateSettings from '@/ResearchFormRS/admin/AdminReviewTemplateSettings.vue'
 import AdminRolePageAccessSettings from '@/ResearchFormRS/admin/AdminRolePageAccessSettings.vue'
 import Swal from 'sweetalert2'
 import {
+  PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 
@@ -423,16 +430,17 @@ const STATUS_FLOW_ALLOWED_TRANSITIONS = Object.freeze({
   draft: ['pending_confirm'],
   pending_confirm: ['submitted'],
   submitted: ['faculty_review_pending'],
-  faculty_review_pending: ['faculty_approved'],
+  faculty_review_pending: ['faculty_approved', 'rejected'],
   faculty_approved: ['office_received'],
+  faculty_rejected: ['rejected'],
   office_received: ['document_checking'],
   document_checking: ['assigned_to_committee'],
   assigned_to_committee: ['under_review'],
-  under_review: ['meeting_completed'],
-  meeting_completed: ['revision_requested', 'approved', 'rejected'],
+  under_review: ['committee_valuated'],
+  committee_valuated: ['revision_requested', 'approved', 'rejected'],
   revision_requested: ['resubmitted'],
   resubmitted: ['second_round_review'],
-  second_round_review: ['meeting_completed'],
+  second_round_review: ['committee_valuated'],
   approved: ['announced'],
   rejected: ['announced']
 })
@@ -443,11 +451,12 @@ const STATUS_ICONS = {
   submitted:              '<path d="M8 2v8M5 7l3 3 3-3"/><rect x="2" y="11" width="12" height="2" rx="1"/>',
   faculty_review_pending: '<circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/>',
   faculty_approved:       '<path d="M3 8l4 4 6-6"/>',
+  faculty_rejected:       '<path d="M4 4l8 8M12 4l-8 8"/>',
   office_received:        '<path d="M8 14V6M5 9l3-3 3 3"/><rect x="2" y="3" width="12" height="2" rx="1"/>',
   document_checking:      '<circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/>',
   assigned_to_committee:  '<rect x="2" y="2" width="12" height="12" rx="1"/><path d="M5 6h6M5 9h4"/>',
   under_review:           '<circle cx="8" cy="8" r="6"/><path d="M8 5v3h3"/>',
-  meeting_completed:      '<rect x="2" y="3" width="12" height="11" rx="1"/><path d="M5 3V1M11 3V1M2 7h12"/>',
+  committee_valuated:     '<rect x="2" y="3" width="12" height="11" rx="1"/><path d="M5 3V1M11 3V1M2 7h12"/>',
   revision_requested:     '<path d="M11 3l2 2-7 7H4v-2L11 3z"/>',
   resubmitted:            '<path d="M2 10l4-4 4 4"/><path d="M6 6v6"/><path d="M10 6h3a1 1 0 010 4h-3"/>',
   second_round_review:    '<path d="M13 8A5 5 0 103 8"/><path d="M13 8l-2-2M13 8l2-2"/>',
@@ -461,15 +470,16 @@ const SETTINGS_TAB_INDEX = {
   funding_budget: 1,
   role_access: 2,
   workflow: 3,
-  email: 4,
-  users: 5
+  review_templates: 4,
+  email: 5,
+  users: 6
 }
 
-const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'funding_budget', 'role_access', 'workflow', 'email', 'users']
+const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'funding_budget', 'role_access', 'workflow', 'review_templates', 'email', 'users']
 
 export default {
   name: 'AdminSettings',
-  components: { AdminUsersManagement, AdminFundingBudgetSettings, AdminRolePageAccessSettings },
+  components: { AdminUsersManagement, AdminFundingBudgetSettings, AdminReviewTemplateSettings, AdminRolePageAccessSettings },
   data () {
     return {
       activeTab: 0,
@@ -583,11 +593,8 @@ export default {
     getStatusIcon (status) {
       return STATUS_ICONS[status] || ''
     },
-    getStatusChipClass (status) {
-      if (['approved', 'faculty_approved'].includes(status)) return 'status-chip--approve'
-      if (['rejected'].includes(status)) return 'status-chip--reject'
-      if (['revision_requested'].includes(status)) return 'status-chip--alt'
-      return 'status-chip--to'
+    getStatusChipColor (status) {
+      return STATUS_COLORS[status] || 'secondary'
     },
 
     // ─── Tab routing ──────────────────────────────────────────────────────
@@ -1577,63 +1584,6 @@ body.c-dark-theme .settings-tabs::v-deep .nav-underline .nav-link.active::after 
   font-weight: 500;
   white-space: nowrap;
   line-height: 1.4;
-}
-
-.status-chip--from {
-  background: #f1efeb;
-  color: #5f5e5a;
-  border: 1px solid #d3d1c7;
-}
-
-.status-chip--to {
-  background: #cecbf6;
-  color: #26215c;
-}
-
-.status-chip--approve {
-  background: #c0dd97;
-  color: #173404;
-}
-
-.status-chip--reject {
-  background: #f7c1c1;
-  color: #501313;
-}
-
-.status-chip--alt {
-  background: #f4c0d1;
-  color: #4b1528;
-}
-
-[data-coreui-theme='dark'] .status-chip--from,
-body.c-dark-theme .status-chip--from {
-  background: #1b2938;
-  color: #cfe0f2;
-  border-color: #4b6480;
-}
-
-[data-coreui-theme='dark'] .status-chip--to,
-body.c-dark-theme .status-chip--to {
-  background: #2a3a56;
-  color: #d9e7f7;
-}
-
-[data-coreui-theme='dark'] .status-chip--approve,
-body.c-dark-theme .status-chip--approve {
-  background: #285035;
-  color: #d9f3e0;
-}
-
-[data-coreui-theme='dark'] .status-chip--reject,
-body.c-dark-theme .status-chip--reject {
-  background: #5e2b2b;
-  color: #ffe3e3;
-}
-
-[data-coreui-theme='dark'] .status-chip--alt,
-body.c-dark-theme .status-chip--alt {
-  background: #4b3455;
-  color: #f0dff8;
 }
 /* ──────────────────────────────────────────────────────── */
 

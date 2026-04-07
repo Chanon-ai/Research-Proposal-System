@@ -75,6 +75,9 @@
                   <CBadge :color="getStatusColor(item.currentStatus)">
                     {{ getStatusLabel(item.currentStatus, item) }}
                   </CBadge>
+                  <div v-if="getChairmanStatusText(item)" class="small text-muted mt-1">
+                    {{ getChairmanStatusText(item) }}
+                  </div>
                 </td>
               </template>
 
@@ -83,7 +86,7 @@
               </template>
 
               <template #updatedAt="{ item }">
-                <td>{{ formatDate(item.updatedAt) }}</td>
+                <td>{{ formatDate(getLatestStatusUpdatedAt(item)) }}</td>
               </template>
 
               <template #actions="{ item }">
@@ -171,6 +174,50 @@
     </CModal>
 
     <CModal
+      :show.sync="showChairmanModal"
+      :close-on-backdrop="false"
+      centered
+      title="ส่งเอกสารให้ประธาน"
+    >
+      <template #body-wrapper>
+        <div v-if="selectedProposal">
+          <div class="mb-2"><strong>รหัสโครงการ:</strong> {{ selectedProposal.proposalCode || '-' }}</div>
+          <div class="mb-3"><strong>ชื่อโครงการ:</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
+
+          <div v-if="chairmanLoading" class="text-center py-3">
+            <CSpinner size="sm" color="primary" />
+            <div class="small text-muted mt-2">กำลังโหลดรายชื่อประธาน...</div>
+          </div>
+
+          <CAlert v-else-if="chairmanError" color="warning" show>
+            {{ chairmanError }}
+          </CAlert>
+
+          <CSelect
+            v-else
+            label="เลือกประธาน"
+            :value="selectedChairmanId"
+            :options="chairmanOptions"
+            @change="onChairmanChange"
+          />
+        </div>
+      </template>
+
+      <template #footer-wrapper>
+        <div class="d-flex justify-content-end w-100">
+          <CButton color="secondary" class="mr-2" @click="closeChairmanModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
+          <CButton
+            color="warning"
+            :disabled="!selectedChairmanId || sendingChairman"
+            @click="confirmAssignChairman"
+          >
+            <CIcon name="cil-check-circle" class="mr-1" /> {{ sendingChairman ? 'กำลังส่ง...' : 'ยืนยันส่งให้ประธาน' }}
+          </CButton>
+        </div>
+      </template>
+    </CModal>
+
+    <CModal
       :show.sync="showCommitteeModal"
       :close-on-backdrop="false"
       centered
@@ -206,14 +253,15 @@
 </template>
 
 <script>
-import { instance as axios } from '@/service/api'
+import Service, { instance as axios } from '@/service/api'
 import Swal from 'sweetalert2'
 import {
   PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_COLORS,
   PROPOSAL_STATUS_KEYS as STATUS_KEYS,
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
-  getProposalStatusLabel
+  getProposalStatusLabel,
+  normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
@@ -250,6 +298,13 @@ export default {
 
       showCommitteeModal: false,
       submittingCommittee: false,
+
+      showChairmanModal: false,
+      chairmanLoading: false,
+      chairmanError: '',
+      chairmanUsers: [],
+      selectedChairmanId: '',
+      sendingChairman: false,
 
       selectedProposal: null,
       statusForm: {
@@ -306,6 +361,15 @@ export default {
           ? 'ส่งให้คณะกรรมการพิจารณา'
           : this.getStatusLabel(s, this.selectedProposal, { nextRoundForSecondRoundReview: true })
       }))]
+    },
+    chairmanOptions () {
+      return [
+        { value: '', label: 'เลือกประธาน' },
+        ...(this.chairmanUsers || []).map(user => ({
+          value: user && user._id ? String(user._id) : '',
+          label: user && user.fullName ? `${user.fullName}${user.department ? ` (${user.department})` : ''}` : '-'
+        }))
+      ]
     }
   },
   watch: {
@@ -322,6 +386,7 @@ export default {
   async mounted () {
     await loadResearchFormRuntimeConfigs()
     this.$forceUpdate()
+    this.fetchChairmanUsers()
     this.fetchProposals()
   },
   beforeDestroy () {
@@ -330,8 +395,68 @@ export default {
     }
   },
   methods: {
+    getChairmanAssignment (proposal) {
+      return proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+        ? proposal.chairmanAssignment
+        : {}
+    },
+    getAssignedChairmanIds (proposal) {
+      const assignment = this.getChairmanAssignment(proposal)
+      return Array.isArray(assignment.assignedChairmanIds) ? assignment.assignedChairmanIds.map(String) : []
+    },
+    getChairmanNames (proposal) {
+      const ids = this.getAssignedChairmanIds(proposal)
+      if (!ids.length) return ''
+      const byId = new Map((this.chairmanUsers || []).map(user => [String(user._id), user]))
+      const names = ids
+        .map(id => byId.get(String(id)))
+        .filter(Boolean)
+        .map(user => user.fullName || '')
+        .filter(Boolean)
+      if (names.length > 0) return names.join(', ')
+      return `${ids.length} คน`
+    },
+    getChairmanStatusText (proposal) {
+      const assignment = this.getChairmanAssignment(proposal)
+      const status = String(assignment.status || '').trim().toLowerCase()
+      const names = this.getChairmanNames(proposal)
+      if (status === 'pending') return names ? `ส่งให้ประธานแล้ว: ${names}` : 'ส่งให้ประธานแล้ว'
+      if (status === 'approved') return names ? `ประธานอนุมัติ: ${names}` : 'ประธานอนุมัติ'
+      if (status === 'rejected') return names ? `ประธานไม่อนุมัติ: ${names}` : 'ประธานไม่อนุมัติ'
+      return ''
+    },
+    getChairmanActionLabel (proposal) {
+      const status = String(this.getChairmanAssignment(proposal).status || '').trim().toLowerCase()
+      if (status === 'pending') return 'ส่งให้ประธานแล้ว'
+      if (status === 'rejected') return 'ส่งให้ประธานอีกครั้ง'
+      if (status === 'approved') return 'ประธานอนุมัติแล้ว'
+      return 'ส่งให้ประธาน'
+    },
+    canOpenChairmanAssign (proposal) {
+      const currentStatus = normalizeProposalStatus(proposal && proposal.currentStatus)
+      const status = String(this.getChairmanAssignment(proposal).status || '').trim().toLowerCase()
+      if (status === 'pending' || status === 'approved') return false
+      return currentStatus === 'submitted'
+    },
     hasAssignedCommittee (proposal) {
       return Array.isArray(proposal && proposal.committeeIds) && proposal.committeeIds.length > 0
+    },
+    async fetchChairmanUsers () {
+      this.chairmanLoading = true
+      this.chairmanError = ''
+      try {
+        const response = await Service.proposal.getCommitteeUsers({ role: 'chairman', limit: 100 })
+        const payload = response && response.data ? response.data : null
+        const wrapped = payload && payload.data && !Array.isArray(payload.data) ? payload.data : null
+        this.chairmanUsers = wrapped && Array.isArray(wrapped.items)
+          ? wrapped.items
+          : (payload && Array.isArray(payload.data) ? payload.data : [])
+      } catch (error) {
+        this.chairmanUsers = []
+        this.chairmanError = (error && error.response && error.response.data && error.response.data.message) || error.message || 'ไม่สามารถโหลดรายชื่อประธานได้'
+      } finally {
+        this.chairmanLoading = false
+      }
     },
     async fetchProposals () {
       this.loading = true
@@ -395,13 +520,17 @@ export default {
       return getProposalStatusLabel(status, STATUS_LABELS, roundSource, options)
     },
     getStatusColor (status) {
-      return STATUS_COLORS[status] || 'secondary'
+      return STATUS_COLORS[normalizeProposalStatus(status)] || 'secondary'
     },
     formatDate (value) {
       if (!value) return '-'
       const date = new Date(value)
       if (Number.isNaN(date.getTime())) return '-'
       return date.toLocaleString('th-TH')
+    },
+    getLatestStatusUpdatedAt (item) {
+      if (!item || typeof item !== 'object') return null
+      return item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt || null
     },
     onView (item) {
       this.$router.push({
@@ -413,6 +542,47 @@ export default {
           scrollReviews: '1'
         }
       })
+    },
+    async openChairmanModal (item) {
+      this.selectedProposal = item
+      this.selectedChairmanId = ''
+      this.showChairmanModal = true
+      if (!(this.chairmanUsers || []).length) {
+        await this.fetchChairmanUsers()
+      }
+    },
+    closeChairmanModal () {
+      this.showChairmanModal = false
+      this.selectedProposal = null
+      this.selectedChairmanId = ''
+    },
+    onChairmanChange (val) {
+      this.selectedChairmanId = val && val.target ? val.target.value : val
+    },
+    async confirmAssignChairman () {
+      if (!this.selectedProposal || !this.selectedChairmanId) return
+      this.sendingChairman = true
+      try {
+        await Service.proposal.assignChairman(this.selectedProposal._id, {
+          chairmanIds: [this.selectedChairmanId]
+        })
+        this.closeChairmanModal()
+        await this.fetchProposals()
+        await Swal.fire({
+          icon: 'success',
+          title: 'ส่งให้ประธานสำเร็จ',
+          timer: 1600,
+          showConfirmButton: false
+        })
+      } catch (error) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'ส่งให้ประธานไม่สำเร็จ',
+          text: (error && error.response && error.response.data && error.response.data.message) || 'กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง'
+        })
+      } finally {
+        this.sendingChairman = false
+      }
     },
     openStatusModal (item) {
       this.selectedProposal = item

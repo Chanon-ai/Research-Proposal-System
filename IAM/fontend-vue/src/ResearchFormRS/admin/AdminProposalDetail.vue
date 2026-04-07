@@ -49,7 +49,7 @@
             <CCol md="6" class="mb-2"><strong>ประเภทงานวิจัย:</strong> {{ proposal.researchType || '-' }}</CCol>
             <CCol md="6" class="mb-2"><strong>งบประมาณรวม:</strong> {{ formatCurrency(proposal.budgetTotal) }}</CCol>
             <CCol md="6" class="mb-2"><strong>วันที่ยื่น:</strong> {{ formatDate(proposal.submittedAt) }}</CCol>
-            <CCol md="6" class="mb-2"><strong>วันที่อัปเดต:</strong> {{ formatDate(proposal.updatedAt) }}</CCol>
+            <CCol md="6" class="mb-2"><strong>วันที่อัปเดต:</strong> {{ formatDate(proposal.lastStatusActionAt || proposal.currentStatusUpdatedAt || proposal.statusUpdatedAt || proposal.updatedAt || proposal.createdAt) }}</CCol>
           </CRow>
         </CCardBody>
       </CCard>
@@ -332,7 +332,8 @@ import {
   PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
-  getProposalStatusLabel
+  getProposalStatusLabel,
+  normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
@@ -582,7 +583,7 @@ export default {
       return getProposalStatusLabel(status, STATUS_LABELS, roundSource, options)
     },
     getBadgeColor (status) {
-      return STATUS_COLORS[status] || 'secondary'
+      return STATUS_COLORS[normalizeProposalStatus(status)] || 'secondary'
     },
     formatDate (dateStr) {
       if (!dateStr) return '-'

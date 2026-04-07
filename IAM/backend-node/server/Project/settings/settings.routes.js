@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const { authenticate, requireRole } = require('../../../middleware/authMiddleware');
 const account = require('../accounts/service/account');
 
@@ -9,6 +10,11 @@ const group = require("./service/group");
 const verification = require("./service/verification");
 const authMessage = require("./service/auth_message");
 const systemSetting = require('./controller/system-setting');
+
+const uploadMemory = multer({
+	storage: multer.memoryStorage(),
+	limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 router.get("/message", account.onCheckAuthorization, message.onQuerys);
 router.post("/message", account.onCheckAuthorization, message.onCreate);
@@ -38,6 +44,8 @@ router.get("/workflow-policy", authenticate, systemSetting.workflowPolicy);
 router.get("/email-logs", authenticate, requireRole('admin', 'chairman'), systemSetting.listEmailLogs);
 router.post("/test-email", authenticate, requireRole('admin', 'chairman'), systemSetting.testEmail);
 router.post("/clear-cache", authenticate, requireRole('admin', 'chairman'), systemSetting.clearCache);
+router.post('/template-import/preview', authenticate, requireRole('admin', 'chairman'), uploadMemory.single('file'), systemSetting.previewTemplateImport);
+router.post('/template-import/apply', authenticate, requireRole('admin', 'chairman'), systemSetting.applyTemplateImport);
 router.put("/:id", authenticate, requireRole('admin', 'chairman'), systemSetting.update);
 router.delete("/:id", authenticate, requireRole('admin', 'chairman'), systemSetting.remove);
 

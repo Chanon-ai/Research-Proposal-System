@@ -141,7 +141,8 @@
             :fields="tableFields"
             :items-per-page="perPage"
             :active-page="activePage"
-            sorter
+            :sorter="{ resetable: false }"
+            :sorter-value.sync="sorterValue"
             hover
             striped
           >
@@ -156,6 +157,7 @@
                 <div class="project-meta">
                   <div class="project-title">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
                   <div class="project-owner">{{ item.projectLeaderName || '-' }}</div>
+                  <div v-if="getFundingTypeDisplay(item)" class="project-funding-type">{{ getFundingTypeDisplay(item) }}</div>
                   <div class="project-budget-line">งบโครงการที่เสนอ: {{ formatBudgetAmount(item.budgetUsedAmount) }}</div>
                 </div>
               </td>
@@ -163,7 +165,7 @@
 
             <template #currentStatus="{ item }">
               <td class="current-status-cell">
-                <CBadge class="mb-2 status-badge" :style="getStatusBadgeStyle(item.currentStatus)">
+                <CBadge class="mb-2 status-badge" :color="getStatusBadgeColor(item.currentStatus)">
                   {{ getStatusLabel(item) }}
                 </CBadge>
                 <div class="status-progress-label">
@@ -243,12 +245,18 @@ import {
   FILTER_IN_PROGRESS_STATUSES,
   IN_PROGRESS_STATUSES,
   PROPOSAL_STATUSES,
+  PROPOSAL_STATUS_COLORS_COREUI_BADGE as STATUS_BADGE_COLORS,
   PROPOSAL_STATUS_LABELS_TH_RESEARCHER as STATUS_LABEL_MAP,
-  STATUS_COLORS,
   STATUS_STEP_MAP,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
+import {
+  createDefaultFundingBudgetConfig,
+  findFundingSubTypeConfig,
+  getFundingTypeLabel,
+  readFundingBudgetConfigFromFallbackStorage
+} from '@/ResearchFormRS/utils/fundingBudgetConfig'
 import {
   createDefaultRolePageAccessConfig,
   isRoleAllowedForPath
@@ -269,6 +277,7 @@ export default {
       perPage: 5,
       perPageOptions: [5, 10, 20, 50],
       activePage: 1,
+      sorterValue: { column: 'latestStatusUpdatedAt', asc: false },
       deletingProposalIds: {},
       tableFields: [
         {
@@ -304,12 +313,10 @@ export default {
         rejected: ['rejected'],
       },
       workflowSteps: [],
-      rolePageAccessConfig: createDefaultRolePageAccessConfig()
-    };
-  },
 
   async mounted() {
     await loadResearchFormRuntimeConfigs()
+    this.loadFundingBudgetConfig()
     this.workflowSteps = this.buildWorkflowSteps()
     this.$forceUpdate()
     await Promise.all([
@@ -385,8 +392,9 @@ export default {
 
     displayItems() {
       const q = String(this.searchQuery || '').trim().toLowerCase();
-      if (!q) return this.filteredProposals;
-      return this.filteredProposals.filter(item => {
+      const filteredItems = !q
+        ? this.filteredProposals
+        : this.filteredProposals.filter(item => {
         const haystack = [
           item.projectTitleTh,
           item.projectTitleEn,
@@ -398,6 +406,8 @@ export default {
         ].filter(Boolean).join(' ').toLowerCase();
         return haystack.includes(q);
       });
+
+      return this.sortItemsByLatestStatus(filteredItems);
     },
 
     pageCount() {
@@ -427,6 +437,12 @@ export default {
         step: STATUS_STEP_MAP[key] || 0
       }))
     },
+    loadFundingBudgetConfig() {
+      const fallbackConfig = readFundingBudgetConfigFromFallbackStorage()
+      this.fundingBudgetConfig = Array.isArray(fallbackConfig) && fallbackConfig.length > 0
+        ? fallbackConfig
+        : createDefaultFundingBudgetConfig()
+    },
     async fetchRolePageAccessConfig() {
       try {
         const config = await loadRolePageAccessRuntimeConfig()
@@ -453,7 +469,12 @@ export default {
       this.loading = true;
       this.fetchError = null;
       try {
-        const response = await Service.research.list();
+        const response = await Service.research.list({
+          page: 1,
+          limit: 300,
+          sortBy: 'latestStatusUpdatedAt',
+          sortOrder: this.sorterValue && this.sorterValue.asc === false ? 'desc' : 'asc'
+        });
         const payload = response && response.data ? response.data : null;
         let data = [];
         if (Array.isArray(payload)) {
@@ -492,6 +513,34 @@ export default {
 
     retryFetch() {
       this.fetchResearch();
+    },
+
+    sortItemsByLatestStatus(items) {
+      const rows = Array.isArray(items) ? [...items] : [];
+      const sorter = this.sorterValue && typeof this.sorterValue === 'object' ? this.sorterValue : {};
+      const column = sorter.column || 'latestStatusUpdatedAt';
+      const ascending = sorter.asc === true;
+
+      if (column !== 'latestStatusUpdatedAt') {
+        return rows;
+      }
+
+      const getTimestamp = (item) => {
+        const value = item && (item.lastStatusActionAt || item.latestStatusUpdatedAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt);
+        const ts = value ? new Date(value).getTime() : 0;
+        return Number.isFinite(ts) ? ts : 0;
+      };
+
+      return rows.sort((left, right) => {
+        const leftTs = getTimestamp(left);
+        const rightTs = getTimestamp(right);
+        if (leftTs === rightTs) {
+          const leftCode = String(left && left.proposalCode ? left.proposalCode : '');
+          const rightCode = String(right && right.proposalCode ? right.proposalCode : '');
+          return leftCode.localeCompare(rightCode);
+        }
+        return ascending ? leftTs - rightTs : rightTs - leftTs;
+      });
     },
 
     extractApplicantUserId(item) {
@@ -555,6 +604,35 @@ export default {
       return amount.toLocaleString('th-TH', { maximumFractionDigits: 2 });
     },
 
+    resolveFundingTypeValue(item) {
+      const source = item && typeof item === 'object' ? item : {}
+      const snapshot = source.formSnapshotJson && typeof source.formSnapshotJson === 'object'
+        ? source.formSnapshotJson
+        : {}
+      return String(source.fundingType || snapshot.fundingType || '').trim()
+    },
+
+    resolveFundingSubTypeValue(item) {
+      const source = item && typeof item === 'object' ? item : {}
+      const snapshot = source.formSnapshotJson && typeof source.formSnapshotJson === 'object'
+        ? source.formSnapshotJson
+        : {}
+      return String(source.fundingSubType || snapshot.fundingSubType || '').trim()
+    },
+
+    getFundingTypeDisplay(item) {
+      const fundingType = this.resolveFundingTypeValue(item)
+      if (!fundingType) return ''
+
+      const fundingTypeLabel = getFundingTypeLabel(this.fundingBudgetConfig, fundingType, fundingType)
+      const fundingSubType = this.resolveFundingSubTypeValue(item)
+      if (!fundingSubType) return `ประเภททุน: ${fundingTypeLabel}`
+
+      const subType = findFundingSubTypeConfig(this.fundingBudgetConfig, fundingType, fundingSubType)
+      const fundingSubTypeLabel = String(subType && subType.label ? subType.label : fundingSubType).trim()
+      return `ประเภททุน: ${fundingTypeLabel} / ${fundingSubTypeLabel}`
+    },
+
     mapItem(item) {
       const applicant = item && item.applicantUserId && typeof item.applicantUserId === 'object'
         ? item.applicantUserId
@@ -565,7 +643,11 @@ export default {
         projectTitleTh: item.projectTitleTh || '',
         projectTitleEn: item.projectTitleEn || '',
         projectLeaderName: item.projectLeaderName || (applicant && applicant.fullName ? applicant.fullName : '-'),
+        fundingType: this.resolveFundingTypeValue(item),
+        fundingSubType: this.resolveFundingSubTypeValue(item),
         budgetUsedAmount: this.resolveBudgetUsedAmount(item),
+        lastStatusActionAt: item.lastStatusActionAt || null,
+        latestStatusUpdatedAt: item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt || null,
         submittedAt: item.submittedAt,
         updatedAt: item.updatedAt,
         createdAt: item.createdAt,
@@ -606,38 +688,9 @@ export default {
       return STATUS_LABEL_MAP[key] || key || this.$t('status.inProgress')
     },
 
-    getStatusHexColor(status) {
-      const key = String(status || '').toLowerCase();
-      return STATUS_COLORS[key] || STATUS_COLORS.submitted;
-    },
-
-    getReadableTextColor(hexColor) {
-      const raw = String(hexColor || '').replace('#', '').trim();
-      if (raw.length !== 6) return '#ffffff';
-      const r = parseInt(raw.slice(0, 2), 16);
-      const g = parseInt(raw.slice(2, 4), 16);
-      const b = parseInt(raw.slice(4, 6), 16);
-      if ([r, g, b].some((v) => Number.isNaN(v))) return '#ffffff';
-      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-      return yiq >= 160 ? '#111827' : '#ffffff';
-    },
-
-    getStatusBadgeStyle(status) {
-      const color = this.getStatusHexColor(status);
-      return {
-        fontSize: '11px',
-        backgroundColor: color,
-        borderColor: color,
-        color: this.getReadableTextColor(color)
-      };
-    },
-
-    getStatusProgressStyle(status) {
-      const color = this.getStatusHexColor(status);
-      return {
-        '--status-progress-color': color,
-        '--status-progress-text-color': this.getReadableTextColor(color)
-      };
+    getStatusBadgeColor(status) {
+      const key = normalizeProposalStatus(status)
+      return STATUS_BADGE_COLORS[key] || STATUS_BADGE_COLORS.submitted || 'primary'
     },
 
     getProgressPercent(status) {
@@ -663,13 +716,14 @@ export default {
         draft: `${ownerName} : กำลังกรอกข้อมูล`,
         pending_confirm: 'คณะวิจัย : รอการยินยอมจากผู้ร่วมโครงการ/ที่ปรึกษาโครงการ',
         submitted: 'ส่วนบริหารโครงการ : กำลังพิจารณา',
-        faculty_review_pending: 'ประธานคณะ : กำลังพิจารณา',
+        faculty_review_pending: 'ประธานกำลังพิจารณา',
         faculty_approved: 'ส่วนบริหารโครงการ : รอรับเรื่อง',
+        faculty_rejected: 'ส่วนบริหารโครงการ : รอปิดผลไม่อนุมัติ',
         office_received: 'ส่วนบริหารโครงการ : รับเรื่องแล้ว กำลังดำเนินการ',
         document_checking: 'ส่วนบริหารโครงการ : กำลังตรวจสอบเอกสาร',
         assigned_to_committee: 'ส่วนบริหารโครงการ : กำลังมอบหมายคณะผู้ทรงคุณวุฒิ',
         under_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,
-        meeting_completed: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
+        committee_valuated: 'ส่วนบริหารโครงการ : รอสรุปผลการพิจารณา',
         revision_requested: `${ownerName} : รอแก้ไขเอกสารตามข้อเสนอแนะ`,
         resubmitted: 'ส่วนบริหารโครงการ : ได้รับเอกสารแก้ไข กำลังส่งพิจารณาต่อ',
         second_round_review: `คณะผู้ทรงคุณวุฒิ : กำลังทำการพิจารณารอบที่ ${roundNo}`,
@@ -707,6 +761,10 @@ export default {
     getLatestActionDate(item) {
       if (!item || typeof item !== 'object') return null;
       const candidates = [
+        item.latestStatusUpdatedAt,
+        item.lastStatusActionAt,
+        item.currentStatusUpdatedAt,
+        item.statusUpdatedAt,
         item.updatedAt,
         item.submittedAt,
         item.createdAt
@@ -1313,6 +1371,12 @@ export default {
   color: #111827;
 }
 
+.project-funding-type {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
 .project-owner {
   font-size: 12px;
 }
@@ -1471,6 +1535,8 @@ body.c-dark-theme .project-title {
   color: #f3f4f6;
 }
 
+[data-coreui-theme='dark'] .project-funding-type,
+body.c-dark-theme .project-funding-type,
 [data-coreui-theme='dark'] .project-code,
 body.c-dark-theme .project-code,
 [data-coreui-theme='dark'] .proposal-code-cell,

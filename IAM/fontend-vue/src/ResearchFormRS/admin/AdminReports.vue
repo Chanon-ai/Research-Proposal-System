@@ -309,9 +309,10 @@ import { instance as axios } from '@/service/api'
 import Swal from 'sweetalert2'
 import { CChartBar, CChartDoughnut, CChartLine } from '@coreui/vue-chartjs'
 import {
-  PROPOSAL_STATUS_COLORS_HEX_REPORT as STATUS_COLORS,
+  PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
   PROPOSAL_STATUS_KEYS_REPORT as STATUS_KEYS,
-  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
+  PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS,
+  getCoreUiColorHex
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
@@ -392,7 +393,7 @@ export default {
       return Number(this.reportSummary.rejected) || 0
     },
     pendingCount () {
-      const keys = ['submitted', 'faculty_review_pending', 'document_checking', 'assigned_to_committee', 'under_review', 'meeting_completed']
+      const keys = ['submitted', 'faculty_review_pending', 'faculty_approved', 'faculty_rejected', 'document_checking', 'assigned_to_committee', 'under_review', 'committee_valuated']
       return keys.reduce((sum, key) => sum + (Number(this.reportSummary[key]) || 0), 0)
     },
     approvalRate () {
@@ -409,14 +410,14 @@ export default {
           label: STATUS_LABELS[status] || status,
           count,
           percent: this.totalProjects ? (count / total) * 100 : 0,
-          color: this.getStatusColor(status)
+          color: this.getStatusColorValue(status)
         }
       })
     },
     doughnutChartData () {
       const labels = STATUS_KEYS.map(status => STATUS_LABELS[status] || status)
       const data = STATUS_KEYS.map(status => Number(this.reportSummary[status]) || 0)
-      const colors = STATUS_KEYS.map(status => STATUS_COLORS[status] || '#6c757d')
+      const colors = STATUS_KEYS.map(status => this.getStatusColorValue(status, 0.9))
       return {
         labels,
         datasets: [
@@ -629,7 +630,10 @@ export default {
       }
     },
     getStatusColor (status) {
-      return STATUS_COLORS[status] || '#6c757d'
+      return STATUS_COLORS[normalizeProposalStatus(status)] || 'secondary'
+    },
+    getStatusColorValue (status, alpha = null) {
+      return getCoreUiColorHex(this.getStatusColor(status), alpha)
     },
     formatDate (dateStr) {
       if (!dateStr) return '-'

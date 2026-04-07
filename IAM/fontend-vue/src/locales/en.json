@@ -23,6 +23,7 @@
     "researcherMenu": "Researcher Menu",
     "adminMenu": "Admin Menu",
     "committeeMenu": "Committee Menu",
+    "chairmanMenu": "Chairman Menu",
     "userPanel": "User Panel",
     "userDashboard": "My Projects",
     "userMeetings": "My Meetings",
@@ -39,12 +40,14 @@
   "status": {
     "draft": "Draft",
     "submitted": "Submitted",
-    "faculty_review_pending": "Waiting for Chair Review",
+    "faculty_review_pending": "Chairman Reviewing",
     "faculty_approved": "Chair Approved",
+    "faculty_rejected": "Chair Rejected",
     "office_received": "Office Received",
     "document_checking": "Document Checking",
     "assigned_to_committee": "Assigned to Committee",
     "under_review": "Under Review",
+    "committee_valuated": "Committee Evaluated",
     "meeting_completed": "Meeting Completed",
     "revision_requested": "Revision Requested",
     "resubmitted": "Resubmitted",
@@ -82,6 +85,14 @@
     "actions": {
       "reset": "Reset",
       "viewDetail": "View details",
+      "sendToChairman": "Send to chairman",
+      "resendToChairman": "Resend to chairman",
+      "sentToChairman": "Sent to chairman",
+      "sentToChairmanWithName": "Sent to chairman: {name}",
+      "chairmanApproved": "Chairman approved",
+      "chairmanApprovedWithName": "Chairman approved: {name}",
+      "chairmanRejected": "Chairman rejected",
+      "chairmanRejectedWithName": "Chairman rejected: {name}",
       "cancel": "Cancel",
       "saving": "Saving...",
       "confirm": "Confirm"
@@ -115,6 +126,18 @@
       "noUsers": "No committee users found",
       "recommendedBadge": "Recommended for this proposal",
       "note": "Check the minimum required number before confirming"
+    },
+    "assignChairman": {
+      "title": "Send document to chairman",
+      "proposalCode": "Proposal code:",
+      "projectTitle": "Project title:",
+      "selectLabel": "Select chairman",
+      "selectPlaceholder": "Select chairman",
+      "loadingUsers": "Loading chairman users...",
+      "confirm": "Confirm send to chairman",
+      "successTitle": "Sent to chairman successfully",
+      "errorTitle": "Unable to send to chairman",
+      "errorText": "Please try again"
     }
   }
 }

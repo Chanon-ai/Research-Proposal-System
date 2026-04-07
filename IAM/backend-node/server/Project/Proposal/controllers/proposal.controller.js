@@ -335,6 +335,9 @@ exports.detail = async (req, res, next) => {
     if (!proposal) return res.status(404).json({ success: false, message: 'Not found' });
     return jsonResponse(res, { success: true, data: proposal });
   } catch (err) {
+    if (err && err.message === 'Forbidden') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
     next(err);
   }
 };
@@ -425,6 +428,17 @@ exports.assignCommittee = async (req, res, next) => {
   }
 };
 
+exports.assignChairman = async (req, res, next) => {
+  try {
+    const user = getUserFromReq(req);
+    const { chairmanIds } = req.body || {};
+    const proposal = await service.assignChairman(req.params.id, chairmanIds, user);
+    return jsonResponse(res, { success: true, message: 'Chairman assigned', data: proposal });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.saveReview = async (req, res, next) => {
   try {
     const user = getUserFromReq(req);
@@ -471,9 +485,12 @@ exports.listProposalReviews = async (req, res, next) => {
   try {
     const user = getUserFromReq(req);
     if (!user) return res.status(401).json({ success: false, message: 'Unauthorized' });
-    const reviews = await service.getProposalReviews(req.params.id, req.query || {});
+    const reviews = await service.getProposalReviews(req.params.id, req.query || {}, user);
     return jsonResponse(res, { success: true, data: reviews });
   } catch (err) {
+    if (err && err.message === 'Forbidden') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
     next(err);
   }
 };

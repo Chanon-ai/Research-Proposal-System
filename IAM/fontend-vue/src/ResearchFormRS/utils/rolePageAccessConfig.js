@@ -5,7 +5,7 @@ export const RESEARCH_ROLE_PAGE_ACCESS_ROLES = Object.freeze([
   { value: 'researcher', label: 'นักวิจัย' },
   { value: 'committee', label: 'คณะกรรมการ' },
   { value: 'admin', label: 'ผู้ดูแลระบบ' },
-  { value: 'chairman', label: 'ประธานกรรมการ' }
+  { value: 'chairman', label: 'ประธานสำนัก' }
 ])
 
 const KNOWN_ROLE_SET = new Set(RESEARCH_ROLE_PAGE_ACCESS_ROLES.map(role => role.value))
@@ -144,6 +144,41 @@ const DEFAULT_ROLE_PAGE_ACCESS_CONFIG_SOURCE = [
     path: '/committee/proposals',
     matchMode: 'prefix',
     roles: ['committee', 'admin', 'chairman']
+  },
+  {
+    pageKey: 'chairman-dashboard',
+    label: 'แดชบอร์ดประธานสำนัก',
+    path: '/chairman/dashboard',
+    matchMode: 'exact',
+    roles: ['admin', 'chairman']
+  },
+  {
+    pageKey: 'chairman-assigned',
+    label: 'รายการที่ได้รับมอบหมายประธานสำนัก',
+    path: '/chairman/assigned',
+    matchMode: 'exact',
+    roles: ['admin', 'chairman']
+  },
+  {
+    pageKey: 'chairman-meetings',
+    label: 'ประชุมประธานสำนัก',
+    path: '/chairman/meetings',
+    matchMode: 'exact',
+    roles: ['admin', 'chairman']
+  },
+  {
+    pageKey: 'chairman-notifications',
+    label: 'การแจ้งเตือนประธานสำนัก',
+    path: '/chairman/notifications',
+    matchMode: 'exact',
+    roles: ['admin', 'chairman']
+  },
+  {
+    pageKey: 'chairman-proposals',
+    label: 'หน้าอ่านข้อเสนอของประธานสำนัก',
+    path: '/chairman/proposals',
+    matchMode: 'prefix',
+    roles: ['admin', 'chairman']
   }
 ]
 
@@ -151,7 +186,7 @@ const DEFAULT_ROLE_LANDING_PATHS = Object.freeze({
   researcher: ['/userdashboard', '/user/profile', '/research-form'],
   committee: ['/committee/assigned', '/committee/dashboard', '/committee/meetings'],
   admin: ['/admin/dashboard', '/admin/settings', '/admin/proposals'],
-  chairman: ['/admin/dashboard', '/admin/settings', '/admin/proposals']
+  chairman: ['/chairman/assigned', '/chairman/dashboard', '/chairman/meetings']
 })
 
 const cloneConfigRow = (row) => ({

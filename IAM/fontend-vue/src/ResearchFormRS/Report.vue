@@ -4,16 +4,6 @@
     <div id="report-area" ref="reportContainer" class="report-container">
 
       <div class="first-page">
-        <!-- รหัสเอกสาร -->
-        <div class="doc-code">RS-01</div>
-
-        <!-- หัวกระดาษ -->
-
-        <div class="head-title">
-          แบบเสนอโครงการวิจัย <br>ประกอบการของบประมาณงานวิจัยของมหาวิทยาลัยแม่ฟ้าหลวงประจำปีงบประมาณ พ.ศ.2569
-        </div>
-
-
         <!-- ประเภททุน -->
         <div class="checkbox-line">
 
@@ -455,76 +445,42 @@
         <!-- 18 -->
         <div class="section">
           <div class="sub-title">
-            18. มาตรฐานการวิจัย
+            {{ researchStandardText.sectionTitle }}
           </div>
 
-          <!-- ไม่มีการวิจัยในมนุษย์ -->
           <div class="option">
-            <span>{{ check((form.researchStandard || []).includes('none')) }}</span>
-            ไม่มีการทำวิจัยในมนุษย์ / ไม่มีการใช้สัตว์ทดลอง / การวิจัยที่เกี่ยวข้องกับงานด้านเทคโนโลยีชีวภาพสมัยใหม่
+            <span>{{ check(isResearchStandardNoneSelected) }}</span>
+            {{ researchStandardText.noneMessage }}
           </div>
 
-          <!-- มีการทำวิจัยในมนุษย์ -->
-          <div class="option">
-            <span>{{ check((form.researchStandard || []).includes('human')) }}</span>
-            มีการทำวิจัยในมนุษย์
-          </div>
+          <template v-for="group in researchStandardReportItems">
+            <div :key="`${group.key}-title`" class="option">
+              <span>{{ check(group.enabled) }}</span>
+              {{ group.title }}
+            </div>
 
-          <div class="sub-option">
-            <span>{{ check(form.humanDetail && form.humanDetail.hasCert) }}</span>
-            มีหนังสือรับรองจริยธรรมการวิจัยในมนุษย์ (แนบสำเนา 1 ชุด)
-          </div>
-
-          <div class="sub-option">
-            <span>{{ check(form.humanDetail && form.humanDetail.isPending) }}</span>
-            ไม่มีหนังสือรับรองจริยธรรมการวิจัยในมนุษย์ อยู่ระหว่างเสนอคณะกรรมการจริยธรรมการวิจัยในมนุษย์พิจารณา
-            วันที่ยื่นโครงการ {{ (form.humanDetail && form.humanDetail.applyDate) || '-' }}
-          </div>
-
-          <!-- มีการใช้สัตว์ทดลอง -->
-          <div class="option">
-            <span>{{ check((form.researchStandard || []).includes('animal')) }}</span>
-            มีการใช้สัตว์ทดลอง
-          </div>
-
-          <div class="sub-option">
-            <span>{{ check(form.animalDetail && form.animalDetail.hasCert) }}</span>
-            มีหนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์ (แนบสำเนา 1 ชุด)
-          </div>
-
-          <div class="sub-option">
-            <span>{{ check(form.animalDetail && form.animalDetail.isPending) }}</span>
-            ไม่มีหนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์
-            อยู่ระหว่างเสนอคณะกรรมการจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์
-            วันที่ยื่นโครงการ {{ (form.animalDetail && form.animalDetail.applyDate) || '-' }}
-          </div>
-
-          <!-- พันธุ์พืช -->
-          <div class="option">
-            <span>{{ check((form.researchStandard || []).includes('plant')) }}</span>
-            มีการเก็บ จัดหา หรือรวบรวมพันธุ์พืชพื้นเมืองทั่วไปและพันธุ์พืชป่าหรือส่วนหนึ่งส่วนใดของพันธุ์พืช เห็ด รา
-            เพื่อการศึกษา ทดลอง หรือวิจัย ตามมาตรา 53 แห่งพระราชบัญญัติคุ้มครองพันธุ์พืช พ.ศ. 2542
-          </div>
-
-          <div class="sub-option">
-            <span>{{ check(form.plantDetail && form.plantDetail.hasCert) }}</span>
-            มีหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ ตามมาตรา 53 แห่งพระราชบัญญัติคุ้มครองพันธุ์พืช พ.ศ. 2542
-            (แนบสำเนา 1 ชุด)
-          </div>
-
-          <div class="sub-option">
-            <span>{{ check(form.plantDetail && form.plantDetail.isPending) }}</span>
-            ไม่มีหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ อยู่ระหว่างดำเนินการ
-            วันที่ยื่นโครงการ {{ (form.plantDetail && form.plantDetail.applyDate) || '-' }}
-          </div>
-
-
+            <div
+              v-for="option in group.options"
+              :key="`${group.key}-${option.value}`"
+              class="sub-option"
+            >
+              <span>{{ check(group.status === option.value) }}</span>
+              {{ option.label }}
+              <template v-if="group.status === option.value && option.value === researchStandardStatuses.pending">
+                {{ researchStandardText.submittedDateLabel }} {{ group.submittedDate || '-' }}
+              </template>
+            </div>
+          </template>
         </div>
 
-
-        <!-- 19 -->
         <div class="section">
-          <div class="sub-title">19. การลงนามยืนยันข้อมูลและคำรับรอง</div>
+          <div class="sub-title">19. หมายเหตุ</div>
+          <div class="field-line" v-html="form.remark || '-'"></div>
+        </div>
+
+        <!-- 20 -->
+        <div class="section">
+          <div class="sub-title">การลงนามยืนยันข้อมูลและคำรับรอง</div>
           <div class="signature-page-in-section">
             <div class="signature-row">
               <div class="signature-box">
@@ -562,11 +518,6 @@
             </div>
           </div>
         </div>
-
-        <div class="section">
-          <div class="sub-title">20. หมายเหตุ</div>
-          <div class="field-line" v-html="form.remark || '-'"></div>
-        </div>
       </div>
 
 
@@ -575,6 +526,15 @@
 </template>
 
 <script>
+import {
+  RESEARCH_STANDARD_STATUSES,
+  RESEARCH_STANDARD_TEXT,
+  getResearchStandardGroupList,
+  getResearchStandardGroupMeta,
+  normalizeResearchStandardStatus
+} from '@/ResearchFormRS/constants/researchStandard'
+import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
+
 export default {
   name: "ResearchReport",
   props: {
@@ -585,6 +545,7 @@ export default {
   },
   data() {
     return {
+      runtimeConfigVersion: 0,
       contentSections: [
         { title: "5. คำสำคัญ (Keywords)", model: "keywords" },
         { title: "6. ความสำคัญของปัญหาและแนวคิด", model: "importance" },
@@ -597,6 +558,10 @@ export default {
     };
   }
   ,
+  async created() {
+    await loadResearchFormRuntimeConfigs()
+    this.runtimeConfigVersion += 1
+  },
   methods: {
     check(condition) {
       return condition ? '☑' : '☐'
@@ -615,6 +580,54 @@ export default {
       return multipliers
         .map(this.formatMultiplier)
         .join(' x ')
+    },
+    researchStandardGroupMeta(groupKey) {
+      return getResearchStandardGroupMeta(groupKey)
+    },
+    normalizeResearchStandardDate(value) {
+      const raw = String(value || '').trim()
+      if (!raw) return ''
+      return raw.length >= 10 ? raw.slice(0, 10) : raw
+    },
+    getLegacyResearchStandardDetail(groupKey) {
+      const source = this.form && typeof this.form === 'object' ? this.form : {}
+      if (groupKey === 'human') return source.humanDetail || {}
+      if (groupKey === 'animal') return source.animalDetail || {}
+      if (groupKey === 'plant') return source.plantDetail || {}
+      return {}
+    },
+    buildResearchStandardGroupState(groupKey) {
+      const source = this.form && typeof this.form === 'object' ? this.form : {}
+      const meta = this.researchStandardGroupMeta(groupKey)
+      if (!meta) return null
+
+      const section18 = source.section18 && typeof source.section18 === 'object' ? source.section18 : {}
+      const currentSection = section18[groupKey] && typeof section18[groupKey] === 'object' ? section18[groupKey] : {}
+      const legacyDetail = this.getLegacyResearchStandardDetail(groupKey)
+      const legacySelection = Array.isArray(source.researchStandard) ? source.researchStandard : []
+
+      const enabled = typeof currentSection.enabled === 'boolean'
+        ? currentSection.enabled
+        : (legacySelection.includes(groupKey) || Boolean(source[meta.legacy.enabledKey]))
+
+      let status = normalizeResearchStandardStatus(currentSection.status || source[meta.legacy.statusKey])
+      if (!status) {
+        if (legacyDetail && legacyDetail.hasCert) status = RESEARCH_STANDARD_STATUSES.approved
+        else if (legacyDetail && legacyDetail.isPending) status = RESEARCH_STANDARD_STATUSES.pending
+      }
+
+      const submittedDate = this.normalizeResearchStandardDate(
+        currentSection.submittedDate || source[meta.legacy.submittedDateKey] || legacyDetail.applyDate
+      )
+
+      return {
+        key: meta.key,
+        title: meta.title,
+        enabled: Boolean(enabled),
+        status: Boolean(enabled) ? status : '',
+        submittedDate,
+        options: Array.isArray(meta.options) ? meta.options : []
+      }
     },
     exportFileName() {
       const title = String(this.form.titleTH || this.form.titleEN || 'Research_Proposal_RS1')
@@ -782,6 +795,26 @@ export default {
 
   },
   computed: {
+    researchStandardStatuses() {
+      this.runtimeConfigVersion
+      return RESEARCH_STANDARD_STATUSES
+    },
+    researchStandardText() {
+      this.runtimeConfigVersion
+      return RESEARCH_STANDARD_TEXT
+    },
+    researchStandardReportItems() {
+      this.runtimeConfigVersion
+      return getResearchStandardGroupList()
+        .map(group => this.buildResearchStandardGroupState(group.key))
+        .filter(Boolean)
+    },
+    isResearchStandardNoneSelected() {
+      const source = this.form && typeof this.form === 'object' ? this.form : {}
+      const legacySelection = Array.isArray(source.researchStandard) ? source.researchStandard : []
+      if (legacySelection.includes('none')) return true
+      return !this.researchStandardReportItems.some(item => item.enabled)
+    },
     currentThaiDate() {
       return new Date().toLocaleDateString("th-TH");
     },
@@ -1100,15 +1133,6 @@ export default {
     page-break-after: always;
     /* บังคับให้ PDF ตัดขึ้นหน้าใหม่ทันทีที่จบ Class นี้ */
     break-after: page;
-  }
-
-  .report-container::after {
-    counter-increment: page;
-    content: "หน้า " counter(page);
-    position: fixed;
-    bottom: 4mm;
-    right: 2mm;
-    font-size: 14px;
   }
 
   .landscape-container .rotated-content {

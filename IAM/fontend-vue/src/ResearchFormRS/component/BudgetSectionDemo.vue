@@ -199,9 +199,11 @@
                                v-model="mult.label" placeholder="ชื่อหน่วย" :readonly="isReadOnly">
                         <input type="text" inputmode="numeric" class="form-control text-center" 
                                v-model="mult.value" placeholder="ตัวเลข" 
+                             :max="getHtmlInputMax(mult.maxValue)"
                                @keypress="isNumber"
-                               @input="cleanNumber(mult, 'value'); calculateItemTotal(item)"
-                               :readonly="isReadOnly">
+                             @input="handleManualMultiplierInput(item, mult)"
+                               @blur="handleManualMultiplierBlur(item, mult)"
+                               :readonly="isReadOnly || Boolean(mult.isAdmin)">
                       </div>
                       <span
                         v-if="mIndex < item.multipliers.length - 1"
@@ -229,9 +231,11 @@
                             class="input-floating-outline text-center"
                             placeholder=" "
                             v-model="item.inputs[field.key]"
-                            :readonly="isReadOnly"
+                            :max="getHtmlInputMax(field.maxValue)"
+                            :readonly="isReadOnly || Boolean(field.isAdmin)"
                             @keypress="isNumber"
                             @input="handleCalcInputChange(catIndex, item, field.key)"
+                            @blur="handleCalcInputBlur(catIndex, item, field.key)"
                           >
                           <label class="label-floating-outline">{{ field.label }}</label>
                         </div>
@@ -459,13 +463,16 @@
 <script>
 import {
   normalizeFundingBudgetConfig,
+  normalizeFundingBudgetKey,
   getFundingTypeBudgetLimit,
   getFundingTypeLabel
 } from '@/ResearchFormRS/utils/fundingBudgetConfig'
 import {
   createDefaultBudgetMultiplierConfig,
   normalizeBudgetMultiplierConfig,
-  buildBudgetMultiplierCategoryMap
+  buildBudgetMultiplierCategoryMap,
+  toMultiplierMaxNumber,
+  resolveMultiplierMaxNumber
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
 
 const BUDGET_ATTACHMENT_EXAMPLE_WINDOW_NAME = 'budget-attachment-example-doc'
@@ -533,10 +540,15 @@ const BUDGET_CATEGORY_KEYS = Object.freeze({
   OTHER: 'other'
 })
 
+const toOptionalMaxValue = (value) => {
+  return toMultiplierMaxNumber(value, null)
+}
+
 const cloneMultiplierList = (multipliers = []) => (
   (Array.isArray(multipliers) ? multipliers : []).map(multiplier => ({
     label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
     value: Number.isFinite(Number(multiplier && multiplier.value)) ? Math.max(0, Number(multiplier.value)) : 0,
+    maxValue: toOptionalMaxValue(multiplier && multiplier.maxValue),
     isAdmin: Boolean(multiplier && multiplier.isAdmin)
   }))
 )
@@ -544,6 +556,12 @@ const cloneMultiplierList = (multipliers = []) => (
 const cloneItemOverrideList = (itemOverrides = []) => (
   (Array.isArray(itemOverrides) ? itemOverrides : []).map(itemOverride => ({
     matchText: String(itemOverride && itemOverride.matchText ? itemOverride.matchText : '').trim(),
+    applyToAllFundingTypes: itemOverride && itemOverride.applyToAllFundingTypes !== undefined
+      ? Boolean(itemOverride.applyToAllFundingTypes)
+      : true,
+    fundingTypeKeys: (Array.isArray(itemOverride && itemOverride.fundingTypeKeys) ? itemOverride.fundingTypeKeys : [])
+      .map(key => normalizeFundingBudgetKey(key))
+      .filter(Boolean),
     multipliers: cloneMultiplierList(itemOverride && itemOverride.multipliers)
   })).filter(itemOverride => itemOverride.matchText && itemOverride.multipliers.length > 0)
 )
@@ -1347,6 +1365,22 @@ export default {
         this.applyBudgetMultiplierConfig(val)
       }
     },
+    fundingType(newVal, oldVal) {
+      if (newVal === oldVal) return
+      this.categories.forEach((category, catIndex) => {
+        if (!category || !Array.isArray(category.items)) return
+        category.items.forEach((item) => {
+          if (!item || typeof item !== 'object') return
+          if (item.isManualMultiplier || category.isOther) {
+            this.formatItemNumericInputs(item, category)
+            this.calculateRowTotal(item)
+            return
+          }
+          this.normalizeRowModel(item, category, catIndex)
+          this.calculateRowTotal(item)
+        })
+      })
+    },
     resetToken(newVal, oldVal) {
       if (newVal === oldVal) return
       this.resetBudgetData()
@@ -1679,15 +1713,16 @@ export default {
       if (!item || typeof item !== 'object') return
 
       if (item.inputs && typeof item.inputs === 'object') {
+        const fieldMaxByKey = new Map(this.getFieldsForRow(item).map(field => [field.key, field.maxValue]))
         Object.keys(item.inputs).forEach((key) => {
-          item.inputs[key] = this.formatNumberInputValue(item.inputs[key])
+          item.inputs[key] = this.clampFormattedInputValue(item.inputs[key], fieldMaxByKey.get(key))
         })
       }
 
       if (Array.isArray(item.multipliers)) {
         item.multipliers.forEach((multiplier) => {
           if (!multiplier || typeof multiplier !== 'object') return
-          multiplier.value = this.formatNumberInputValue(multiplier.value)
+          multiplier.value = this.clampFormattedInputValue(multiplier.value, multiplier.maxValue)
         })
       }
 
@@ -1813,15 +1848,18 @@ export default {
       const schema = this.getSchemaByCalcType(row && row.calcType)
       const baseFields = Array.isArray(schema.fields) ? schema.fields : []
       const overrides = Array.isArray(row && row.multiplierFieldOverrides) ? row.multiplierFieldOverrides : []
-      if (!overrides.length) return baseFields
-
       return baseFields.map((field, index) => {
-        const override = overrides[index]
-        const hasOverrideValue = Number.isFinite(Number(override && override.value))
+        const sourceMultiplier = overrides.length
+          ? overrides[index]
+          : (Array.isArray(row && row.multipliers) ? row.multipliers[index] : null)
+        const hasOverrideValue = Number.isFinite(Number(sourceMultiplier && sourceMultiplier.value))
         return {
           ...field,
-          label: String(override && override.label ? override.label : field.label || '').trim() || field.label,
-          defaultValue: hasOverrideValue ? Number(override.value) : field.defaultValue
+          label: String(sourceMultiplier && sourceMultiplier.label ? sourceMultiplier.label : field.label || '').trim() || field.label,
+          defaultValue: hasOverrideValue ? Number(sourceMultiplier.value) : field.defaultValue,
+          maxValue: toOptionalMaxValue(sourceMultiplier && sourceMultiplier.maxValue),
+          isAdmin: Boolean(sourceMultiplier && sourceMultiplier.isAdmin),
+          fieldKey: String(sourceMultiplier && sourceMultiplier.fieldKey ? sourceMultiplier.fieldKey : field.key || '')
         }
       })
     },
@@ -1876,6 +1914,18 @@ export default {
         .replace(/\s+/g, ' ')
         .trim()
     },
+    isItemOverrideApplicableToFundingType(itemOverride) {
+      if (!itemOverride || typeof itemOverride !== 'object') return false
+      if (itemOverride.applyToAllFundingTypes !== false) return true
+
+      const fundingTypeKey = normalizeFundingBudgetKey(this.fundingType)
+      if (!fundingTypeKey) return false
+
+      const fundingTypeKeys = Array.isArray(itemOverride.fundingTypeKeys)
+        ? itemOverride.fundingTypeKeys.map(key => normalizeFundingBudgetKey(key)).filter(Boolean)
+        : []
+      return fundingTypeKeys.includes(fundingTypeKey)
+    },
     findCategoryItemOverride(category, itemName) {
       if (!category || category.isOther) return null
       const normalizedItemName = this.normalizeKeywordText(itemName)
@@ -1884,6 +1934,7 @@ export default {
       const overrides = Array.isArray(category.itemOverrides) ? category.itemOverrides : []
       for (let index = 0; index < overrides.length; index += 1) {
         const itemOverride = overrides[index]
+        if (!this.isItemOverrideApplicableToFundingType(itemOverride)) continue
         const normalizedMatchText = this.normalizeKeywordText(itemOverride && itemOverride.matchText)
         if (!normalizedMatchText) continue
         if (normalizedItemName.includes(normalizedMatchText)) return itemOverride
@@ -1959,7 +2010,11 @@ export default {
       return ''
     },
     normalizeCalcInputs(calcType, existingInputs = {}, legacyMultipliers = [], row = null) {
-      const fields = this.getFieldsForRow({ calcType, multiplierFieldOverrides: row && row.multiplierFieldOverrides })
+      const fields = this.getFieldsForRow({
+        calcType,
+        multiplierFieldOverrides: row && row.multiplierFieldOverrides,
+        multipliers: row && row.multipliers
+      })
       const safeInputs = existingInputs && typeof existingInputs === 'object' ? existingInputs : {}
       const normalized = {}
 
@@ -1971,7 +2026,7 @@ export default {
         if (!this.hasUsableValue(value)) {
           value = field.defaultValue
         }
-        normalized[field.key] = this.formatNumberInputValue(value)
+        normalized[field.key] = this.clampFormattedInputValue(value, field.maxValue)
       })
 
       return normalized
@@ -2008,7 +2063,8 @@ export default {
       const multipliers = fields.map(field => ({
         label: field.label,
         value: this.formatNumberInputValue(row.inputs && row.inputs[field.key]),
-        isAdmin: false,
+        maxValue: this.normalizeOptionalMaxValue(field.maxValue),
+        isAdmin: Boolean(field.isAdmin),
         fieldKey: field.key
       }))
       this.setRowProp(row, 'multipliers', multipliers)
@@ -2155,6 +2211,24 @@ export default {
       this.syncRowMultipliersWithInputs(item, category)
       this.calculateRowTotal(item)
     },
+    handleCalcInputBlur(catIndex, item, fieldKey) {
+      const category = this.categories[catIndex]
+      if (!category || !item || category.isOther) return
+      const field = this.getFieldsForRow(item).find(currentField => currentField.key === fieldKey)
+      this.clampNumber(item.inputs, fieldKey, field && field.maxValue)
+      this.syncRowMultipliersWithInputs(item, category)
+      this.calculateRowTotal(item)
+    },
+    handleManualMultiplierInput(item, multiplier) {
+      if (!multiplier || typeof multiplier !== 'object') return
+      this.cleanNumber(multiplier, 'value')
+      this.calculateItemTotal(item)
+    },
+    handleManualMultiplierBlur(item, multiplier) {
+      if (!multiplier || typeof multiplier !== 'object') return
+      this.clampNumber(multiplier, 'value', multiplier.maxValue)
+      this.calculateItemTotal(item)
+    },
     resizeTextarea(event) {
       if (!event || !event.target) return
       const el = event.target;
@@ -2172,6 +2246,35 @@ export default {
       if (obj[key] !== null && obj[key] !== undefined) {
         obj[key] = this.formatNumberInputValue(obj[key]);
       }
+    },
+    clampNumber(obj, key, maxValue = null) {
+      if (obj[key] !== null && obj[key] !== undefined) {
+        obj[key] = this.clampFormattedInputValue(obj[key], maxValue)
+      }
+    },
+    normalizeOptionalMaxValue(value) {
+      return toMultiplierMaxNumber(value, null)
+    },
+    resolveEffectiveMaxValue(value) {
+      return resolveMultiplierMaxNumber(value, this.budgetLimit, null)
+    },
+    clampFormattedInputValue(value, maxValue = null) {
+      const rawValue = this.toRawNumberString(value)
+      if (!rawValue) return ''
+
+      const normalizedMax = this.resolveEffectiveMaxValue(maxValue)
+      const numericValue = Number(rawValue)
+      const clampedValue = normalizedMax === null ? numericValue : Math.min(numericValue, normalizedMax)
+      return this.formatNumberInputValue(clampedValue)
+    },
+    getClampedNumericValue(value, maxValue = null) {
+      const normalizedMax = this.resolveEffectiveMaxValue(maxValue)
+      const numericValue = this.toNumber(value)
+      return normalizedMax === null ? numericValue : Math.min(numericValue, normalizedMax)
+    },
+    getHtmlInputMax(value) {
+      const normalizedMax = this.resolveEffectiveMaxValue(value)
+      return normalizedMax === null ? null : normalizedMax
     },
     cleanArrayNumber(arr, index) {
       if (arr[index] !== null && arr[index] !== undefined) {
@@ -2241,6 +2344,7 @@ export default {
       item.multipliers.push({
         label: String(lastTemplate && lastTemplate.label ? lastTemplate.label : 'ตัวคูณใหม่'),
         value: Number.isFinite(Number(lastTemplate && lastTemplate.value)) ? Number(lastTemplate.value) : 1,
+        maxValue: toOptionalMaxValue(lastTemplate && lastTemplate.maxValue),
         isAdmin: Boolean(lastTemplate && lastTemplate.isAdmin)
       });
       this.formatItemNumericInputs(item);
@@ -2261,12 +2365,17 @@ export default {
           item.total = 0;
         } else {
           item.total = item.multipliers.reduce((acc, curr) => {
-            const val = this.toNumber(curr && curr.value);
+            const val = this.getClampedNumericValue(curr && curr.value, curr && curr.maxValue);
             return acc * val;
           }, 1);
         }
       } else {
-        item.total = this.getCalculatedTotalByCalcType(item.calcType, item.inputs);
+        const fields = this.getFieldsForRow(item)
+        const effectiveInputs = { ...(item.inputs || {}) }
+        fields.forEach((field) => {
+          effectiveInputs[field.key] = this.getClampedNumericValue(item.inputs && item.inputs[field.key], field.maxValue)
+        })
+        item.total = this.getCalculatedTotalByCalcType(item.calcType, effectiveInputs);
       }
 
       this.enforceAllPeriodLimits(item);

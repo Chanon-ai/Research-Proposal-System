@@ -279,7 +279,7 @@ import Swal from 'sweetalert2'
 
 const ROLES = {
   admin: 'ผู้ดูแลระบบ',
-  chairman: 'ประธานวิจัย',
+  chairman: 'ประธานสำนัก',
   committee: 'คณะกรรมการ',
   researcher: 'นักวิจัย'
 }

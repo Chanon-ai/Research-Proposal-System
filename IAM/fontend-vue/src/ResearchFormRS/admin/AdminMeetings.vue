@@ -617,7 +617,7 @@ export default {
     currentUserEmail() { const user = this.currentUser || {}; return String(user.email || '').trim() },
     applyMyOnlyFilter() {
       const role = this.currentUser && this.currentUser.role ? String(this.currentUser.role) : ''
-      return Boolean(this.myOnly && role === 'committee' && (this.currentUserId || this.currentUserName || this.currentUserEmail))
+      return Boolean(this.myOnly && ['committee', 'chairman'].includes(role) && (this.currentUserId || this.currentUserName || this.currentUserEmail))
     },
     canCreate() { return !this.readOnly },
     canEditDelete() { return !this.readOnly },

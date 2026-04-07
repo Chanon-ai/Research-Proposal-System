@@ -75,12 +75,14 @@ const STATUS_LABELS = {
   draft: 'ร่าง',
   pending_confirm: 'รอการยืนยัน',
   submitted: 'ยื่นแล้ว',
-  faculty_review_pending: 'รอคณะพิจารณา (คณะ)',
-  faculty_approved: 'ผ่านการพิจารณา (คณะ)',
+  faculty_review_pending: 'ประธานกำลังพิจารณา',
+  faculty_approved: 'ประธานอนุมัติ',
+  faculty_rejected: 'ประธานไม่อนุมัติ',
   office_received: 'สำนักงานรับเรื่องแล้ว',
   document_checking: 'ตรวจเอกสาร',
   assigned_to_committee: 'มอบหมายกรรมการแล้ว',
   under_review: 'พิจารณารอบ 1',
+  committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
   meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
   revision_requested: 'ขอแก้ไข',
   resubmitted: 'ส่งแก้ไขแล้ว',
@@ -309,6 +311,11 @@ export default {
 
       if (String(role || '') === 'committee') {
         this.$router.push('/committee/notifications')
+        return
+      }
+
+      if (String(role || '') === 'chairman') {
+        this.$router.push('/chairman/notifications')
         return
       }
 

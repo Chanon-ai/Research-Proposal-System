@@ -18,8 +18,9 @@ const ALLOWED_TRANSITIONS = {
   [STATUS.DRAFT]: [STATUS.PENDING_CONFIRM],
   [STATUS.PENDING_CONFIRM]: [STATUS.SUBMITTED],
   [STATUS.SUBMITTED]: [STATUS.FACULTY_REVIEW_PENDING],
-  [STATUS.FACULTY_REVIEW_PENDING]: [STATUS.FACULTY_APPROVED],
+  [STATUS.FACULTY_REVIEW_PENDING]: [STATUS.FACULTY_APPROVED, STATUS.REJECTED],
   [STATUS.FACULTY_APPROVED]: [STATUS.OFFICE_RECEIVED],
+  [STATUS.FACULTY_REJECTED]: [STATUS.REJECTED],
   [STATUS.OFFICE_RECEIVED]: [STATUS.DOCUMENT_CHECKING],
   [STATUS.DOCUMENT_CHECKING]: [STATUS.ASSIGNED_TO_COMMITTEE],
   [STATUS.ASSIGNED_TO_COMMITTEE]: [STATUS.UNDER_REVIEW],
@@ -45,6 +46,65 @@ const FUNDING_LABELS = Object.freeze({
   'strategic-research': 'ทุนวิจัยที่สอดคล้องกับยุทธศาสตร์',
   'industry-extension': 'ทุนต่อยอดสู่ภาคอุตสาหกรรม'
 });
+
+const REVIEWER_ROLE_SET = new Set(['committee', 'chairman']);
+
+const CHAIRMAN_REVIEW_STATUS = Object.freeze({
+  IDLE: 'idle',
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected'
+});
+
+function isReviewerRole(role) {
+  return REVIEWER_ROLE_SET.has(String(role || '').trim().toLowerCase());
+}
+
+function isChairmanRole(role) {
+  return String(role || '').trim().toLowerCase() === 'chairman';
+}
+
+function getAssignedChairmanIdsFromProposal(proposal = {}) {
+  const assignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+    ? proposal.chairmanAssignment
+    : {};
+  return dedupeCommitteeIds(Array.isArray(assignment.assignedChairmanIds) ? assignment.assignedChairmanIds : []);
+}
+
+function hasChairmanProposalAccess(proposal = {}, userId = null) {
+  const normalizedUserId = userId ? String(userId) : '';
+  if (!normalizedUserId) return false;
+
+  const assignedChairmanIds = getAssignedChairmanIdsFromProposal(proposal).map(String);
+  if (assignedChairmanIds.includes(normalizedUserId)) return true;
+
+  const reviewedBy = proposal && proposal.chairmanAssignment && proposal.chairmanAssignment.reviewedBy
+    ? String(proposal.chairmanAssignment.reviewedBy)
+    : '';
+  return reviewedBy === normalizedUserId;
+}
+
+function buildChairmanAssignmentUpdate({
+  assignedChairmanIds = [],
+  status = CHAIRMAN_REVIEW_STATUS.IDLE,
+  assignedAt = null,
+  assignedBy = null,
+  reviewedAt = null,
+  reviewedBy = null,
+  summaryComment = ''
+} = {}) {
+  return {
+    chairmanAssignment: {
+      assignedChairmanIds,
+      status,
+      assignedAt,
+      assignedBy,
+      reviewedAt,
+      reviewedBy,
+      summaryComment: String(summaryComment || '')
+    }
+  };
+}
 
 function parseBudgetNumber(value) {
   if (value === null || value === undefined || value === '') return 0;
@@ -345,7 +405,8 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
   const proposal = await Proposal.findById(proposalId).select('_id proposalCode applicantUserId committeeIds currentStatus currentRound');
   if (!proposal) return null;
 
-  const fromStatus = String(proposal.currentStatus || '').trim();
+  const fromStatusRaw = String(proposal.currentStatus || '').trim();
+  const fromStatus = STATUS.normalizeStatus(fromStatusRaw);
   const activeRound = normalizeRoundNo(roundNo, normalizeRoundNo(proposal.currentRound, 1));
   const reviewStatuses = [STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW, STATUS.SECOND_ROUND_REVIEW];
   if (!reviewStatuses.includes(fromStatus)) return proposal;
@@ -367,7 +428,7 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
   if (!toStatus || toStatus === fromStatus) return proposal;
 
   const updatedProposal = await Proposal.findOneAndUpdate(
-    { _id: proposal._id, currentStatus: fromStatus },
+    { _id: proposal._id, currentStatus: fromStatusRaw },
     { $set: { currentStatus: toStatus, updatedBy: user._id } },
     { new: true }
   );
@@ -411,7 +472,7 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
           userId,
           proposalId: updatedProposal._id,
           channel: 'in_app',
-          eventKey: toStatus === STATUS.MEETING_COMPLETED ? 'meeting_completed' : 'status_changed',
+          eventKey: toStatus === STATUS.MEETING_COMPLETED ? 'committee_valuated' : 'status_changed',
           title: notificationTitle,
           message: notificationMessage,
           payload: {
@@ -489,6 +550,12 @@ async function getProposalList(query = {}, user) {
   if (user && user.role === 'committee' && user._id) {
     filter.committeeIds = user._id;
   }
+  if (user && isChairmanRole(user.role) && user._id) {
+    filter.$or = [
+      { 'chairmanAssignment.assignedChairmanIds': user._id },
+      { 'chairmanAssignment.reviewedBy': user._id }
+    ];
+  }
   const statusTokens = [];
   const pushStatusTokens = (raw) => {
     if (!raw) return;
@@ -515,30 +582,121 @@ async function getProposalList(query = {}, user) {
   if (query.fiscalYear) filter.fiscalYear = query.fiscalYear;
   if (query.keyword) {
     const kw = query.keyword;
-    filter.$or = [
+    const keywordFilter = [
       { projectTitleTh: new RegExp(kw, 'i') },
       { projectTitleEn: new RegExp(kw, 'i') },
       { proposalCode: new RegExp(kw, 'i') }
     ];
+    if (filter.$or) {
+      filter.$and = filter.$and || [];
+      filter.$and.push({ $or: keywordFilter });
+    } else {
+      filter.$or = keywordFilter;
+    }
   }
 
   const page = parseInt(query.page, 10) || 1;
   const limit = parseInt(query.limit, 10) || 20;
   const skip = (page - 1) * limit;
+  const sortBy = String(query.sortBy || '').trim();
+  const sortOrder = String(query.sortOrder || query.order || '').trim().toLowerCase() === 'asc' ? 'asc' : 'desc';
+  const sortDirection = sortOrder === 'asc' ? 1 : -1;
+
+  const buildActivityTimestamp = (proposal) => {
+    const values = [
+      proposal && proposal.lastStatusActionAt,
+      proposal && proposal.currentStatusUpdatedAt,
+      proposal && proposal.statusUpdatedAt,
+      proposal && proposal.updatedAt,
+      proposal && proposal.createdAt
+    ];
+    return values.reduce((latest, value) => {
+      const ts = value ? new Date(value).getTime() : 0;
+      return Number.isFinite(ts) && ts > latest ? ts : latest;
+    }, 0);
+  };
+
+  const shouldSortByLatestStatus = sortBy === 'latestStatusUpdatedAt';
 
   const [data, total] = await Promise.all([
-    Proposal.find(filter)
-      .populate('applicantUserId', 'fullName email')
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 }),
+    (() => {
+      const proposalQuery = Proposal.find(filter)
+        .populate('applicantUserId', 'fullName email')
+        .sort({ createdAt: -1 });
+
+      if (!shouldSortByLatestStatus) {
+        proposalQuery.skip(skip).limit(limit);
+      }
+
+      return proposalQuery;
+    })(),
     Proposal.countDocuments(filter)
   ]);
 
+  const proposalIds = data
+    .map((proposal) => (proposal && proposal._id ? proposal._id : null))
+    .filter(Boolean);
+
+  let latestStatusActionAtByProposalId = new Map();
+  if (proposalIds.length > 0) {
+    const latestStatusRows = await ProposalStatusLog.aggregate([
+      {
+        $match: {
+          proposalId: { $in: proposalIds }
+        }
+      },
+      {
+        $sort: {
+          updatedAt: -1,
+          createdAt: -1
+        }
+      },
+      {
+        $group: {
+          _id: '$proposalId',
+          updatedAt: { $first: '$updatedAt' },
+          createdAt: { $first: '$createdAt' }
+        }
+      }
+    ]);
+
+    latestStatusActionAtByProposalId = new Map(
+      latestStatusRows.map((row) => {
+        const proposalId = String(row && row._id ? row._id : '');
+        const updatedAtTs = row && row.updatedAt ? new Date(row.updatedAt).getTime() : 0;
+        const createdAtTs = row && row.createdAt ? new Date(row.createdAt).getTime() : 0;
+        const latestTs = Math.max(updatedAtTs || 0, createdAtTs || 0);
+        return [proposalId, latestTs ? new Date(latestTs) : null];
+      })
+    );
+  }
+
+  const enrichedData = data.map((proposal) => {
+    const plain = proposal && typeof proposal.toObject === 'function'
+      ? proposal.toObject()
+      : { ...proposal };
+    plain.lastStatusActionAt = latestStatusActionAtByProposalId.get(String(plain && plain._id ? plain._id : '')) || null;
+    return plain;
+  });
+
+  const finalData = shouldSortByLatestStatus
+    ? enrichedData
+      .slice()
+      .sort((left, right) => {
+        const leftTs = buildActivityTimestamp(left);
+        const rightTs = buildActivityTimestamp(right);
+        if (leftTs === rightTs) {
+          return String(left && left.proposalCode ? left.proposalCode : '').localeCompare(String(right && right.proposalCode ? right.proposalCode : ''));
+        }
+        return (leftTs - rightTs) * sortDirection;
+      })
+      .slice(skip, skip + limit)
+    : enrichedData;
+
   return {
-    proposals: data,
-    data,
-    items: data,
+    proposals: finalData,
+    data: finalData,
+    items: finalData,
     total,
     page,
     limit,
@@ -551,7 +709,37 @@ async function getProposalById(id, user) {
   const proposal = await Proposal.findById(id);
   // .populate('applicantUserId')
   // .populate('committeeIds');
-  return proposal;
+  if (!proposal) return proposal;
+
+  const role = user && user.role ? String(user.role).trim().toLowerCase() : '';
+  const uid = user && user._id ? String(user._id) : '';
+  const isAdmin = role === 'admin';
+  const isOwner = uid && proposal.applicantUserId && String(proposal.applicantUserId) === uid;
+  const isCommittee = uid && Array.isArray(proposal.committeeIds) && proposal.committeeIds.map(String).includes(uid);
+  const isChairman = isChairmanRole(role) && hasChairmanProposalAccess(proposal, uid);
+
+  if (user && !isAdmin && !isOwner && !isCommittee && !isChairman) {
+    throw new Error('Forbidden');
+  }
+
+  const latestStatusLog = await ProposalStatusLog.findOne({ proposalId: proposal._id })
+    .sort({ updatedAt: -1, createdAt: -1 })
+    .select('updatedAt createdAt');
+
+  const plain = typeof proposal.toObject === 'function'
+    ? proposal.toObject()
+    : { ...proposal };
+
+  if (latestStatusLog) {
+    const updatedAtTs = latestStatusLog.updatedAt ? new Date(latestStatusLog.updatedAt).getTime() : 0;
+    const createdAtTs = latestStatusLog.createdAt ? new Date(latestStatusLog.createdAt).getTime() : 0;
+    const latestTs = Math.max(updatedAtTs || 0, createdAtTs || 0);
+    plain.lastStatusActionAt = latestTs ? new Date(latestTs) : null;
+  } else {
+    plain.lastStatusActionAt = null;
+  }
+
+  return plain;
 }
 
 async function updateDraftProposal(id, payload, user) {
@@ -582,7 +770,7 @@ async function deleteDraftProposal(id, user) {
 
   const role = user && user.role;
   const uid = user && user._id ? String(user._id) : null;
-  const isAdmin = role === 'admin' || role === 'chairman';
+  const isAdmin = role === 'admin';
   const isOwner = uid && proposal.applicantUserId && String(proposal.applicantUserId) === uid;
 
   if (!isAdmin && !isOwner) {
@@ -698,7 +886,8 @@ async function changeProposalStatus(id, toStatus, remark, user) {
 
   const workflowPolicy = await systemSettingService.getWorkflowApprovalPolicy();
   const currentRound = normalizeRoundNo(proposal.currentRound, 1);
-  const fromStatus = proposal.currentStatus;
+  const fromStatus = STATUS.normalizeStatus(proposal.currentStatus);
+  toStatus = STATUS.normalizeStatus(toStatus);
 
   let allowed = ALLOWED_TRANSITIONS[fromStatus] || [];
   const submittedReviewCount = await ProposalReview.countDocuments({
@@ -764,6 +953,9 @@ async function changeProposalStatus(id, toStatus, remark, user) {
     case STATUS.FACULTY_APPROVED:
       updates.facultyApprovedAt = now;
       break;
+    case STATUS.FACULTY_REJECTED:
+      updates.rejectedAt = null;
+      break;
     case STATUS.OFFICE_RECEIVED:
       updates.officeReceivedAt = now;
       break;
@@ -813,12 +1005,14 @@ async function changeProposalStatus(id, toStatus, remark, user) {
 
   const notificationTitleMap = {
     [STATUS.REVISION_REQUESTED]: 'มีคำขอแก้ไขโครงการ',
+    [STATUS.FACULTY_APPROVED]: 'ประธานอนุมัติข้อเสนอโครงการ',
+    [STATUS.FACULTY_REJECTED]: 'ประธานไม่อนุมัติข้อเสนอโครงการ',
     [STATUS.APPROVED]: 'โครงการได้รับการอนุมัติ',
     [STATUS.REJECTED]: 'โครงการไม่ผ่านการพิจารณา',
     [STATUS.ANNOUNCED]: 'มีการประกาศผลโครงการ',
     [STATUS.ASSIGNED_TO_COMMITTEE]: 'มีการมอบหมายคณะกรรมการ',
     [STATUS.UNDER_REVIEW]: 'โครงการเข้าสู่ขั้นตอนการพิจารณา',
-    [STATUS.MEETING_COMPLETED]: 'การประชุมพิจารณาเสร็จสิ้น'
+    [STATUS.MEETING_COMPLETED]: 'กรรมการได้ให้ความเห็นแล้ว'
   };
 
   const notificationTitle = notificationTitleMap[toStatus] || 'สถานะโครงการมีการเปลี่ยนแปลง';
@@ -833,7 +1027,15 @@ async function changeProposalStatus(id, toStatus, remark, user) {
           channel: 'in_app',
           eventKey: toStatus === STATUS.REVISION_REQUESTED
             ? 'revision_requested'
-            : (toStatus === STATUS.APPROVED ? 'approved' : (toStatus === STATUS.REJECTED ? 'rejected' : 'status_changed')),
+            : (toStatus === STATUS.FACULTY_APPROVED
+              ? 'chairman_approved'
+              : (toStatus === STATUS.FACULTY_REJECTED
+                ? 'chairman_rejected'
+                : (toStatus === STATUS.APPROVED
+                  ? 'approved'
+                  : (toStatus === STATUS.REJECTED
+                    ? 'rejected'
+                    : (toStatus === STATUS.MEETING_COMPLETED ? 'committee_valuated' : 'status_changed'))))),
           title: notificationTitle,
           message: notificationMessage,
           payload: {
@@ -852,7 +1054,11 @@ async function changeProposalStatus(id, toStatus, remark, user) {
     const workflowEventKey =
       toStatus === STATUS.REVISION_REQUESTED
         ? 'revision_requested'
-        : (toStatus === STATUS.APPROVED ? 'approved' : (toStatus === STATUS.REJECTED ? 'rejected' : null));
+          : (toStatus === STATUS.FACULTY_APPROVED
+            ? 'chairman_approved'
+            : (toStatus === STATUS.FACULTY_REJECTED
+              ? 'chairman_rejected'
+              : (toStatus === STATUS.APPROVED ? 'approved' : (toStatus === STATUS.REJECTED ? 'rejected' : null))));
 
     if (workflowEventKey) {
       const emailResult = await sendWorkflowEventEmails({
@@ -967,6 +1173,171 @@ async function assignCommittee(id, committeeIds = [], user) {
   return proposal;
 }
 
+async function assignChairman(id, chairmanIds = [], user) {
+  const proposal = await Proposal.findById(id);
+  if (!proposal) throw new Error('Proposal not found');
+
+  if (!Array.isArray(chairmanIds) || chairmanIds.length === 0) {
+    throw new Error('chairmanIds must be a non-empty array');
+  }
+
+  const fromStatus = STATUS.normalizeStatus(proposal.currentStatus);
+  if (![STATUS.SUBMITTED, STATUS.FACULTY_REVIEW_PENDING].includes(fromStatus)) {
+    throw new Error(`Cannot assign chairman from ${fromStatus}`);
+  }
+
+  const selectedChairmanIds = dedupeCommitteeIds(chairmanIds);
+  const chairmanUsers = await User.find({
+    _id: { $in: selectedChairmanIds },
+    role: 'chairman',
+    isActive: true,
+    isDeleted: { $ne: true }
+  })
+    .select('_id')
+    .lean();
+
+  const validChairmanIds = dedupeCommitteeIds(chairmanUsers.map((row) => row && row._id));
+  if (validChairmanIds.length !== selectedChairmanIds.length) {
+    throw new Error('Some selected chairman users are invalid or inactive');
+  }
+
+  proposal.currentStatus = STATUS.FACULTY_REVIEW_PENDING;
+  proposal.updatedBy = user._id;
+
+  const now = new Date();
+  const assignmentState = buildChairmanAssignmentUpdate({
+    assignedChairmanIds: validChairmanIds,
+    status: CHAIRMAN_REVIEW_STATUS.PENDING,
+    assignedAt: now,
+    assignedBy: user._id,
+    reviewedAt: null,
+    reviewedBy: null,
+    summaryComment: ''
+  });
+  proposal.set(assignmentState);
+  await proposal.save();
+
+  await createStatusLog({
+    proposalId: proposal._id,
+    fromStatus,
+    toStatus: STATUS.FACULTY_REVIEW_PENDING,
+    actionKey: 'assign_chairman',
+    remark: null,
+    roundNo: null,
+    changedBy: user._id
+  });
+
+  for (const reviewerId of validChairmanIds) {
+    await createNotification({
+      userId: reviewerId,
+      proposalId: proposal._id,
+      channel: 'in_app',
+      eventKey: 'chairman_assigned',
+      title: 'มีเอกสารถูกส่งให้ประธานพิจารณา',
+      message: `กรุณาตรวจสอบโครงการ ${proposal.proposalCode || proposal._id}`,
+      payload: {
+        toStatus: STATUS.FACULTY_REVIEW_PENDING
+      }
+    });
+  }
+
+  return proposal;
+}
+
+async function applyChairmanReviewOutcome(proposalId, review, payload = {}, user) {
+  const proposal = await Proposal.findById(proposalId);
+  if (!proposal) throw new Error('Proposal not found');
+
+  const currentStatus = STATUS.normalizeStatus(proposal.currentStatus);
+  if (currentStatus !== STATUS.FACULTY_REVIEW_PENDING) {
+    return review;
+  }
+
+  const decision = String(payload && payload.decision ? payload.decision : '').trim().toLowerCase();
+  const now = new Date();
+
+  const chairmanAssignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+    ? proposal.chairmanAssignment
+    : {};
+  const assignedChairmanIds = getAssignedChairmanIdsFromProposal(chairmanAssignment);
+
+  let nextStatus = currentStatus;
+  let assignmentStatus = CHAIRMAN_REVIEW_STATUS.PENDING;
+  let facultyApprovedAt = proposal.facultyApprovedAt || null;
+  let officeReceivedAt = proposal.officeReceivedAt || null;
+  let rejectedAt = proposal.rejectedAt || null;
+
+  if (decision === 'approve') {
+    nextStatus = STATUS.FACULTY_APPROVED;
+    assignmentStatus = CHAIRMAN_REVIEW_STATUS.APPROVED;
+    facultyApprovedAt = now;
+  } else if (decision === 'reject') {
+    nextStatus = STATUS.REJECTED;
+    assignmentStatus = CHAIRMAN_REVIEW_STATUS.REJECTED;
+    officeReceivedAt = null;
+    rejectedAt = now;
+  } else {
+    return review;
+  }
+
+  proposal.currentStatus = nextStatus;
+  proposal.updatedBy = user._id;
+  proposal.facultyApprovedAt = facultyApprovedAt;
+  proposal.officeReceivedAt = officeReceivedAt;
+  proposal.rejectedAt = rejectedAt;
+  proposal.set(buildChairmanAssignmentUpdate({
+    assignedChairmanIds,
+    status: assignmentStatus,
+    assignedAt: chairmanAssignment.assignedAt || null,
+    assignedBy: chairmanAssignment.assignedBy || null,
+    reviewedAt: now,
+    reviewedBy: user._id,
+    summaryComment: payload && payload.summaryComment ? payload.summaryComment : ''
+  }));
+  await proposal.save();
+
+  await createStatusLog({
+    proposalId: proposal._id,
+    fromStatus: currentStatus,
+    toStatus: nextStatus,
+    actionKey: decision === 'approve' ? 'chairman_approved' : 'chairman_rejected',
+    remark: payload && payload.summaryComment ? payload.summaryComment : null,
+    roundNo: null,
+    changedBy: user._id
+  });
+
+  const recipientIds = new Set();
+  if (proposal.applicantUserId) recipientIds.add(String(proposal.applicantUserId));
+  if (chairmanAssignment && chairmanAssignment.assignedBy) recipientIds.add(String(chairmanAssignment.assignedBy));
+
+  if (recipientIds.size > 0) {
+    const eventKey = decision === 'approve' ? 'chairman_approved' : 'chairman_rejected';
+    const title = decision === 'approve' ? 'ประธานอนุมัติข้อเสนอโครงการ' : 'ประธานไม่อนุมัติข้อเสนอโครงการ';
+    const message = decision === 'approve'
+      ? `โครงการ ${proposal.proposalCode || proposal._id} ผ่านการพิจารณาจากประธานแล้ว และอยู่ในสถานะประธานอนุมัติ`
+      : `โครงการ ${proposal.proposalCode || proposal._id} ไม่ผ่านการพิจารณาจากประธาน และอยู่ในสถานะปฏิเสธ`;
+
+    await Notification.insertMany(
+      Array.from(recipientIds).map((userId) => ({
+        userId,
+        proposalId: proposal._id,
+        channel: 'in_app',
+        eventKey,
+        title,
+        message,
+        payload: {
+          decision,
+          toStatus: nextStatus
+        },
+        isRead: false,
+        sentAt: now
+      }))
+    );
+  }
+
+  return review;
+}
+
 async function saveReview(proposalId, payload, user) {
   const {
     roundNo = 1,
@@ -983,12 +1354,22 @@ async function saveReview(proposalId, payload, user) {
   const filter = { proposalId, reviewerUserId: user._id, roundNo: round };
 
   // Access control: committee can only review proposals they are assigned to.
-  if (user.role === 'committee') {
-    const proposal = await Proposal.findById(proposalId).select('_id committeeIds').lean();
+  const reviewerRole = String(user && user.role ? user.role : '').trim().toLowerCase();
+  if (isReviewerRole(reviewerRole)) {
+    const proposal = await Proposal.findById(proposalId).select('_id committeeIds chairmanAssignment currentStatus').lean();
     if (!proposal) throw new Error('Proposal not found');
-    const committeeIds = Array.isArray(proposal.committeeIds) ? proposal.committeeIds.map(String) : [];
-    if (!committeeIds.includes(String(user._id))) {
-      throw new Error('Forbidden');
+    if (reviewerRole === 'chairman') {
+      if (!hasChairmanProposalAccess(proposal, user._id)) {
+        throw new Error('Forbidden');
+      }
+      if (STATUS.normalizeStatus(proposal.currentStatus) !== STATUS.FACULTY_REVIEW_PENDING) {
+        throw new Error('Forbidden');
+      }
+    } else {
+      const committeeIds = Array.isArray(proposal.committeeIds) ? proposal.committeeIds.map(String) : [];
+      if (!committeeIds.includes(String(user._id))) {
+        throw new Error('Forbidden');
+      }
     }
   }
 
@@ -1020,7 +1401,7 @@ async function saveReview(proposalId, payload, user) {
 
   const review = await ProposalReview.findOneAndUpdate(filter, update, { upsert: true, new: true });
 
-  if (nextStatus === 'submitted') {
+  if (nextStatus === 'submitted' && !isChairmanRole(reviewerRole)) {
     try {
       await syncProposalStatusWithSubmittedReviews(proposalId, round, user);
     } catch (err) {
@@ -1030,6 +1411,10 @@ async function saveReview(proposalId, payload, user) {
         error: err && err.message ? err.message : err
       });
     }
+  }
+
+  if (nextStatus === 'submitted' && isChairmanRole(reviewerRole)) {
+    await applyChairmanReviewOutcome(proposalId, review, payload, user);
   }
 
   return review;
@@ -1077,7 +1462,24 @@ async function getMyReviews(query = {}, user) {
   return ProposalReview.find(filter).sort({ updatedAt: -1 });
 }
 
-async function getProposalReviews(proposalId, query = {}) {
+async function getProposalReviews(proposalId, query = {}, user = null) {
+  const proposal = await Proposal.findById(proposalId)
+    .select('_id applicantUserId committeeIds chairmanAssignment');
+  if (!proposal) throw new Error('Proposal not found');
+
+  if (user) {
+    const role = user && user.role ? String(user.role).trim().toLowerCase() : '';
+    const uid = user && user._id ? String(user._id) : '';
+    const isAdmin = role === 'admin';
+    const isOwner = uid && proposal.applicantUserId && String(proposal.applicantUserId) === uid;
+    const isCommittee = uid && Array.isArray(proposal.committeeIds) && proposal.committeeIds.map(String).includes(uid);
+    const isChairman = isChairmanRole(role) && hasChairmanProposalAccess(proposal, uid);
+
+    if (!isAdmin && !isOwner && !isCommittee && !isChairman) {
+      throw new Error('Forbidden');
+    }
+  }
+
   const filter = { proposalId };
   const round = parseInt(query.roundNo, 10);
   if (!Number.isNaN(round) && round > 0) filter.roundNo = round;
@@ -1089,10 +1491,13 @@ async function getProposalReviews(proposalId, query = {}) {
 
 async function getProposalFeedback(proposalId, user) {
   const proposal = await Proposal.findById(proposalId)
-    .select('_id applicantUserId currentStatus currentRound');
+    .select('_id applicantUserId committeeIds chairmanAssignment currentStatus currentRound');
   if (!proposal) throw new Error('Proposal not found');
 
   if (user && user.role === 'researcher' && String(proposal.applicantUserId) !== String(user._id)) {
+    throw new Error('Forbidden');
+  }
+  if (user && isChairmanRole(user.role) && !hasChairmanProposalAccess(proposal, user._id)) {
     throw new Error('Forbidden');
   }
 
@@ -1198,8 +1603,12 @@ async function getResearcherUsers(query = {}, currentUser = null) {
 
 async function getCommitteeUsers(query = {}) {
   try {
+    const roleFilter = String(query.role || '').trim().toLowerCase();
+    const allowedRoles = roleFilter === 'chairman'
+      ? ['chairman']
+      : (roleFilter === 'committee' ? ['committee'] : ['committee', 'chairman']);
     const filter = {
-      role: 'committee',
+      role: { $in: allowedRoles },
       isActive: true,
       isDeleted: { $ne: true }
     };
@@ -1278,6 +1687,7 @@ async function getCommitteeUsers(query = {}) {
       fullName: u && u.fullName ? u.fullName : '',
       email: u && u.email ? u.email : '',
       department,
+      role: u && u.role ? String(u.role) : '',
       isRecommended,
       matchReason: isRecommended ? 'department_match' : ''
       };
@@ -1341,6 +1751,7 @@ module.exports = {
   submitProposal,
   changeProposalStatus,
   assignCommittee,
+  assignChairman,
   saveReview,
   getMyReview,
   getMyReviews,

@@ -8,6 +8,8 @@ const MANAGED_SETTING_KEYS = Object.freeze({
   FUNDING_BUDGET: 'funding_budget_config_json',
   BUDGET_MULTIPLIER: 'budget_multiplier_config_json',
   COMMITTEE_FEEDBACK: 'committee_feedback_config_json',
+  COMMITTEE_RUBRIC: 'committee_rubric_config_json',
+  CHAIRMAN_CHECKLIST: 'chairman_checklist_config_json',
   RESEARCH_STANDARD: 'research_standard_config_json'
 });
 
@@ -18,11 +20,12 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'revision_requested',
     'resubmitted',
     'second_round_review',
@@ -35,11 +38,12 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'resubmitted',
     'second_round_review'
   ],
@@ -47,11 +51,12 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'revision_requested',
     'resubmitted',
     'second_round_review'
@@ -62,11 +67,12 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'submitted',
     'faculty_review_pending',
     'faculty_approved',
+    'faculty_rejected',
     'office_received',
     'document_checking',
     'assigned_to_committee',
     'under_review',
-    'meeting_completed',
+    'committee_valuated',
     'approved',
     'rejected',
     'announced'
@@ -75,16 +81,17 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     draft: ['pending_confirm'],
     pending_confirm: ['submitted'],
     submitted: ['faculty_review_pending'],
-    faculty_review_pending: ['faculty_approved'],
+    faculty_review_pending: ['faculty_approved', 'rejected'],
     faculty_approved: ['office_received'],
+    faculty_rejected: ['rejected'],
     office_received: ['document_checking'],
     document_checking: ['assigned_to_committee'],
     assigned_to_committee: ['under_review'],
-    under_review: ['meeting_completed'],
-    meeting_completed: ['approved', 'rejected', 'revision_requested'],
+    under_review: ['committee_valuated'],
+    committee_valuated: ['approved', 'rejected', 'revision_requested'],
     revision_requested: ['resubmitted'],
     resubmitted: ['second_round_review'],
-    second_round_review: ['meeting_completed'],
+    second_round_review: ['committee_valuated'],
     approved: ['announced'],
     rejected: ['announced']
   },
@@ -94,11 +101,12 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     submitted: 2,
     faculty_review_pending: 3,
     faculty_approved: 4,
+    faculty_rejected: 4,
     office_received: 5,
     document_checking: 6,
     assigned_to_committee: 7,
     under_review: 8,
-    meeting_completed: 9,
+    committee_valuated: 9,
     revision_requested: 5,
     resubmitted: 6,
     second_round_review: 8,
@@ -111,13 +119,14 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       draft: 'แบบร่าง',
       pending_confirm: 'รอการยืนยัน',
       submitted: 'ยื่นแล้ว',
-      faculty_review_pending: 'รอประธานพิจารณา',
+      faculty_review_pending: 'ประธานกำลังพิจารณา',
       faculty_approved: 'ประธานอนุมัติ',
+      faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'ส่วนบริหารรับแล้ว',
       document_checking: 'ตรวจสอบเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
       under_review: 'พิจารณารอบ 1',
-      meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
+      committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ 2',
@@ -129,13 +138,14 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       draft: 'แบบร่าง',
       pending_confirm: 'รอยืนยันผู้ร่วมโครงการ',
       submitted: 'ยื่นแล้ว',
-      faculty_review_pending: 'รอประธานพิจารณา',
+      faculty_review_pending: 'ประธานกำลังพิจารณา',
       faculty_approved: 'ประธานอนุมัติ',
+      faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'ส่วนบริหารรับแล้ว',
       document_checking: 'ตรวจสอบเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
       under_review: 'พิจารณารอบ 1',
-      meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
+      committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ 2',
@@ -147,13 +157,14 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       draft: 'ร่าง',
       pending_confirm: 'รอการยืนยัน',
       submitted: 'ยื่นแล้ว',
-      faculty_review_pending: 'รอคณะพิจารณา (คณะ)',
-      faculty_approved: 'ผ่านการพิจารณา (คณะ)',
+      faculty_review_pending: 'ประธานกำลังพิจารณา',
+      faculty_approved: 'ประธานอนุมัติ',
+      faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'สำนักงานรับเรื่องแล้ว',
       document_checking: 'ตรวจเอกสาร',
       assigned_to_committee: 'มอบหมายกรรมการแล้ว',
       under_review: 'พิจารณารอบ 1',
-      meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
+      committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ 2',
@@ -169,11 +180,12 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       submitted: '#3B82F6',
       faculty_review_pending: '#3B82F6',
       faculty_approved: '#34D399',
+      faculty_rejected: '#F87171',
       office_received: '#38BDF8',
       document_checking: '#FACC15',
       assigned_to_committee: '#A78BFA',
       under_review: '#6366F1',
-      meeting_completed: '#10B981',
+        committee_valuated: '#EF4444',
       revision_requested: '#FB923C',
       resubmitted: '#22D3EE',
       second_round_review: '#8B5CF6',
@@ -186,11 +198,12 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       submitted: '#17a2b8',
       faculty_review_pending: '#ffc107',
       faculty_approved: '#007bff',
+      faculty_rejected: '#dc3545',
       office_received: '#17a2b8',
       document_checking: '#fd7e14',
       assigned_to_committee: '#007bff',
       under_review: '#e83e8c',
-      meeting_completed: '#6f42c1',
+        committee_valuated: '#dc3545',
       revision_requested: '#dc3545',
       resubmitted: '#20c997',
       second_round_review: '#fd7e14',
@@ -201,20 +214,20 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     coreui: {
       admin: {
         draft: 'secondary', pending_confirm: 'secondary', submitted: 'info', faculty_review_pending: 'warning',
-        faculty_approved: 'primary', office_received: 'primary', document_checking: 'warning', assigned_to_committee: 'info',
-        under_review: 'danger', meeting_completed: 'primary', revision_requested: 'danger', resubmitted: 'info',
+        faculty_approved: 'primary', faculty_rejected: 'danger', office_received: 'primary', document_checking: 'warning', assigned_to_committee: 'info',
+          under_review: 'danger', committee_valuated: 'danger', revision_requested: 'danger', resubmitted: 'info',
         second_round_review: 'warning', approved: 'success', rejected: 'danger', announced: 'primary'
       },
       badge: {
         draft: 'secondary', pending_confirm: 'secondary', submitted: 'info', faculty_review_pending: 'warning',
-        faculty_approved: 'primary', office_received: 'primary', document_checking: 'warning', assigned_to_committee: 'info',
-        under_review: 'warning', meeting_completed: 'primary', revision_requested: 'danger', resubmitted: 'info',
+        faculty_approved: 'primary', faculty_rejected: 'danger', office_received: 'primary', document_checking: 'warning', assigned_to_committee: 'info',
+          under_review: 'warning', committee_valuated: 'danger', revision_requested: 'danger', resubmitted: 'info',
         second_round_review: 'warning', approved: 'success', rejected: 'danger', announced: 'success'
       },
       researchForm: {
         draft: 'secondary', pending_confirm: 'warning', submitted: 'info', faculty_review_pending: 'warning',
-        faculty_approved: 'primary', office_received: 'primary', document_checking: 'warning', assigned_to_committee: 'info',
-        under_review: 'danger', meeting_completed: 'primary', revision_requested: 'danger', resubmitted: 'info',
+        faculty_approved: 'primary', faculty_rejected: 'danger', office_received: 'primary', document_checking: 'warning', assigned_to_committee: 'info',
+          under_review: 'danger', committee_valuated: 'danger', revision_requested: 'danger', resubmitted: 'info',
         second_round_review: 'warning', approved: 'success', rejected: 'danger', announced: 'primary'
       }
     }
@@ -223,7 +236,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     flowStatuses: [
       'assigned_to_committee',
       'under_review',
-      'meeting_completed',
+      'committee_valuated',
       'revision_requested',
       'resubmitted',
       'second_round_review',
@@ -235,14 +248,14 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       'second_round_review'
     ],
     reviewedStatuses: [
-      'meeting_completed',
+      'committee_valuated',
       'approved',
       'rejected'
     ],
     labels: {
       assigned_to_committee: 'รอการประเมิน',
       under_review: 'พิจารณารอบ {roundNo}',
-      meeting_completed: 'ส่งผลการประเมินแล้ว',
+      committee_valuated: 'ส่งผลการประเมินแล้ว',
       revision_requested: 'ขอแก้ไข',
       resubmitted: 'ส่งแก้ไขแล้ว',
       second_round_review: 'พิจารณารอบ {roundNo}',
@@ -252,7 +265,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       background: {
         assigned_to_committee: 'rgba(59, 130, 246, 0.45)',
         under_review: 'rgba(124, 58, 237, 0.45)',
-        meeting_completed: 'rgba(22, 163, 74, 0.45)',
+          committee_valuated: 'rgba(220, 53, 69, 0.45)',
         revision_requested: 'rgba(249, 115, 22, 0.45)',
         resubmitted: 'rgba(6, 182, 212, 0.45)',
         second_round_review: 'rgba(168, 85, 247, 0.45)',
@@ -261,7 +274,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       border: {
         assigned_to_committee: 'rgba(59, 130, 246, 1)',
         under_review: 'rgba(124, 58, 237, 1)',
-        meeting_completed: 'rgba(22, 163, 74, 1)',
+          committee_valuated: 'rgba(220, 53, 69, 1)',
         revision_requested: 'rgba(249, 115, 22, 1)',
         resubmitted: 'rgba(6, 182, 212, 1)',
         second_round_review: 'rgba(168, 85, 247, 1)',
@@ -292,7 +305,12 @@ const ROLE_PAGE_ACCESS_DEFAULT = Object.freeze([
   { pageKey: 'committee-assigned', label: 'รายการที่ได้รับมอบหมาย', path: '/committee/assigned', matchMode: 'exact', roles: ['committee', 'admin', 'chairman'] },
   { pageKey: 'committee-meetings', label: 'ประชุมคณะกรรมการ', path: '/committee/meetings', matchMode: 'exact', roles: ['committee', 'admin', 'chairman'] },
   { pageKey: 'committee-notifications', label: 'การแจ้งเตือนคณะกรรมการ', path: '/committee/notifications', matchMode: 'exact', roles: ['committee', 'admin', 'chairman'] },
-  { pageKey: 'committee-proposals', label: 'หน้าอ่านข้อเสนอของกรรมการ', path: '/committee/proposals', matchMode: 'prefix', roles: ['committee', 'admin', 'chairman'] }
+  { pageKey: 'committee-proposals', label: 'หน้าอ่านข้อเสนอของกรรมการ', path: '/committee/proposals', matchMode: 'prefix', roles: ['committee', 'admin', 'chairman'] },
+  { pageKey: 'chairman-dashboard', label: 'แดชบอร์ดประธานสำนัก', path: '/chairman/dashboard', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'chairman-assigned', label: 'รายการที่ได้รับมอบหมายประธานสำนัก', path: '/chairman/assigned', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'chairman-meetings', label: 'ประชุมประธานสำนัก', path: '/chairman/meetings', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'chairman-notifications', label: 'การแจ้งเตือนประธานสำนัก', path: '/chairman/notifications', matchMode: 'exact', roles: ['admin', 'chairman'] },
+  { pageKey: 'chairman-proposals', label: 'หน้าอ่านข้อเสนอของประธานสำนัก', path: '/chairman/proposals', matchMode: 'prefix', roles: ['admin', 'chairman'] }
 ]);
 
 const FUNDING_BUDGET_DEFAULT = Object.freeze([
@@ -323,13 +341,13 @@ const FUNDING_BUDGET_DEFAULT = Object.freeze([
 ]);
 
 const BUDGET_MULTIPLIER_DEFAULT = Object.freeze([
-  { categoryKey: 'compensation', categoryLabel: 'หมวดค่าตอบแทน', multipliers: [{ label: 'จำนวน (คน)', value: 1, isAdmin: false }, { label: 'จำนวน (ครั้ง/ด.)', value: 1, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }] },
-  { categoryKey: 'operating', categoryLabel: 'หมวดค่าใช้สอย', multipliers: [{ label: 'จำนวน (คน/ชิ้น)', value: 1, isAdmin: false }, { label: 'จำนวน (วัน/ครั้ง)', value: 1, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }] },
-  { categoryKey: 'travel', categoryLabel: 'หมวดค่าเดินทาง', multipliers: [{ label: 'จำนวน (คน)', value: 1, isAdmin: false }, { label: 'จำนวน (วัน/เที่ยว)', value: 1, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }] },
-  { categoryKey: 'material', categoryLabel: 'หมวดค่าวัสดุ', multipliers: [{ label: 'จำนวน', value: 1, isAdmin: false }, { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false }, { label: 'ราคา/หน่วย', value: 5000, isAdmin: true }] },
-  { categoryKey: 'utility', categoryLabel: 'หมวดค่าสาธารณูปโภค', multipliers: [{ label: 'จำนวน (เดือน)', value: 1, isAdmin: false }, { label: 'จำนวน (หน่วย)', value: 1, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, isAdmin: true }] },
-  { categoryKey: 'equipment', categoryLabel: 'หมวดครุภัณฑ์', multipliers: [{ label: 'จำนวน (รายการ)', value: 1, isAdmin: false }, { label: 'ตัวคูณ (ถ้ามี)', value: 1, isAdmin: false }, { label: 'ราคา/ชุด', value: 5000, isAdmin: true }] },
-  { categoryKey: 'other', categoryLabel: 'หมวดอื่นๆ', multipliers: [{ label: 'จำนวน', value: 1, isAdmin: false }, { label: 'หน่วย', value: 1, isAdmin: false }, { label: 'ราคา/หน่วย', value: 0, isAdmin: false }] }
+  { categoryKey: 'compensation', categoryLabel: 'หมวดค่าตอบแทน', multipliers: [{ label: 'จำนวน (คน)', value: 1, maxValue: null, isAdmin: false }, { label: 'จำนวน (ครั้ง/ด.)', value: 1, maxValue: null, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'operating', categoryLabel: 'หมวดค่าใช้สอย', multipliers: [{ label: 'จำนวน (คน/ชิ้น)', value: 1, maxValue: null, isAdmin: false }, { label: 'จำนวน (วัน/ครั้ง)', value: 1, maxValue: null, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'travel', categoryLabel: 'หมวดค่าเดินทาง', multipliers: [{ label: 'จำนวน (คน)', value: 1, maxValue: null, isAdmin: false }, { label: 'จำนวน (วัน/เที่ยว)', value: 1, maxValue: null, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'material', categoryLabel: 'หมวดค่าวัสดุ', multipliers: [{ label: 'จำนวน', value: 1, maxValue: null, isAdmin: false }, { label: 'ตัวคูณ (ถ้ามี)', value: 1, maxValue: null, isAdmin: false }, { label: 'ราคา/หน่วย', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'utility', categoryLabel: 'หมวดค่าสาธารณูปโภค', multipliers: [{ label: 'จำนวน (เดือน)', value: 1, maxValue: null, isAdmin: false }, { label: 'จำนวน (หน่วย)', value: 1, maxValue: null, isAdmin: false }, { label: 'อัตรา (บาท)', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'equipment', categoryLabel: 'หมวดครุภัณฑ์', multipliers: [{ label: 'จำนวน (รายการ)', value: 1, maxValue: null, isAdmin: false }, { label: 'ตัวคูณ (ถ้ามี)', value: 1, maxValue: null, isAdmin: false }, { label: 'ราคา/ชุด', value: 5000, maxValue: null, isAdmin: true }] },
+  { categoryKey: 'other', categoryLabel: 'หมวดอื่นๆ', multipliers: [{ label: 'จำนวน', value: 1, maxValue: null, isAdmin: false }, { label: 'หน่วย', value: 1, maxValue: null, isAdmin: false }, { label: 'ราคา/หน่วย', value: 0, maxValue: null, isAdmin: false }] }
 ]);
 
 const COMMITTEE_FEEDBACK_DEFAULT = Object.freeze({
@@ -351,6 +369,137 @@ const COMMITTEE_FEEDBACK_DEFAULT = Object.freeze({
     general: 'โปรดตรวจสอบและปรับปรุงข้อมูลในหัวข้อนี้ตามข้อเสนอแนะจากคณะกรรมการ',
     sectionPrefix: 'โปรดปรับปรุง{sectionLabel}ตามข้อเสนอแนะของคณะกรรมการ'
   }
+});
+
+const COMMITTEE_RUBRIC_DEFAULT = Object.freeze({
+  templateVersion: 1,
+  reviewerRole: 'committee',
+  reviewerLabel: 'คณะกรรมการ',
+  scoreOptions: [0, 1, 2],
+  fundTypeOptions: [
+    { value: 'new', label: 'ทุนวิจัยใหม่' },
+    { value: 'develop', label: 'ทุนพัฒนา' },
+    { value: 'extension', label: 'ทุนต่อยอด/ทุนอุตสาหกรรม' }
+  ],
+  rubricRows: [
+    { no: 1, title: 'ความสำคัญและความชัดเจนของโจทย์วิจัย/คำถามวิจัย', desc: '0–2', weights: { new: 15, develop: 10, extension: 10 } },
+    { no: 2, title: 'วัตถุประสงค์ของโครงการ', desc: '0–2', weights: { new: 15, develop: 5, extension: 5 } },
+    { no: 3, title: 'การทบทวนวรรณกรรม', desc: '0–2', weights: { new: 15, develop: 5, extension: 5 } },
+    { no: 4, title: 'กระบวนการและวิธีการ', desc: '0–2', weights: { new: 15, develop: 15, extension: 10 } },
+    { no: 5, title: 'แผนการดำเนินงาน', desc: '0–2', weights: { new: 10, develop: 10, extension: 5 } },
+    { no: 6, title: 'ผลลัพธ์ของโครงการวิจัย', desc: '0–2', weights: { new: 10, develop: 15, extension: 15 } },
+    { no: 7, title: 'การบูรณาการงานวิจัย', desc: '0–2', weights: { new: 5, develop: 10, extension: 15 } },
+    { no: 8, title: 'ระดับการถ่ายทอดสังคม', desc: '0–2', weights: { new: null, develop: 10, extension: 15 } },
+    { no: 9, title: 'งบประมาณ', desc: '0–2', weights: { new: 5, develop: 5, extension: 5 } },
+    { no: 10, title: 'คุณสมบัติของคณะผู้วิจัย', desc: '0–2', weights: { new: 5, develop: 5, extension: 5 } },
+    { no: 11, title: 'ความสอดคล้องกับแผนงานที่มหาวิทยาลัยกำหนด', desc: '0–2', weights: { new: 5, develop: 10, extension: 10 } }
+  ]
+});
+
+const CHAIRMAN_CHECKLIST_DEFAULT = Object.freeze({
+  templateVersion: 1,
+  reviewerRole: 'chairman',
+  reviewerLabel: 'ประธานสำนัก',
+  importStatus: 'partial',
+  note: 'Imported checklist for new-researcher. Other funding types are still pending import.',
+  fundingTemplates: FUNDING_BUDGET_DEFAULT.map((item) => {
+    if (item.key === 'new-researcher') {
+      return {
+        fundingTypeKey: item.key,
+        fundingTypeLabel: item.label,
+        sections: [
+          {
+            sectionKey: 'applicant_eligibility',
+            sectionLabel: '1. คุณสมบัติของผู้ขอรับทุน',
+            description: 'ตรวจสอบคุณสมบัติของหัวหน้าโครงการตามเกณฑ์ของทุนนักวิจัยใหม่',
+            items: [
+              {
+                itemKey: 'academic_staff_position',
+                label: 'เป็นพนักงานสายวิชาการ ตำแหน่งอาจารย์ หรือนักวิจัยของมหาวิทยาลัยแม่ฟ้าหลวง'
+              },
+              {
+                itemKey: 'qualification_alignment',
+                label: 'มีคุณวุฒิสอดคล้องกับเนื้อหาของโครงการวิจัยที่เสนอ'
+              },
+              {
+                itemKey: 'capability_and_time',
+                label: 'มีศักยภาพและเวลาในการดำเนินโครงการวิจัยให้สำเร็จลุล่วงอย่างมีคุณภาพ และสามารถเผยแพร่ผลงานวิจัยได้ตามเกณฑ์ที่กำหนด'
+              },
+              {
+                itemKey: 'single_new_researcher_project',
+                label: 'เสนอขอรับทุนนักวิจัยใหม่ในตำแหน่งหัวหน้าโครงการวิจัย ไม่เกิน 1 โครงการ'
+              },
+              {
+                itemKey: 'no_previous_new_researcher_grant',
+                label: 'ไม่เคยได้รับทุนสนับสนุนการวิจัยประเภททุนนักวิจัยใหม่จากเงินรายได้มหาวิทยาลัยแม่ฟ้าหลวงมาก่อน ในตำแหน่งหัวหน้าโครงการ',
+                description: 'ข้อยกเว้น: คณาจารย์หรือนักวิจัยด้านสังคมศาสตร์และมนุษยศาสตร์ สามารถขอเพิ่มได้ตามกรอบงบประมาณที่เหลือจากโครงการเดิม รวมแล้วไม่เกิน 100,000 บาท'
+              },
+              {
+                itemKey: 'not_on_study_leave',
+                label: 'ไม่อยู่ระหว่างการลาศึกษาต่อ หรือมีแผนลาศึกษาต่อในระหว่างการรับทุน'
+              },
+              {
+                itemKey: 'no_previous_other_grants',
+                label: 'ไม่เคยได้รับทุนพัฒนานักวิจัย ทุนสอดคล้องยุทธศาสตร์การวิจัยและนวัตกรรม หรือทุนต่อยอดสู่ภาคอุตสาหกรรมมาก่อน นับตั้งแต่ปีงบประมาณ 2560'
+              },
+              {
+                itemKey: 'research_training_completed',
+                label: 'หัวหน้าโครงการต้องผ่านการอบรมมาตรฐานการวิจัย หรือจริยธรรมการวิจัยในมนุษย์ที่เกี่ยวข้อง พร้อมแสดงหลักฐาน'
+              }
+            ]
+          },
+          {
+            sectionKey: 'supported_project_characteristics',
+            sectionLabel: '2. ลักษณะโครงการวิจัยที่ให้การสนับสนุน',
+            description: 'ตรวจสอบลักษณะของโครงการวิจัยและเงื่อนไขการสนับสนุนของทุนนักวิจัยใหม่',
+            items: [
+              {
+                itemKey: 'has_project_advisor',
+                label: 'ควรมีที่ปรึกษาโครงการวิจัยอย่างน้อย 1 คน ซึ่งเป็นผู้เชี่ยวชาญในสาขาที่เกี่ยวข้อง'
+              },
+              {
+                itemKey: 'duration_within_one_year',
+                label: 'ระยะเวลาดำเนินการไม่เกิน 1 ปี'
+              },
+              {
+                itemKey: 'budget_within_limit',
+                label: 'งบประมาณที่เสนอขอไม่เกิน 100,000 บาท และเป็นไปตามระเบียบที่มหาวิทยาลัยกำหนด'
+              },
+              {
+                itemKey: 'clear_non_duplicate_problem',
+                label: 'มีโจทย์วิจัยที่ชัดเจนและไม่ซ้ำซ้อนกับงานที่เคยมีผู้ทำมาก่อน'
+              },
+              {
+                itemKey: 'feasible_objectives',
+                label: 'มีวัตถุประสงค์การวิจัยที่ดำเนินการได้จริงและประเมินได้'
+              },
+              {
+                itemKey: 'not_part_of_thesis',
+                label: 'ต้องไม่เป็นส่วนหนึ่งของวิทยานิพนธ์ของผู้ขอรับทุนเพื่อสำเร็จการศึกษา'
+              },
+              {
+                itemKey: 'publication_potential',
+                label: 'มีศักยภาพสามารถตีพิมพ์ผลงานวิจัยตามเกณฑ์ที่มหาวิทยาลัยกำหนด'
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+    return {
+      fundingTypeKey: item.key,
+      fundingTypeLabel: item.label,
+      sections: [
+        {
+          sectionKey: 'import_placeholder',
+          sectionLabel: 'Checklist Template',
+          description: 'พื้นที่สำหรับ import checklist ภายหลัง',
+          items: []
+        }
+      ]
+    }
+  })
 });
 
 const RESEARCH_STANDARD_DEFAULT = Object.freeze({
@@ -421,6 +570,16 @@ const MANAGED_DEFAULTS = Object.freeze({
     group: RESEARCH_FORM_SETTING_GROUP,
     value: COMMITTEE_FEEDBACK_DEFAULT
   },
+  [MANAGED_SETTING_KEYS.COMMITTEE_RUBRIC]: {
+    description: 'Committee rubric templates for ResearchFormRS',
+    group: RESEARCH_FORM_SETTING_GROUP,
+    value: COMMITTEE_RUBRIC_DEFAULT
+  },
+  [MANAGED_SETTING_KEYS.CHAIRMAN_CHECKLIST]: {
+    description: 'Chairman checklist templates for ResearchFormRS',
+    group: RESEARCH_FORM_SETTING_GROUP,
+    value: CHAIRMAN_CHECKLIST_DEFAULT
+  },
   [MANAGED_SETTING_KEYS.RESEARCH_STANDARD]: {
     description: 'Research standard section config for ResearchFormRS',
     group: RESEARCH_FORM_SETTING_GROUP,
@@ -459,10 +618,51 @@ function normalizeSlug(value) {
     .replace(/-+/g, '-');
 }
 
+function normalizeFundingTypeKeys(value) {
+  const source = Array.isArray(value) ? value : [];
+  const seen = new Set();
+  return source.reduce((result, item) => {
+    const normalized = normalizeSlug(item);
+    if (!normalized || seen.has(normalized)) return result;
+    seen.add(normalized);
+    result.push(normalized);
+    return result;
+  }, []);
+}
+
 function toNumber(value, fallback) {
   if (value === undefined || value === null || value === '') return fallback;
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function toOptionalNonNegativeNumber(value, fallback = null) {
+  if (value === undefined || value === null || value === '') return fallback;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.max(0, numeric);
+}
+
+function normalizeOptionalMaxValue(value, fallback = null) {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? Math.max(0, value) : fallback;
+  }
+
+  const text = String(value || '').trim().replace(/,/g, '');
+  if (!text) return fallback;
+
+  const normalizedPercentText = text.replace(/\s+/g, '');
+  const percentMatch = normalizedPercentText.match(/^(\d+(?:\.\d+)?)%$/);
+  if (percentMatch) {
+    const percentValue = Number(percentMatch[1]);
+    if (!Number.isFinite(percentValue)) return fallback;
+    return `${Math.max(0, percentValue)}%`;
+  }
+
+  const numeric = Number(text);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.max(0, numeric);
 }
 
 function normalizeFundingBudgetConfig(rawValue) {
@@ -494,13 +694,19 @@ function normalizeBudgetMultiplierConfig(rawValue) {
       multipliers: (Array.isArray(category && category.multipliers) ? category.multipliers : []).map((multiplier) => ({
         label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
         value: Math.max(0, toNumber(multiplier && multiplier.value, 0)),
+        maxValue: normalizeOptionalMaxValue(multiplier && multiplier.maxValue, null),
         isAdmin: Boolean(multiplier && multiplier.isAdmin)
       })).filter((multiplier) => multiplier.label),
       itemOverrides: (Array.isArray(category && category.itemOverrides) ? category.itemOverrides : []).map((itemOverride) => ({
         matchText: String(itemOverride && itemOverride.matchText !== undefined ? itemOverride.matchText : '').trim(),
+        applyToAllFundingTypes: itemOverride && itemOverride.applyToAllFundingTypes !== undefined
+          ? Boolean(itemOverride.applyToAllFundingTypes)
+          : true,
+        fundingTypeKeys: normalizeFundingTypeKeys(itemOverride && itemOverride.fundingTypeKeys),
         multipliers: (Array.isArray(itemOverride && itemOverride.multipliers) ? itemOverride.multipliers : []).map((multiplier) => ({
           label: String(multiplier && multiplier.label !== undefined ? multiplier.label : '').trim(),
           value: Math.max(0, toNumber(multiplier && multiplier.value, 0)),
+          maxValue: normalizeOptionalMaxValue(multiplier && multiplier.maxValue, null),
           isAdmin: Boolean(multiplier && multiplier.isAdmin)
         })).filter((multiplier) => multiplier.label)
       })).filter((itemOverride) => itemOverride.matchText && itemOverride.multipliers.length > 0)
@@ -552,6 +758,10 @@ function normalizeManagedSettingValue(key, rawValue) {
       return normalizeObjectOrDefault(rawValue, PROPOSAL_WORKFLOW_DEFAULT);
     case MANAGED_SETTING_KEYS.COMMITTEE_FEEDBACK:
       return normalizeObjectOrDefault(rawValue, COMMITTEE_FEEDBACK_DEFAULT);
+    case MANAGED_SETTING_KEYS.COMMITTEE_RUBRIC:
+      return normalizeObjectOrDefault(rawValue, COMMITTEE_RUBRIC_DEFAULT);
+    case MANAGED_SETTING_KEYS.CHAIRMAN_CHECKLIST:
+      return normalizeObjectOrDefault(rawValue, CHAIRMAN_CHECKLIST_DEFAULT);
     case MANAGED_SETTING_KEYS.RESEARCH_STANDARD:
       return normalizeObjectOrDefault(rawValue, RESEARCH_STANDARD_DEFAULT);
     default:
@@ -575,7 +785,8 @@ function getManagedDefaultEntries(options = {}) {
 }
 
 function normalizeManagedSettingInput(payload = {}) {
-  const key = String(payload.key || '').trim();
+  const rawKey = String(payload.key || '').trim();
+  const key = rawKey;
   if (!MANAGED_KEY_SET.has(key)) {
     return {
       key,

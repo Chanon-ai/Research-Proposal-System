@@ -22,7 +22,7 @@ const parseSettingsPayload = (response) => {
 }
 
 export const mapRoleForResearchAccess = (role) => {
-  const normalized = String(role || '').trim().toLowerCase()
+  const normalized = String(role || '').trim().toLowerCase().replace(/-/g, '_')
   if (normalized === 'legacy_admin') return 'admin'
   return normalized
 }

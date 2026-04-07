@@ -150,7 +150,7 @@
           <div>
             <div class="font-weight-bold">ตั้งค่ารูปแบบตัวคูณงบประมาณ</div>
             <small class="text-muted">
-              เพิ่ม/ลด/ปรับชื่อและค่าเริ่มต้นของตัวคูณในแต่ละหมวด เพื่อใช้ในหน้า BudgetSectionDemo
+              เพิ่ม/ลด/ปรับชื่อ ค่าเริ่มต้น และค่าสูงสุดของตัวคูณในแต่ละหมวด เพื่อใช้ในหน้า BudgetSectionDemo
             </small>
           </div>
           <div class="funding-budget-summary">
@@ -186,9 +186,11 @@
                 <table class="table table-bordered table-striped mb-0">
                   <thead>
                     <tr>
-                      <th style="width: 52%;">ชื่อตัวคูณ</th>
-                      <th style="width: 28%;">ค่าเริ่มต้น</th>
-                      <th style="width: 20%;">จัดการ</th>
+                      <th style="width: 32%;">ชื่อตัวคูณ</th>
+                      <th style="width: 17%;">ค่าเริ่มต้น</th>
+                      <th style="width: 19%;">ค่าสูงสุดที่กรอกได้</th>
+                      <th style="width: 16%;">อนุญาตให้ผู้ใช้กรอก</th>
+                      <th style="width: 16%;">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -215,6 +217,27 @@
                           @input="updateBudgetMultiplierValue(categoryIndex, multiplierIndex, $event.target.value)"
                         />
                       </td>
+                      <td>
+                        <input
+                          class="form-control"
+                          :value="multiplier.maxValue"
+                          placeholder="ไม่จำกัด, เช่น 5000 หรือ 10%"
+                          @input="updateBudgetMultiplierMaxValue(categoryIndex, multiplierIndex, $event.target.value)"
+                        />
+                      </td>
+                      <td class="text-center align-middle">
+                        <div class="d-flex flex-column align-items-center">
+                          <CSwitch
+                            class="mx-1"
+                            color="success"
+                            :checked="!multiplier.isAdmin"
+                            @update:checked="(checked) => updateBudgetMultiplierUserInputAllowed(categoryIndex, multiplierIndex, checked)"
+                          />
+                          <small :class="multiplier.isAdmin ? 'text-muted' : 'text-success'">
+                            {{ multiplier.isAdmin ? 'ปิด' : 'เปิด' }}
+                          </small>
+                        </div>
+                      </td>
                       <td class="text-center">
                         <CButton
                           color="danger"
@@ -228,7 +251,7 @@
                       </td>
                     </tr>
                     <tr v-if="!category.multipliers || category.multipliers.length === 0">
-                      <td colspan="3" class="text-center text-muted">ยังไม่มีตัวคูณในหมวดนี้</td>
+                      <td colspan="5" class="text-center text-muted">ยังไม่มีตัวคูณในหมวดนี้</td>
                     </tr>
                   </tbody>
                 </table>
@@ -266,13 +289,46 @@
                   />
                 </div>
 
+                <div class="mb-3">
+                  <label class="mb-1 font-weight-bold d-block">ปรับใช้ข้อกำหนดตัวคูณกับทุน</label>
+                  <div class="d-flex flex-wrap" style="gap: 12px;">
+                    <label class="mb-0 d-inline-flex align-items-center" style="gap: 6px;">
+                      <input
+                        type="checkbox"
+                        :checked="isOverrideAppliedToAllFundingTypes(itemOverride)"
+                        @change="toggleBudgetItemOverrideApplyAllFundingTypes(categoryIndex, overrideIndex, $event.target.checked)"
+                      >
+                      <span>ทั้งหมด</span>
+                    </label>
+                    <label
+                      v-for="option in fundingTypeSelectionOptions"
+                      :key="`${category.categoryKey}-override-${overrideIndex}-funding-${option.key}`"
+                      class="mb-0 d-inline-flex align-items-center"
+                      style="gap: 6px;"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="isOverrideFundingTypeSelected(itemOverride, option.key)"
+                        :disabled="isOverrideAppliedToAllFundingTypes(itemOverride)"
+                        @change="toggleBudgetItemOverrideFundingType(categoryIndex, overrideIndex, option.key, $event.target.checked)"
+                      >
+                      <span :title="option.label">{{ option.shortLabel }}</span>
+                    </label>
+                  </div>
+                  <small class="text-muted d-block mt-1">
+                    เมื่อเลือก "ทั้งหมด" ระบบจะใช้ข้อกำหนดนี้กับทุกประเภททุน
+                  </small>
+                </div>
+
                 <div class="table-responsive funding-suboptions-table">
                   <table class="table table-bordered table-striped mb-0">
                     <thead>
                       <tr>
-                        <th style="width: 52%;">ชื่อตัวคูณ</th>
-                        <th style="width: 28%;">ค่าเริ่มต้น</th>
-                        <th style="width: 20%;">จัดการ</th>
+                        <th style="width: 32%;">ชื่อตัวคูณ</th>
+                        <th style="width: 17%;">ค่าเริ่มต้น</th>
+                        <th style="width: 19%;">ค่าสูงสุดที่กรอกได้</th>
+                        <th style="width: 16%;">อนุญาตให้ผู้ใช้กรอก</th>
+                        <th style="width: 16%;">จัดการ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -298,6 +354,27 @@
                             placeholder="0"
                             @input="updateBudgetItemOverrideMultiplierValue(categoryIndex, overrideIndex, overrideMultiplierIndex, $event.target.value)"
                           />
+                        </td>
+                        <td>
+                          <input
+                            class="form-control"
+                            :value="overrideMultiplier.maxValue"
+                            placeholder="ไม่จำกัด, เช่น 5000 หรือ 10%"
+                            @input="updateBudgetItemOverrideMultiplierMaxValue(categoryIndex, overrideIndex, overrideMultiplierIndex, $event.target.value)"
+                          />
+                        </td>
+                        <td class="text-center align-middle">
+                          <div class="d-flex flex-column align-items-center">
+                            <CSwitch
+                              class="mx-1"
+                              color="success"
+                              :checked="!overrideMultiplier.isAdmin"
+                              @update:checked="(checked) => updateBudgetItemOverrideMultiplierUserInputAllowed(categoryIndex, overrideIndex, overrideMultiplierIndex, checked)"
+                            />
+                            <small :class="overrideMultiplier.isAdmin ? 'text-muted' : 'text-success'">
+                              {{ overrideMultiplier.isAdmin ? 'ปิด' : 'เปิด' }}
+                            </small>
+                          </div>
                         </td>
                         <td class="text-center">
                           <CButton
@@ -369,14 +446,19 @@ import {
   parseBudgetMultiplierSettingValue,
   normalizeBudgetMultiplierConfig as normalizeBudgetMultiplierConfigUtil,
   sanitizeBudgetMultiplierConfigForSave as sanitizeBudgetMultiplierConfigForSaveUtil,
-  toMultiplierNumber as toMultiplierNumberUtil
+  mergeBudgetMultiplierMaxValues,
+  toMultiplierNumber as toMultiplierNumberUtil,
+  toMultiplierMaxNumber as toMultiplierMaxNumberUtil,
+  resolveMultiplierMaxNumber as resolveMultiplierMaxNumberUtil
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
 
 const createFundingTypeTemplate = () => ({ key: '', label: '', budgetLimit: 0, subOptions: [] })
 const createFundingSubOptionTemplate = () => ({ key: '', label: '' })
-const createBudgetMultiplierTemplate = () => ({ label: '', value: 1, isAdmin: false })
+const createBudgetMultiplierTemplate = () => ({ label: '', value: 1, maxValue: null, isAdmin: false })
 const createBudgetItemOverrideTemplate = () => ({
   matchText: '',
+  applyToAllFundingTypes: true,
+  fundingTypeKeys: [],
   multipliers: [createBudgetMultiplierTemplate()]
 })
 
@@ -402,6 +484,20 @@ export default {
       return this.budgetMultiplierConfig.reduce((sum, category) => (
         sum + ((category && Array.isArray(category.multipliers)) ? category.multipliers.length : 0)
       ), 0)
+    },
+    fundingTypeSelectionOptions () {
+      return this.fundingBudgetConfig.reduce((result, type, index) => {
+        const key = this.normalizeFundingKey(type && type.key)
+        if (!key) return result
+        const label = String(type && type.label ? type.label : key).trim() || key
+        result.push({
+          key,
+          index,
+          shortLabel: `ทุนที่ ${index + 1}: ${label}`,
+          label
+        })
+        return result
+      }, [])
     }
   },
   async mounted () {
@@ -438,11 +534,58 @@ export default {
     toMultiplierNumber (value, fallback = 0) {
       return toMultiplierNumberUtil(value, fallback)
     },
+    toMultiplierMaxNumber (value, fallback = null) {
+      return toMultiplierMaxNumberUtil(value, fallback)
+    },
+    resolveMultiplierMaxNumber (value, budgetLimit, fallback = null) {
+      return resolveMultiplierMaxNumberUtil(value, budgetLimit, fallback)
+    },
     normalizeBudgetMultiplierConfig (rawConfig) {
       return normalizeBudgetMultiplierConfigUtil(rawConfig, { fallbackToDefault: true })
     },
     sanitizeBudgetMultiplierConfigForSave (config = this.budgetMultiplierConfig) {
       return sanitizeBudgetMultiplierConfigForSaveUtil(config)
+    },
+    isMultiplierMaxValueValid (value) {
+      if (value === '' || value === undefined || value === null) return true
+      return this.toMultiplierMaxNumber(value, '__invalid__') !== '__invalid__'
+    },
+    getApplicableFundingBudgetLimits (fundingTypeKeys = []) {
+      const normalizedFundingTypeKeys = Array.isArray(fundingTypeKeys) && fundingTypeKeys.length > 0
+        ? fundingTypeKeys.map(key => this.normalizeFundingKey(key)).filter(Boolean)
+        : this.fundingTypeSelectionOptions.map(option => option.key)
+
+      return normalizedFundingTypeKeys.reduce((result, fundingTypeKey) => {
+        const fundingType = this.fundingBudgetConfig.find(item => this.normalizeFundingKey(item && item.key) === fundingTypeKey)
+        const budgetLimit = this.toBudgetLimitNumber(fundingType && fundingType.budgetLimit, 0)
+        if (budgetLimit > 0) result.push(budgetLimit)
+        return result
+      }, [])
+    },
+    resolveAdminMultiplierMaxValue (maxValue, fundingTypeKeys = []) {
+      const normalizedMaxValue = this.toMultiplierMaxNumber(maxValue, '__invalid__')
+      if (normalizedMaxValue === '__invalid__') {
+        return { isValid: false, effectiveMaxValue: null }
+      }
+      if (normalizedMaxValue === null) {
+        return { isValid: true, effectiveMaxValue: null }
+      }
+      if (typeof normalizedMaxValue === 'string' && normalizedMaxValue.endsWith('%')) {
+        const budgetLimits = this.getApplicableFundingBudgetLimits(fundingTypeKeys)
+        if (!budgetLimits.length) {
+          return { isValid: true, effectiveMaxValue: null }
+        }
+
+        const effectiveMaxValue = budgetLimits.reduce((minValue, budgetLimit) => {
+          const resolvedMaxValue = this.resolveMultiplierMaxNumber(normalizedMaxValue, budgetLimit, null)
+          if (resolvedMaxValue === null) return minValue
+          return minValue === null ? resolvedMaxValue : Math.min(minValue, resolvedMaxValue)
+        }, null)
+
+        return { isValid: true, effectiveMaxValue }
+      }
+
+      return { isValid: true, effectiveMaxValue: normalizedMaxValue }
     },
     validateFundingBudgetPayload (payload) {
       if (!Array.isArray(payload) || payload.length === 0) {
@@ -503,6 +646,13 @@ export default {
           if (!Number.isFinite(numeric) || numeric < 0) {
             return `${categoryLabel}: ตัวคูณลำดับที่ ${no} มีค่าเริ่มต้นไม่ถูกต้อง`
           }
+          if (!this.isMultiplierMaxValueValid(multiplier && multiplier.maxValue)) {
+            return `${categoryLabel}: ตัวคูณลำดับที่ ${no} รูปแบบค่าสูงสุดไม่ถูกต้อง (เช่น 5000 หรือ 10%)`
+          }
+          const { effectiveMaxValue } = this.resolveAdminMultiplierMaxValue(multiplier && multiplier.maxValue)
+          if (effectiveMaxValue !== null && numeric > effectiveMaxValue) {
+            return `${categoryLabel}: ตัวคูณลำดับที่ ${no} ต้องมีค่าสูงสุดมากกว่าหรือเท่ากับค่าเริ่มต้น`
+          }
         }
 
         const itemOverrides = Array.isArray(category && category.itemOverrides) ? category.itemOverrides : []
@@ -512,6 +662,16 @@ export default {
           const matchText = String(itemOverride && itemOverride.matchText || '').trim()
           if (!matchText) {
             return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ต้องระบุคำจับคู่`
+          }
+
+          const applyToAllFundingTypes = itemOverride && itemOverride.applyToAllFundingTypes !== undefined
+            ? Boolean(itemOverride.applyToAllFundingTypes)
+            : true
+          const fundingTypeKeys = Array.isArray(itemOverride && itemOverride.fundingTypeKeys)
+            ? itemOverride.fundingTypeKeys.map(key => this.normalizeFundingKey(key)).filter(Boolean)
+            : []
+          if (!applyToAllFundingTypes && fundingTypeKeys.length === 0) {
+            return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ต้องเลือกอย่างน้อย 1 ประเภททุน หรือเลือก "ทั้งหมด"`
           }
 
           const overrideMultipliers = Array.isArray(itemOverride && itemOverride.multipliers) ? itemOverride.multipliers : []
@@ -528,6 +688,16 @@ export default {
             const overrideNumeric = Number(overrideMultiplier && overrideMultiplier.value)
             if (!Number.isFinite(overrideNumeric) || overrideNumeric < 0) {
               return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ตัวคูณลำดับที่ ${overrideMultiplierNo} มีค่าเริ่มต้นไม่ถูกต้อง`
+            }
+            if (!this.isMultiplierMaxValueValid(overrideMultiplier && overrideMultiplier.maxValue)) {
+              return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ตัวคูณลำดับที่ ${overrideMultiplierNo} รูปแบบค่าสูงสุดไม่ถูกต้อง (เช่น 5000 หรือ 10%)`
+            }
+            const { effectiveMaxValue } = this.resolveAdminMultiplierMaxValue(
+              overrideMultiplier && overrideMultiplier.maxValue,
+              applyToAllFundingTypes ? [] : fundingTypeKeys
+            )
+            if (effectiveMaxValue !== null && overrideNumeric > effectiveMaxValue) {
+              return `${categoryLabel}: รายการเฉพาะลำดับที่ ${overrideNo} ตัวคูณลำดับที่ ${overrideMultiplierNo} ต้องมีค่าสูงสุดมากกว่าหรือเท่ากับค่าเริ่มต้น`
             }
           }
         }
@@ -614,7 +784,13 @@ export default {
         const settings = await this.fetchSettingCache()
         const setting = settings.find(item => item && item.key === BUDGET_MULTIPLIER_SETTING_KEY)
         const rawValue = setting ? setting.value : null
-        this.budgetMultiplierConfig = parseBudgetMultiplierSettingValue(rawValue, { fallbackToDefault: true })
+        const parsedConfig = parseBudgetMultiplierSettingValue(rawValue, { fallbackToDefault: true })
+        const fallbackRaw = localStorage.getItem(BUDGET_MULTIPLIER_LOCAL_FALLBACK_KEY)
+        const fallbackParsed = fallbackRaw ? JSON.parse(fallbackRaw) : null
+        const fallbackConfig = fallbackParsed && Array.isArray(fallbackParsed.budgetMultiplierConfig)
+          ? fallbackParsed.budgetMultiplierConfig
+          : []
+        this.budgetMultiplierConfig = mergeBudgetMultiplierMaxValues(parsedConfig, fallbackConfig)
         this.saveBudgetMultiplierFallback()
       } catch (error) {
         console.error('[AdminFundingBudgetSettings] fetch multiplier config error:', error)
@@ -681,7 +857,7 @@ export default {
       if (!Array.isArray(category.multipliers)) {
         this.$set(category, 'multipliers', [])
       }
-      category.multipliers.push({ label: 'ตัวคูณใหม่', value: 1, isAdmin: false })
+      category.multipliers.push({ ...createBudgetMultiplierTemplate(), label: 'ตัวคูณใหม่' })
     },
     removeBudgetMultiplier (categoryIndex, multiplierIndex) {
       const category = this.budgetMultiplierConfig[categoryIndex]
@@ -704,6 +880,22 @@ export default {
       if (!multiplier) return
       this.$set(multiplier, 'value', this.toMultiplierNumber(value, 0))
     },
+    updateBudgetMultiplierMaxValue (categoryIndex, multiplierIndex, value) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const multiplier = category && Array.isArray(category.multipliers)
+        ? category.multipliers[multiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'maxValue', value)
+    },
+    updateBudgetMultiplierUserInputAllowed (categoryIndex, multiplierIndex, checked) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const multiplier = category && Array.isArray(category.multipliers)
+        ? category.multipliers[multiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'isAdmin', !checked)
+    },
     addBudgetItemOverride (categoryIndex) {
       const category = this.budgetMultiplierConfig[categoryIndex]
       if (!category) return
@@ -724,6 +916,50 @@ export default {
         : null
       if (!itemOverride) return
       this.$set(itemOverride, 'matchText', value)
+    },
+    isOverrideAppliedToAllFundingTypes (itemOverride) {
+      if (!itemOverride || typeof itemOverride !== 'object') return true
+      return itemOverride.applyToAllFundingTypes !== false
+    },
+    isOverrideFundingTypeSelected (itemOverride, fundingTypeKey) {
+      if (!itemOverride || typeof itemOverride !== 'object') return false
+      const normalizedKey = this.normalizeFundingKey(fundingTypeKey)
+      if (!normalizedKey) return false
+      const current = Array.isArray(itemOverride.fundingTypeKeys)
+        ? itemOverride.fundingTypeKeys.map(key => this.normalizeFundingKey(key)).filter(Boolean)
+        : []
+      return current.includes(normalizedKey)
+    },
+    toggleBudgetItemOverrideApplyAllFundingTypes (categoryIndex, overrideIndex, checked) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      if (!itemOverride) return
+      this.$set(itemOverride, 'applyToAllFundingTypes', Boolean(checked))
+      if (checked) {
+        this.$set(itemOverride, 'fundingTypeKeys', [])
+      }
+    },
+    toggleBudgetItemOverrideFundingType (categoryIndex, overrideIndex, fundingTypeKey, checked) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      if (!itemOverride) return
+
+      const normalizedKey = this.normalizeFundingKey(fundingTypeKey)
+      if (!normalizedKey) return
+
+      const current = Array.isArray(itemOverride.fundingTypeKeys)
+        ? itemOverride.fundingTypeKeys.map(key => this.normalizeFundingKey(key)).filter(Boolean)
+        : []
+      const next = checked
+        ? Array.from(new Set(current.concat(normalizedKey)))
+        : current.filter(key => key !== normalizedKey)
+
+      this.$set(itemOverride, 'applyToAllFundingTypes', false)
+      this.$set(itemOverride, 'fundingTypeKeys', next)
     },
     addBudgetItemOverrideMultiplier (categoryIndex, overrideIndex) {
       const category = this.budgetMultiplierConfig[categoryIndex]
@@ -766,6 +1002,28 @@ export default {
       if (!multiplier) return
       this.$set(multiplier, 'value', this.toMultiplierNumber(value, 0))
     },
+    updateBudgetItemOverrideMultiplierMaxValue (categoryIndex, overrideIndex, overrideMultiplierIndex, value) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      const multiplier = itemOverride && Array.isArray(itemOverride.multipliers)
+        ? itemOverride.multipliers[overrideMultiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'maxValue', value)
+    },
+    updateBudgetItemOverrideMultiplierUserInputAllowed (categoryIndex, overrideIndex, overrideMultiplierIndex, checked) {
+      const category = this.budgetMultiplierConfig[categoryIndex]
+      const itemOverride = category && Array.isArray(category.itemOverrides)
+        ? category.itemOverrides[overrideIndex]
+        : null
+      const multiplier = itemOverride && Array.isArray(itemOverride.multipliers)
+        ? itemOverride.multipliers[overrideMultiplierIndex]
+        : null
+      if (!multiplier) return
+      this.$set(multiplier, 'isAdmin', !checked)
+    },
     async resetBudgetMultipliersToDefault () {
       const result = await Swal.fire({
         icon: 'warning',
@@ -791,12 +1049,13 @@ export default {
       this.fundingBudgetConfig = createDefaultFundingBudgetConfig()
     },
     async saveBudgetMultiplierConfig () {
-      const payload = this.sanitizeBudgetMultiplierConfigForSave()
-      const validationError = this.validateBudgetMultiplierPayload(payload)
+      const validationError = this.validateBudgetMultiplierPayload(this.budgetMultiplierConfig)
       if (validationError) {
         await Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบถ้วน', text: validationError })
         return
       }
+
+      const payload = this.sanitizeBudgetMultiplierConfigForSave()
 
       this.savingMultiplier = true
       try {

@@ -207,6 +207,7 @@ import {
   buildCommitteeSectionComment,
   getCommitteeFeedbackMeta
 } from '@/ResearchFormRS/constants/committeeFeedback'
+import { getCommitteeRubricConfig } from '@/ResearchFormRS/constants/committeeRubric'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 
 export default {
@@ -228,39 +229,38 @@ export default {
       selectedFundType: 'new',
       fundTypeLocked: false,
       fundTypeFallback: false,
-      fundTypeOptions: [
-        { value: 'new', label: 'ทุนวิจัยใหม่' },
-        { value: 'develop', label: 'ทุนพัฒนา' },
-        { value: 'extension', label: 'ทุนต่อยอด/ทุนอุตสาหกรรม' }
-      ],
-      rubricScoreOptions: [0, 1, 2],
-      rubricRows: [
-        { no: 1, title: 'ความสำคัญและความชัดเจนของโจทย์วิจัย/คำถามวิจัย', desc: '0–2', weights: { new: 15, develop: 10, extension: 10 } },
-        { no: 2, title: 'วัตถุประสงค์ของโครงการ', desc: '0–2', weights: { new: 15, develop: 5, extension: 5 } },
-        { no: 3, title: 'การทบทวนวรรณกรรม', desc: '0–2', weights: { new: 15, develop: 5, extension: 5 } },
-        { no: 4, title: 'กระบวนการและวิธีการ', desc: '0–2', weights: { new: 15, develop: 15, extension: 10 } },
-        { no: 5, title: 'แผนการดำเนินงาน', desc: '0–2', weights: { new: 10, develop: 10, extension: 5 } },
-        { no: 6, title: 'ผลลัพธ์ของโครงการวิจัย', desc: '0–2', weights: { new: 10, develop: 15, extension: 15 } },
-        { no: 7, title: 'การบูรณาการงานวิจัย', desc: '0–2', weights: { new: 5, develop: 10, extension: 15 } },
-        { no: 8, title: 'ระดับการถ่ายทอดสังคม', desc: '0–2', weights: { new: null, develop: 10, extension: 15 } },
-        { no: 9, title: 'งบประมาณ', desc: '0–2', weights: { new: 5, develop: 5, extension: 5 } },
-        { no: 10, title: 'คุณสมบัติของคณะผู้วิจัย', desc: '0–2', weights: { new: 5, develop: 5, extension: 5 } },
-        { no: 11, title: 'ความสอดคล้องกับแผนงานที่มหาวิทยาลัยกำหนด', desc: '0–2', weights: { new: 5, develop: 10, extension: 10 } }
-      ],
       decisionOptions: [
         { value: 'approve', label: 'อนุมัติ' },
         { value: 'reject', label: 'ไม่อนุมัติ' },
         { value: 'revision', label: 'ขอแก้ไขเพิ่มเติม' }
       ],
       form: {
-        rubricScores: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0 },
-        rowComments: { 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '', 10: '', 11: '' },
+        rubricScores: {},
+        rowComments: {},
         comments: '',
         decision: 'approve'
       }
     }
   },
   computed: {
+    committeeRubricConfig() {
+      return getCommitteeRubricConfig()
+    },
+    fundTypeOptions() {
+      return this.committeeRubricConfig && Array.isArray(this.committeeRubricConfig.fundTypeOptions)
+        ? this.committeeRubricConfig.fundTypeOptions
+        : []
+    },
+    rubricScoreOptions() {
+      return this.committeeRubricConfig && Array.isArray(this.committeeRubricConfig.scoreOptions)
+        ? this.committeeRubricConfig.scoreOptions
+        : [0, 1, 2]
+    },
+    rubricRows() {
+      return this.committeeRubricConfig && Array.isArray(this.committeeRubricConfig.rubricRows)
+        ? this.committeeRubricConfig.rubricRows
+        : []
+    },
     proposalId() {
       return this.proposal && this.proposal._id ? this.proposal._id : (this.$route.params.id || '')
     },
@@ -350,9 +350,30 @@ export default {
     },
     applyFundTypeFromProposal() {
       const derived = this.deriveFundTypeKeyFromProposal(this.proposal)
+      const fallbackFundType = this.fundTypeOptions && this.fundTypeOptions[0] ? this.fundTypeOptions[0].value : 'new'
       this.fundTypeLocked = true
       this.fundTypeFallback = !derived
-      this.selectedFundType = derived || this.selectedFundType || 'new'
+      this.selectedFundType = derived || this.selectedFundType || fallbackFundType
+    },
+    buildEmptyRubricScores() {
+      return (this.rubricRows || []).reduce((result, row) => {
+        result[row.no] = 0
+        return result
+      }, {})
+    },
+    buildEmptyRowComments() {
+      return (this.rubricRows || []).reduce((result, row) => {
+        result[row.no] = ''
+        return result
+      }, {})
+    },
+    buildInitialForm() {
+      return {
+        rubricScores: this.buildEmptyRubricScores(),
+        rowComments: this.buildEmptyRowComments(),
+        comments: '',
+        decision: 'approve'
+      }
     },
     async load() {
       await loadResearchFormRuntimeConfigs()
@@ -381,12 +402,7 @@ export default {
 
       this.applyFundTypeFromProposal()
 
-      this.form = {
-        rubricScores: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0 },
-        rowComments: { 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '', 10: '', 11: '' },
-        comments: '',
-        decision: 'approve'
-      }
+      this.form = this.buildInitialForm()
 
       if (this.proposal) this.loadDraft()
       if (this.proposal) await this.loadSavedReview()
@@ -626,7 +642,7 @@ export default {
       return items
     },
     extractRowComments(commentItems) {
-      const base = { 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '', 10: '', 11: '' }
+      const base = this.buildEmptyRowComments()
       ;(Array.isArray(commentItems) ? commentItems : []).forEach(item => {
         const key = String(item && item.fieldKey ? item.fieldKey : '')
         const matched = key.match(/^criteria_(\d+)$/)

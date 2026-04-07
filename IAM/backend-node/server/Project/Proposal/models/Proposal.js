@@ -62,7 +62,8 @@ const proposalSchema = new mongoose.Schema(
       type: String,
       required: true,
       default: ProposalStatus.DRAFT,
-      enum: Object.values(ProposalStatus),
+      enum: ProposalStatus.WORKFLOW_STATUS_VALUES,
+      set: ProposalStatus.normalizeStatus,
       index: true
     },
     currentRound: {
@@ -82,6 +83,40 @@ const proposalSchema = new mongoose.Schema(
       type: [mongoose.Schema.Types.ObjectId],
       ref: 'User',
       default: []
+    },
+    chairmanAssignment: {
+      assignedChairmanIds: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'User',
+        default: []
+      },
+      status: {
+        type: String,
+        enum: ['idle', 'pending', 'approved', 'rejected'],
+        default: 'idle'
+      },
+      assignedAt: {
+        type: Date,
+        default: null
+      },
+      assignedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+      },
+      reviewedAt: {
+        type: Date,
+        default: null
+      },
+      reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+      },
+      summaryComment: {
+        type: String,
+        default: ''
+      }
     },
     requiresRevision: {
       type: Boolean,

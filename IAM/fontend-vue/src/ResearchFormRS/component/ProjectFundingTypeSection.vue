@@ -29,6 +29,10 @@
               <span v-if="typeOption.subOptions.length" class="funding-type-card__badge">มีตัวเลือกย่อย</span>
             </div>
 
+            <div v-if="hasBudgetLimit(typeOption.budgetLimit)" class="funding-type-card__budget">
+              วงเงินสูงสุด {{ formatBudgetLimit(typeOption.budgetLimit) }} บาท
+            </div>
+
             <p class="funding-type-card__description mb-0">{{ typeOption.shortDescription }}</p>
 
             <details class="funding-detail-disclosure">
@@ -120,6 +124,9 @@
             <span v-else> → (ยังไม่ได้เลือก)</span>
           </template>
         </div>
+        <div v-if="selectedFundingTypeOption && hasBudgetLimit(selectedFundingTypeOption.budgetLimit)" class="funding-selection-summary__budget">
+          วงเงินสูงสุด {{ formatBudgetLimit(selectedFundingTypeOption.budgetLimit) }} บาท
+        </div>
       </div>
     </div>
   </div>
@@ -183,6 +190,14 @@ export default {
     }
   },
   methods: {
+    hasBudgetLimit(value) {
+      return Number.isFinite(Number(value)) && Number(value) > 0
+    },
+    formatBudgetLimit(value) {
+      const amount = Number(value)
+      if (!Number.isFinite(amount) || amount <= 0) return '-'
+      return amount.toLocaleString('th-TH')
+    },
     focusSubStepIfNeeded(fundingType) {
       const option = (Array.isArray(this.fundingTypeOptions) ? this.fundingTypeOptions : [])
         .find((item) => item && item.value === fundingType)
@@ -417,6 +432,13 @@ export default {
   line-height: 1.45;
 }
 
+.funding-type-card__budget {
+  margin-top: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
 .funding-subtype-card__description {
   margin-top: 6px;
   margin-left: 0;
@@ -560,6 +582,13 @@ export default {
   line-height: 1.45;
 }
 
+.funding-selection-summary__budget {
+  margin-top: 6px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
 .funding-type-section.is-dark .funding-options {
   background: #1a2432;
   border: 1px solid #2f3f52;
@@ -610,6 +639,11 @@ export default {
 .funding-type-section.is-dark .funding-detail-disclosure p,
 .funding-type-section.is-dark .funding-detail-toggle {
   color: #aab9ca;
+}
+
+.funding-type-section.is-dark .funding-type-card__budget,
+.funding-type-section.is-dark .funding-selection-summary__budget {
+  color: #93c5fd;
 }
 
 .funding-type-section.is-dark .funding-selection-summary {

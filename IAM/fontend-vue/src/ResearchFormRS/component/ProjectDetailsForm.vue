@@ -308,6 +308,7 @@ import {
   normalizeFundingBudgetConfig,
   normalizeFundingBudgetKey
 } from '@/ResearchFormRS/utils/fundingBudgetConfig'
+import { RESEARCH_STANDARD_TEXT } from '@/ResearchFormRS/constants/researchStandard'
 
 // Structured funding definitions reserved for future cross-section constraints
 // (e.g. budget-cap rules) without changing template wiring.
@@ -560,7 +561,7 @@ export default {
     },
     isCommitteeReviewRoute() {
       const path = String((this.$route && this.$route.path) || '').trim().toLowerCase()
-      return path.indexOf('/committee/') !== -1 || path.indexOf('/review/proposals') !== -1
+      return path.indexOf('/committee/') !== -1 || path.indexOf('/chairman/') !== -1 || path.indexOf('/review/proposals') !== -1
     },
     shouldUseBudgetReport() {
       return (
@@ -885,6 +886,7 @@ export default {
         const fallbackType = fallbackMap.get(typeKey) || {}
         const fallbackValue = normalizeFundingBudgetKey(fallbackType && fallbackType.value)
         const value = typeKey || fallbackValue || `funding-type-${typeIndex + 1}`
+        const budgetLimit = Number(fundingType && fundingType.budgetLimit)
         const shortName = String(
           (fundingType && fundingType.label) ||
           fallbackType.shortName ||
@@ -909,6 +911,7 @@ export default {
         return {
           ...fallbackType,
           value,
+          budgetLimit: Number.isFinite(budgetLimit) && budgetLimit > 0 ? budgetLimit : 0,
           shortName,
           shortDescription,
           officialText,
@@ -1282,7 +1285,7 @@ export default {
       // 1. ตรวจสอบ Validation (ตัวอย่างการเช็คหัวข้อ 18)
       const std = this.form.researchStandard;
       if (std.mainType === 'human_animal' && !std.isHuman && !std.isAnimal) {
-        alert('กรุณาระบุข้อมูลมาตรฐานการวิจัยให้ครบถ้วน (ต้องเลือก มนุษย์ หรือ สัตว์ทดลอง อย่างน้อย 1 อย่าง)');
+        alert(RESEARCH_STANDARD_TEXT.minimumSelectionMessage);
         return;
       }
     },

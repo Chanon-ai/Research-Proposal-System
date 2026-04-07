@@ -231,6 +231,7 @@ const NOTIFICATION_TYPES = {
   revision_requested: 'ขอแก้ไขเอกสาร',
   approved: 'โครงการได้รับการอนุมัติ',
   rejected: 'โครงการถูกปฏิเสธ',
+  committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
   meeting_completed: 'กรรมการได้ให้ความเห็นแล้ว',
   collaboration_confirmation: 'ยืนยันความร่วมมือ',
   meeting_scheduled: 'กำหนดการประชุม',
@@ -244,7 +245,8 @@ const TYPE_BADGE_COLOR = {
   revision_requested: 'warning',
   approved: 'success',
   rejected: 'danger',
-  meeting_completed: 'primary',
+  committee_valuated: 'danger',
+  meeting_completed: 'danger',
   collaboration_confirmation: 'info',
   meeting_scheduled: 'primary',
   document_required: 'warning',
@@ -337,7 +339,7 @@ export default {
     previewRecipientCount () {
       if (this.sendForm.recipientType === 'specific') return this.sendForm.recipientIds.length
       if (this.sendForm.recipientType === 'all_researchers') return this.users.filter(u => u.role === 'researcher').length
-      if (this.sendForm.recipientType === 'all_committee') return this.users.filter(u => u.role === 'committee').length
+      if (this.sendForm.recipientType === 'all_committee') return this.users.filter(u => ['committee', 'chairman'].includes(u.role)).length
       return this.users.length
     }
   },

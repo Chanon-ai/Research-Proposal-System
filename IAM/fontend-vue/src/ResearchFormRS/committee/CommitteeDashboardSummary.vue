@@ -249,12 +249,12 @@
 import Service, { instance as axios } from '@/service/api'
 import { CChartBar, CChartDoughnut } from '@coreui/vue-chartjs'
 import {
-  COMMITTEE_DASHBOARD_BACKGROUND_COLORS,
-  COMMITTEE_DASHBOARD_BORDER_COLORS,
   COMMITTEE_DASHBOARD_FLOW_STATUSES,
   COMMITTEE_PENDING_STATUSES,
   COMMITTEE_REVIEWED_STATUSES,
+  PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
   deriveProposalRoundNo,
+  getCoreUiColorHex,
   getCommitteeDashboardStatusLabel,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
@@ -374,12 +374,14 @@ export default {
       })
 
       const labels = COMMITTEE_DASHBOARD_FLOW_STATUSES.map(key => this.committeeStatusLabelByKey(key, null, false))
-      const backgroundColor = COMMITTEE_DASHBOARD_FLOW_STATUSES.map(key => COMMITTEE_DASHBOARD_BACKGROUND_COLORS[key])
-      const borderColor = COMMITTEE_DASHBOARD_FLOW_STATUSES.map(key => COMMITTEE_DASHBOARD_BORDER_COLORS[key])
+      const semanticColors = COMMITTEE_DASHBOARD_FLOW_STATUSES.map(key => this.getCommitteeFlowColorName(key))
+      const backgroundColor = semanticColors.map(color => getCoreUiColorHex(color, 0.28))
+      const borderColor = semanticColors.map(color => getCoreUiColorHex(color))
       const data = COMMITTEE_DASHBOARD_FLOW_STATUSES.map(key => counts[key] || 0)
       const items = COMMITTEE_DASHBOARD_FLOW_STATUSES.map((key, index) => ({
         key,
         label: labels[index],
+        badgeColor: semanticColors[index],
         color: borderColor[index],
         count: data[index]
       }))
@@ -640,9 +642,9 @@ export default {
       const reviewStatus = explicitReviewStatus || (proposal ? this.getReviewStatusForProposal(proposal) : '')
       const key = normalizeProposalStatus(status)
       if (this.isCommitteeReviewSubmitted(reviewStatus) && key !== 'announced' && key !== 'revision_requested' && key !== 'resubmitted') {
-        return 'meeting_completed'
+        return 'committee_valuated'
       }
-      if (key === 'approved' || key === 'rejected') return 'meeting_completed'
+      if (key === 'approved' || key === 'rejected') return 'committee_valuated'
       if (COMMITTEE_DASHBOARD_FLOW_STATUSES.includes(key)) return key
       return 'assigned_to_committee'
     },
@@ -664,6 +666,9 @@ export default {
     committeeStatusLabel(status, roundNo, includeRound = true, reviewStatus = null) {
       const statusKey = this.getCommitteeFlowStatusKey(status, reviewStatus)
       return this.committeeStatusLabelByKey(statusKey, roundNo, includeRound)
+    },
+    getCommitteeFlowColorName(status) {
+      return STATUS_COLORS[normalizeProposalStatus(status)] || 'secondary'
     },
     async fetchAssignedProposals() {
       this.loading = true
@@ -753,7 +758,6 @@ export default {
           totalScore,
           maxScore,
           percent,
-          p.submittedAt || p.createdAt || '',
           (review && (review.updatedAt || review.submittedAt)) || p.updatedAt || ''
         ]
       }
@@ -769,7 +773,6 @@ export default {
         'คะแนนรวม',
         'คะแนนเต็ม',
         'คิดเป็น %',
-        'วันที่ส่ง',
         'อัปเดตล่าสุด'
       ]
       const rows = items.map(rowFor)
