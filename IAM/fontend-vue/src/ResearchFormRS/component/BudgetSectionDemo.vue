@@ -184,21 +184,23 @@
               <td class="align-middle bg-white">
                 <div class="d-flex justify-content-center align-items-center flex-wrap" style="gap: 8px;">
                   <template v-if="category.isOther">
-                    <template v-for="(mult, mIndex) in item.multipliers">
-                      <div :key="`${item.id}-other-mult-${mIndex}`" class="position-relative multiplier-box">
-                        <CButton v-if="!isReadOnly && item.multipliers.length > 1" 
-                                 color="danger" 
+                    <div v-for="(mult, mIndex) in item.multipliers"
+                         :key="`${item.id}-other-mult-${mIndex}`"
+                         style="display: contents">
+                      <div class="position-relative multiplier-box">
+                        <CButton v-if="!isReadOnly && item.multipliers.length > 1"
+                                 color="danger"
                                  size="sm"
-                                 @click="removeMultiplier(item, mIndex)" 
-                                 class="position-absolute remove-mult-btn" 
+                                 @click="removeMultiplier(item, mIndex)"
+                                 class="position-absolute remove-mult-btn"
                                  :title="budgetText.removeMultiplier">
                           <CIcon name="cil-x" class="m-1"/>
                         </CButton>
-                        
-                        <input type="text" class="form-control form-control-sm text-center mb-1 text-muted bg-transparent border-1" 
+
+                        <input type="text" class="form-control form-control-sm text-center mb-1 text-muted bg-transparent border-1"
                                v-model="mult.label" :placeholder="budgetText.unitNamePlaceholder" :readonly="isReadOnly">
-                        <input type="text" inputmode="numeric" class="form-control text-center" 
-                               v-model="mult.value" :placeholder="budgetText.numberPlaceholder" 
+                        <input type="text" inputmode="numeric" class="form-control text-center"
+                               v-model="mult.value" :placeholder="budgetText.numberPlaceholder"
                              :max="getHtmlInputMax(mult.maxValue)"
                                @keypress="isNumber"
                              @input="handleManualMultiplierInput(item, mult)"
@@ -207,23 +209,21 @@
                       </div>
                       <span
                         v-if="mIndex < item.multipliers.length - 1"
-                        :key="`${item.id}-other-sep-${mIndex}`"
                         class="multiplier-separator"
                       >
                         x
                       </span>
-                    </template>
+                    </div>
                     <CButton v-if="!isReadOnly" color="primary" size="sm" class="mt-4" :title="budgetText.addMultiplier" @click="addMultiplier(item)" style="height: 38px;">
                       <CIcon name="cil-plus" class="m-1"/>
                     </CButton>
                   </template>
 
                   <template v-else>
-                    <template v-for="(field, fieldIndex) in getFieldsForRow(item)">
-                      <div
-                        :key="`${item.id}-${field.key}`"
-                        class="position-relative multiplier-box"
-                      >
+                    <div v-for="(field, fieldIndex) in getFieldsForRow(item)"
+                         :key="`${item.id}-${field.key}`"
+                         style="display: contents">
+                      <div class="position-relative multiplier-box">
                         <div class="floating-outline-wrap">
                           <input
                             type="text"
@@ -242,12 +242,11 @@
                       </div>
                       <span
                         v-if="fieldIndex < getFieldsForRow(item).length - 1"
-                        :key="`${item.id}-calc-sep-${fieldIndex}`"
                         class="multiplier-separator"
                       >
                         x
                       </span>
-                    </template>
+                    </div>
                   </template>
                 </div>
 
@@ -342,14 +341,14 @@
         <hr class="mt-2 mb-2" style="border-color: rgba(229, 83, 83, 0.2);">
         <ul class="mb-0 text-dark pl-3 budget-warning-details">
           <li v-if="isTravelExceeded" class="mb-1">
-            <strong>{{ isEnglishLocale ? 'Travel Costs:' : '??????????????:' }}</strong> {{ isEnglishLocale ? 'requested' : '??????' }} {{ formatNumber(travelTotal) }} {{ isEnglishLocale ? 'THB' : '???' }} 
-            <span class="text-danger">({{ isEnglishLocale ? 'equal to' : '???????' }} {{ ((travelTotal / grandTotal) * 100).toFixed(2) }}% {{ isEnglishLocale ? 'of total budget' : '????????' }})</span> 
-            *{{ isEnglishLocale ? 'limit is not more than 25% or' : '????????????????? 25% ????' }} {{ formatNumber(limit25Percent) }} {{ isEnglishLocale ? 'THB' : '???' }}
+            <strong>{{ isEnglishLocale ? 'Travel Costs:' : 'ค่าเดินทาง:' }}</strong> {{ isEnglishLocale ? 'requested' : 'ขอ' }} {{ formatNumber(travelTotal) }} {{ isEnglishLocale ? 'THB' : 'บาท' }}
+            <span class="text-danger">({{ isEnglishLocale ? 'equal to' : 'คิดเป็น' }} {{ ((travelTotal / grandTotal) * 100).toFixed(2) }}% {{ isEnglishLocale ? 'of total budget' : 'ของงบรวม' }})</span>
+            *{{ isEnglishLocale ? 'limit is not more than 25% or' : 'กำหนดไม่เกิน 25% หรือ' }} {{ formatNumber(limit25Percent) }} {{ isEnglishLocale ? 'THB' : 'บาท' }}
           </li>
           <li v-if="isEquipmentExceeded">
-            <strong>{{ isEnglishLocale ? 'Equipment:' : '????????????:' }}</strong> {{ isEnglishLocale ? 'requested' : '??????' }} {{ formatNumber(equipmentTotal) }} {{ isEnglishLocale ? 'THB' : '???' }} 
-            <span class="text-danger">({{ isEnglishLocale ? 'equal to' : '???????' }} {{ ((equipmentTotal / grandTotal) * 100).toFixed(2) }}% {{ isEnglishLocale ? 'of total budget' : '????????' }})</span> 
-            *{{ isEnglishLocale ? 'limit is not more than 25% or' : '????????????????? 25% ????' }} {{ formatNumber(limit25Percent) }} {{ isEnglishLocale ? 'THB' : '???' }}
+            <strong>{{ isEnglishLocale ? 'Equipment:' : 'ครุภัณฑ์:' }}</strong> {{ isEnglishLocale ? 'requested' : 'ขอ' }} {{ formatNumber(equipmentTotal) }} {{ isEnglishLocale ? 'THB' : 'บาท' }}
+            <span class="text-danger">({{ isEnglishLocale ? 'equal to' : 'คิดเป็น' }} {{ ((equipmentTotal / grandTotal) * 100).toFixed(2) }}% {{ isEnglishLocale ? 'of total budget' : 'ของงบรวม' }})</span>
+            *{{ isEnglishLocale ? 'limit is not more than 25% or' : 'กำหนดไม่เกิน 25% หรือ' }} {{ formatNumber(limit25Percent) }} {{ isEnglishLocale ? 'THB' : 'บาท' }}
           </li>
         </ul>
       </div>
@@ -1154,37 +1153,37 @@ export default {
         }
       }
       return {
-        used: '?????',
-        remaining: '?????',
-        valid: '???????',
-        invalid: '??????????',
-        collapseDetails: '?????????????',
-        expandDetails: '?????????????',
-        addManualItem: '??????????????',
-        attachDocument: '?????????',
-        item: '??????',
-        multiplierDetails: '????????????????',
-        totalBudget: '????? (???)',
-        period: (index) => `??? ${index}`,
-        noItemsInCategory: '???????????????????????',
-        itemPlaceholder: '??????????????...',
-        searchItemPlaceholder: '?????/??????????????...',
-        selectDocumentCategory: '???????????????????:',
-        selectCategory: '-- ????????????? --',
-        quotationOption: '?????????? / Quotation',
-        serviceRatesOption: '?????????????????? ? / Service Rates',
-        exampleDocument: '??????????????',
-        removeMultiplier: '????????',
-        unitNamePlaceholder: '?????????',
-        numberPlaceholder: '??????',
-        addMultiplier: '???????????',
-        overBudget: '??????!',
-        remove: '??',
-        warningHeading: '???????????: ???????????????????????????????????????????',
-        projectBudget: '???????????????',
-        usedAlready: '?????????',
-        remainingBudget: '???????',
-        totalBudgetShort: '?????'
+        used: 'ใช้ไป',
+        remaining: 'คงเหลือ',
+        valid: 'ถูกต้อง',
+        invalid: 'ไม่ถูกต้อง',
+        collapseDetails: 'ย่อรายละเอียด',
+        expandDetails: 'ขยายรายละเอียด',
+        addManualItem: 'เพิ่มรายการ',
+        attachDocument: 'แนบเอกสาร',
+        item: 'รายการ',
+        multiplierDetails: 'รายละเอียดตัวคูณ',
+        totalBudget: 'งบประมาณ (บาท)',
+        period: (index) => `ปีที่ ${index}`,
+        noItemsInCategory: 'ยังไม่มีรายการในหมวดนี้',
+        itemPlaceholder: 'ระบุชื่อรายการ...',
+        searchItemPlaceholder: 'ค้นหา/ระบุชื่อรายการ...',
+        selectDocumentCategory: 'เลือกประเภทเอกสาร:',
+        selectCategory: '-- เลือกประเภท --',
+        quotationOption: 'ใบเสนอราคา / Quotation',
+        serviceRatesOption: 'อัตราค่าบริการ / Service Rates',
+        exampleDocument: 'เอกสารตัวอย่าง',
+        removeMultiplier: 'ลบตัวคูณ',
+        unitNamePlaceholder: 'ชื่อหน่วย',
+        numberPlaceholder: 'จำนวน',
+        addMultiplier: 'เพิ่มตัวคูณ',
+        overBudget: 'เกินงบ!',
+        remove: 'ลบ',
+        warningHeading: 'คำเตือน: การจัดสรรงบประมาณเกินเกณฑ์ที่มหาวิทยาลัยกำหนด',
+        projectBudget: 'งบประมาณโครงการ',
+        usedAlready: 'ใช้ไปแล้ว',
+        remainingBudget: 'คงเหลือ',
+        totalBudgetShort: 'รวม'
       }
     },
     categoryHeaderStyle() {
@@ -1282,7 +1281,7 @@ export default {
       return getFundingTypeLabel(
         this.normalizedFundingBudgetConfig,
         this.fundingType,
-        this.isEnglishLocale ? 'Unspecified funding type' : '????????????????'
+        this.isEnglishLocale ? 'Unspecified funding type' : 'ไม่ระบุประเภททุน'
       )
     },
     remainingBudget() {
@@ -1315,8 +1314,8 @@ export default {
       return this.isBudgetSummaryValid ? 'valid' : 'invalid'
     },
     budgetSummaryPillLabel() {
-      if (this.budgetSummaryState === 'empty') return this.isEnglishLocale ? 'No data yet' : '??????????????'
-      return this.budgetSummaryState === 'valid' ? (this.isEnglishLocale ? 'Valid' : '???????') : (this.isEnglishLocale ? 'Needs attention' : '?????????')
+      if (this.budgetSummaryState === 'empty') return this.isEnglishLocale ? 'No data yet' : 'ยังไม่มีข้อมูล'
+      return this.budgetSummaryState === 'valid' ? (this.isEnglishLocale ? 'Valid' : 'ถูกต้อง') : (this.isEnglishLocale ? 'Needs attention' : 'ต้องตรวจสอบ')
     },
     budgetSummaryStatePillClass() {
       if (this.budgetSummaryState === 'empty') return 'is-empty'
@@ -1352,51 +1351,51 @@ export default {
 
       if (this.isBudgetLimitExceeded) {
         details.push(
-          `${this.isEnglishLocale ? 'Total budget exceeds the limit' : '??????????????'} (${this.formatNumber(this.grandTotal)} / ${this.formatNumber(this.budgetLimit)} ${this.isEnglishLocale ? 'THB' : '???'})`
+          `${this.isEnglishLocale ? 'Total budget exceeds the limit' : 'งบประมาณรวมเกินวงเงิน'} (${this.formatNumber(this.grandTotal)} / ${this.formatNumber(this.budgetLimit)} ${this.isEnglishLocale ? 'THB' : 'บาท'})`
         )
       }
 
       if (this.isTravelExceeded) {
         details.push(
-          `${this.isEnglishLocale ? 'Travel costs exceed the 25% limit' : '??????????????????????? 25%'} (${this.formatNumber(this.travelTotal)} / ${this.formatNumber(this.limit25Percent)} ${this.isEnglishLocale ? 'THB' : '???'})`
+          `${this.isEnglishLocale ? 'Travel costs exceed the 25% limit' : 'ค่าเดินทางเกินเกณฑ์ 25%'} (${this.formatNumber(this.travelTotal)} / ${this.formatNumber(this.limit25Percent)} ${this.isEnglishLocale ? 'THB' : 'บาท'})`
         )
       }
 
       if (this.isEquipmentExceeded) {
         details.push(
-          `${this.isEnglishLocale ? 'Equipment costs exceed the 25% limit' : '????????????????????? 25%'} (${this.formatNumber(this.equipmentTotal)} / ${this.formatNumber(this.limit25Percent)} ${this.isEnglishLocale ? 'THB' : '???'})`
+          `${this.isEnglishLocale ? 'Equipment costs exceed the 25% limit' : 'ค่าครุภัณฑ์เกินเกณฑ์ 25%'} (${this.formatNumber(this.equipmentTotal)} / ${this.formatNumber(this.limit25Percent)} ${this.isEnglishLocale ? 'THB' : 'บาท'})`
         )
       }
 
       if (this.grandTotal > 0 && !this.isPeriod1Valid) {
         details.push(
-          `${this.budgetText.period(1)} ${this.isEnglishLocale ? 'must equal' : '????????'} ${this.formatNumber(this.expectedPeriod1)} ${this.isEnglishLocale ? 'THB' : '???'} (${this.isEnglishLocale ? 'current' : '????????'} ${this.formatNumber(this.totalPeriod1)} ${this.isEnglishLocale ? 'THB' : '???'})`
+          `${this.budgetText.period(1)} ${this.isEnglishLocale ? 'must equal' : 'ต้องเท่ากับ'} ${this.formatNumber(this.expectedPeriod1)} ${this.isEnglishLocale ? 'THB' : 'บาท'} (${this.isEnglishLocale ? 'current' : 'ปัจจุบัน'} ${this.formatNumber(this.totalPeriod1)} ${this.isEnglishLocale ? 'THB' : 'บาท'})`
         )
       }
 
       if (this.grandTotal > 0 && !this.isPeriod2Valid) {
         details.push(
-          `${this.budgetText.period(2)} ${this.isEnglishLocale ? 'must equal' : '????????'} ${this.formatNumber(this.expectedPeriod2)} ${this.isEnglishLocale ? 'THB' : '???'} (${this.isEnglishLocale ? 'current' : '????????'} ${this.formatNumber(this.totalPeriod2)} ${this.isEnglishLocale ? 'THB' : '???'})`
+          `${this.budgetText.period(2)} ${this.isEnglishLocale ? 'must equal' : 'ต้องเท่ากับ'} ${this.formatNumber(this.expectedPeriod2)} ${this.isEnglishLocale ? 'THB' : 'บาท'} (${this.isEnglishLocale ? 'current' : 'ปัจจุบัน'} ${this.formatNumber(this.totalPeriod2)} ${this.isEnglishLocale ? 'THB' : 'บาท'})`
         )
       }
 
       if (this.grandTotal > 0 && !this.isPeriod3Valid) {
         details.push(
-          `${this.budgetText.period(3)} ${this.isEnglishLocale ? 'must equal' : '????????'} ${this.formatNumber(this.expectedPeriod3)} ${this.isEnglishLocale ? 'THB' : '???'} (${this.isEnglishLocale ? 'current' : '????????'} ${this.formatNumber(this.totalPeriod3)} ${this.isEnglishLocale ? 'THB' : '???'})`
+          `${this.budgetText.period(3)} ${this.isEnglishLocale ? 'must equal' : 'ต้องเท่ากับ'} ${this.formatNumber(this.expectedPeriod3)} ${this.isEnglishLocale ? 'THB' : 'บาท'} (${this.isEnglishLocale ? 'current' : 'ปัจจุบัน'} ${this.formatNumber(this.totalPeriod3)} ${this.isEnglishLocale ? 'THB' : 'บาท'})`
         )
       }
 
       return details
     },
     budgetSummaryStatusText() {
-      if (this.isBudgetSummaryEmpty) return this.isEnglishLocale ? 'No data yet' : '??????????????'
-      if (this.isBudgetSummaryValid) return this.isEnglishLocale ? 'Budget is valid' : '???????????????'
-      if (this.isBudgetLimitExceeded) return this.isEnglishLocale ? 'Budget exceeds the limit' : '?????????????????'
-      if (this.isTravelExceeded || this.isEquipmentExceeded) return this.isEnglishLocale ? 'Some budget categories exceed the allowed ratio' : '???????????????????????????????'
+      if (this.isBudgetSummaryEmpty) return this.isEnglishLocale ? 'No data yet' : 'ยังไม่มีข้อมูล'
+      if (this.isBudgetSummaryValid) return this.isEnglishLocale ? 'Budget is valid' : 'งบประมาณถูกต้อง'
+      if (this.isBudgetLimitExceeded) return this.isEnglishLocale ? 'Budget exceeds the limit' : 'งบประมาณเกินวงเงิน'
+      if (this.isTravelExceeded || this.isEquipmentExceeded) return this.isEnglishLocale ? 'Some budget categories exceed the allowed ratio' : 'บางหมวดงบประมาณเกินสัดส่วนที่กำหนด'
       if (this.grandTotal > 0 && (!this.isPeriod1Valid || !this.isPeriod2Valid || !this.isPeriod3Valid)) {
-        return this.isEnglishLocale ? 'Period allocation does not match 50/40/10' : '??????????????????????? 50/40/10'
+        return this.isEnglishLocale ? 'Period allocation does not match 50/40/10' : 'การจัดสรรงบรายปีไม่ตรงเกณฑ์ 50/40/10'
       }
-      return this.isEnglishLocale ? 'Budget is invalid' : '??????????????????'
+      return this.isEnglishLocale ? 'Budget is invalid' : 'งบประมาณไม่ถูกต้อง'
     },
     stickyOverlaySummary() {
       return {
@@ -1577,7 +1576,7 @@ export default {
       const displayName = this.localizedCategoryName(categoryKey, name)
       if (categoryKey === BUDGET_CATEGORY_KEYS.TRAVEL || categoryKey === BUDGET_CATEGORY_KEYS.EQUIPMENT) {
         const limitAmount = this.formatNumber(this.limit25Percent)
-        return `${displayName} (${this.isEnglishLocale ? 'not more than 25% of the total budget / not more than' : '??????? ?????? 25 ???????????/???????'} ${limitAmount} ${this.isEnglishLocale ? 'THB' : '???'})`
+        return `${displayName} (${this.isEnglishLocale ? 'not more than 25% of the total budget / not more than' : 'ไม่เกิน 25% ของงบรวม/ไม่เกิน'} ${limitAmount} ${this.isEnglishLocale ? 'THB' : 'บาท'})`
       }
       return displayName
     },
