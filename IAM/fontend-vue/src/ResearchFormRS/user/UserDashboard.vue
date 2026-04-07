@@ -11,7 +11,7 @@
             'is-dimmed': Boolean(activeFilter)
           }"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-primary" :header="String(stats.all || 0)" text="ทั้งหมด">
+          <CWidgetDropdown class="user-widget-card" color="gradient-primary" :header="String(stats.all || 0)" :text="dashboardText.all">
             <template #footer>
               <div class="widget-footer-spacer"></div>
             </template>
@@ -28,7 +28,7 @@
             'is-dimmed': activeFilter && activeFilter !== 'in_progress'
           }"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-info" :header="String(stats.inProgress || 0)" text="กำลังดำเนินการ">
+          <CWidgetDropdown class="user-widget-card" color="gradient-info" :header="String(stats.inProgress || 0)" :text="dashboardText.inProgress">
             <template #footer>
               <div class="widget-footer-spacer"></div>
             </template>
@@ -45,7 +45,7 @@
             'is-dimmed': activeFilter && activeFilter !== 'approved'
           }"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-success" :header="String(stats.approved || 0)" text="อนุมัติ">
+          <CWidgetDropdown class="user-widget-card" color="gradient-success" :header="String(stats.approved || 0)" :text="dashboardText.approved">
             <template #footer>
               <div class="widget-footer-spacer"></div>
             </template>
@@ -62,7 +62,7 @@
             'is-dimmed': activeFilter && activeFilter !== 'rejected'
           }"
         >
-          <CWidgetDropdown class="user-widget-card" color="gradient-danger" :header="String(stats.rejected || 0)" text="ไม่อนุมัติ">
+          <CWidgetDropdown class="user-widget-card" color="gradient-danger" :header="String(stats.rejected || 0)" :text="dashboardText.rejected">
             <template #footer>
               <div class="widget-footer-spacer"></div>
             </template>
@@ -108,8 +108,8 @@
           <div class="header-tools">
             <CInput
               class="search-input"
-              placeholder="ค้นหา..."
-              aria-label="ค้นหาในตาราง"
+              :placeholder="dashboardText.searchPlaceholder"
+              :aria-label="dashboardText.searchPlaceholder"
               v-model="searchQuery"
             />
             <CButton
@@ -119,7 +119,7 @@
               class="clear-filter-btn"
               @click="clearFilter"
             >
-              <CIcon name="cil-chevron-right" class="mr-1" /> ล้างตัวกรอง
+              <CIcon name="cil-chevron-right" class="mr-1" /> {{ dashboardText.clearFilter }}
             </CButton>
           </div>
         </div>
@@ -127,12 +127,12 @@
       <CCardBody class="card-body-tight">
         <div v-if="loading" class="state-box">
           <div class="spinner"></div>
-          <div class="state-text">กำลังโหลดข้อมูล…</div>
+          <div class="state-text">{{ dashboardText.loading }}</div>
         </div>
 
         <div v-else-if="fetchError" class="state-box">
-          <div class="state-text">เกิดข้อผิดพลาดในการโหลดข้อมูล: {{ fetchError }}</div>
-          <div style="margin-top:10px;"><button class="btn-quick btn-success" @click="retryFetch"><CIcon name="cil-chevron-right" class="mr-1" /> ลองอีกครั้ง</button></div>
+          <div class="state-text">{{ dashboardText.fetchError }}: {{ fetchError }}</div>
+          <div style="margin-top:10px;"><button class="btn-quick btn-success" @click="retryFetch"><CIcon name="cil-chevron-right" class="mr-1" /> {{ dashboardText.retry }}</button></div>
         </div>
 
         <div v-else class="table-surface">
@@ -155,10 +155,10 @@
             <template #projectTitleTh="{ item }">
               <td class="project-info-cell">
                 <div class="project-meta">
-                  <div class="project-title">{{ item.projectTitleTh || item.projectTitleEn || '(ไม่มีชื่อ)' }}</div>
+                  <div class="project-title">{{ item.projectTitleTh || item.projectTitleEn || dashboardText.noTitle }}</div>
                   <div class="project-owner">{{ item.projectLeaderName || '-' }}</div>
                   <div v-if="getFundingTypeDisplay(item)" class="project-funding-type">{{ getFundingTypeDisplay(item) }}</div>
-                  <div class="project-budget-line">งบโครงการที่เสนอ: {{ formatBudgetAmount(item.budgetUsedAmount) }}</div>
+                  <div class="project-budget-line">{{ dashboardText.budgetLabel }}: {{ formatBudgetAmount(item.budgetUsedAmount) }}</div>
                 </div>
               </td>
             </template>
@@ -188,7 +188,7 @@
                     @click.stop="viewDocument(item)"
                   >
                     <CIcon name="cil-file" class="mr-1" />
-                    ดูเอกสาร
+                    {{ dashboardText.viewDocument }}
                   </CButton>
                   <CButton
                     v-if="canDeleteDocument(item)"
@@ -200,7 +200,7 @@
                     @click.stop="deleteDocument(item)"
                   >
                     <CIcon name="cil-trash" class="mr-1" />
-                    {{ isDeleting(item) ? 'กำลังลบ...' : 'ลบเอกสาร' }}
+                    {{ isDeleting(item) ? dashboardText.deleting : dashboardText.deleteDocument }}
                   </CButton>
                 </div>
               </td>
@@ -208,15 +208,15 @@
 
           </CDataTable>
           <div v-if="displayItems.length === 0" class="text-muted text-center py-4">
-            ไม่พบข้อมูลที่ค้นหา
+            {{ dashboardText.noResults }}
           </div>
           <div class="table-footer">
             <div class="table-footer__left">
-              <span class="table-footer__label">แสดงต่อหน้า</span>
-              <select v-model.number="perPage" class="form-control form-control-sm per-page-select" aria-label="แสดงต่อหน้า">
+              <span class="table-footer__label">{{ dashboardText.perPage }}</span>
+              <select v-model.number="perPage" class="form-control form-control-sm per-page-select" :aria-label="dashboardText.perPage">
                 <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
               </select>
-              <span class="table-footer__suffix">รายการ</span>
+              <span class="table-footer__suffix">{{ dashboardText.perPageSuffix }}</span>
             </div>
             <div class="table-footer__right">
               <CPagination
@@ -233,7 +233,7 @@
       </CCardBody>
     </CCard>
 
-    <button v-if="canAccessResearchForm" class="fab" title="สร้างโครงการใหม่" @click="onAdd"><CIcon name="cil-plus" /></button>
+    <button v-if="canAccessResearchForm" class="fab" :title="dashboardText.createNew" @click="onAdd"><CIcon name="cil-plus" /></button>
   </div>
 </template>
 
@@ -279,33 +279,6 @@ export default {
       activePage: 1,
       sorterValue: { column: 'latestStatusUpdatedAt', asc: false },
       deletingProposalIds: {},
-      tableFields: [
-        {
-          key: 'proposalCode',
-          label: 'รหัสโครงการ',
-          _style: 'width:170px; text-align:center;',
-          _classes: 'proposal-code-column'
-        },
-        {
-          key: 'projectTitleTh',
-          label: 'ชื่อโครงการวิจัย / หัวหน้าโครงการ',
-          _style: 'min-width:260px;',
-          _classes: 'project-info-column'
-        },
-        {
-          key: 'currentStatus',
-          label: 'สถานะ',
-          _style: 'width:360px; text-align:center;'
-        },
-        {
-          key: 'action',
-          label: 'Action',
-          _style: 'width:220px; text-align:center;',
-          _classes: 'action-column',
-          sorter: false,
-          filter: false
-        },
-      ],
       activeFilter: null,
       filterGroups: {
         in_progress: [...FILTER_IN_PROGRESS_STATUSES],
@@ -330,6 +303,108 @@ export default {
   },
 
   computed: {
+    isEnglishLocale() {
+      const locale = String((this.$i18n && this.$i18n.locale) || '').trim().toLowerCase()
+      return locale === 'en'
+    },
+
+    dashboardText() {
+      if (this.isEnglishLocale) {
+        return {
+          all: 'All',
+          inProgress: 'In Progress',
+          approved: 'Approved',
+          rejected: 'Not Approved',
+          searchPlaceholder: 'Search...',
+          clearFilter: 'Clear Filter',
+          loading: 'Loading...',
+          fetchError: 'An error occurred while loading data',
+          retry: 'Retry',
+          noTitle: '(No Title)',
+          budgetLabel: 'Proposed Budget',
+          viewDocument: 'View',
+          deleting: 'Deleting...',
+          deleteDocument: 'Delete',
+          noResults: 'No matching records found',
+          perPage: 'Show per page',
+          perPageSuffix: 'items',
+          createNew: 'Create New Project',
+          allProjects: 'All Projects',
+          filteredProjects: 'Filtered Projects',
+          colProposalCode: 'Project Code',
+          colProjectTitle: 'Research Title / Principal Investigator',
+          colStatus: 'Status',
+          filterLabels: {
+            in_progress: 'In Progress',
+            approved: 'Approved',
+            rejected: 'Not Approved'
+          },
+          fundingTypePrefix: 'Funding Type'
+        }
+      }
+      return {
+        all: 'ทั้งหมด',
+        inProgress: 'กำลังดำเนินการ',
+        approved: 'อนุมัติ',
+        rejected: 'ไม่อนุมัติ',
+        searchPlaceholder: 'ค้นหา...',
+        clearFilter: 'ล้างตัวกรอง',
+        loading: 'กำลังโหลดข้อมูล…',
+        fetchError: 'เกิดข้อผิดพลาดในการโหลดข้อมูล',
+        retry: 'ลองอีกครั้ง',
+        noTitle: '(ไม่มีชื่อ)',
+        budgetLabel: 'งบโครงการที่เสนอ',
+        viewDocument: 'ดูเอกสาร',
+        deleting: 'กำลังลบ...',
+        deleteDocument: 'ลบเอกสาร',
+        noResults: 'ไม่พบข้อมูลที่ค้นหา',
+        perPage: 'แสดงต่อหน้า',
+        perPageSuffix: 'รายการ',
+        createNew: 'สร้างโครงการใหม่',
+        allProjects: 'โครงการทั้งหมด',
+        filteredProjects: 'โครงการที่กรอง',
+        colProposalCode: 'รหัสโครงการ',
+        colProjectTitle: 'ชื่อโครงการวิจัย / หัวหน้าโครงการ',
+        colStatus: 'สถานะ',
+        filterLabels: {
+          in_progress: 'กำลังดำเนินการ',
+          approved: 'อนุมัติ',
+          rejected: 'ไม่อนุมัติ'
+        },
+        fundingTypePrefix: 'ประเภททุน'
+      }
+    },
+
+    tableFields() {
+      return [
+        {
+          key: 'proposalCode',
+          label: this.dashboardText.colProposalCode,
+          _style: 'width:170px; text-align:center;',
+          _classes: 'proposal-code-column'
+        },
+        {
+          key: 'projectTitleTh',
+          label: this.dashboardText.colProjectTitle,
+          _style: 'min-width:260px;',
+          _classes: 'project-info-column'
+        },
+        {
+          key: 'currentStatus',
+          label: this.dashboardText.colStatus,
+          _style: 'width:360px; text-align:center;'
+        },
+        {
+          key: 'action',
+          label: 'Action',
+          _style: 'width:220px; text-align:center;',
+          _classes: 'action-column',
+          sorter: false,
+          filter: false
+        },
+      ]
+    },
+
     currentResearchRole() {
       const storeRole = this.$store && this.$store.getters
         ? this.$store.getters['Authentication/userRole']
@@ -384,14 +459,10 @@ export default {
     },
 
     filterLabel() {
-      const labels = {
-        in_progress: 'กำลังดำเนินการ',
-        approved: 'อนุมัติ',
-        rejected: 'ไม่อนุมัติ',
-      };
+      const labels = this.dashboardText.filterLabels
       return this.activeFilter
-        ? `โครงการที่กรอง: ${labels[this.activeFilter] || '-'}`
-        : 'โครงการทั้งหมด';
+        ? `${this.dashboardText.filteredProjects}: ${labels[this.activeFilter] || '-'}`
+        : this.dashboardText.allProjects
     },
 
     displayItems() {
@@ -630,11 +701,12 @@ export default {
 
       const fundingTypeLabel = getFundingTypeLabel(this.fundingBudgetConfig, fundingType, fundingType)
       const fundingSubType = this.resolveFundingSubTypeValue(item)
-      if (!fundingSubType) return `ประเภททุน: ${fundingTypeLabel}`
+      const prefix = this.dashboardText.fundingTypePrefix
+      if (!fundingSubType) return `${prefix}: ${fundingTypeLabel}`
 
       const subType = findFundingSubTypeConfig(this.fundingBudgetConfig, fundingType, fundingSubType)
       const fundingSubTypeLabel = String(subType && subType.label ? subType.label : fundingSubType).trim()
-      return `ประเภททุน: ${fundingTypeLabel} / ${fundingSubTypeLabel}`
+      return `${prefix}: ${fundingTypeLabel} / ${fundingSubTypeLabel}`
     },
 
     mapItem(item) {
@@ -687,7 +759,7 @@ export default {
       const roundNo = this.deriveRoundNo(itemOrStatus)
 
       if (key === 'under_review' || key === 'second_round_review') {
-        return `พิจารณารอบ ${roundNo}`
+        return this.isEnglishLocale ? `Review Round ${roundNo}` : `พิจารณารอบ ${roundNo}`
       }
       return STATUS_LABEL_MAP[key] || key || this.$t('status.inProgress')
     },
@@ -715,6 +787,31 @@ export default {
       const key = String(item ? item.currentStatus : itemOrStatus || '').toLowerCase();
       const roundNo = this.deriveRoundNo(itemOrStatus)
       const researcherName = item && item.projectLeaderName ? String(item.projectLeaderName).trim() : '';
+
+      if (this.isEnglishLocale) {
+        const ownerName = researcherName || 'Researcher'
+        const statusOwnerMapEn = {
+          draft: `${ownerName} : Filling in information`,
+          pending_confirm: 'Research Team : Awaiting consent from co-researchers/advisors',
+          submitted: 'Project Administration : Under consideration',
+          faculty_review_pending: 'Chairman is reviewing',
+          faculty_approved: 'Project Administration : Awaiting receipt',
+          faculty_rejected: 'Project Administration : Awaiting rejection closure',
+          office_received: 'Project Administration : Received, processing',
+          document_checking: 'Project Administration : Checking documents',
+          assigned_to_committee: 'Project Administration : Assigning reviewers',
+          under_review: `Reviewers : Round ${roundNo} review in progress`,
+          committee_valuated: 'Project Administration : Awaiting review summary',
+          revision_requested: `${ownerName} : Awaiting document revision`,
+          resubmitted: 'Project Administration : Received revised documents, forwarding',
+          second_round_review: `Reviewers : Round ${roundNo} review in progress`,
+          approved: 'Project Administration : Project approved',
+          rejected: 'Project Administration : Project not approved',
+          announced: 'Project Administration : Results announced'
+        }
+        return statusOwnerMapEn[key] || 'Project Administration : In progress'
+      }
+
       const ownerName = researcherName || 'ชื่อนักวิจัย';
       const statusOwnerMap = {
         draft: `${ownerName} : กำลังกรอกข้อมูล`,
@@ -782,10 +879,13 @@ export default {
 
     formatElapsedSince(dateValue) {
       const date = this.toValidDate(dateValue);
-      if (!date) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: \u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e40\u0e27\u0e25\u0e32';
+      const en = this.isEnglishLocale;
+      const prefix = en ? 'Last updated:' : 'เวลาล่าสุด:';
+
+      if (!date) return en ? 'Last updated: No data' : 'เวลาล่าสุด: ไม่พบข้อมูลเวลา';
 
       const diffMs = Date.now() - date.getTime();
-      if (diffMs < 60000) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: \u0e40\u0e21\u0e37\u0e48\u0e2d\u0e2a\u0e31\u0e01\u0e04\u0e23\u0e39\u0e48';
+      if (diffMs < 60000) return en ? 'Last updated: Just now' : 'เวลาล่าสุด: เมื่อสักครู่';
 
       const minuteMs = 60 * 1000;
       const hourMs = 60 * minuteMs;
@@ -794,12 +894,12 @@ export default {
       const monthMs = 30 * dayMs;
       const yearMs = 365 * dayMs;
 
-      if (diffMs < hourMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / minuteMs) + ' \u0e19\u0e32\u0e17\u0e35\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
-      if (diffMs < dayMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / hourMs) + ' \u0e0a\u0e31\u0e48\u0e27\u0e42\u0e21\u0e07\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
-      if (diffMs < weekMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / dayMs) + ' \u0e27\u0e31\u0e19\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
-      if (diffMs < monthMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / weekMs) + ' \u0e2a\u0e31\u0e1b\u0e14\u0e32\u0e2b\u0e4c\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
-      if (diffMs < yearMs) return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / monthMs) + ' \u0e40\u0e14\u0e37\u0e2d\u0e19\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
-      return '\u0e40\u0e27\u0e25\u0e32\u0e25\u0e48\u0e32\u0e2a\u0e38\u0e14: ' + Math.floor(diffMs / yearMs) + ' \u0e1b\u0e35\u0e17\u0e35\u0e48\u0e41\u0e25\u0e49\u0e27';
+      if (diffMs < hourMs) return `${prefix} ${Math.floor(diffMs / minuteMs)} ${en ? 'minute(s) ago' : 'นาทีที่แล้ว'}`;
+      if (diffMs < dayMs) return `${prefix} ${Math.floor(diffMs / hourMs)} ${en ? 'hour(s) ago' : 'ชั่วโมงที่แล้ว'}`;
+      if (diffMs < weekMs) return `${prefix} ${Math.floor(diffMs / dayMs)} ${en ? 'day(s) ago' : 'วันที่แล้ว'}`;
+      if (diffMs < monthMs) return `${prefix} ${Math.floor(diffMs / weekMs)} ${en ? 'week(s) ago' : 'สัปดาห์ที่แล้ว'}`;
+      if (diffMs < yearMs) return `${prefix} ${Math.floor(diffMs / monthMs)} ${en ? 'month(s) ago' : 'เดือนที่แล้ว'}`;
+      return `${prefix} ${Math.floor(diffMs / yearMs)} ${en ? 'year(s) ago' : 'ปีที่แล้ว'}`;
     },
 
     getLastActionElapsedLabel(item) {
@@ -825,12 +925,13 @@ export default {
       const id = item && item._id ? String(item._id) : '';
       if (!id) return;
 
+      const en = this.isEnglishLocale;
       if (!this.canDeleteDocument(item)) {
         await Swal.fire({
           icon: 'warning',
-          title: 'ไม่สามารถลบเอกสารได้',
-          text: 'สามารถลบได้เฉพาะเอกสารที่อยู่สถานะแบบร่างเท่านั้น',
-          confirmButtonText: 'ตกลง'
+          title: en ? 'Cannot delete document' : 'ไม่สามารถลบเอกสารได้',
+          text: en ? 'Only draft documents can be deleted.' : 'สามารถลบได้เฉพาะเอกสารที่อยู่สถานะแบบร่างเท่านั้น',
+          confirmButtonText: en ? 'OK' : 'ตกลง'
         });
         return;
       }
@@ -838,11 +939,11 @@ export default {
       const code = item && item.proposalCode ? String(item.proposalCode) : '-';
       const confirmation = await Swal.fire({
         icon: 'warning',
-        title: `ยืนยันการลบเอกสาร ${code} ?`,
-        text: 'เมื่อลบแล้วจะไม่สามารถกู้คืนข้อมูลได้',
+        title: en ? `Confirm delete document ${code}?` : `ยืนยันการลบเอกสาร ${code} ?`,
+        text: en ? 'This action cannot be undone.' : 'เมื่อลบแล้วจะไม่สามารถกู้คืนข้อมูลได้',
         showCancelButton: true,
-        confirmButtonText: 'ลบเอกสาร',
-        cancelButtonText: 'ยกเลิก',
+        confirmButtonText: en ? 'Delete' : 'ลบเอกสาร',
+        cancelButtonText: en ? 'Cancel' : 'ยกเลิก',
         confirmButtonColor: '#dc3545',
         cancelButtonColor: '#6c757d',
         reverseButtons: true
@@ -863,9 +964,9 @@ export default {
           : '';
         await Swal.fire({
           icon: 'error',
-          title: 'ลบเอกสารไม่สำเร็จ',
-          text: apiMessage || 'ไม่สามารถลบเอกสารได้ กรุณาลองใหม่อีกครั้ง',
-          confirmButtonText: 'ตกลง'
+          title: en ? 'Failed to delete document' : 'ลบเอกสารไม่สำเร็จ',
+          text: apiMessage || (en ? 'Unable to delete document. Please try again.' : 'ไม่สามารถลบเอกสารได้ กรุณาลองใหม่อีกครั้ง'),
+          confirmButtonText: en ? 'OK' : 'ตกลง'
         });
       } finally {
         const nextMap = { ...this.deletingProposalIds };
