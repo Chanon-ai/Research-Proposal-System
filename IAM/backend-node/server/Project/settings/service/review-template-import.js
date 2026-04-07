@@ -1,7 +1,6 @@
 'use strict';
 
 const path = require('path');
-const { PDFParse } = require('pdf-parse');
 const { MANAGED_SETTING_KEYS, RESEARCH_FORM_SETTING_GROUP } = require('./research-form-config');
 
 const TEMPLATE_TARGETS = Object.freeze({
@@ -318,22 +317,20 @@ async function extractPdfText(file) {
     throw new Error('Only PDF files are supported');
   }
 
-  const parser = new PDFParse({ data: file.buffer });
+  let pdfParse;
   try {
-    const parsed = await parser.getText();
-    const text = String(
-      (parsed && (parsed.text || parsed.content || parsed.rawText)) || ''
-    ).trim();
-    if (!text) {
-      throw new Error('Unable to extract readable text from PDF');
-    }
-
-    return text;
-  } finally {
-    if (parser && typeof parser.destroy === 'function') {
-      await parser.destroy();
-    }
+    pdfParse = require('pdf-parse');
+  } catch (error) {
+    throw new Error(`PDF parser is unavailable: ${error && error.message ? error.message : error}`);
   }
+
+  const parsed = await pdfParse(file.buffer);
+  const text = String(parsed && parsed.text ? parsed.text : '').trim();
+  if (!text) {
+    throw new Error('Unable to extract readable text from PDF');
+  }
+
+  return text;
 }
 
 async function previewImportedTemplate(options) {
