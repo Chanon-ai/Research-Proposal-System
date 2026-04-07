@@ -197,101 +197,114 @@
     <CCard class="mt-3">
       <CCardHeader>Template Rubric ของคณะกรรมการ</CCardHeader>
       <CCardBody>
-        <div class="template-toolbar mb-3">
-          <CSelect
-            class="template-toolbar__select"
-            label="Preview น้ำหนักคะแนนตามประเภททุน"
-            :value="committeePreviewFundType"
-            :options="committeeFundTypeOptions"
-            @change="committeePreviewFundType = getSelectValue($event)"
-          />
-          <div class="template-toolbar__actions">
-            <CButton size="sm" color="warning" variant="outline" @click="resetCommitteeTemplate">รีเซ็ตค่าเริ่มต้น</CButton>
-            <CButton size="sm" color="primary" @click="saveCommitteeTemplate">บันทึก Template กรรมการ</CButton>
-          </div>
-        </div>
-
-        <CRow>
-          <CCol md="4"><CInput label="Version" type="number" v-model.number="committeeForm.templateVersion" /></CCol>
-          <CCol md="4"><CInput label="Reviewer Role" v-model="committeeForm.reviewerRole" /></CCol>
-          <CCol md="4"><CInput label="Reviewer Label" v-model="committeeForm.reviewerLabel" /></CCol>
-        </CRow>
-
-        <div class="template-section-header mt-3">
-          <div>
-            <div class="template-section-title">ประเภททุนสำหรับ rubric</div>
-            <div class="text-muted small">กำหนด key ที่ใช้จับคู่กับน้ำหนักคะแนน</div>
-          </div>
-          <CButton size="sm" color="success" variant="outline" @click="addCommitteeFundTypeOption">เพิ่มประเภททุน</CButton>
-        </div>
-
-        <div v-for="(fundType, fundTypeIndex) in committeeForm.fundTypeOptions" :key="`committee-fund-${fundTypeIndex}`" class="editor-card mt-2">
-          <div class="editor-card__header">
-            <div class="editor-card__title">ประเภททุน {{ fundTypeIndex + 1 }}</div>
-            <CButton size="sm" color="danger" variant="outline" @click="removeCommitteeFundTypeOption(fundTypeIndex)">ลบประเภททุน</CButton>
-          </div>
-          <CRow>
-            <CCol md="4"><CInput label="Value" v-model="fundType.value" /></CCol>
-            <CCol md="8"><CInput label="Label" v-model="fundType.label" /></CCol>
-          </CRow>
-        </div>
-
-        <div class="template-section-header mt-3">
-          <div>
-            <div class="template-section-title">Rubric Rows</div>
-            <div class="text-muted small">แก้หัวข้อประเมินและน้ำหนักคะแนนของแต่ละประเภททุน</div>
-          </div>
-          <CButton size="sm" color="success" variant="outline" @click="addCommitteeRubricRow">เพิ่มหัวข้อ</CButton>
-        </div>
-
-        <div v-for="(row, rowIndex) in committeeForm.rubricRows" :key="`committee-row-${rowIndex}`" class="editor-card mt-3">
-          <div class="editor-card__header">
-            <div class="editor-card__title">หัวข้อประเมิน {{ rowIndex + 1 }}</div>
-            <CButton size="sm" color="danger" variant="outline" @click="removeCommitteeRubricRow(rowIndex)">ลบหัวข้อ</CButton>
-          </div>
-
-          <CRow>
-            <CCol md="2"><CInput label="No" type="number" v-model.number="row.no" /></CCol>
-            <CCol md="6"><CInput label="Title" v-model="row.title" /></CCol>
-            <CCol md="4"><CInput label="Description" v-model="row.desc" /></CCol>
-          </CRow>
-
-          <div class="weights-grid">
-            <div v-for="fundType in committeeForm.fundTypeOptions" :key="`weight-${rowIndex}-${fundType.value}`" class="weights-grid__item">
-              <CInput
-                :label="`น้ำหนัก: ${fundType.label || fundType.value}`"
-                type="number"
-                :value="row.weights[fundType.value]"
-                @input="updateCommitteeWeight(rowIndex, fundType.value, $event)"
+        <CRow class="template-two-pane">
+          <CCol lg="4" class="mb-3 mb-lg-0">
+            <div class="template-two-pane__preview">
+              <CSelect
+                class="template-toolbar__select"
+                label="Preview น้ำหนักคะแนนตามประเภททุน"
+                :value="committeePreviewFundType"
+                :options="committeeFundTypeOptions"
+                @change="committeePreviewFundType = getSelectValue($event)"
               />
+
+              <div v-if="committeePreviewConfig" class="template-preview template-preview--sticky template-preview--with-select-gap">
+                <div class="template-preview__title">ตัวอย่าง Rubric</div>
+                <div class="text-muted small mb-2">{{ committeePreviewFundTypeLabel }}</div>
+                <div class="table-responsive">
+                  <table class="table table-sm table-bordered mb-0">
+                    <thead>
+                      <tr>
+                        <th style="width:64px;">ข้อ</th>
+                        <th>หัวข้อ</th>
+                        <th style="width:120px;">น้ำหนัก</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="row in committeePreviewConfig.rubricRows" :key="row.no">
+                        <td class="text-center">{{ row.no }}</td>
+                        <td>{{ row.title }}</td>
+                        <td class="text-center">{{ formatCommitteeWeight(row) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </CCol>
 
-        <div v-if="committeeTemplateError" class="text-danger small mt-3">{{ committeeTemplateError }}</div>
+          <CCol lg="8">
+            <div class="template-two-pane__editor">
+              <div class="template-toolbar mb-3">
+                <div class="template-toolbar__actions ml-auto">
+                  <CButton size="sm" color="warning" variant="outline" @click="resetCommitteeTemplate">รีเซ็ตค่าเริ่มต้น</CButton>
+                  <CButton size="sm" color="primary" @click="saveCommitteeTemplate">บันทึก Template กรรมการ</CButton>
+                </div>
+              </div>
 
-        <div v-if="committeePreviewConfig" class="template-preview mt-3">
-          <div class="template-preview__title">ตัวอย่าง Rubric</div>
-          <div class="text-muted small mb-2">{{ committeePreviewFundTypeLabel }}</div>
-          <div class="table-responsive">
-            <table class="table table-sm table-bordered mb-0">
-              <thead>
-                <tr>
-                  <th style="width:64px;">ข้อ</th>
-                  <th>หัวข้อ</th>
-                  <th style="width:120px;">น้ำหนัก</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="row in committeePreviewConfig.rubricRows" :key="row.no">
-                  <td class="text-center">{{ row.no }}</td>
-                  <td>{{ row.title }}</td>
-                  <td class="text-center">{{ formatCommitteeWeight(row) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+              <div class="template-two-pane__editor-scroll">
+                <CRow>
+                  <CCol md="4"><CInput label="Version" type="number" v-model.number="committeeForm.templateVersion" /></CCol>
+                  <CCol md="4"><CInput label="Reviewer Role" v-model="committeeForm.reviewerRole" /></CCol>
+                  <CCol md="4"><CInput label="Reviewer Label" v-model="committeeForm.reviewerLabel" /></CCol>
+                </CRow>
+
+                <div class="template-section-header mt-3">
+                  <div>
+                    <div class="template-section-title">ประเภททุนสำหรับ rubric</div>
+                    <div class="text-muted small">กำหนด key ที่ใช้จับคู่กับน้ำหนักคะแนน</div>
+                  </div>
+                  <CButton size="sm" color="success" variant="outline" @click="addCommitteeFundTypeOption">เพิ่มประเภททุน</CButton>
+                </div>
+
+                <div v-for="(fundType, fundTypeIndex) in committeeForm.fundTypeOptions" :key="`committee-fund-${fundTypeIndex}`" class="editor-card mt-2">
+                  <div class="editor-card__header">
+                    <div class="editor-card__title">ประเภททุน {{ fundTypeIndex + 1 }}</div>
+                    <CButton size="sm" color="danger" variant="outline" @click="removeCommitteeFundTypeOption(fundTypeIndex)">ลบประเภททุน</CButton>
+                  </div>
+                  <CRow>
+                    <CCol md="4"><CInput label="Value" v-model="fundType.value" /></CCol>
+                    <CCol md="8"><CInput label="Label" v-model="fundType.label" /></CCol>
+                  </CRow>
+                </div>
+
+                <div class="template-section-header mt-3">
+                  <div>
+                    <div class="template-section-title">Rubric Rows</div>
+                    <div class="text-muted small">แก้หัวข้อประเมินและน้ำหนักคะแนนของแต่ละประเภททุน</div>
+                  </div>
+                  <CButton size="sm" color="success" variant="outline" @click="addCommitteeRubricRow">เพิ่มหัวข้อ</CButton>
+                </div>
+
+                <div v-for="(row, rowIndex) in committeeForm.rubricRows" :key="`committee-row-${rowIndex}`" class="editor-card mt-3">
+                  <div class="editor-card__header">
+                    <div class="editor-card__title">หัวข้อประเมิน {{ rowIndex + 1 }}</div>
+                    <CButton size="sm" color="danger" variant="outline" @click="removeCommitteeRubricRow(rowIndex)">ลบหัวข้อ</CButton>
+                  </div>
+
+                  <CRow>
+                    <CCol md="2"><CInput label="No" type="number" v-model.number="row.no" /></CCol>
+                    <CCol md="6"><CInput label="Title" v-model="row.title" /></CCol>
+                    <CCol md="4"><CInput label="Description" v-model="row.desc" /></CCol>
+                  </CRow>
+
+                  <div class="weights-grid">
+                    <div v-for="fundType in committeeForm.fundTypeOptions" :key="`weight-${rowIndex}-${fundType.value}`" class="weights-grid__item">
+                      <CInput
+                        :label="`น้ำหนัก: ${fundType.label || fundType.value}`"
+                        type="number"
+                        :value="row.weights[fundType.value]"
+                        @input="updateCommitteeWeight(rowIndex, fundType.value, $event)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="committeeTemplateError" class="text-danger small mt-3">{{ committeeTemplateError }}</div>
+              </div>
+            </div>
+          </CCol>
+        </CRow>
       </CCardBody>
     </CCard>
   </div>
