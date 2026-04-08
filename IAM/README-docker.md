@@ -26,9 +26,10 @@ docker compose -f docker-compose.yml up -d --build
 docker compose -f .\IAM\docker-compose.yml up -d --build
 ```
 
-พอร์ตที่เข้าได้จาก host:
+URL ที่ใช้งานจากภายนอก:
 
-- `http://localhost:8080` -> Nginx frontend
+- `https://researchproposal.mfu.ac.th` -> Nginx frontend (production example)
+- `http://localhost:8080` -> Nginx frontend (local machine)
 
 พอร์ตที่ไม่เปิดออก host:
 
