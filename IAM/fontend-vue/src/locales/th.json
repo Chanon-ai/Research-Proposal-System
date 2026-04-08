@@ -4,6 +4,7 @@
     "viewAll": "ดูทั้งหมด",
     "cancel": "ยกเลิก",
     "delete": "ลบ",
+    "remove": "ลบ",
     "confirmDelete": "ยืนยันการลบ"
   },
   "header": {
@@ -845,6 +846,92 @@
         "status": "สถานะ",
         "decision": "ผลการพิจารณา",
         "updatedAt": "อัปเดตล่าสุด"
+      }
+    },
+    "projectProposal": {
+      "tiles": {
+        "all": "ทั้งหมด",
+        "pending": "รอการพิจารณา",
+        "approved": "ประธานอนุมัติ",
+        "rejected": "ประธานไม่อนุมัติ"
+      },
+      "assignedCardTitle": "ข้อเสนอโครงการที่ได้รับมอบหมาย",
+      "searchPlaceholder": "ค้นหา...",
+      "searchAria": "ค้นหาในตาราง",
+      "loading": "กำลังโหลดข้อมูลโครงการ...",
+      "loadFailedTitle": "โหลดข้อมูลโครงการไม่สำเร็จ",
+      "emptySearch": "ไม่พบข้อมูลที่ค้นหา",
+      "viewAll": "ดูทั้งหมด",
+      "viewDetail": "ดูรายละเอียด",
+      "noTitle": "(ไม่มีชื่อโครงการ)",
+      "fields": {
+        "code": "รหัสโครงการ",
+        "title": "ชื่อโครงการ",
+        "leader": "หัวหน้าโครงการ",
+        "affiliation": "สังกัด",
+        "decision": "ผลประเมิน",
+        "status": "สถานะ"
+      },
+      "table": {
+        "perPageLabel": "แสดงต่อหน้า",
+        "perPageAria": "แสดงต่อหน้า",
+        "itemsSuffix": "รายการ"
+      },
+      "decision": {
+        "notSubmitted": "ยังไม่ส่งผล",
+        "approve": "อนุมัติ",
+        "reject": "ไม่อนุมัติ",
+        "unspecified": "ไม่ระบุ"
+      },
+      "status": {
+        "pending": "รอการพิจารณา",
+        "approved": "อนุมัติแล้ว",
+        "rejected": "ไม่อนุมัติ",
+        "other": "อยู่ระหว่างดำเนินการ"
+      },
+      "progress": {
+        "pending": "ประธานสำนัก : รอพิจารณา/กำลังพิจารณา",
+        "approved": "ประธานสำนัก : อนุมัติแล้ว",
+        "rejected": "ประธานสำนัก : ไม่อนุมัติ",
+        "other": "ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ"
+      },
+      "latest": {
+        "label": "เวลาล่าสุด: {time}",
+        "noTime": "เวลาล่าสุด: ไม่พบข้อมูลเวลา"
+      },
+      "timeAgo": {
+        "justNow": "เมื่อสักครู่",
+        "soon": "อีกไม่นาน",
+        "minutesAgo": "{count} นาทีที่แล้ว",
+        "hoursAgo": "{count} ชั่วโมงที่แล้ว",
+        "daysAgo": "{count} วันที่แล้ว",
+        "monthsAgo": "{count} เดือนที่แล้ว",
+        "yearsAgo": "{count} ปีที่แล้ว",
+        "inMinutes": "อีก {count} นาที",
+        "inHours": "อีก {count} ชั่วโมง",
+        "inDays": "อีก {count} วัน",
+        "inMonths": "อีก {count} เดือน",
+        "inYears": "อีก {count} ปี"
+      },
+      "meetings": {
+        "title": "การประชุมที่ใกล้ถึงกำหนด",
+        "subtitle": "แสดงรายการการประชุมที่กำหนดไว้ในระยะใกล้",
+        "empty": "ไม่พบรายการการประชุมที่ใกล้ถึงกำหนด",
+        "metaDate": "วันที่ {date}",
+        "metaTime": "เวลา {time} น.",
+        "metaFormat": "รูปแบบ: {format}",
+        "metaLocation": "สถานที่: {location}",
+        "metaLink": "ลิงก์: {link}",
+        "typeOnline": "ออนไลน์",
+        "typeOnsite": "ออนไซต์"
+      },
+      "notifs": {
+        "title": "การแจ้งเตือนที่สำคัญ",
+        "subtitle": "แสดงเหตุการณ์สำคัญล่าสุดเพื่อการติดตาม",
+        "empty": "ไม่พบรายการแจ้งเตือนล่าสุด",
+        "mock1": "มีโครงการส่งเข้าประเมิน",
+        "mock2": "มีคำขอแก้ไขเอกสาร",
+        "mock3": "กำหนดการประชุมถูกอัปเดต"
       }
     },
     "meetings": {

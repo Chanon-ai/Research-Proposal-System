@@ -375,6 +375,7 @@ import {
 } from '@/ResearchFormRS/constants/chairmanChecklist'
 
 const INTERNAL_CHECKLIST_FIELD_KEY = 'checklist_payload'
+const INTERNAL_CHECKLIST_SECTION_KEY = 'chairman_checklist'
 
 export default {
   name: 'ChairmanProposalDetail',
@@ -400,6 +401,7 @@ export default {
       signatureSavedAt: '',
       isSignatureDrawing: false,
       signatureHasStroke: false,
+      draftAutoSaveTimer: null,
       form: {
         checklistValues: {},
         comments: '',
@@ -588,6 +590,12 @@ export default {
         if (this.signatureData) this.renderSignatureToCanvas()
       })
     },
+    'form.comments' () {
+      this.queueDraftAutoSave()
+    },
+    'form.decision' () {
+      this.queueDraftAutoSave()
+    },
     $route: {
       immediate: true,
       handler () {
@@ -646,6 +654,7 @@ export default {
       const normalized = String(answer || '').trim().toLowerCase()
       if (normalized !== 'yes' && normalized !== 'no') return
       this.$set(this.form.checklistValues, key, normalized)
+      this.queueDraftAutoSave()
     },
     clearChecklistAnswer (section, item) {
       if (this.isEvaluationLocked) return
@@ -653,6 +662,36 @@ export default {
       if (this.form && this.form.checklistValues && Object.prototype.hasOwnProperty.call(this.form.checklistValues, key)) {
         this.$delete(this.form.checklistValues, key)
       }
+      this.queueDraftAutoSave()
+    },
+    queueDraftAutoSave () {
+      if (!this.proposal || this.isEvaluationLocked) return
+      if (this.draftAutoSaveTimer) clearTimeout(this.draftAutoSaveTimer)
+      this.draftAutoSaveTimer = setTimeout(() => {
+        this.draftAutoSaveTimer = null
+        this.saveDraftSilently()
+      }, 450)
+    },
+    saveDraftSilently () {
+      if (!this.proposal || this.isEvaluationLocked) return
+      const key = this.draftKey()
+      if (!key) return
+      try {
+        localStorage.setItem(key, JSON.stringify({
+          form: {
+            ...this.form
+          },
+          signatureData: this.signatureData,
+          signatureTimestamp: this.signatureTimestamp,
+          evaluationFileName: this.evaluationFileName,
+          savedAt: new Date().toISOString(),
+          userId: this.currentUserId || ''
+        }))
+      } catch (_) {
+        return undefined
+      }
+      this.saveSignatureToStorage()
+      return undefined
     },
     formatDateTime (value) {
       if (!value) return '-'
@@ -881,34 +920,128 @@ export default {
         }
       ]
     },
-    extractChecklistValues (review) {
+    parseChecklistPayload (review) {
       const items = Array.isArray(review && review.commentItems) ? review.commentItems : []
-      const payloadItem = items.find((item) => item && item.fieldKey === INTERNAL_CHECKLIST_FIELD_KEY)
-      if (!payloadItem || !payloadItem.commentText) return {}
-      try {
-        const parsed = JSON.parse(payloadItem.commentText)
-        const sections = Array.isArray(parsed && parsed.sections) ? parsed.sections : []
+
+      const byFieldKey = items.find((item) => item && item.fieldKey === INTERNAL_CHECKLIST_FIELD_KEY && item.commentText)
+      const bySectionKey = items.find((item) => item && item.sectionKey === INTERNAL_CHECKLIST_SECTION_KEY && item.commentText)
+      const fallbackJson = items.find((item) => item && typeof item.commentText === 'string' && item.commentText.trim().startsWith('{'))
+
+      const payloadItem = byFieldKey || bySectionKey || fallbackJson
+      if (!payloadItem || !payloadItem.commentText) return null
+
+      const parseJson = (value) => {
+        if (value === null || value === undefined) return null
+        if (typeof value === 'object') return value
+        if (typeof value !== 'string') return null
+        const trimmed = value.trim()
+        if (!trimmed) return null
+        try {
+          const first = JSON.parse(trimmed)
+          if (typeof first === 'string') {
+            const second = first.trim()
+            if (second && (second.startsWith('{') || second.startsWith('['))) {
+              try { return JSON.parse(second) } catch (_) { return null }
+            }
+          }
+          return first
+        } catch (_) {
+          return null
+        }
+      }
+
+      const parsed = parseJson(payloadItem.commentText)
+      if (!parsed || typeof parsed !== 'object') return null
+      if (parsed.payload && typeof parsed.payload === 'object') return parsed.payload
+      if (parsed.data && typeof parsed.data === 'object') return parsed.data
+      return parsed
+    },
+    extractChecklistValues (review, targetSections = null) {
+      const parsed = this.parseChecklistPayload(review)
+      if (!parsed || typeof parsed !== 'object') return {}
+
+      const normalizeAnswerValue = (value) => {
+        if (value === true) return 'yes'
+        if (value === false) return 'no'
+        const raw = String(value === undefined || value === null ? '' : value).trim().toLowerCase()
+        if (!raw) return ''
+        const yesTokens = new Set(['yes', 'y', 'true', '1', 'pass', 'ผ่าน', 'มี'])
+        const noTokens = new Set(['no', 'n', 'false', '0', 'fail', 'ไม่ผ่าน', 'ไม่มี'])
+        if (yesTokens.has(raw)) return 'yes'
+        if (noTokens.has(raw)) return 'no'
+        return ''
+      }
+
+      if (parsed.checklistValues && typeof parsed.checklistValues === 'object' && !Array.isArray(parsed.checklistValues)) {
+        const direct = {}
+        Object.keys(parsed.checklistValues).forEach((key) => {
+          const ans = normalizeAnswerValue(parsed.checklistValues[key])
+          if (ans) direct[String(key)] = ans
+        })
+        if (Object.keys(direct).length > 0) return direct
+      }
+
+      const sections = Array.isArray(parsed.sections) ? parsed.sections : []
+      if (!sections.length) return {}
+
+      const getRowAnswer = (row) => {
+        if (!row || typeof row !== 'object') return ''
+        const ans = normalizeAnswerValue(row.answer)
+        if (ans) return ans
+        if (row.checked === true) return 'yes'
+        if (row.checked === false) return 'no'
+        return normalizeAnswerValue(row.value)
+      }
+
+      const bySectionKey = new Map()
+      sections.forEach((s) => {
+        const k = String(s && s.sectionKey ? s.sectionKey : '').trim()
+        if (k) bySectionKey.set(k, s)
+      })
+
+      const targets = Array.isArray(targetSections) ? targetSections : null
+      if (!targets || targets.length === 0) {
         return sections.reduce((result, section) => {
           const sectionKey = String(section && section.sectionKey ? section.sectionKey : '').trim()
           const rows = Array.isArray(section && section.items) ? section.items : []
-          rows.forEach((item) => {
-            const itemKey = String(item && item.itemKey ? item.itemKey : '').trim()
+          rows.forEach((row) => {
+            const itemKey = String(row && row.itemKey ? row.itemKey : '').trim()
             if (!sectionKey || !itemKey) return
-            const rawAnswer = item && item.answer ? String(item.answer).trim().toLowerCase() : ''
-            if (rawAnswer === 'yes' || rawAnswer === 'no') {
-              result[`${sectionKey}:${itemKey}`] = rawAnswer
-              return
-            }
-            // Backward compatibility: older payload stored only boolean "checked"
-            if (item && item.checked === true) {
-              result[`${sectionKey}:${itemKey}`] = 'yes'
-            }
+            const ans = getRowAnswer(row)
+            if (ans) result[`${sectionKey}:${itemKey}`] = ans
           })
           return result
         }, {})
-      } catch (_) {
-        return {}
       }
+
+      const result = {}
+      targets.forEach((targetSection, sectionIndex) => {
+        const targetSectionKey = String(targetSection && targetSection.sectionKey ? targetSection.sectionKey : '').trim()
+        const payloadSection = (targetSectionKey && bySectionKey.get(targetSectionKey))
+          ? bySectionKey.get(targetSectionKey)
+          : (sections[sectionIndex] || null)
+
+        const payloadItems = Array.isArray(payloadSection && payloadSection.items) ? payloadSection.items : []
+        const payloadByItemKey = new Map()
+        payloadItems.forEach((row) => {
+          const itemKey = String(row && row.itemKey ? row.itemKey : '').trim()
+          if (itemKey) payloadByItemKey.set(itemKey, row)
+        })
+
+        const items = Array.isArray(targetSection && targetSection.items) ? targetSection.items : []
+        items.forEach((targetItem, itemIndex) => {
+          const targetItemKey = String(targetItem && targetItem.itemKey ? targetItem.itemKey : targetItem && targetItem.key ? targetItem.key : '').trim()
+          const row = (targetItemKey && payloadByItemKey.get(targetItemKey))
+            ? payloadByItemKey.get(targetItemKey)
+            : (payloadItems[itemIndex] || null)
+
+          const ans = getRowAnswer(row)
+          if (!ans || !targetSectionKey || !targetItemKey) return
+          result[`${targetSectionKey}:${targetItemKey}`] = ans
+        })
+      })
+
+      return result
     },
     async load () {
       await loadResearchFormRuntimeConfigs()
@@ -977,8 +1110,15 @@ export default {
       if (!proposalId) return
 
       try {
-        const response = await Service.proposal.getMyReview(encodeURIComponent(proposalId), { roundNo: this.activeRoundNo })
-        const review = response && response.data && response.data.data ? response.data.data : null
+        const fetchReview = async (roundNo) => {
+          const res = await Service.proposal.getMyReview(encodeURIComponent(proposalId), { roundNo })
+          return res && res.data && res.data.data ? res.data.data : null
+        }
+
+        let review = await fetchReview(this.activeRoundNo)
+        if (!review && this.activeRoundNo > 1) {
+          review = await fetchReview(1)
+        }
         const reviewStatus = review && review.reviewStatus ? String(review.reviewStatus).toLowerCase() : ''
         const isLockedReview = reviewStatus === 'submitted' || reviewStatus === 'certified'
         if (!review) {
@@ -989,16 +1129,67 @@ export default {
           return
         }
 
+        let extractedChecklist = this.extractChecklistValues(review, this.templateSections)
+        let hasExtractedChecklist = extractedChecklist && Object.keys(extractedChecklist).length > 0
+        if (!hasExtractedChecklist && isLockedReview) {
+          try {
+            const stored = (() => {
+              const raw = localStorage.getItem(this.submissionKey())
+              if (raw) {
+                try { return JSON.parse(raw) } catch (_) { /* ignore */ }
+              }
+              return this.findLocalStorageValueByPrefix(this.submissionKeyPrefix()) || this.findLocalStorageValueByPrefix(this.submissionKeyAnyRoundPrefix())
+            })()
+
+            const storedForm = stored && stored.form && typeof stored.form === 'object' ? stored.form : null
+            const storedChecklist = storedForm && storedForm.checklistValues && typeof storedForm.checklistValues === 'object'
+              ? storedForm.checklistValues
+              : null
+            if (storedChecklist && Object.keys(storedChecklist).length > 0) {
+              extractedChecklist = storedChecklist
+              hasExtractedChecklist = true
+            }
+          } catch (_) {
+            // ignore local fallback errors
+          }
+        }
+        const localChecklist = this.form && this.form.checklistValues && typeof this.form.checklistValues === 'object' ? this.form.checklistValues : {}
+        const hasLocalChecklist = localChecklist && Object.keys(localChecklist).length > 0
+
+        const reviewComments = String(review && review.summaryComment ? review.summaryComment : '')
+        const localComments = String(this.form && this.form.comments ? this.form.comments : '')
+
+        const reviewDecision = String(review && review.decision ? review.decision : '').trim().toLowerCase()
+        const localDecision = String(this.form && this.form.decision ? this.form.decision : 'approve').trim().toLowerCase() || 'approve'
+
+        const nextChecklist = isLockedReview
+          ? (hasExtractedChecklist ? extractedChecklist : (hasLocalChecklist ? localChecklist : {}))
+          : (hasLocalChecklist ? localChecklist : (hasExtractedChecklist ? extractedChecklist : {}))
+
+        const nextComments = isLockedReview
+          ? reviewComments
+          : (localComments.trim() ? localComments : reviewComments)
+
+        const nextDecision = isLockedReview
+          ? (reviewDecision === 'reject' ? 'reject' : 'approve')
+          : (localDecision === 'reject' ? 'reject' : (reviewDecision === 'reject' ? 'reject' : 'approve'))
+
         this.form = {
           ...this.form,
-          checklistValues: this.extractChecklistValues(review),
-          comments: review.summaryComment || '',
-          decision: review.decision === 'reject' ? 'reject' : 'approve'
+          checklistValues: nextChecklist,
+          comments: nextComments,
+          decision: nextDecision
         }
-        this.signatureData = String(review && review.signatureData ? review.signatureData : '')
-        this.signatureTimestamp = review && (review.signatureUpdatedAt || review.submittedAt)
-          ? String(review.signatureUpdatedAt || review.submittedAt)
-          : ''
+
+        const reviewSignatureData = String(review && review.signatureData ? review.signatureData : '')
+        if (isLockedReview || !this.hasSignatureData) {
+          if (reviewSignatureData) {
+            this.signatureData = reviewSignatureData
+            this.signatureTimestamp = review && (review.signatureUpdatedAt || review.submittedAt)
+              ? String(review.signatureUpdatedAt || review.submittedAt)
+              : ''
+          }
+        }
         this.submittedAt = review && review.submittedAt ? String(review.submittedAt) : ''
         if (this.signatureData) this.saveSignatureToStorage()
 
@@ -1043,10 +1234,26 @@ export default {
       const userId = this.currentUserId || 'unknown'
       return proposalId ? `chairmanDraft:${proposalId}:round:${this.activeRoundNo}:user:${userId}` : ''
     },
+    draftKeyPrefix () {
+      const proposalId = this.proposal ? (this.proposal._id || this.proposal.id) : ''
+      return proposalId ? `chairmanDraft:${proposalId}:round:${this.activeRoundNo}:user:` : ''
+    },
+    draftKeyAnyRoundPrefix () {
+      const proposalId = this.proposal ? (this.proposal._id || this.proposal.id) : ''
+      return proposalId ? `chairmanDraft:${proposalId}:round:` : ''
+    },
     submissionKey () {
       const proposalId = this.proposal ? (this.proposal._id || this.proposal.id) : ''
       const userId = this.currentUserId || 'unknown'
       return proposalId ? `chairmanSubmission:${proposalId}:round:${this.activeRoundNo}:user:${userId}` : ''
+    },
+    submissionKeyPrefix () {
+      const proposalId = this.proposal ? (this.proposal._id || this.proposal.id) : ''
+      return proposalId ? `chairmanSubmission:${proposalId}:round:${this.activeRoundNo}:user:` : ''
+    },
+    submissionKeyAnyRoundPrefix () {
+      const proposalId = this.proposal ? (this.proposal._id || this.proposal.id) : ''
+      return proposalId ? `chairmanSubmission:${proposalId}:round:` : ''
     },
     signatureKey () {
       const proposalId = this.proposal ? (this.proposal._id || this.proposal.id) : ''
@@ -1085,7 +1292,11 @@ export default {
     },
     loadDraft () {
       try {
-        const raw = localStorage.getItem(this.draftKey())
+        let raw = localStorage.getItem(this.draftKey())
+        if (!raw) {
+          const fallback = this.findLocalStorageValueByPrefix(this.draftKeyPrefix()) || this.findLocalStorageValueByPrefix(this.draftKeyAnyRoundPrefix())
+          raw = fallback ? JSON.stringify(fallback) : ''
+        }
         if (!raw) return
         const draft = JSON.parse(raw)
         const form = draft && typeof draft === 'object' && draft.form && typeof draft.form === 'object'
@@ -1126,6 +1337,28 @@ export default {
       this.saveSignatureToStorage()
       this.draftSaved = true
       return undefined
+    },
+    findLocalStorageValueByPrefix (prefix) {
+      const p = String(prefix || '').trim()
+      if (!p) return null
+      try {
+        for (let i = 0; i < localStorage.length; i += 1) {
+          const key = localStorage.key(i)
+          if (!key || typeof key !== 'string') continue
+          if (!key.startsWith(p)) continue
+          const raw = localStorage.getItem(key)
+          if (!raw) continue
+          try {
+            const parsed = JSON.parse(raw)
+            if (parsed && typeof parsed === 'object') return parsed
+          } catch (_) {
+            continue
+          }
+        }
+      } catch (_) {
+        return null
+      }
+      return null
     },
     async onSaveDraftClick () {
       if (this.isEvaluationLocked || !this.proposal) return

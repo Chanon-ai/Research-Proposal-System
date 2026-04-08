@@ -153,30 +153,6 @@
                   <div class="col-12 mb-2"><strong>สรุปข้อเสนอแนะ:</strong> {{ card.review.summaryComment || '-' }}</div>
                 </div>
 
-                <div
-                  v-if="isAdminView && isReviewPendingAdminAcceptance(card.review)"
-                  class="d-flex justify-content-end flex-wrap mb-3"
-                  style="gap: 8px;"
-                >
-                  <CButton
-                    size="sm"
-                    color="success"
-                    :disabled="isReviewModerationBusy(card.review)"
-                    @click="acceptProposalReview(card.review)"
-                  >
-                    <CIcon name="cil-check-circle" class="mr-1" /> {{ isReviewModerationBusy(card.review) ? 'กำลังบันทึก...' : 'รับผลประเมิน' }}
-                  </CButton>
-                  <CButton
-                    size="sm"
-                    color="danger"
-                    variant="outline"
-                    :disabled="isReviewModerationBusy(card.review)"
-                    @click="rejectProposalReview(card.review)"
-                  >
-                    <CIcon name="cil-x-circle" class="mr-1" /> ไม่รับผลประเมิน
-                  </CButton>
-                </div>
-
                 <div v-if="card.sections.length" class="chairman-review-card__sections">
                   <div
                     v-for="section in card.sections"
@@ -217,6 +193,30 @@
                 </div>
                 <div v-else class="text-muted small">
                   ไม่พบ payload checklist จากผลประเมินของประธาน
+                </div>
+
+                <div
+                  v-if="isAdminView && isReviewPendingAdminAcceptance(card.review)"
+                  class="d-flex justify-content-end flex-wrap mt-3"
+                  style="gap: 8px;"
+                >
+                  <CButton
+                    size="sm"
+                    color="success"
+                    :disabled="isReviewModerationBusy(card.review)"
+                    @click="acceptProposalReview(card.review)"
+                  >
+                    <CIcon name="cil-check-circle" class="mr-1" /> {{ isReviewModerationBusy(card.review) ? 'กำลังบันทึก...' : 'รับผลประเมิน' }}
+                  </CButton>
+                  <CButton
+                    size="sm"
+                    color="danger"
+                    variant="outline"
+                    :disabled="isReviewModerationBusy(card.review)"
+                    @click="rejectProposalReview(card.review)"
+                  >
+                    <CIcon name="cil-x-circle" class="mr-1" /> ไม่รับผลประเมิน
+                  </CButton>
                 </div>
               </div>
             </div>

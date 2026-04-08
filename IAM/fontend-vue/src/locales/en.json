@@ -4,6 +4,7 @@
     "viewAll": "View all",
     "cancel": "Cancel",
     "delete": "Delete",
+    "remove": "Remove",
     "confirmDelete": "Confirm delete"
   },
   "header": {
@@ -845,6 +846,92 @@
         "status": "Status",
         "decision": "Decision",
         "updatedAt": "Last updated"
+      }
+    },
+    "projectProposal": {
+      "tiles": {
+        "all": "All",
+        "pending": "Pending review",
+        "approved": "Chairman approved",
+        "rejected": "Chairman rejected"
+      },
+      "assignedCardTitle": "Assigned proposals",
+      "searchPlaceholder": "Search...",
+      "searchAria": "Search in table",
+      "loading": "Loading proposals...",
+      "loadFailedTitle": "Failed to load proposals",
+      "emptySearch": "No matching results",
+      "viewAll": "View all",
+      "viewDetail": "View details",
+      "noTitle": "(No project title)",
+      "fields": {
+        "code": "Project code",
+        "title": "Project title",
+        "leader": "Principal investigator",
+        "affiliation": "Affiliation",
+        "decision": "Decision",
+        "status": "Status"
+      },
+      "table": {
+        "perPageLabel": "Per page",
+        "perPageAria": "Items per page",
+        "itemsSuffix": "items"
+      },
+      "decision": {
+        "notSubmitted": "Not submitted",
+        "approve": "Approve",
+        "reject": "Reject",
+        "unspecified": "Unspecified"
+      },
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "other": "In progress"
+      },
+      "progress": {
+        "pending": "Chairman: pending/in review",
+        "approved": "Chairman: approved",
+        "rejected": "Chairman: rejected",
+        "other": "Project administration: in progress"
+      },
+      "latest": {
+        "label": "Latest: {time}",
+        "noTime": "Latest: time not available"
+      },
+      "timeAgo": {
+        "justNow": "just now",
+        "soon": "soon",
+        "minutesAgo": "{count} min ago",
+        "hoursAgo": "{count} hr ago",
+        "daysAgo": "{count} day(s) ago",
+        "monthsAgo": "{count} month(s) ago",
+        "yearsAgo": "{count} year(s) ago",
+        "inMinutes": "in {count} min",
+        "inHours": "in {count} hr",
+        "inDays": "in {count} day(s)",
+        "inMonths": "in {count} month(s)",
+        "inYears": "in {count} year(s)"
+      },
+      "meetings": {
+        "title": "Upcoming meetings",
+        "subtitle": "Shows your nearest scheduled meetings",
+        "empty": "No upcoming meetings",
+        "metaDate": "Date {date}",
+        "metaTime": "Time {time}",
+        "metaFormat": "Format: {format}",
+        "metaLocation": "Location: {location}",
+        "metaLink": "Link: {link}",
+        "typeOnline": "Online",
+        "typeOnsite": "On-site"
+      },
+      "notifs": {
+        "title": "Important notifications",
+        "subtitle": "Shows recent important events for follow-up",
+        "empty": "No recent notifications",
+        "mock1": "A proposal has been submitted for review",
+        "mock2": "A document revision has been requested",
+        "mock3": "A meeting schedule has been updated"
       }
     },
     "meetings": {
