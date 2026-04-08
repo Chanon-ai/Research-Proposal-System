@@ -44,7 +44,7 @@
         <div class="evaluation-sticky">
           <CCard class="evaluation-card">
             <CCardHeader class="evaluation-card__header">
-              {{ $t('chairman.proposalDetail.title') }}
+              {{ evaluationCardTitle }}
             </CCardHeader>
             <CCardBody v-if="proposal" class="evaluation-card__body" :class="{ 'evaluation-locked': isEvaluationLocked }">
               <CAlert
@@ -494,6 +494,12 @@ export default {
     },
     selectedFundingTemplate () {
       return getChairmanChecklistTemplate(this.proposal && this.proposal.fundingType)
+    },
+    evaluationCardTitle () {
+      const config = getChairmanChecklistConfig()
+      const resolved = this.resolveChecklistText(config, 'cardTitle')
+      if (resolved) return resolved
+      return this.$t('chairman.proposalDetail.title')
     },
     selectedFundingLabel () {
       const template = this.selectedFundingTemplate

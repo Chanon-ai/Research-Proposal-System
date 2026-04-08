@@ -2,6 +2,9 @@ const DEFAULT_CHAIRMAN_CHECKLIST_CONFIG = Object.freeze({
   templateVersion: 2,
   reviewerRole: 'chairman',
   reviewerLabel: 'ประธานสำนัก',
+  cardTitleTh: 'Checklist พิจารณาข้อเสนอโครงการ',
+  cardTitleEn: 'Proposal review checklist',
+  cardTitle: 'Checklist พิจารณาข้อเสนอโครงการ',
   importStatus: 'complete',
   note: '',
   fundingTemplates: [
@@ -548,6 +551,9 @@ const mergeMissingLocalization = (runtimeConfig, fallbackConfig) => {
 
   return {
     ...runtime,
+    cardTitle: runtime.cardTitle || fallback.cardTitle || pickLocalizedValue(fallback, 'cardTitle', 'th') || '',
+    cardTitleTh: runtime.cardTitleTh || fallback.cardTitleTh || pickLocalizedValue(fallback, 'cardTitle', 'th') || '',
+    cardTitleEn: runtime.cardTitleEn || fallback.cardTitleEn || pickLocalizedValue(fallback, 'cardTitle', 'en') || '',
     fundingTemplates: mergedTemplates
   }
 }
@@ -592,6 +598,9 @@ function buildNormalizedChairmanChecklistConfigCore(rawConfig = {}) {
     templateVersion: Number(source.templateVersion) || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.templateVersion,
     reviewerRole: String(source.reviewerRole || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.reviewerRole).trim() || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.reviewerRole,
     reviewerLabel: String(source.reviewerLabel || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.reviewerLabel).trim() || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.reviewerLabel,
+    cardTitle: String(source.cardTitle || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.cardTitle).trim() || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.cardTitle,
+    cardTitleTh: pickLocalizedValue(source, 'cardTitle', 'th') || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.cardTitleTh,
+    cardTitleEn: pickLocalizedValue(source, 'cardTitle', 'en') || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.cardTitleEn,
     importStatus: String(source.importStatus || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.importStatus).trim() || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.importStatus,
     note: String(source.note || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.note).trim() || DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.note,
     fundingTemplates: fundingTemplates.length > 0 ? fundingTemplates : DEFAULT_CHAIRMAN_CHECKLIST_CONFIG.fundingTemplates.map(normalizeFundingTemplate)

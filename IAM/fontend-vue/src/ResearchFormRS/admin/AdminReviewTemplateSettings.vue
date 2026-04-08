@@ -133,6 +133,10 @@
                   <CCol md="4"><CInput label="Reviewer Label" v-model="chairmanForm.reviewerLabel" /></CCol>
                 </CRow>
                 <CRow>
+                  <CCol md="6"><CInput label="Card Title (TH)" v-model="chairmanForm.cardTitleTh" /></CCol>
+                  <CCol md="6"><CInput label="Card Title (EN)" v-model="chairmanForm.cardTitleEn" /></CCol>
+                </CRow>
+                <CRow>
                   <CCol md="12"><CTextarea :label="$t('reviewTemplate.noteLabel')" rows="3" v-model="chairmanForm.note" /></CCol>
                 </CRow>
 
