@@ -786,6 +786,9 @@ export default {
           this.proposalDepartmentHint = String(wrapped.proposalDepartment || '').trim()
         }
 
+        const allowedCommitteeIds = new Set((this.committeeUsers || []).map(u => String(u && u._id ? u._id : '')).filter(Boolean))
+        this.selectedCommitteeIds = (this.selectedCommitteeIds || []).map(String).filter(id => allowedCommitteeIds.has(id))
+
         if (!this.committeeDepartments.length) {
           const dedup = Array.from(new Set((this.committeeUsers || []).map(u => String(u && u.department ? u.department : '').trim()).filter(Boolean)))
           this.committeeDepartments = dedup.sort((a, b) => a.localeCompare(b, 'th'))

@@ -1232,6 +1232,20 @@ async function assignCommittee(id, committeeIds = [], user) {
 
   const workflowPolicy = await systemSettingService.getWorkflowApprovalPolicy();
   const normalizedCommitteeIds = dedupeCommitteeIds(committeeIds);
+
+  const assignedCommitteeUsers = await User.find({
+    _id: { $in: normalizedCommitteeIds },
+    role: 'committee',
+    isActive: true,
+    isDeleted: { $ne: true }
+  })
+    .select('_id')
+    .lean();
+
+  if (assignedCommitteeUsers.length !== normalizedCommitteeIds.length) {
+    throw new Error('All assigned users must be active committee members');
+  }
+
   // Prevent committee assignment to finalized proposals
   const terminalStates = [STATUS.APPROVED, STATUS.REJECTED, STATUS.ANNOUNCED];
   if (terminalStates.includes(proposal.currentStatus)) {
@@ -1919,7 +1933,7 @@ async function getCommitteeUsers(query = {}) {
     const roleFilter = String(query.role || '').trim().toLowerCase();
     const allowedRoles = roleFilter === 'chairman'
       ? ['chairman']
-      : (roleFilter === 'committee' ? ['committee'] : ['committee', 'chairman']);
+      : ['committee'];
     const filter = {
       role: { $in: allowedRoles },
       isActive: true,

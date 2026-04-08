@@ -2579,6 +2579,9 @@ export default {
           const wrapped = payload.data
           this.adminCommitteeUsers = Array.isArray(wrapped.items) ? wrapped.items : []
         }
+
+        const allowedCommitteeIds = new Set((this.adminCommitteeUsers || []).map(u => String(u && u._id ? u._id : '')).filter(Boolean))
+        this.adminSelectedCommitteeIds = (this.adminSelectedCommitteeIds || []).map(String).filter(id => allowedCommitteeIds.has(id))
       } catch (err) {
         this.adminCommitteeUsers = []
         this.adminCommitteeUsersError = (err && err.response && err.response.data && err.response.data.message)
