@@ -156,6 +156,32 @@ export default [{
       to: '/research-form',
       icon: 'cil-notes',
       roles: ['chairman']
+    },
+    {
+      _name: 'CSidebarNavTitle',
+      roles: ['finance_officer'],
+      _children: ['Finance Officer']
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'ภาพรวมงบประมาณ',
+      to: '/finance-officer/dashboard',
+      icon: 'cil-speedometer',
+      roles: ['finance_officer']
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'โครงการที่ได้รับมอบหมาย',
+      to: '/finance-officer/assigned',
+      icon: 'cil-wallet',
+      roles: ['finance_officer']
+    },
+    {
+      _name: 'CSidebarNavItem',
+      name: 'Notifications',
+      to: '/finance-officer/notifications',
+      icon: 'cil-bell',
+      roles: ['finance_officer']
     }
   ]
 }]

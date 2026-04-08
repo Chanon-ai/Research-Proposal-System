@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const USER_ROLES = ['admin', 'chairman', 'committee', 'researcher'];
+const USER_ROLES = ['admin', 'chairman', 'committee', 'finance_officer', 'researcher'];
 
 function normalizeUserRole(role) {
   return String(role || '').trim().toLowerCase();

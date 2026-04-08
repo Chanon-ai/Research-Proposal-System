@@ -475,6 +475,9 @@ export default {
       if (role === 'chairman') {
         return { name: 'chairmanProposalDetail', params: { id: proposalId } }
       }
+      if (role === 'finance_officer') {
+        return { name: 'FinanceOfficerProposalDetail', params: { id: proposalId } }
+      }
       if (['admin', 'legacy_admin'].includes(role)) {
         return { name: 'AdminProposalDetail', params: { id: proposalId } }
       }

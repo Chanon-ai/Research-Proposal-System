@@ -4,6 +4,7 @@ export const ROLE_PAGE_ACCESS_LOCAL_FALLBACK_KEY = 'admin_role_page_access_setti
 export const RESEARCH_ROLE_PAGE_ACCESS_ROLES = Object.freeze([
   { value: 'researcher', label: 'นักวิจัย' },
   { value: 'committee', label: 'คณะกรรมการ' },
+  { value: 'finance_officer', label: 'เจ้าหน้าที่การเงิน' },
   { value: 'admin', label: 'ผู้ดูแลระบบ' },
   { value: 'chairman', label: 'ประธานสำนัก' }
 ])
@@ -23,7 +24,7 @@ const DEFAULT_ROLE_PAGE_ACCESS_CONFIG_SOURCE = [
     label: 'โปรไฟล์ผู้วิจัย',
     path: '/user/profile',
     matchMode: 'exact',
-    roles: ['researcher']
+    roles: ['researcher', 'finance_officer']
   },
   {
     pageKey: 'user-history',
@@ -179,12 +180,41 @@ const DEFAULT_ROLE_PAGE_ACCESS_CONFIG_SOURCE = [
     path: '/chairman/proposals',
     matchMode: 'prefix',
     roles: ['chairman']
+  },
+  {
+    pageKey: 'finance-dashboard',
+    label: 'แดชบอร์ดเจ้าหน้าที่การเงิน',
+    path: '/finance-officer/dashboard',
+    matchMode: 'exact',
+    roles: ['finance_officer']
+  },
+  {
+    pageKey: 'finance-assigned',
+    label: 'โครงการที่ได้รับมอบหมายด้านงบประมาณ',
+    path: '/finance-officer/assigned',
+    matchMode: 'exact',
+    roles: ['finance_officer']
+  },
+  {
+    pageKey: 'finance-notifications',
+    label: 'การแจ้งเตือนเจ้าหน้าที่การเงิน',
+    path: '/finance-officer/notifications',
+    matchMode: 'exact',
+    roles: ['finance_officer']
+  },
+  {
+    pageKey: 'finance-proposals',
+    label: 'หน้าอ่านข้อเสนอโครงการของเจ้าหน้าที่การเงิน',
+    path: '/finance-officer/proposals',
+    matchMode: 'prefix',
+    roles: ['finance_officer']
   }
 ]
 
 const DEFAULT_ROLE_LANDING_PATHS = Object.freeze({
   researcher: ['/userdashboard', '/user/profile', '/research-form'],
   committee: ['/committee/assigned', '/committee/dashboard', '/committee/meetings'],
+  finance_officer: ['/finance-officer/assigned', '/finance-officer/dashboard', '/finance-officer/notifications'],
   admin: ['/admin/dashboard', '/admin/settings', '/admin/proposals'],
   chairman: ['/chairman/assigned', '/chairman/dashboard', '/chairman/meetings']
 })

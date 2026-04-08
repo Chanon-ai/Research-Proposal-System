@@ -219,6 +219,10 @@ export default {
         this.$router.push('/chairman/assigned')
         return
       }
+      if (role === 'finance_officer') {
+        this.$router.push('/finance-officer/assigned')
+        return
+      }
       if (role === 'admin') {
         this.$router.push('/admin/dashboard')
         return

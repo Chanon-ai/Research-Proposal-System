@@ -281,6 +281,7 @@ const ROLES = {
   admin: 'ผู้ดูแลระบบ',
   chairman: 'ประธานสำนัก',
   committee: 'คณะกรรมการ',
+  finance_officer: 'เจ้าหน้าที่การเงิน',
   researcher: 'นักวิจัย'
 }
 
@@ -288,6 +289,7 @@ const ROLE_BADGE_COLORS = {
   admin: 'danger',
   chairman: 'warning',
   committee: 'info',
+  finance_officer: 'primary',
   researcher: 'success'
 }
 

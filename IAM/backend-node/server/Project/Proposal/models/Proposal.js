@@ -118,6 +118,40 @@ const proposalSchema = new mongoose.Schema(
         default: ''
       }
     },
+    financeAssignment: {
+      assignedFinanceOfficerIds: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'User',
+        default: []
+      },
+      status: {
+        type: String,
+        enum: ['idle', 'pending', 'submitted'],
+        default: 'idle'
+      },
+      assignedAt: {
+        type: Date,
+        default: null
+      },
+      assignedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+      },
+      submittedAt: {
+        type: Date,
+        default: null
+      },
+      submittedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+      },
+      summaryComment: {
+        type: String,
+        default: ''
+      }
+    },
     requiresRevision: {
       type: Boolean,
       default: false
@@ -178,5 +212,6 @@ proposalSchema.index({ applicantUserId: 1, currentStatus: 1 });
 proposalSchema.index({ fiscalYear: 1, currentStatus: 1 });
 proposalSchema.index({ currentStatus: 1, isDeleted: 1 });
 proposalSchema.index({ committeeIds: 1 });
+proposalSchema.index({ 'financeAssignment.assignedFinanceOfficerIds': 1 });
 
 module.exports = mongoose.model('Proposal', proposalSchema);

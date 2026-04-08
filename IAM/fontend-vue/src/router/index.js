@@ -34,6 +34,10 @@ const CommitteeAssigned = () => import('@/ResearchFormRS/committee/CommitteeProj
 const CommitteeMeetings = () => import('@/ResearchFormRS/committee/CommitteeMeetings.vue')
 const CommitteeNotifications = () => import('@/ResearchFormRS/committee/CommitteeNotifications.vue')
 const CommitteeProposalDetail = () => import('@/ResearchFormRS/committee/CommitteeProposalDetail.vue')
+const FinanceOfficerDashboard = () => import('@/ResearchFormRS/finance/FinanceOfficerDashboardSummary.vue')
+const FinanceOfficerAssigned = () => import('@/ResearchFormRS/finance/FinanceOfficerProjectProposal.vue')
+const FinanceOfficerNotifications = () => import('@/ResearchFormRS/finance/FinanceOfficerNotifications.vue')
+const FinanceOfficerProposalDetail = () => import('@/ResearchFormRS/finance/FinanceOfficerProposalDetail.vue')
 const ChairmanDashboard = () => import('@/ResearchFormRS/chairman/ChairmanDashboardSummary.vue')
 const ChairmanAssigned = () => import('@/ResearchFormRS/chairman/ChairmanProjectProposal.vue')
 const ChairmanMeetings = () => import('@/ResearchFormRS/chairman/ChairmanMeetings.vue')
@@ -157,7 +161,7 @@ const router = new Router({
           alias: '/profile',
           name: 'UserProfile',
           component: UserProfile,
-          meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman', 'finance_officer'] }
         },
         {
           path: 'user/history',
@@ -315,6 +319,34 @@ const router = new Router({
         {
           path: 'chairman/logout',
           redirect: '/chairman/assigned'
+        },
+        {
+          path: 'finance-officer/dashboard',
+          name: 'FinanceOfficerDashboard',
+          component: FinanceOfficerDashboard,
+          meta: { appAuth: 'research', roles: ['finance_officer'] }
+        },
+        {
+          path: 'finance-officer/assigned',
+          name: 'FinanceOfficerAssigned',
+          component: FinanceOfficerAssigned,
+          meta: { appAuth: 'research', roles: ['finance_officer'] }
+        },
+        {
+          path: 'finance-officer/notifications',
+          name: 'FinanceOfficerNotifications',
+          component: FinanceOfficerNotifications,
+          meta: { appAuth: 'research', roles: ['finance_officer'] }
+        },
+        {
+          path: 'finance-officer/proposals/:id',
+          name: 'FinanceOfficerProposalDetail',
+          component: FinanceOfficerProposalDetail,
+          meta: { appAuth: 'research', roles: ['finance_officer'] }
+        },
+        {
+          path: 'finance-officer/logout',
+          redirect: '/finance-officer/assigned'
         },
         {
           path: 'theme',
@@ -858,6 +890,7 @@ function getRoleHome(role) {
   const normalizedRole = mapRoleForResearchAccess(role)
   if (normalizedRole === 'committee') return '/committee/assigned'
   if (normalizedRole === 'chairman') return '/chairman/assigned'
+  if (normalizedRole === 'finance_officer') return '/finance-officer/assigned'
   if (normalizedRole === 'admin') return '/admin/dashboard'
   return '/userdashboard'
 }
@@ -914,6 +947,7 @@ router.beforeEach(async (to, from, next) => {
         if (researchRole === 'admin') return next('/admin/dashboard')
         if (researchRole === 'committee') return next('/committee/assigned')
         if (researchRole === 'chairman') return next('/chairman/assigned')
+        if (researchRole === 'finance_officer') return next('/finance-officer/assigned')
         return next('/userdashboard')
       }
     }

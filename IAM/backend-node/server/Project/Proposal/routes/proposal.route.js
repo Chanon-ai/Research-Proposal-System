@@ -40,6 +40,8 @@ router.post('/:id/resubmit', authenticate, controller.resubmit);
 router.patch('/:id/status', authenticate, requireRole('admin', 'chairman'), controller.changeStatus);
 router.post('/:id/assign-committee', authenticate, requireRole('admin', 'chairman'), controller.assignCommittee);
 router.post('/:id/assign-chairman', authenticate, requireRole('admin', 'chairman'), controller.assignChairman);
+router.post('/:id/assign-finance-officer', authenticate, requireRole('admin'), controller.assignFinanceOfficer);
 router.post('/:id/reviews', authenticate, requireRole('committee', 'chairman', 'admin'), controller.saveReview);
+router.post('/:id/finance-review', authenticate, requireRole('finance_officer'), controller.saveFinanceReview);
 
 module.exports = router;

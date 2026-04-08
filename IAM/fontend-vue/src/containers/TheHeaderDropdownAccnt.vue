@@ -144,7 +144,7 @@ export default {
     },
 
     showUserMenu () {
-      return ['researcher', 'admin', 'chairman'].includes(this.currentRole)
+      return ['researcher', 'admin', 'chairman', 'finance_officer'].includes(this.currentRole)
     }
   },
 

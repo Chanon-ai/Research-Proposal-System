@@ -1,6 +1,6 @@
 const User = require('../models/User');
 
-const USER_ROLES = ['admin', 'chairman', 'committee', 'researcher'];
+const USER_ROLES = ['admin', 'chairman', 'committee', 'finance_officer', 'researcher'];
 
 function normalizeChairmanRoleToken(role) {
   return String(role || '').trim().toLowerCase();

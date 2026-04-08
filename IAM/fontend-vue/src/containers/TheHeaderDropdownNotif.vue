@@ -319,6 +319,10 @@ export default {
         return { path: '/chairman/notifications', query }
       }
 
+      if (role === 'finance_officer') {
+        return { path: '/finance-officer/notifications', query }
+      }
+
       return { path: '/user/notification', query }
     },
 

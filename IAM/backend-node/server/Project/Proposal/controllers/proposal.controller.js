@@ -446,6 +446,17 @@ exports.assignChairman = async (req, res, next) => {
   }
 };
 
+exports.assignFinanceOfficer = async (req, res, next) => {
+  try {
+    const user = getUserFromReq(req);
+    const { financeOfficerIds } = req.body || {};
+    const proposal = await service.assignFinanceOfficer(req.params.id, financeOfficerIds, user);
+    return jsonResponse(res, { success: true, message: 'Finance officer assigned', data: proposal });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.saveReview = async (req, res, next) => {
   try {
     const user = getUserFromReq(req);
@@ -463,6 +474,22 @@ exports.saveReview = async (req, res, next) => {
     }
     if (err && (err.message === 'Signature is required' || err.message === 'Signature format is invalid' || err.message === 'Signature payload is too large')) {
       return res.status(400).json({ success: false, message: err.message });
+    }
+    next(err);
+  }
+};
+
+exports.saveFinanceReview = async (req, res, next) => {
+  try {
+    const user = getUserFromReq(req);
+    const proposal = await service.saveFinanceReview(req.params.id, req.body || {}, user);
+    return jsonResponse(res, { success: true, message: 'Finance review saved', data: proposal });
+  } catch (err) {
+    if (err && err.message === 'Forbidden') {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    if (err && err.message === 'Unauthorized') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
     next(err);
   }

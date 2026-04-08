@@ -22,6 +22,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'faculty_approved',
     'faculty_rejected',
     'office_received',
+    'finance_budget_checking',
     'meeting_in_progress',
     'meeting_completed',
     'document_checking',
@@ -42,6 +43,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'faculty_approved',
     'faculty_rejected',
     'office_received',
+    'finance_budget_checking',
     'meeting_in_progress',
     'meeting_completed',
     'document_checking',
@@ -57,6 +59,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'faculty_approved',
     'faculty_rejected',
     'office_received',
+    'finance_budget_checking',
     'meeting_in_progress',
     'meeting_completed',
     'document_checking',
@@ -75,6 +78,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     'faculty_approved',
     'faculty_rejected',
     'office_received',
+    'finance_budget_checking',
     'meeting_in_progress',
     'meeting_completed',
     'document_checking',
@@ -92,7 +96,8 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     faculty_review_pending: ['faculty_approved', 'rejected'],
     faculty_approved: ['office_received'],
     faculty_rejected: ['rejected'],
-    office_received: ['meeting_in_progress', 'meeting_completed', 'document_checking'],
+    office_received: ['finance_budget_checking', 'meeting_in_progress', 'meeting_completed', 'document_checking'],
+    finance_budget_checking: ['document_checking'],
     meeting_in_progress: ['office_received', 'meeting_completed'],
     meeting_completed: ['meeting_in_progress', 'document_checking'],
     document_checking: ['assigned_to_committee'],
@@ -113,18 +118,19 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     faculty_approved: 4,
     faculty_rejected: 4,
     office_received: 5,
+    finance_budget_checking: 6,
     meeting_completed: 5,
-    document_checking: 6,
-    assigned_to_committee: 7,
-    under_review: 8,
-    meeting_in_progress: 9,
-    committee_valuated: 9,
+    document_checking: 7,
+    assigned_to_committee: 8,
+    under_review: 9,
+    meeting_in_progress: 10,
+    committee_valuated: 10,
     revision_requested: 5,
-    resubmitted: 6,
-    second_round_review: 8,
-    approved: 10,
-    rejected: 10,
-    announced: 10
+    resubmitted: 7,
+    second_round_review: 9,
+    approved: 11,
+    rejected: 11,
+    announced: 11
   },
   labels: {
     admin: {
@@ -135,6 +141,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       faculty_approved: 'ประธานอนุมัติ',
       faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'ส่วนบริหารรับแล้ว',
+      finance_budget_checking: 'เจ้าหน้าที่กำลังตรวจสอบงบประมาณ',
       meeting_in_progress: 'กำลังจัดการประชุม',
       meeting_completed: 'ส่วนบริหารกำลังจัดเตรียมผล',
       document_checking: 'ตรวจสอบเอกสาร',
@@ -156,6 +163,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       faculty_approved: 'ประธานอนุมัติ',
       faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'ส่วนบริหารรับแล้ว',
+      finance_budget_checking: 'เจ้าหน้าที่กำลังตรวจสอบงบประมาณ',
       meeting_in_progress: 'กำลังจัดการประชุม',
       meeting_completed: 'ส่วนบริหารกำลังจัดเตรียมผล',
       document_checking: 'ตรวจสอบเอกสาร',
@@ -177,6 +185,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       faculty_approved: 'ประธานอนุมัติ',
       faculty_rejected: 'ประธานไม่อนุมัติ',
       office_received: 'สำนักงานรับเรื่องแล้ว',
+      finance_budget_checking: 'เจ้าหน้าที่กำลังตรวจสอบงบประมาณ',
       meeting_in_progress: 'กำลังจัดการประชุม',
       meeting_completed: 'ส่วนบริหารกำลังจัดเตรียมผล',
       document_checking: 'ตรวจเอกสาร',
@@ -200,6 +209,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       faculty_approved: '#34D399',
       faculty_rejected: '#F87171',
       office_received: '#38BDF8',
+      finance_budget_checking: '#F59E0B',
       meeting_in_progress: '#F97316',
       meeting_completed: '#0EA5E9',
       document_checking: '#FACC15',
@@ -220,6 +230,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
       faculty_approved: '#007bff',
       faculty_rejected: '#dc3545',
       office_received: '#17a2b8',
+      finance_budget_checking: '#ffc107',
       meeting_in_progress: '#fd7e14',
       meeting_completed: '#17a2b8',
       document_checking: '#fd7e14',
@@ -236,19 +247,19 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
     coreui: {
       admin: {
         draft: 'secondary', pending_confirm: 'secondary', submitted: 'info', faculty_review_pending: 'warning',
-        faculty_approved: 'primary', faculty_rejected: 'danger', office_received: 'primary', meeting_in_progress: 'warning', meeting_completed: 'info', document_checking: 'warning', assigned_to_committee: 'info',
+        faculty_approved: 'primary', faculty_rejected: 'danger', office_received: 'primary', finance_budget_checking: 'warning', meeting_in_progress: 'warning', meeting_completed: 'info', document_checking: 'warning', assigned_to_committee: 'info',
           under_review: 'danger', committee_valuated: 'danger', revision_requested: 'danger', resubmitted: 'info',
         second_round_review: 'warning', approved: 'success', rejected: 'danger', announced: 'primary'
       },
       badge: {
         draft: 'secondary', pending_confirm: 'secondary', submitted: 'info', faculty_review_pending: 'warning',
-        faculty_approved: 'primary', faculty_rejected: 'danger', office_received: 'primary', meeting_in_progress: 'warning', meeting_completed: 'info', document_checking: 'warning', assigned_to_committee: 'info',
+        faculty_approved: 'primary', faculty_rejected: 'danger', office_received: 'primary', finance_budget_checking: 'warning', meeting_in_progress: 'warning', meeting_completed: 'info', document_checking: 'warning', assigned_to_committee: 'info',
           under_review: 'warning', committee_valuated: 'danger', revision_requested: 'danger', resubmitted: 'info',
         second_round_review: 'warning', approved: 'success', rejected: 'danger', announced: 'success'
       },
       researchForm: {
         draft: 'secondary', pending_confirm: 'warning', submitted: 'info', faculty_review_pending: 'warning',
-        faculty_approved: 'primary', faculty_rejected: 'danger', office_received: 'primary', meeting_in_progress: 'warning', meeting_completed: 'info', document_checking: 'warning', assigned_to_committee: 'info',
+        faculty_approved: 'primary', faculty_rejected: 'danger', office_received: 'primary', finance_budget_checking: 'warning', meeting_in_progress: 'warning', meeting_completed: 'info', document_checking: 'warning', assigned_to_committee: 'info',
           under_review: 'danger', committee_valuated: 'danger', revision_requested: 'danger', resubmitted: 'info',
         second_round_review: 'warning', approved: 'success', rejected: 'danger', announced: 'primary'
       }
@@ -306,7 +317,7 @@ const PROPOSAL_WORKFLOW_DEFAULT = Object.freeze({
   }
 });
 
-const ROLE_ORDER = Object.freeze(['researcher', 'committee', 'admin', 'chairman']);
+const ROLE_ORDER = Object.freeze(['researcher', 'committee', 'finance_officer', 'admin', 'chairman']);
 
 const ROLE_PAGE_ACCESS_DEFAULT = Object.freeze([
   { pageKey: 'user-dashboard', label: 'หน้าหลักผู้วิจัย', path: '/userdashboard', matchMode: 'exact', roles: ['researcher'] },
@@ -333,6 +344,10 @@ const ROLE_PAGE_ACCESS_DEFAULT = Object.freeze([
   { pageKey: 'chairman-meetings', label: 'ประชุมประธานสำนัก', path: '/chairman/meetings', matchMode: 'exact', roles: ['chairman'] },
   { pageKey: 'chairman-notifications', label: 'การแจ้งเตือนประธานสำนัก', path: '/chairman/notifications', matchMode: 'exact', roles: ['chairman'] },
   { pageKey: 'chairman-proposals', label: 'หน้าอ่านข้อเสนอของประธานสำนัก', path: '/chairman/proposals', matchMode: 'prefix', roles: ['chairman'] }
+  ,{ pageKey: 'finance-dashboard', label: 'แดชบอร์ดเจ้าหน้าที่การเงิน', path: '/finance-officer/dashboard', matchMode: 'exact', roles: ['finance_officer'] }
+  ,{ pageKey: 'finance-assigned', label: 'โครงการที่ได้รับมอบหมายด้านงบประมาณ', path: '/finance-officer/assigned', matchMode: 'exact', roles: ['finance_officer'] }
+  ,{ pageKey: 'finance-notifications', label: 'การแจ้งเตือนเจ้าหน้าที่การเงิน', path: '/finance-officer/notifications', matchMode: 'exact', roles: ['finance_officer'] }
+  ,{ pageKey: 'finance-proposals', label: 'หน้าอ่านข้อเสนอโครงการของเจ้าหน้าที่การเงิน', path: '/finance-officer/proposals', matchMode: 'prefix', roles: ['finance_officer'] }
 ]);
 
 const FUNDING_BUDGET_DEFAULT = Object.freeze([

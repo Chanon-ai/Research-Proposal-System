@@ -25,6 +25,7 @@ function isResearchAppPath(pathname) {
   return [
     '/admin',
     '/committee',
+    '/finance-officer',
     '/user',
     '/research-form',
     '/userdashboard'
@@ -238,7 +239,9 @@ export default {
     changeStatus: (id, data) => instance.patch(`/api/v1/proposals/${id}/status`, data),
     assignCommittee: (id, data) => instance.post(`/api/v1/proposals/${id}/assign-committee`, data),
     assignChairman: (id, data) => instance.post(`/api/v1/proposals/${id}/assign-chairman`, data),
+    assignFinanceOfficer: (id, data) => instance.post(`/api/v1/proposals/${id}/assign-finance-officer`, data),
     saveReview: (id, data) => instance.post(`/api/v1/proposals/${id}/reviews`, data),
+    saveFinanceReview: (id, data) => instance.post(`/api/v1/proposals/${id}/finance-review`, data),
     acceptReview: (id, reviewId) => instance.post(`/api/v1/proposals/${id}/reviews/${reviewId}/accept`),
     rejectReview: (id, reviewId) => instance.post(`/api/v1/proposals/${id}/reviews/${reviewId}/reject`),
     getMyReview: (id, params) => instance.get(`/api/v1/proposals/${id}/reviews/me`, { params }),

@@ -21,7 +21,8 @@ const ALLOWED_TRANSITIONS = {
   [STATUS.FACULTY_REVIEW_PENDING]: [STATUS.FACULTY_APPROVED, STATUS.REJECTED],
   [STATUS.FACULTY_APPROVED]: [STATUS.OFFICE_RECEIVED],
   [STATUS.FACULTY_REJECTED]: [STATUS.REJECTED],
-  [STATUS.OFFICE_RECEIVED]: [STATUS.DOCUMENT_CHECKING],
+  [STATUS.OFFICE_RECEIVED]: [STATUS.FINANCE_BUDGET_CHECKING, STATUS.DOCUMENT_CHECKING],
+  [STATUS.FINANCE_BUDGET_CHECKING]: [STATUS.DOCUMENT_CHECKING],
   [STATUS.DOCUMENT_CHECKING]: [STATUS.ASSIGNED_TO_COMMITTEE],
   [STATUS.ASSIGNED_TO_COMMITTEE]: [STATUS.UNDER_REVIEW],
   [STATUS.UNDER_REVIEW]: [STATUS.COMMITTEE_VALUATED],
@@ -64,6 +65,12 @@ const CHAIRMAN_REVIEW_STATUS = Object.freeze({
   PENDING: 'pending',
   APPROVED: 'approved',
   REJECTED: 'rejected'
+});
+
+const FINANCE_REVIEW_STATUS = Object.freeze({
+  IDLE: 'idle',
+  PENDING: 'pending',
+  SUBMITTED: 'submitted'
 });
 
 function isReviewerRole(role) {
@@ -110,7 +117,7 @@ function validateReviewSignatureData(signatureData, { required = false } = {}) {
 function getAssignedChairmanIdsFromProposal(proposal = {}) {
   const assignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
     ? proposal.chairmanAssignment
-    : {};
+    : (proposal && typeof proposal === 'object' ? proposal : {});
   return dedupeCommitteeIds(Array.isArray(assignment.assignedChairmanIds) ? assignment.assignedChairmanIds : []);
 }
 
@@ -125,6 +132,26 @@ function hasChairmanProposalAccess(proposal = {}, userId = null) {
     ? String(proposal.chairmanAssignment.reviewedBy)
     : '';
   return reviewedBy === normalizedUserId;
+}
+
+function getAssignedFinanceOfficerIdsFromProposal(proposal = {}) {
+  const assignment = proposal && proposal.financeAssignment && typeof proposal.financeAssignment === 'object'
+    ? proposal.financeAssignment
+    : (proposal && typeof proposal === 'object' ? proposal : {});
+  return dedupeCommitteeIds(Array.isArray(assignment.assignedFinanceOfficerIds) ? assignment.assignedFinanceOfficerIds : []);
+}
+
+function hasFinanceProposalAccess(proposal = {}, userId = null) {
+  const normalizedUserId = userId ? String(userId) : '';
+  if (!normalizedUserId) return false;
+
+  const assignedIds = getAssignedFinanceOfficerIdsFromProposal(proposal).map(String);
+  if (assignedIds.includes(normalizedUserId)) return true;
+
+  const submittedBy = proposal && proposal.financeAssignment && proposal.financeAssignment.submittedBy
+    ? String(proposal.financeAssignment.submittedBy)
+    : '';
+  return submittedBy === normalizedUserId;
 }
 
 function buildChairmanAssignmentUpdate({
@@ -144,6 +171,28 @@ function buildChairmanAssignmentUpdate({
       assignedBy,
       reviewedAt,
       reviewedBy,
+      summaryComment: String(summaryComment || '')
+    }
+  };
+}
+
+function buildFinanceAssignmentUpdate({
+  assignedFinanceOfficerIds = [],
+  status = FINANCE_REVIEW_STATUS.IDLE,
+  assignedAt = null,
+  assignedBy = null,
+  submittedAt = null,
+  submittedBy = null,
+  summaryComment = ''
+} = {}) {
+  return {
+    financeAssignment: {
+      assignedFinanceOfficerIds,
+      status,
+      assignedAt,
+      assignedBy,
+      submittedAt,
+      submittedBy,
       summaryComment: String(summaryComment || '')
     }
   };
@@ -349,6 +398,16 @@ function getProposalStakeholderIds(proposal = {}, { includeApplicant = true, inc
       if (normalizedId) recipientIds.add(normalizedId);
     });
   }
+
+  getAssignedChairmanIdsFromProposal(proposal).forEach((chairmanId) => {
+    const normalizedId = String(chairmanId || '').trim();
+    if (normalizedId) recipientIds.add(normalizedId);
+  });
+
+  getAssignedFinanceOfficerIdsFromProposal(proposal).forEach((financeOfficerId) => {
+    const normalizedId = String(financeOfficerId || '').trim();
+    if (normalizedId) recipientIds.add(normalizedId);
+  });
 
   (Array.isArray(extraRecipientIds) ? extraRecipientIds : []).forEach((recipientId) => {
     const normalizedId = String(recipientId || '').trim();
@@ -795,6 +854,12 @@ async function getProposalList(query = {}, user) {
       { 'chairmanAssignment.reviewedBy': user._id }
     ];
   }
+  if (user && user.role === 'finance_officer' && user._id) {
+    filter.$or = [
+      { 'financeAssignment.assignedFinanceOfficerIds': user._id },
+      { 'financeAssignment.submittedBy': user._id }
+    ];
+  }
   const statusTokens = [];
   const pushStatusTokens = (raw) => {
     if (!raw) return;
@@ -956,8 +1021,9 @@ async function getProposalById(id, user) {
   const isOwner = uid && proposal.applicantUserId && String(proposal.applicantUserId) === uid;
   const isCommittee = uid && Array.isArray(proposal.committeeIds) && proposal.committeeIds.map(String).includes(uid);
   const isChairman = isChairmanRole(role) && hasChairmanProposalAccess(proposal, uid);
+  const isFinanceOfficer = role === 'finance_officer' && hasFinanceProposalAccess(proposal, uid);
 
-  if (user && !isAdmin && !isOwner && !isCommittee && !isChairman) {
+  if (user && !isAdmin && !isOwner && !isCommittee && !isChairman && !isFinanceOfficer) {
     throw new Error('Forbidden');
   }
 
@@ -1236,6 +1302,9 @@ async function changeProposalStatus(id, toStatus, remark, user) {
     case STATUS.OFFICE_RECEIVED:
       updates.officeReceivedAt = now;
       break;
+    case STATUS.FINANCE_BUDGET_CHECKING:
+      updates.officeReceivedAt = proposal.officeReceivedAt || now;
+      break;
     case STATUS.REVISION_REQUESTED:
       updates.requiresRevision = true;
       break;
@@ -1287,6 +1356,7 @@ async function changeProposalStatus(id, toStatus, remark, user) {
     [STATUS.APPROVED]: 'โครงการได้รับการอนุมัติ',
     [STATUS.REJECTED]: 'โครงการไม่ผ่านการพิจารณา',
     [STATUS.ANNOUNCED]: 'มีการประกาศผลโครงการ',
+    [STATUS.FINANCE_BUDGET_CHECKING]: 'เจ้าหน้าที่การเงินกำลังตรวจสอบงบประมาณ',
     [STATUS.ASSIGNED_TO_COMMITTEE]: 'มีการมอบหมายคณะกรรมการ',
     [STATUS.UNDER_REVIEW]: 'โครงการเข้าสู่ขั้นตอนการพิจารณา',
     [STATUS.COMMITTEE_VALUATED]: 'กรรมการได้ให้ความเห็นแล้ว',
@@ -1304,13 +1374,15 @@ async function changeProposalStatus(id, toStatus, remark, user) {
           ? 'chairman_approved'
           : (toStatus === STATUS.FACULTY_REJECTED
             ? 'chairman_rejected'
+            : (toStatus === STATUS.FINANCE_BUDGET_CHECKING
+              ? 'status_changed'
             : (toStatus === STATUS.APPROVED
-              ? 'approved'
-              : (toStatus === STATUS.REJECTED
-                ? 'rejected'
-                : (toStatus === STATUS.COMMITTEE_VALUATED
-                  ? 'committee_valuated'
-                  : (toStatus === STATUS.MEETING_COMPLETED ? 'meeting_completed' : 'status_changed'))))));
+                ? 'approved'
+                : (toStatus === STATUS.REJECTED
+                  ? 'rejected'
+                  : (toStatus === STATUS.COMMITTEE_VALUATED
+                    ? 'committee_valuated'
+                    : (toStatus === STATUS.MEETING_COMPLETED ? 'meeting_completed' : 'status_changed')))))));
 
     await notifyUsersWithWorkflowEmail({
       recipientIds: Array.from(recipientIds),
@@ -1513,6 +1585,87 @@ async function assignChairman(id, chairmanIds = [], user) {
   return proposal;
 }
 
+async function assignFinanceOfficer(id, financeOfficerIds = [], user) {
+  const proposal = await Proposal.findById(id);
+  if (!proposal) throw new Error('Proposal not found');
+
+  if (!Array.isArray(financeOfficerIds) || financeOfficerIds.length === 0) {
+    throw new Error('financeOfficerIds must be a non-empty array');
+  }
+
+  const fromStatus = STATUS.normalizeStatus(proposal.currentStatus);
+  if (![STATUS.OFFICE_RECEIVED, STATUS.FINANCE_BUDGET_CHECKING].includes(fromStatus)) {
+    throw new Error(`Cannot assign finance officer from ${fromStatus}`);
+  }
+
+  const selectedIds = dedupeCommitteeIds(financeOfficerIds);
+  const financeOfficerUsers = await User.find({
+    _id: { $in: selectedIds },
+    role: 'finance_officer',
+    isActive: true,
+    isDeleted: { $ne: true }
+  })
+    .select('_id')
+    .lean();
+
+  const validIds = dedupeCommitteeIds(financeOfficerUsers.map((row) => row && row._id));
+  if (validIds.length !== selectedIds.length) {
+    throw new Error('Some selected finance officers are invalid or inactive');
+  }
+
+  const now = new Date();
+  proposal.currentStatus = STATUS.FINANCE_BUDGET_CHECKING;
+  proposal.updatedBy = user._id;
+  proposal.set(buildFinanceAssignmentUpdate({
+    assignedFinanceOfficerIds: validIds,
+    status: FINANCE_REVIEW_STATUS.PENDING,
+    assignedAt: now,
+    assignedBy: user._id,
+    submittedAt: null,
+    submittedBy: null,
+    summaryComment: ''
+  }));
+  await proposal.save();
+
+  const assignFinanceLog = await createStatusLog({
+    proposalId: proposal._id,
+    fromStatus,
+    toStatus: STATUS.FINANCE_BUDGET_CHECKING,
+    actionKey: 'assign_finance_officer',
+    remark: null,
+    roundNo: null,
+    changedBy: user._id
+  });
+
+  if (validIds.length > 0) {
+    const emailResult = await dispatchProposalWorkflowNotification({
+      eventKey: 'finance_officer_assigned',
+      recipientIds: validIds,
+      proposal,
+      inApp: {
+        title: 'ได้รับมอบหมายให้ตรวจสอบงบประมาณ',
+        message: `กรุณาตรวจสอบงบประมาณของโครงการ ${proposal.proposalCode || proposal._id}`,
+        payload: {
+          toStatus: STATUS.FINANCE_BUDGET_CHECKING
+        }
+      },
+      proposalStatusLogId: assignFinanceLog && assignFinanceLog._id ? assignFinanceLog._id : null
+    });
+
+    if (emailResult && emailResult.email && (emailResult.email.failed > 0 || emailResult.email.skippedReason)) {
+      console.warn('[Proposal.assignFinanceOfficer] Workflow email delivery issue:', {
+        proposalId: String(proposal._id),
+        eventKey: 'finance_officer_assigned',
+        skippedReason: emailResult.email.skippedReason || '',
+        failed: emailResult.email.failed || 0,
+        failures: emailResult.email.failures || []
+      });
+    }
+  }
+
+  return proposal;
+}
+
 async function applyChairmanReviewOutcome(proposalId, review, payload = {}, user) {
   const proposal = await Proposal.findById(proposalId);
   if (!proposal) throw new Error('Proposal not found');
@@ -1698,6 +1851,83 @@ async function saveReview(proposalId, payload, user) {
   }
 
   return review;
+}
+
+async function saveFinanceReview(proposalId, payload = {}, user) {
+  if (!user || !user._id) throw new Error('Unauthorized');
+  if (String(user.role || '').trim().toLowerCase() !== 'finance_officer') throw new Error('Forbidden');
+
+  const proposal = await Proposal.findById(proposalId);
+  if (!proposal) throw new Error('Proposal not found');
+  if (!hasFinanceProposalAccess(proposal, user._id)) throw new Error('Forbidden');
+
+  const currentStatus = STATUS.normalizeStatus(proposal.currentStatus);
+  if (currentStatus !== STATUS.FINANCE_BUDGET_CHECKING) {
+    throw new Error('Forbidden');
+  }
+
+  const financeAssignment = proposal && proposal.financeAssignment && typeof proposal.financeAssignment === 'object'
+    ? proposal.financeAssignment
+    : {};
+  const assignedFinanceOfficerIds = getAssignedFinanceOfficerIdsFromProposal(financeAssignment);
+  const summaryComment = String(payload && payload.summaryComment ? payload.summaryComment : '').trim();
+  const isSubmit = payload && payload.isSubmit === true;
+  const now = new Date();
+
+  proposal.updatedBy = user._id;
+  proposal.set(buildFinanceAssignmentUpdate({
+    assignedFinanceOfficerIds,
+    status: isSubmit ? FINANCE_REVIEW_STATUS.SUBMITTED : FINANCE_REVIEW_STATUS.PENDING,
+    assignedAt: financeAssignment.assignedAt || null,
+    assignedBy: financeAssignment.assignedBy || null,
+    submittedAt: isSubmit ? now : (financeAssignment.submittedAt || null),
+    submittedBy: isSubmit ? user._id : (financeAssignment.submittedBy || null),
+    summaryComment
+  }));
+
+  let financeSubmissionLog = null;
+  if (isSubmit) {
+    proposal.currentStatus = STATUS.DOCUMENT_CHECKING;
+  }
+
+  await proposal.save();
+
+  if (isSubmit) {
+    financeSubmissionLog = await createStatusLog({
+      proposalId: proposal._id,
+      fromStatus: currentStatus,
+      toStatus: STATUS.DOCUMENT_CHECKING,
+      actionKey: 'finance_review_submitted',
+      remark: summaryComment || null,
+      roundNo: null,
+      changedBy: user._id
+    });
+  }
+
+  if (isSubmit) {
+    const adminIds = await getActiveAdminIds();
+    const recipientIds = Array.from(new Set(adminIds.concat(financeAssignment.assignedBy ? [String(financeAssignment.assignedBy)] : [])));
+    if (recipientIds.length > 0) {
+      await notifyUsersWithWorkflowEmail({
+        recipientIds,
+        proposalId: proposal._id,
+        eventKey: 'finance_review_submitted',
+        title: 'ได้รับผลการตรวจสอบงบประมาณแล้ว',
+        message: `เจ้าหน้าที่การเงินส่งผลการตรวจสอบงบประมาณของโครงการ ${proposal.proposalCode || proposal._id} แล้ว`,
+        payload: {
+          toStatus: STATUS.DOCUMENT_CHECKING,
+          summaryComment
+        },
+        proposal,
+        context: {
+          remarks: summaryComment
+        },
+        proposalStatusLogId: financeSubmissionLog && financeSubmissionLog._id ? financeSubmissionLog._id : null
+      });
+    }
+  }
+
+  return proposal;
 }
 
 async function acceptProposalReview(proposalId, reviewId, user) {
@@ -2101,7 +2331,9 @@ async function getCommitteeUsers(query = {}) {
     const roleFilter = String(query.role || '').trim().toLowerCase();
     const allowedRoles = roleFilter === 'chairman'
       ? ['chairman']
-      : ['committee'];
+      : (roleFilter === 'finance_officer'
+        ? ['finance_officer']
+        : ['committee']);
     const filter = {
       role: { $in: allowedRoles },
       isActive: true,
@@ -2247,7 +2479,9 @@ module.exports = {
   changeProposalStatus,
   assignCommittee,
   assignChairman,
+  assignFinanceOfficer,
   saveReview,
+  saveFinanceReview,
   acceptProposalReview,
   rejectProposalReview,
   getMyReview,
