@@ -84,7 +84,7 @@ const proposalReviewSchema = new mongoose.Schema(
     },
     decision: {
       type: String,
-      enum: ['approve', 'reject', 'revise', null],
+      enum: ['approve', 'reject', 'revise', 'revision', null],
       default: null
     },
     totalScore: {

@@ -195,6 +195,21 @@
                   ไม่พบ payload checklist จากผลประเมินของประธาน
                 </div>
 
+                <div v-if="card.signatureData" class="chairman-review-card__signature">
+                  <div class="chairman-review-card__signature-label">ลงชื่อ</div>
+                  <div class="chairman-review-card__signature-preview">
+                    <img
+                      :src="card.signatureData"
+                      :alt="`ลายเซ็นของ ${reviewerName(card.review)}`"
+                      class="chairman-review-card__signature-image"
+                    >
+                  </div>
+                  <div class="chairman-review-card__signature-line"></div>
+                  <div class="chairman-review-card__signature-name">( {{ reviewerName(card.review) }} )</div>
+                  <div class="chairman-review-card__signature-role">ประธานผู้พิจารณา</div>
+                  <div class="chairman-review-card__signature-date">วันที่ {{ formatReviewDateTime(card.signatureUpdatedAt || card.review.submittedAt || card.review.updatedAt) }}</div>
+                </div>
+
                 <div
                   v-if="isAdminView && isReviewPendingAdminAcceptance(card.review)"
                   class="d-flex justify-content-end flex-wrap mt-3"
@@ -1533,6 +1548,8 @@ export default {
           reviewId: String(review && review._id ? review._id : `${review && review.roundNo ? review.roundNo : 1}`),
           review,
           fundingTypeLabel: String(parsed.fundingTypeLabel || '-'),
+          signatureData: this.normalizeReviewSignatureData(review && review.signatureData),
+          signatureUpdatedAt: review && review.signatureUpdatedAt ? review.signatureUpdatedAt : null,
           checkedCount: normalizedSections.reduce((sum, section) => sum + section.checkedCount, 0),
           totalItems: normalizedSections.reduce((sum, section) => sum + section.totalItems, 0),
           sections: normalizedSections
@@ -1581,7 +1598,7 @@ export default {
       return this.submittedReviews.filter(r => r && r.decision === 'approve').length
     },
     reviseCount () {
-      return this.submittedReviews.filter(r => r && r.decision === 'revise').length
+      return this.submittedReviews.filter(r => r && ['revise', 'revision'].includes(String(r && r.decision ? r.decision : '').toLowerCase())).length
     },
     rejectCount () {
       return this.submittedReviews.filter(r => r && r.decision === 'reject').length
@@ -1591,8 +1608,10 @@ export default {
       return nonZeroBuckets.length > 1
     },
     feedbackReviews () {
-      const rows = this.userFeedback && Array.isArray(this.userFeedback.committeeReviews)
-        ? this.userFeedback.committeeReviews
+      const rows = this.userFeedback && Array.isArray(this.userFeedback.feedbackReviews)
+        ? this.userFeedback.feedbackReviews
+        : this.userFeedback && Array.isArray(this.userFeedback.committeeReviews)
+          ? this.userFeedback.committeeReviews
         : []
       return rows.filter(r => this.isReviewAccepted(r))
     },
@@ -1749,7 +1768,7 @@ export default {
     pendingFeedbackSectionsForResubmit () {
       if (!this.isRevisionRequested) return []
       return (this.feedbackEditableSections || [])
-        .filter(section => section && section.sectionKey && !this.isFeedbackSectionSubmitted(section.sectionKey))
+        .filter(section => section && section.sectionKey && section.meta && section.meta.editable !== false && !this.isFeedbackSectionSubmitted(section.sectionKey))
     },
     canResubmitRevision () {
       if (!this.isRevisionRequested) return false
@@ -3358,6 +3377,9 @@ export default {
     reviewModerationBusyKey (review) {
       return String(review && review._id ? review._id : '')
     },
+    normalizeReviewSignatureData (value) {
+      return typeof value === 'string' && value.startsWith('data:image/') ? value : ''
+    },
     isReviewModerationBusy (review) {
       const key = this.reviewModerationBusyKey(review)
       return Boolean(key && this.reviewModerationBusyMap[key])
@@ -3465,7 +3487,7 @@ export default {
     },
     decisionLabel (decision) {
       if (decision === 'approve') return 'อนุมัติ'
-      if (decision === 'revise') return 'ขอแก้ไข'
+      if (decision === 'revise' || decision === 'revision' || decision === 'request_revision' || decision === 'revision_requested') return 'ขอแก้ไข'
       if (decision === 'reject') return 'ไม่อนุมัติ'
       return 'ยังไม่ระบุ'
     },
@@ -3909,6 +3931,7 @@ export default {
     async submitFeedbackSection (section) {
       const sectionKey = section && section.sectionKey ? section.sectionKey : ''
       if (!sectionKey || this.effectiveReadOnly) return
+      if (section && section.meta && section.meta.editable === false) return
 
       const preservedScrollTop = this.currentWindowScrollTop()
       this.setFeedbackSectionCardState(sectionKey, { saving: true })
@@ -3950,6 +3973,9 @@ export default {
       }
     },
     reopenFeedbackSection (sectionKey) {
+      const targetSection = (this.feedbackEditableSections || []).find(section => String(section && section.sectionKey ? section.sectionKey : '') === String(sectionKey || ''))
+      if (targetSection && targetSection.meta && targetSection.meta.editable === false) return
+
       this.$set(this.feedbackSectionDrafts, sectionKey, this.cloneSerializable(this.feedbackSectionSnapshot(sectionKey)))
       this.setFeedbackSectionCardState(sectionKey, {
         submitted: false,
@@ -3983,6 +4009,10 @@ export default {
         .sort((left, right) => this.feedbackItemSortOrder(left) - this.feedbackItemSortOrder(right))
     },
     feedbackMetaForItem (item) {
+      if (item && item.meta && typeof item.meta === 'object' && item.meta.sectionKey) {
+        return item.meta
+      }
+
       const fieldKey = String(item && item.fieldKey ? item.fieldKey : '')
       const matched = fieldKey.match(/^criteria_(\d+)$/)
       if (matched) {
@@ -7425,6 +7455,52 @@ export default {
   gap: 14px;
 }
 
+.chairman-review-card__signature {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed rgba(197, 155, 58, 0.45);
+  text-align: center;
+}
+
+.chairman-review-card__signature-label {
+  font-weight: 700;
+  color: var(--rf-text);
+  margin-bottom: 10px;
+}
+
+.chairman-review-card__signature-preview {
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.chairman-review-card__signature-image {
+  max-width: min(260px, 100%);
+  max-height: 92px;
+  object-fit: contain;
+  display: block;
+}
+
+.chairman-review-card__signature-line {
+  width: min(320px, 82%);
+  margin: 0 auto 10px;
+  border-top: 1px solid rgba(15, 23, 42, 0.18);
+}
+
+.chairman-review-card__signature-name {
+  font-weight: 700;
+  color: var(--rf-text);
+}
+
+.chairman-review-card__signature-role,
+.chairman-review-card__signature-date {
+  color: var(--rf-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 .chairman-review-card__section + .chairman-review-card__section {
   padding-top: 12px;
   border-top: 1px solid var(--rf-border);
@@ -7604,6 +7680,14 @@ export default {
 
 .research-form--dark .chairman-review-card__section + .chairman-review-card__section {
   border-top-color: #2f3f52;
+}
+
+.research-form--dark .chairman-review-card__signature {
+  border-top-color: rgba(197, 155, 58, 0.28);
+}
+
+.research-form--dark .chairman-review-card__signature-line {
+  border-top-color: rgba(226, 232, 240, 0.22);
 }
 
 .research-form--dark .chairman-review-card__cell-no {

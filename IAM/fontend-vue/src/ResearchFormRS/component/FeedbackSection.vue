@@ -70,7 +70,12 @@
                   </div>
 
                   <div v-if="!isFeedbackSectionCollapsed(section.sectionKey)" class="feedback-workspace-editor">
-                    <template v-if="section.sectionKey === 'problem_significance' && !isFeedbackSectionSubmitted(section.sectionKey)">
+                    <template v-if="section.meta && section.meta.editable === false">
+                      <div class="alert alert-info mb-0">
+                        หัวข้อนี้เป็นข้อเสนอแนะเพื่อใช้ตรวจทานก่อนส่งกลับ ระบบไม่ต้องส่งแก้ไขรายหัวข้อในส่วนนี้
+                      </div>
+                    </template>
+                    <template v-else-if="section.sectionKey === 'problem_significance' && !isFeedbackSectionSubmitted(section.sectionKey)">
                       <TextEditor
                         :model-value="feedbackSectionDraft(section.sectionKey)"
                         :is-read-only="effectiveReadOnly"
@@ -626,7 +631,7 @@
                       </div>
                     </template>
 
-                    <div v-if="!effectiveReadOnly" class="feedback-workspace-editor__actions">
+                    <div v-if="!effectiveReadOnly && (!section.meta || section.meta.editable !== false)" class="feedback-workspace-editor__actions">
                       <CButton
                         v-if="!isFeedbackSectionSubmitted(section.sectionKey)"
                         color="primary"
@@ -655,7 +660,7 @@
 
             <div v-else>
               <div v-for="group in feedbackReviewGroups" :key="`feedback-round-${group.roundNo}`" class="mb-3">
-                <h6 class="mb-2">ความเห็นคณะกรรมการ รอบที่ {{ group.roundNo }}</h6>
+                <h6 class="mb-2">ความเห็นผู้ประเมิน รอบที่ {{ group.roundNo }}</h6>
                 <div v-for="review in group.reviews" :key="review._id" class="card mb-2">
                   <div class="card-body">
                     <div class="row">

@@ -75,6 +75,9 @@ const FINANCE_REVIEW_STATUS = Object.freeze({
   REVISION_REQUESTED: 'revision_requested'
 });
 
+const CHAIRMAN_CHECKLIST_FIELD_KEY = 'checklist_payload';
+const CHAIRMAN_CHECKLIST_SECTION_KEY = 'chairman_checklist';
+
 function isReviewerRole(role) {
   return REVIEWER_ROLE_SET.has(String(role || '').trim().toLowerCase());
 }
@@ -599,6 +602,163 @@ function normalizeRoundNo(value, fallback = 1) {
   const n = Number(value);
   if (!Number.isFinite(n) || n < 1) return fallback;
   return Math.floor(n);
+}
+
+function normalizeFeedbackDecision(decision) {
+  const normalized = String(decision || '').trim().toLowerCase();
+  if (!normalized) return null;
+  if (['revision', 'request_revision', 'revision_requested'].includes(normalized)) return 'revision';
+  return normalized;
+}
+
+function isChairmanReviewRecord(review = {}) {
+  const role = String(review && review.reviewerUserId && review.reviewerUserId.role ? review.reviewerUserId.role : '').trim().toLowerCase();
+  return role === 'chairman';
+}
+
+function parseChairmanChecklistPayload(commentItems = []) {
+  const items = Array.isArray(commentItems) ? commentItems : [];
+  const payloadItem = items.find((item) => item && item.fieldKey === CHAIRMAN_CHECKLIST_FIELD_KEY && item.commentText)
+    || items.find((item) => item && item.sectionKey === CHAIRMAN_CHECKLIST_SECTION_KEY && item.commentText)
+    || items.find((item) => item && typeof item.commentText === 'string' && item.commentText.trim().startsWith('{'));
+
+  if (!payloadItem || !payloadItem.commentText) return null;
+
+  const parseJson = (value) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'object') return value;
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    try {
+      const first = JSON.parse(trimmed);
+      if (typeof first === 'string') {
+        const nested = first.trim();
+        if (nested && (nested.startsWith('{') || nested.startsWith('['))) {
+          try {
+            return JSON.parse(nested);
+          } catch (_) {
+            return null;
+          }
+        }
+      }
+      return first;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const parsed = parseJson(payloadItem.commentText);
+  if (!parsed || typeof parsed !== 'object') return null;
+  if (parsed.payload && typeof parsed.payload === 'object') return parsed.payload;
+  if (parsed.data && typeof parsed.data === 'object') return parsed.data;
+  return parsed;
+}
+
+function normalizeChairmanChecklistAnswer(value, fallbackChecked = null) {
+  if (value === true || fallbackChecked === true) return 'yes';
+  if (value === false || fallbackChecked === false) return 'no';
+
+  const normalized = String(value === undefined || value === null ? '' : value).trim().toLowerCase();
+  if (!normalized) return '';
+
+  if (['yes', 'y', 'true', '1', 'pass', 'ผ่าน', 'มี'].includes(normalized)) return 'yes';
+  if (['no', 'n', 'false', '0', 'fail', 'ไม่ผ่าน', 'ไม่มี'].includes(normalized)) return 'no';
+  return '';
+}
+
+function buildChairmanFeedbackItems(review = {}) {
+  const parsed = parseChairmanChecklistPayload(review.commentItems);
+  const sections = Array.isArray(parsed && parsed.sections) ? parsed.sections : [];
+  const feedbackItems = [];
+
+  sections.forEach((section, sectionIndex) => {
+    const rawSectionKey = String(section && section.sectionKey ? section.sectionKey : `section_${sectionIndex + 1}`).trim();
+    const sectionKey = rawSectionKey || `section_${sectionIndex + 1}`;
+    const sectionLabel = String(section && section.sectionLabel ? section.sectionLabel : 'ข้อเสนอแนะจากประธาน').trim() || 'ข้อเสนอแนะจากประธาน';
+    const rows = Array.isArray(section && section.items) ? section.items : [];
+
+    rows.forEach((row, rowIndex) => {
+      const answer = normalizeChairmanChecklistAnswer(row && row.answer, row && Object.prototype.hasOwnProperty.call(row, 'checked') ? row.checked : null);
+      if (answer !== 'no') return;
+
+      const itemKey = String(row && row.itemKey ? row.itemKey : `item_${rowIndex + 1}`).trim() || `item_${rowIndex + 1}`;
+      const label = String(row && (row.label || row.description) ? (row.label || row.description) : `รายการตรวจสอบ ${rowIndex + 1}`).trim();
+      const syntheticSectionKey = `chairman_checklist:${sectionKey}`;
+
+      feedbackItems.push({
+        sectionKey: syntheticSectionKey,
+        fieldKey: `chairman_checklist:${sectionKey}:${itemKey}`,
+        commentType: 'required_fix',
+        commentText: label || `รายการตรวจสอบ ${rowIndex + 1}`,
+        visibility: 'researcher_visible',
+        meta: {
+          sectionKey: syntheticSectionKey,
+          sectionLabel,
+          rubricLabel: 'รายการที่ประธานขอให้ตรวจทาน',
+          sectionNo: 1000 + sectionIndex,
+          editable: false,
+          source: 'chairman_checklist'
+        }
+      });
+    });
+  });
+
+  if (feedbackItems.length === 0) {
+    const summaryComment = String(review && review.summaryComment ? review.summaryComment : '').trim();
+    if (summaryComment) {
+      feedbackItems.push({
+        sectionKey: 'chairman_summary',
+        fieldKey: 'chairman_summary',
+        commentType: 'suggestion',
+        commentText: summaryComment,
+        visibility: 'researcher_visible',
+        meta: {
+          sectionKey: 'chairman_summary',
+          sectionLabel: 'ข้อเสนอแนะจากประธาน',
+          rubricLabel: 'สรุปความเห็น',
+          sectionNo: 1999,
+          editable: false,
+          source: 'chairman_checklist'
+        }
+      });
+    }
+  }
+
+  return feedbackItems;
+}
+
+function serializeFeedbackReview(review = {}, options = {}) {
+  const isChairman = Boolean(options.isChairman);
+  const normalizedDecision = normalizeFeedbackDecision(review.decision);
+  const base = {
+    _id: review._id,
+    roundNo: review.roundNo || 1,
+    reviewerUserId: review.reviewerUserId || null,
+    decision: normalizedDecision,
+    summaryComment: review.summaryComment || '',
+    totalScore: review.totalScore,
+    submittedAt: review.submittedAt || review.updatedAt || null,
+    updatedAt: review.updatedAt || null,
+    reviewStatus: review.reviewStatus || '',
+    feedbackSource: isChairman ? 'chairman' : 'committee'
+  };
+
+  if (isChairman) {
+    return {
+      ...base,
+      commentItems: buildChairmanFeedbackItems(review),
+      rawCommentItems: Array.isArray(review.commentItems) ? review.commentItems : [],
+      scoreItems: Array.isArray(review.scoreItems) ? review.scoreItems : []
+    };
+  }
+
+  return {
+    ...base,
+    commentItems: Array.isArray(review.commentItems) ? review.commentItems : [],
+    scoreItems: Array.isArray(review.scoreItems) ? review.scoreItems : []
+  };
 }
 
 function dedupeCommitteeIds(committeeIds = []) {
@@ -2376,6 +2536,12 @@ async function getProposalFeedback(proposalId, user) {
       .sort({ submittedAt: -1, updatedAt: -1 })
   ]);
 
+  const serializedReviews = (reviews || []).map((review) => serializeFeedbackReview(review, {
+    isChairman: isChairmanReviewRecord(review)
+  }));
+  const chairmanReviews = serializedReviews.filter((review) => review.feedbackSource === 'chairman');
+  const committeeReviews = serializedReviews.filter((review) => review.feedbackSource !== 'chairman');
+
   return {
     proposalId: proposal._id,
     currentStatus: proposal.currentStatus,
@@ -2387,19 +2553,9 @@ async function getProposalFeedback(proposalId, user) {
       changedAt: latestDecisionLog.createdAt,
       changedBy: latestDecisionLog.changedBy || null
     } : null,
-    committeeReviews: (reviews || []).map(r => ({
-      _id: r._id,
-      roundNo: r.roundNo || 1,
-      reviewerUserId: r.reviewerUserId || null,
-      decision: r.decision || null,
-      summaryComment: r.summaryComment || '',
-      commentItems: Array.isArray(r.commentItems) ? r.commentItems : [],
-      scoreItems: Array.isArray(r.scoreItems) ? r.scoreItems : [],
-      totalScore: r.totalScore,
-      submittedAt: r.submittedAt || r.updatedAt || null,
-      updatedAt: r.updatedAt || null,
-      reviewStatus: r.reviewStatus || ''
-    }))
+    feedbackReviews: serializedReviews,
+    committeeReviews,
+    chairmanReviews
   };
 }
 
