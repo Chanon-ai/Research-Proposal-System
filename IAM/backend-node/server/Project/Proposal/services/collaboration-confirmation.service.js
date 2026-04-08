@@ -8,6 +8,7 @@ const CollaborationConfirmation = require('../models/CollaborationConfirmation')
 const User = require('../../Auth/models/User');
 const STATUS = require('../constants/proposal-status');
 const systemSettingService = require('../../settings/service/system-setting');
+const { dispatchProposalWorkflowNotification } = require('./workflow-notification.service');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DEFAULT_TOKEN_TTL_HOURS = 24 * 7;
@@ -593,7 +594,7 @@ async function applySignatureToProposalDocument({
   await proposal.save();
 }
 
-async function notifyProposalOwnerOnDecision({ proposal, confirmation, status, reopenedForRevision = false }) {
+async function notifyProposalOwnerOnDecision({ proposal, confirmation, status, reopenedForRevision = false, proposalStatusLogId = null }) {
   const ownerId = proposal && proposal.applicantUserId ? proposal.applicantUserId : null;
   if (!ownerId) return;
 
@@ -605,6 +606,30 @@ async function notifyProposalOwnerOnDecision({ proposal, confirmation, status, r
   const message = reopenedForRevision
     ? `${actorName} has rejected participation for proposal ${asString(proposal.proposalCode, '-')}. Proposal status is now draft so the project leader can edit team members and submit again.`
     : `${actorName} has ${actionLabel} participation for proposal ${asString(proposal.proposalCode, '-')}.`;
+
+  if (reopenedForRevision) {
+    await dispatchProposalWorkflowNotification({
+      eventKey: 'status_changed',
+      recipientIds: [String(ownerId)],
+      proposal,
+      inApp: {
+        title,
+        message,
+        payload: {
+          confirmationId: String(confirmation._id),
+          participantType: confirmation.participantType,
+          participantName: actorName,
+          status,
+          reopenedForRevision: true
+        }
+      },
+      context: {
+        remarks: `${actorName} rejected participation. Proposal status has been reverted to draft for team revision.`
+      },
+      proposalStatusLogId
+    });
+    return;
+  }
 
   await Notification.create({
     userId: ownerId,
@@ -618,31 +643,32 @@ async function notifyProposalOwnerOnDecision({ proposal, confirmation, status, r
       participantType: confirmation.participantType,
       participantName: actorName,
       status,
-      reopenedForRevision: Boolean(reopenedForRevision)
+      reopenedForRevision: false
     },
     isRead: false,
     sentAt: new Date()
   });
 }
 
-async function notifyAdminsOnSubmittedProposal(proposal) {
+async function notifyAdminsOnSubmittedProposal(proposal, proposalStatusLogId = null) {
   if (!proposal) return;
   const admins = await User.find({ role: 'admin', isActive: true }).select('_id');
   if (!admins.length) return;
 
-  await Notification.insertMany(
-    admins.map(admin => ({
-      userId: admin._id,
-      eventKey: 'status_changed',
-      channel: 'in_app',
+  await dispatchProposalWorkflowNotification({
+    eventKey: 'proposal_submitted',
+    recipientIds: admins.map((admin) => String(admin._id)),
+    proposal,
+    inApp: {
       title: 'มีข้อเสนอโครงการใหม่',
       message: `โครงการ "${proposal.projectTitleTh}" ได้รับการยื่นเข้าระบบแล้ว รหัส: ${proposal.proposalCode}`,
-      proposalId: proposal._id,
-      isRead: false,
-      sentAt: new Date(),
       payload: {}
-    }))
-  );
+    },
+    context: {
+      remarks: 'ข้อเสนอโครงการใหม่พร้อมให้ตรวจสอบในขั้นตอนถัดไป'
+    },
+    proposalStatusLogId
+  });
 }
 
 async function promotePendingConfirmToSubmittedWhenAllAccepted({ proposalId, changedBy = null } = {}) {
@@ -680,8 +706,9 @@ async function promotePendingConfirmToSubmittedWhenAllAccepted({ proposalId, cha
   proposal.markModified('formSnapshotJson');
   await proposal.save();
 
+  let submittedStatusLog = null;
   if (actor) {
-    await ProposalStatusLog.create({
+    submittedStatusLog = await ProposalStatusLog.create({
       proposalId: proposal._id,
       fromStatus,
       toStatus: STATUS.SUBMITTED,
@@ -692,7 +719,7 @@ async function promotePendingConfirmToSubmittedWhenAllAccepted({ proposalId, cha
     });
   }
 
-  await notifyAdminsOnSubmittedProposal(proposal);
+  await notifyAdminsOnSubmittedProposal(proposal, submittedStatusLog && submittedStatusLog._id ? submittedStatusLog._id : null);
   return { promoted: true, proposal };
 }
 
@@ -737,8 +764,9 @@ async function reopenProposalForTeamRevisionOnRejection({ proposal, confirmation
   proposal.markModified('formSnapshotJson');
   await proposal.save();
 
+  let reopenStatusLog = null;
   if (changedBy) {
-    await ProposalStatusLog.create({
+    reopenStatusLog = await ProposalStatusLog.create({
       proposalId: proposal._id,
       fromStatus,
       toStatus: STATUS.DRAFT,
@@ -749,7 +777,11 @@ async function reopenProposalForTeamRevisionOnRejection({ proposal, confirmation
     });
   }
 
-  return { reopened: true, proposal };
+  return {
+    reopened: true,
+    proposal,
+    proposalStatusLogId: reopenStatusLog && reopenStatusLog._id ? reopenStatusLog._id : null
+  };
 }
 
 async function respondCollaborationConfirmation({
@@ -802,8 +834,9 @@ async function respondCollaborationConfirmation({
   }
 
   let reopenedForRevision = false;
+  let reopenResult = null;
   if (proposal && nextStatus === 'rejected') {
-    const reopenResult = await reopenProposalForTeamRevisionOnRejection({
+    reopenResult = await reopenProposalForTeamRevisionOnRejection({
       proposal,
       confirmation
     });
@@ -816,7 +849,8 @@ async function respondCollaborationConfirmation({
       proposal,
       confirmation,
       status: nextStatus,
-      reopenedForRevision
+      reopenedForRevision,
+      proposalStatusLogId: reopenedForRevision && reopenResult && reopenResult.proposalStatusLogId ? reopenResult.proposalStatusLogId : null
     });
   }
 

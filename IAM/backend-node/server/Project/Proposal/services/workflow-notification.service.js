@@ -1,12 +1,53 @@
 const nodemailer = require('nodemailer');
 const User = require('../../Auth/models/User');
 const Notification = require('../models/Notification');
+const ProposalStatusLog = require('../models/ProposalStatusLog');
 const EmailLog = require('../../settings/models/email-log.model');
 const systemSettingService = require('../../settings/service/system-setting');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const DEFAULT_EMAIL_TEMPLATES = {
+  proposal_submitted: {
+    subject: 'มีข้อเสนอโครงการใหม่เข้าสู่ระบบ - {{proposalCode}}',
+    body: 'เรียน {{recipientName}}\n\nมีข้อเสนอโครงการใหม่เข้าสู่ระบบ\n\nโครงการ: {{projectTitle}}\nรหัสโครงการ: {{proposalCode}}\n\nกรุณาเข้าสู่ระบบเพื่อตรวจสอบรายละเอียดและดำเนินการในขั้นตอนถัดไป\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+  },
+  proposal_resubmitted: {
+    subject: 'มีการส่งโครงการฉบับแก้ไขกลับเข้าระบบ - {{proposalCode}}',
+    body: 'เรียน {{recipientName}}\n\nโครงการ {{projectTitle}} ได้ถูกส่งฉบับแก้ไขกลับเข้าระบบแล้ว\n\nรหัสโครงการ: {{proposalCode}}\nหมายเหตุ: {{remarks}}\n\nกรุณาเข้าสู่ระบบเพื่อตรวจสอบและดำเนินการในขั้นตอนถัดไป\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+  },
+  proposal_meeting_in_progress: {
+    subject: 'สถานะโครงการเปลี่ยนเป็นกำลังจัดการประชุม - {{proposalCode}}',
+    body: 'เรียน {{recipientName}}\n\nโครงการ {{projectTitle}} มีการเปลี่ยนสถานะเป็น "กำลังจัดการประชุม"\n\nรหัสโครงการ: {{proposalCode}}\nรายละเอียดเพิ่มเติม: {{remarks}}\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+  },
+  proposal_status_restored: {
+    subject: 'สถานะโครงการถูกปรับกลับหลังจบการประชุม - {{proposalCode}}',
+    body: 'เรียน {{recipientName}}\n\nโครงการ {{projectTitle}} ถูกปรับสถานะกลับหลังจบหรือยกเลิกการประชุม\n\nรหัสโครงการ: {{proposalCode}}\nรายละเอียดเพิ่มเติม: {{remarks}}\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+  },
+  meeting_completed: {
+    subject: 'สถานะโครงการอยู่ในขั้นจัดเตรียมผล - {{proposalCode}}',
+    body: 'เรียน {{recipientName}}\n\nโครงการ {{projectTitle}} อยู่ในสถานะ "ส่วนบริหารกำลังจัดเตรียมผล" แล้ว\n\nรหัสโครงการ: {{proposalCode}}\nรายละเอียดเพิ่มเติม: {{remarks}}\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+  },
+  chairman_assigned: {
+    subject: 'แจ้งมอบหมายให้ประธานพิจารณาโครงการ - {{proposalCode}}',
+    body: 'เรียน {{recipientName}}\n\nท่านได้รับมอบหมายให้พิจารณาโครงการ {{projectTitle}}\n\nรหัสโครงการ: {{proposalCode}}\n\nกรุณาเข้าสู่ระบบเพื่อตรวจสอบและดำเนินการพิจารณา\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+  },
+  chairman_approved: {
+    subject: 'แจ้งผลการพิจารณาจากประธาน - {{proposalCode}}',
+    body: 'เรียน {{recipientName}}\n\nโครงการ {{projectTitle}} ได้รับการอนุมัติจากประธานแล้ว\n\nรหัสโครงการ: {{proposalCode}}\nหมายเหตุ: {{remarks}}\n\nกรุณาเข้าสู่ระบบเพื่อตรวจสอบรายละเอียด\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+  },
+  chairman_rejected: {
+    subject: 'แจ้งผลการพิจารณาจากประธาน - {{proposalCode}}',
+    body: 'เรียน {{recipientName}}\n\nโครงการ {{projectTitle}} ไม่ผ่านการพิจารณาจากประธาน\n\nรหัสโครงการ: {{proposalCode}}\nหมายเหตุ: {{remarks}}\n\nกรุณาเข้าสู่ระบบเพื่อตรวจสอบรายละเอียด\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+  },
+  review_certified: {
+    subject: 'แอดมินรับผลการประเมินแล้ว - {{proposalCode}}',
+    body: 'เรียน {{recipientName}}\n\nผลการประเมินของท่านสำหรับโครงการ {{projectTitle}} ถูกแอดมินรับเข้าระบบเรียบร้อยแล้ว\n\nรหัสโครงการ: {{proposalCode}}\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+  },
+  review_rejected_by_admin: {
+    subject: 'แอดมินตีกลับผลการประเมิน - {{proposalCode}}',
+    body: 'เรียน {{recipientName}}\n\nผลการประเมินสำหรับโครงการ {{projectTitle}} ถูกแอดมินตีกลับ\n\nรหัสโครงการ: {{proposalCode}}\nหมายเหตุ: {{remarks}}\n\nกรุณาเข้าสู่ระบบเพื่อตรวจสอบและดำเนินการอีกครั้ง\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
+  },
   revision_requested: {
     subject: 'แจ้งขอแก้ไขเอกสารโครงการวิจัย - {{proposalCode}}',
     body: 'เรียน {{recipientName}}\n\nโครงการ "{{projectTitle}}" ได้รับการพิจารณาและมีข้อเสนอแนะให้แก้ไข\n\nหมายเหตุ: {{remarks}}\n\nกรุณาเข้าสู่ระบบเพื่อดำเนินการแก้ไขภายในกำหนด\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง'
@@ -223,11 +264,121 @@ async function resolveRecipients(recipientIds = []) {
   return (users || []).filter((user) => EMAIL_REGEX.test(asString(user.email).toLowerCase()));
 }
 
+async function resolveActiveRecipients(recipientIds = []) {
+  const ids = Array.from(new Set((Array.isArray(recipientIds) ? recipientIds : [])
+    .map((id) => String(id || '').trim())
+    .filter(Boolean)));
+
+  if (ids.length === 0) return [];
+
+  return User.find({
+    _id: { $in: ids },
+    isDeleted: { $ne: true },
+    isActive: true
+  }).select('_id fullName email').lean();
+}
+
+async function markProposalStatusLogNotified(proposalStatusLogId, notifySent) {
+  if (!proposalStatusLogId) return;
+  try {
+    await ProposalStatusLog.findByIdAndUpdate(proposalStatusLogId, {
+      $set: {
+        notifySent: Boolean(notifySent)
+      }
+    });
+  } catch (err) {
+    console.error('[WorkflowEmail] markProposalStatusLogNotified error:', err && err.message ? err.message : err);
+  }
+}
+
+async function dispatchProposalWorkflowNotification({
+  eventKey,
+  recipientIds = [],
+  proposal = null,
+  context = {},
+  inApp = {},
+  proposalStatusLogId = null
+} = {}) {
+  const recipients = await resolveActiveRecipients(recipientIds);
+  if (!recipients.length) {
+    await markProposalStatusLogNotified(proposalStatusLogId, false);
+    return {
+      recipientsResolved: 0,
+      inAppSent: 0,
+      email: {
+        attempted: false,
+        sent: 0,
+        failed: 0,
+        skippedReason: 'no-active-recipient'
+      },
+      notifySent: false
+    };
+  }
+
+  const settings = await systemSettingService.getSettingMap();
+  const templates = parseEmailTemplates(settings && settings.email_templates_json);
+  const template = templates[eventKey] || {
+    subject: 'แจ้งเตือนจากระบบบริหารงานวิจัย MFU',
+    body: 'เรียน {{recipientName}}\n\n{{remarks}}\n\nขอแสดงความนับถือ\nระบบบริหารงานวิจัย MFU'
+  };
+
+  let inAppSent = 0;
+  try {
+    const docs = recipients.map((recipient) => {
+      const vars = {
+        recipientName: asString(recipient.fullName, asString(recipient.email, 'ผู้ใช้งาน')),
+        proposalCode: asString(proposal && proposal.proposalCode, '-'),
+        projectTitle: asString((proposal && (proposal.projectTitleTh || proposal.projectTitleEn)) || '-', '-'),
+        remarks: asString(context.remarks, '-'),
+        meetingTitle: asString(context.meetingTitle, '-'),
+        meetingDate: asString(context.meetingDate, '-'),
+        meetingTime: asString(context.meetingTime, '-')
+      };
+      return new Notification({
+        userId: recipient._id,
+        proposalId: proposal && proposal._id ? proposal._id : null,
+        channel: 'in_app',
+        eventKey,
+        title: asString(inApp.title, renderTemplate(template.subject, vars)),
+        message: asString(inApp.message, renderTemplate(template.body, vars)),
+        payload: inApp.payload && typeof inApp.payload === 'object' ? inApp.payload : {},
+        isRead: false,
+        sentAt: new Date()
+      });
+    });
+    if (docs.length > 0) {
+      await Notification.insertMany(docs, { ordered: false });
+      inAppSent = docs.length;
+    }
+  } catch (err) {
+    console.error('[WorkflowEmail] dispatchProposalWorkflowNotification in-app error:', err && err.message ? err.message : err);
+  }
+
+  const emailResult = await sendWorkflowEventEmails({
+    eventKey,
+    recipientIds: recipients.map((recipient) => String(recipient._id)),
+    proposal,
+    context,
+    createInApp: false
+  });
+
+  const notifySent = Boolean(inAppSent > 0 || (emailResult && (emailResult.attempted || emailResult.skippedReason)));
+  await markProposalStatusLogNotified(proposalStatusLogId, notifySent);
+
+  return {
+    recipientsResolved: recipients.length,
+    inAppSent,
+    email: emailResult,
+    notifySent
+  };
+}
+
 async function sendWorkflowEventEmails({
   eventKey,
   recipientIds = [],
   proposal = null,
-  context = {}
+  context = {},
+  createInApp = true
 }) {
   try {
     const recipients = await resolveRecipients(recipientIds);
@@ -243,35 +394,37 @@ async function sendWorkflowEventEmails({
     };
 
     // --- Create in-app notifications for all resolved recipients (best-effort, independent of email delivery) ---
-    try {
-      const inAppRecords = recipients.map(recipient => {
-        const vars = {
-          recipientName: asString(recipient.fullName, asString(recipient.email, 'ผู้ใช้งาน')),
-          proposalCode: asString(proposal && proposal.proposalCode, '-'),
-          projectTitle: asString(proposal && proposal.projectTitleTh, '-'),
-          remarks: asString(context.remarks, '-'),
-          meetingTitle: asString(context.meetingTitle, '-'),
-          meetingDate: asString(context.meetingDate, '-'),
-          meetingTime: asString(context.meetingTime, '-')
-        };
-        const title = renderTemplate(template.subject, vars);
-        const message = renderTemplate(template.body, vars);
-        return new Notification({
-          userId: recipient._id,
-          proposalId: proposal && proposal._id ? proposal._id : null,
-          channel: 'in_app',
-          eventKey,
-          title,
-          message,
-          isRead: false,
-          sentAt: new Date()
+    if (createInApp) {
+      try {
+        const inAppRecords = recipients.map(recipient => {
+          const vars = {
+            recipientName: asString(recipient.fullName, asString(recipient.email, 'ผู้ใช้งาน')),
+            proposalCode: asString(proposal && proposal.proposalCode, '-'),
+            projectTitle: asString(proposal && proposal.projectTitleTh, '-'),
+            remarks: asString(context.remarks, '-'),
+            meetingTitle: asString(context.meetingTitle, '-'),
+            meetingDate: asString(context.meetingDate, '-'),
+            meetingTime: asString(context.meetingTime, '-')
+          };
+          const title = renderTemplate(template.subject, vars);
+          const message = renderTemplate(template.body, vars);
+          return new Notification({
+            userId: recipient._id,
+            proposalId: proposal && proposal._id ? proposal._id : null,
+            channel: 'in_app',
+            eventKey,
+            title,
+            message,
+            isRead: false,
+            sentAt: new Date()
+          });
         });
-      });
-      if (inAppRecords.length > 0) {
-        await Notification.insertMany(inAppRecords, { ordered: false });
+        if (inAppRecords.length > 0) {
+          await Notification.insertMany(inAppRecords, { ordered: false });
+        }
+      } catch (inAppErr) {
+        console.error('[WorkflowEmail] in-app notification insertMany error:', inAppErr && inAppErr.message ? inAppErr.message : inAppErr);
       }
-    } catch (inAppErr) {
-      console.error('[WorkflowEmail] in-app notification insertMany error:', inAppErr && inAppErr.message ? inAppErr.message : inAppErr);
     }
 
     // --- Send emails ---
@@ -857,6 +1010,7 @@ async function sendAdminNotificationEmails({
 }
 
 module.exports = {
+  dispatchProposalWorkflowNotification,
   sendWorkflowEventEmails,
   sendAdminNotificationEmails
 };

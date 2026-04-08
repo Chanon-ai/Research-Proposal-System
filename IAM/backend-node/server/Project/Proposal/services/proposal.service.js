@@ -10,7 +10,7 @@ const Notification = require('../models/Notification');
 const User = require('../../Auth/models/User');
 const systemSettingService = require('../../settings/service/system-setting');
 const STATUS = require('../constants/proposal-status');
-const { sendWorkflowEventEmails } = require('./workflow-notification.service');
+const { dispatchProposalWorkflowNotification } = require('./workflow-notification.service');
 const collaborationConfirmationService = require('./collaboration-confirmation.service');
 
 // allowed status transitions map
@@ -259,6 +259,109 @@ async function createNotification({ userId, proposalId, channel, eventKey, title
   }
 }
 
+async function getActiveAdminIds() {
+  const rows = await User.find({
+    role: 'admin',
+    isActive: true,
+    isDeleted: { $ne: true }
+  })
+    .select('_id')
+    .lean();
+
+  return Array.from(new Set((rows || []).map((row) => String(row && row._id ? row._id : '')).filter(Boolean)));
+}
+
+async function notifyUsersWithWorkflowEmail({ recipientIds = [], proposalId = null, eventKey, title, message, payload = {}, proposal = null, context = {}, proposalStatusLogId = null }) {
+  const uniqueRecipientIds = Array.from(new Set((Array.isArray(recipientIds) ? recipientIds : []).map((id) => String(id || '').trim()).filter(Boolean)));
+  if (uniqueRecipientIds.length === 0) return;
+
+  const emailResult = await dispatchProposalWorkflowNotification({
+    eventKey,
+    recipientIds: uniqueRecipientIds,
+    proposal,
+    context,
+    inApp: {
+      title,
+      message,
+      payload
+    },
+    proposalStatusLogId
+  });
+
+  if (emailResult && emailResult.email && (emailResult.email.failed > 0 || emailResult.email.skippedReason)) {
+    console.warn('[Proposal.notifyUsersWithWorkflowEmail] Workflow email delivery issue:', {
+      proposalId: proposal && proposal._id ? String(proposal._id) : String(proposalId || ''),
+      eventKey,
+      skippedReason: emailResult.email.skippedReason || '',
+      failed: emailResult.email.failed || 0,
+      failures: emailResult.email.failures || []
+    });
+  }
+}
+
+async function notifyAdminsOfProposalSubmission(proposal, { eventKey, title, message, remarks = '', proposalStatusLogId = null } = {}) {
+  const adminIds = await getActiveAdminIds();
+  if (adminIds.length === 0) return;
+
+  await notifyUsersWithWorkflowEmail({
+    recipientIds: adminIds,
+    proposalId: proposal && proposal._id ? proposal._id : null,
+    eventKey,
+    title,
+    message,
+    payload: {
+      proposalStatus: proposal && proposal.currentStatus ? String(proposal.currentStatus) : '',
+      source: 'proposal_workflow'
+    },
+    proposal,
+    context: {
+      remarks
+    },
+    proposalStatusLogId
+  });
+}
+
+function getProposalStakeholderIds(proposal = {}, { includeApplicant = true, includeCommittee = true, extraRecipientIds = [] } = {}) {
+  const recipientIds = new Set();
+
+  if (includeApplicant && proposal && proposal.applicantUserId) {
+    recipientIds.add(String(proposal.applicantUserId));
+  }
+
+  if (includeCommittee && Array.isArray(proposal && proposal.committeeIds)) {
+    proposal.committeeIds.forEach((committeeId) => {
+      const normalizedId = String(committeeId || '').trim();
+      if (normalizedId) recipientIds.add(normalizedId);
+    });
+  }
+
+  (Array.isArray(extraRecipientIds) ? extraRecipientIds : []).forEach((recipientId) => {
+    const normalizedId = String(recipientId || '').trim();
+    if (normalizedId) recipientIds.add(normalizedId);
+  });
+
+  return Array.from(recipientIds);
+}
+
+async function notifyProposalStakeholders(proposal, { eventKey, title, message, payload = {}, remarks = '', includeApplicant = true, includeCommittee = true, extraRecipientIds = [], proposalStatusLogId = null } = {}) {
+  const recipientIds = getProposalStakeholderIds(proposal, { includeApplicant, includeCommittee, extraRecipientIds });
+  if (recipientIds.length === 0) return;
+
+  await notifyUsersWithWorkflowEmail({
+    recipientIds,
+    proposalId: proposal && proposal._id ? proposal._id : null,
+    eventKey,
+    title,
+    message,
+    payload,
+    proposal,
+    context: {
+      remarks
+    },
+    proposalStatusLogId
+  });
+}
+
 function normalizeDraftCoreFields(target, fallback = {}) {
   const doc = target || {};
   const base = fallback || {};
@@ -441,7 +544,7 @@ function getRequiredCommitteeReviewCount(workflowPolicy = {}, committeeIds = [])
 async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user) {
   if (!proposalId || !user || !user._id) return null;
 
-  const proposal = await Proposal.findById(proposalId).select('_id proposalCode applicantUserId committeeIds currentStatus currentRound');
+  const proposal = await Proposal.findById(proposalId).select('_id proposalCode projectTitleTh projectTitleEn applicantUserId committeeIds currentStatus currentRound');
   if (!proposal) return null;
 
   const fromStatusRaw = String(proposal.currentStatus || '').trim();
@@ -476,7 +579,7 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
     return Proposal.findById(proposal._id);
   }
 
-  await createStatusLog({
+  const statusLog = await createStatusLog({
     proposalId: updatedProposal._id,
     fromStatus,
     toStatus,
@@ -507,25 +610,25 @@ async function syncProposalStatusWithSubmittedReviews(proposalId, roundNo, user)
     const notificationMessage = `โครงการ ${updatedProposal.proposalCode || updatedProposal._id} เปลี่ยนสถานะเป็น ${toStatus}`;
 
     try {
-      await Notification.insertMany(
-        Array.from(recipientIds).map((userId) => ({
-          userId,
-          proposalId: updatedProposal._id,
-          channel: 'in_app',
-          eventKey: toStatus === STATUS.COMMITTEE_VALUATED
-            ? 'committee_valuated'
-            : (toStatus === STATUS.MEETING_COMPLETED ? 'meeting_completed' : 'status_changed'),
-          title: notificationTitle,
-          message: notificationMessage,
-          payload: {
-            toStatus,
-            fromStatus,
-            roundNo: activeRound
-          },
-          isRead: false,
-          sentAt: new Date()
-        }))
-      );
+      await notifyUsersWithWorkflowEmail({
+        recipientIds: Array.from(recipientIds),
+        proposalId: updatedProposal._id,
+        eventKey: toStatus === STATUS.COMMITTEE_VALUATED
+          ? 'committee_valuated'
+          : (toStatus === STATUS.MEETING_COMPLETED ? 'meeting_completed' : 'status_changed'),
+        title: notificationTitle,
+        message: notificationMessage,
+        payload: {
+          toStatus,
+          fromStatus,
+          roundNo: activeRound
+        },
+        proposal: updatedProposal,
+        context: {
+          remarks: `รอบการพิจารณา ${activeRound}`
+        },
+        proposalStatusLogId: statusLog && statusLog._id ? statusLog._id : null
+      });
     } catch (err) {
       console.warn('[Proposal.saveReview] Failed to create status-sync notifications:', {
         proposalId: String(updatedProposal._id),
@@ -571,7 +674,7 @@ async function syncProposalStatusWithAcceptedCommitteeReviews(proposalId, roundN
     return Proposal.findById(proposal._id);
   }
 
-  await createStatusLog({
+  const statusLog = await createStatusLog({
     proposalId: updatedProposal._id,
     fromStatus,
     toStatus,
@@ -593,23 +696,18 @@ async function syncProposalStatusWithAcceptedCommitteeReviews(proposalId, roundN
     const notificationMessage = `โครงการ ${updatedProposal.proposalCode || updatedProposal._id} เปลี่ยนสถานะเป็น ${toStatus}`;
 
     try {
-      await Notification.insertMany(
-        Array.from(recipientIds).map((userId) => ({
-          userId,
-          proposalId: updatedProposal._id,
-          channel: 'in_app',
-          eventKey: 'committee_valuated',
-          title: 'ส่วนบริหารกำลังจัดเตรียมผล',
-          message: notificationMessage,
-          payload: {
-            toStatus,
-            fromStatus,
-            roundNo: activeRound
-          },
-          isRead: false,
-          sentAt: new Date()
-        }))
-      );
+      await notifyProposalStakeholders(updatedProposal, {
+        eventKey: 'meeting_completed',
+        title: 'ส่วนบริหารกำลังจัดเตรียมผล',
+        message: notificationMessage,
+        payload: {
+          toStatus,
+          fromStatus,
+          roundNo: activeRound
+        },
+        remarks: 'แอดมินรับผลการประเมินครบตามเงื่อนไขแล้ว',
+        proposalStatusLogId: statusLog && statusLog._id ? statusLog._id : null
+      });
     } catch (err) {
       console.warn('[Proposal.acceptProposalReview] Failed to create status-sync notifications:', {
         proposalId: String(updatedProposal._id),
@@ -927,7 +1025,7 @@ async function resubmitProposal(id, user) {
   proposal.updatedBy = user._id;
   await proposal.save();
 
-  await createStatusLog({
+  const resubmitStatusLog = await createStatusLog({
     proposalId: proposal._id,
     fromStatus,
     toStatus: STATUS.RESUBMITTED,
@@ -935,6 +1033,27 @@ async function resubmitProposal(id, user) {
     remark: null,
     roundNo: proposal.currentRound || 1,
     changedBy: user._id
+  });
+
+  await createNotification({
+    userId: user._id,
+    proposalId: proposal._id,
+    channel: 'in_app',
+    eventKey: 'proposal_resubmitted',
+    title: 'ส่งโครงการฉบับแก้ไขแล้ว',
+    message: `โครงการ ${proposal.proposalCode || proposal._id} ถูกส่งฉบับแก้ไขกลับเข้าระบบแล้ว`,
+    payload: {
+      toStatus: STATUS.RESUBMITTED,
+      fromStatus
+    }
+  });
+
+  await notifyAdminsOfProposalSubmission(proposal, {
+    eventKey: 'proposal_resubmitted',
+    title: 'มีโครงการฉบับแก้ไขส่งกลับมา',
+    message: `โครงการ ${proposal.proposalCode || proposal._id} ถูกส่งฉบับแก้ไขกลับเข้าระบบแล้ว`,
+    remarks: 'โครงการถูกส่งกลับเข้ากระบวนการหลังได้รับคำขอแก้ไข',
+    proposalStatusLogId: resubmitStatusLog && resubmitStatusLog._id ? resubmitStatusLog._id : null
   });
 
   return proposal;
@@ -966,7 +1085,7 @@ async function submitProposal(id, user, options = {}) {
   proposal.markModified('formSnapshotJson');
   await proposal.save();
 
-  await createStatusLog({
+  const submitStatusLog = await createStatusLog({
     proposalId: proposal._id,
     fromStatus,
     toStatus,
@@ -991,6 +1110,16 @@ async function submitProposal(id, user, options = {}) {
     message: submitNotificationMessage,
     payload: {}
   });
+
+  if (!requiresCollaborationConfirmation && toStatus === STATUS.SUBMITTED) {
+    await notifyAdminsOfProposalSubmission(proposal, {
+      eventKey: 'proposal_submitted',
+      title: 'มีข้อเสนอโครงการใหม่',
+      message: `โครงการ ${proposal.projectTitleTh || proposal.projectTitleEn || proposal.proposalCode || proposal._id} ถูกยื่นเข้าระบบแล้ว`,
+      remarks: 'ข้อเสนอโครงการใหม่พร้อมให้ตรวจสอบในขั้นตอนถัดไป',
+      proposalStatusLogId: submitStatusLog && submitStatusLog._id ? submitStatusLog._id : null
+    });
+  }
 
   if (requiresCollaborationConfirmation) {
     try {
@@ -1114,7 +1243,7 @@ async function changeProposalStatus(id, toStatus, remark, user) {
 
   const updatedProposal = await Proposal.findByIdAndUpdate(id, { $set: updates }, { new: true });
 
-  await createStatusLog({
+  const manualStatusLog = await createStatusLog({
     proposalId: updatedProposal._id,
     fromStatus,
     toStatus,
@@ -1153,69 +1282,38 @@ async function changeProposalStatus(id, toStatus, remark, user) {
   const notificationMessage = `โครงการ ${updatedProposal.proposalCode || updatedProposal._id} เปลี่ยนสถานะเป็น ${toStatus}${remark ? ` (${remark})` : ''}`;
 
   if (recipientIds.size > 0) {
-    try {
-      await Notification.insertMany(
-        Array.from(recipientIds).map((userId) => ({
-          userId,
-          proposalId: updatedProposal._id,
-          channel: 'in_app',
-          eventKey: toStatus === STATUS.REVISION_REQUESTED
-            ? 'revision_requested'
-            : (toStatus === STATUS.FACULTY_APPROVED
-              ? 'chairman_approved'
-              : (toStatus === STATUS.FACULTY_REJECTED
-                ? 'chairman_rejected'
-                : (toStatus === STATUS.APPROVED
-                  ? 'approved'
-                  : (toStatus === STATUS.REJECTED
-                    ? 'rejected'
-                    : (toStatus === STATUS.COMMITTEE_VALUATED
-                      ? 'committee_valuated'
-                      : (toStatus === STATUS.MEETING_COMPLETED ? 'meeting_completed' : 'status_changed')))))),
-          title: notificationTitle,
-          message: notificationMessage,
-          payload: {
-            toStatus,
-            fromStatus,
-            remark: remark || ''
-          },
-          isRead: false,
-          sentAt: new Date()
-        }))
-      );
-    } catch (err) {
-      throw new Error(`Failed to create notification records: ${err && err.message ? err.message : err}`);
-    }
-
     const workflowEventKey =
       toStatus === STATUS.REVISION_REQUESTED
         ? 'revision_requested'
-          : (toStatus === STATUS.FACULTY_APPROVED
-            ? 'chairman_approved'
-            : (toStatus === STATUS.FACULTY_REJECTED
-              ? 'chairman_rejected'
-              : (toStatus === STATUS.APPROVED ? 'approved' : (toStatus === STATUS.REJECTED ? 'rejected' : null))));
+        : (toStatus === STATUS.FACULTY_APPROVED
+          ? 'chairman_approved'
+          : (toStatus === STATUS.FACULTY_REJECTED
+            ? 'chairman_rejected'
+            : (toStatus === STATUS.APPROVED
+              ? 'approved'
+              : (toStatus === STATUS.REJECTED
+                ? 'rejected'
+                : (toStatus === STATUS.COMMITTEE_VALUATED
+                  ? 'committee_valuated'
+                  : (toStatus === STATUS.MEETING_COMPLETED ? 'meeting_completed' : 'status_changed'))))));
 
-    if (workflowEventKey) {
-      const emailResult = await sendWorkflowEventEmails({
-        eventKey: workflowEventKey,
-        recipientIds: Array.from(recipientIds),
-        proposal: updatedProposal,
-        context: {
-          remarks: remark || ''
-        }
-      });
-
-      if (emailResult && (emailResult.failed > 0 || emailResult.skippedReason)) {
-        console.warn('[Proposal.changeStatus] Workflow email delivery issue:', {
-          proposalId: String(updatedProposal._id),
-          eventKey: workflowEventKey,
-          skippedReason: emailResult.skippedReason || '',
-          failed: emailResult.failed || 0,
-          failures: emailResult.failures || []
-        });
-      }
-    }
+    await notifyUsersWithWorkflowEmail({
+      recipientIds: Array.from(recipientIds),
+      proposalId: updatedProposal._id,
+      eventKey: workflowEventKey,
+      title: notificationTitle,
+      message: notificationMessage,
+      payload: {
+        toStatus,
+        fromStatus,
+        remark: remark || ''
+      },
+      proposal: updatedProposal,
+      context: {
+        remarks: remark || ''
+      },
+      proposalStatusLogId: manualStatusLog && manualStatusLog._id ? manualStatusLog._id : null
+    });
   }
 
   return updatedProposal;
@@ -1260,6 +1358,7 @@ async function assignCommittee(id, committeeIds = [], user) {
   proposal.committeeIds = normalizedCommitteeIds;
   proposal.updatedBy = user._id;
   let statusChanged = false;
+  let assignCommitteeLog = null;
   if (![STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW].includes(proposal.currentStatus)) {
     proposal.currentStatus = STATUS.ASSIGNED_TO_COMMITTEE;
     statusChanged = true;
@@ -1268,7 +1367,7 @@ async function assignCommittee(id, committeeIds = [], user) {
 
   // log status change or assignment action
   if (statusChanged) {
-    await createStatusLog({
+    assignCommitteeLog = await createStatusLog({
       proposalId: proposal._id,
       fromStatus,
       toStatus: STATUS.ASSIGNED_TO_COMMITTEE,
@@ -1278,7 +1377,7 @@ async function assignCommittee(id, committeeIds = [], user) {
       changedBy: user._id
     });
   } else {
-    await createStatusLog({
+    assignCommitteeLog = await createStatusLog({
       proposalId: proposal._id,
       fromStatus,
       toStatus: fromStatus,
@@ -1289,33 +1388,26 @@ async function assignCommittee(id, committeeIds = [], user) {
     });
   }
 
-  // notify each committee member
-  for (const reviewerId of normalizedCommitteeIds) {
-    await createNotification({
-      userId: reviewerId,
-      proposalId: proposal._id,
-      channel: 'in_app',
-      eventKey: 'committee_assigned',
-      title: 'ได้รับมอบหมายให้พิจารณาโครงการ',
-      message: `กรุณาตรวจสอบโครงการ ${proposal.proposalCode || proposal._id}`,
-      payload: {}
-    });
-  }
-
   if (normalizedCommitteeIds.length > 0) {
-    const emailResult = await sendWorkflowEventEmails({
+    const emailResult = await dispatchProposalWorkflowNotification({
       eventKey: 'committee_assigned',
       recipientIds: normalizedCommitteeIds,
-      proposal
+      proposal,
+      inApp: {
+        title: 'ได้รับมอบหมายให้พิจารณาโครงการ',
+        message: `กรุณาตรวจสอบโครงการ ${proposal.proposalCode || proposal._id}`,
+        payload: {}
+      },
+      proposalStatusLogId: assignCommitteeLog && assignCommitteeLog._id ? assignCommitteeLog._id : null
     });
 
-    if (emailResult && (emailResult.failed > 0 || emailResult.skippedReason)) {
+    if (emailResult && emailResult.email && (emailResult.email.failed > 0 || emailResult.email.skippedReason)) {
       console.warn('[Proposal.assignCommittee] Workflow email delivery issue:', {
         proposalId: String(proposal._id),
         eventKey: 'committee_assigned',
-        skippedReason: emailResult.skippedReason || '',
-        failed: emailResult.failed || 0,
-        failures: emailResult.failures || []
+        skippedReason: emailResult.email.skippedReason || '',
+        failed: emailResult.email.failed || 0,
+        failures: emailResult.email.failures || []
       });
     }
   }
@@ -1367,7 +1459,7 @@ async function assignChairman(id, chairmanIds = [], user) {
   proposal.set(assignmentState);
   await proposal.save();
 
-  await createStatusLog({
+  const assignChairmanLog = await createStatusLog({
     proposalId: proposal._id,
     fromStatus,
     toStatus: STATUS.FACULTY_REVIEW_PENDING,
@@ -1377,18 +1469,30 @@ async function assignChairman(id, chairmanIds = [], user) {
     changedBy: user._id
   });
 
-  for (const reviewerId of validChairmanIds) {
-    await createNotification({
-      userId: reviewerId,
-      proposalId: proposal._id,
-      channel: 'in_app',
+  if (validChairmanIds.length > 0) {
+    const emailResult = await dispatchProposalWorkflowNotification({
       eventKey: 'chairman_assigned',
-      title: 'มีเอกสารถูกส่งให้ประธานพิจารณา',
-      message: `กรุณาตรวจสอบโครงการ ${proposal.proposalCode || proposal._id}`,
-      payload: {
-        toStatus: STATUS.FACULTY_REVIEW_PENDING
-      }
+      recipientIds: validChairmanIds,
+      proposal,
+      inApp: {
+        title: 'มีเอกสารถูกส่งให้ประธานพิจารณา',
+        message: `กรุณาตรวจสอบโครงการ ${proposal.proposalCode || proposal._id}`,
+        payload: {
+          toStatus: STATUS.FACULTY_REVIEW_PENDING
+        }
+      },
+      proposalStatusLogId: assignChairmanLog && assignChairmanLog._id ? assignChairmanLog._id : null
     });
+
+    if (emailResult && emailResult.email && (emailResult.email.failed > 0 || emailResult.email.skippedReason)) {
+      console.warn('[Proposal.assignChairman] Workflow email delivery issue:', {
+        proposalId: String(proposal._id),
+        eventKey: 'chairman_assigned',
+        skippedReason: emailResult.email.skippedReason || '',
+        failed: emailResult.email.failed || 0,
+        failures: emailResult.email.failures || []
+      });
+    }
   }
 
   return proposal;
@@ -1449,7 +1553,7 @@ async function applyChairmanReviewOutcome(proposalId, review, payload = {}, user
   }));
   await proposal.save();
 
-  await createStatusLog({
+  const chairmanDecisionLog = await createStatusLog({
     proposalId: proposal._id,
     fromStatus: currentStatus,
     toStatus: nextStatus,
@@ -1470,22 +1574,19 @@ async function applyChairmanReviewOutcome(proposalId, review, payload = {}, user
       ? `โครงการ ${proposal.proposalCode || proposal._id} ผ่านการพิจารณาจากประธานแล้ว และอยู่ในสถานะประธานอนุมัติ`
       : `โครงการ ${proposal.proposalCode || proposal._id} ไม่ผ่านการพิจารณาจากประธาน และอยู่ในสถานะปฏิเสธ`;
 
-    await Notification.insertMany(
-      Array.from(recipientIds).map((userId) => ({
-        userId,
-        proposalId: proposal._id,
-        channel: 'in_app',
-        eventKey,
-        title,
-        message,
-        payload: {
-          decision,
-          toStatus: nextStatus
-        },
-        isRead: false,
-        sentAt: now
-      }))
-    );
+    await notifyProposalStakeholders(proposal, {
+      eventKey,
+      title,
+      message,
+      payload: {
+        decision,
+        toStatus: nextStatus
+      },
+      remarks: payload && payload.summaryComment ? payload.summaryComment : '',
+      includeCommittee: false,
+      extraRecipientIds: Array.from(recipientIds),
+      proposalStatusLogId: chairmanDecisionLog && chairmanDecisionLog._id ? chairmanDecisionLog._id : null
+    });
   }
 
   return review;
@@ -1576,6 +1677,10 @@ async function saveReview(proposalId, payload, user) {
 async function acceptProposalReview(proposalId, reviewId, user) {
   if (!user || !user._id) throw new Error('Unauthorized');
 
+  const proposalForNotification = await Proposal.findById(proposalId)
+    .select('_id proposalCode projectTitleTh projectTitleEn')
+    .lean();
+
   const review = await ProposalReview.findOne({ _id: reviewId, proposalId })
     .populate('reviewerUserId', 'fullName email role');
   if (!review) throw new Error('REVIEW_NOT_FOUND');
@@ -1591,10 +1696,9 @@ async function acceptProposalReview(proposalId, reviewId, user) {
 
   if (reviewer && reviewer._id) {
     try {
-      await Notification.create({
-        userId: reviewer._id,
+      await notifyUsersWithWorkflowEmail({
+        recipientIds: [String(reviewer._id)],
         proposalId,
-        channel: 'in_app',
         eventKey: 'review_certified',
         title: 'แอดมินรับผลการประเมินแล้ว',
         message: 'ผลการประเมินของคุณถูกแอดมินรับเข้าระบบเรียบร้อยแล้ว',
@@ -1603,8 +1707,10 @@ async function acceptProposalReview(proposalId, reviewId, user) {
           roundNo: review.roundNo || 1,
           reviewStatus: review.reviewStatus
         },
-        isRead: false,
-        sentAt: new Date()
+        proposal: proposalForNotification,
+        context: {
+          remarks: 'แอดมินรับผลการประเมินเข้าระบบแล้ว'
+        }
       });
     } catch (err) {
       console.warn('[Proposal.acceptProposalReview] Failed to create review acceptance notification:', {
@@ -1662,7 +1768,7 @@ async function rollbackProposalStatusAfterRejectedReview(proposalId, review, use
       }));
       await proposal.save();
 
-      await createStatusLog({
+      const chairmanRollbackLog = await createStatusLog({
         proposalId: proposal._id,
         fromStatus,
         toStatus,
@@ -1670,6 +1776,23 @@ async function rollbackProposalStatusAfterRejectedReview(proposalId, review, use
         remark: 'Admin rejected chairman review submission',
         roundNo: null,
         changedBy: user._id
+      });
+
+      const assignmentById = chairmanAssignment && chairmanAssignment.assignedBy ? String(chairmanAssignment.assignedBy) : '';
+      await notifyProposalStakeholders(proposal, {
+        eventKey: 'review_rejected_by_admin',
+        title: 'ผลการพิจารณาจากประธานถูกตีกลับโดยแอดมิน',
+        message: `โครงการ ${proposal.proposalCode || proposal._id} ถูกปรับกลับไปยังสถานะรอประธานพิจารณา`,
+        payload: {
+          fromStatus,
+          toStatus,
+          reviewId: review && review._id ? review._id : null,
+          roundNo: review && review.roundNo ? review.roundNo : null
+        },
+        remarks: 'แอดมินตีกลับผลการพิจารณาของประธาน',
+        includeCommittee: false,
+        extraRecipientIds: assignedChairmanIds.concat(assignmentById ? [assignmentById] : []),
+        proposalStatusLogId: chairmanRollbackLog && chairmanRollbackLog._id ? chairmanRollbackLog._id : null
       });
     }
 
@@ -1683,7 +1806,7 @@ async function rollbackProposalStatusAfterRejectedReview(proposalId, review, use
   proposal.updatedBy = user._id;
   await proposal.save();
 
-  await createStatusLog({
+  const committeeRollbackLog = await createStatusLog({
     proposalId: proposal._id,
     fromStatus,
     toStatus,
@@ -1693,11 +1816,29 @@ async function rollbackProposalStatusAfterRejectedReview(proposalId, review, use
     changedBy: user._id
   });
 
+  await notifyProposalStakeholders(proposal, {
+    eventKey: 'review_rejected_by_admin',
+    title: 'ผลการประเมินถูกตีกลับโดยแอดมิน',
+    message: `โครงการ ${proposal.proposalCode || proposal._id} ถูกปรับกลับไปยังสถานะมอบหมายกรรมการ`,
+    payload: {
+      fromStatus,
+      toStatus,
+      reviewId: review && review._id ? review._id : null,
+      roundNo: review && review.roundNo ? review.roundNo : null
+    },
+    remarks: 'แอดมินตีกลับผลการประเมินของกรรมการ',
+    proposalStatusLogId: committeeRollbackLog && committeeRollbackLog._id ? committeeRollbackLog._id : null
+  });
+
   return proposal;
 }
 
 async function rejectProposalReview(proposalId, reviewId, user) {
   if (!user || !user._id) throw new Error('Unauthorized');
+
+  const proposalForNotification = await Proposal.findById(proposalId)
+    .select('_id proposalCode projectTitleTh projectTitleEn')
+    .lean();
 
   const review = await ProposalReview.findOne({ _id: reviewId, proposalId })
     .populate('reviewerUserId', 'fullName email role');
@@ -1721,10 +1862,9 @@ async function rejectProposalReview(proposalId, reviewId, user) {
 
   if (reviewer && reviewer._id) {
     try {
-      await Notification.create({
-        userId: reviewer._id,
+      await notifyUsersWithWorkflowEmail({
+        recipientIds: [String(reviewer._id)],
         proposalId,
-        channel: 'in_app',
         eventKey: 'review_rejected_by_admin',
         title: 'แอดมินไม่รับผลการประเมิน',
         message: 'ผลการประเมินของคุณถูกตีกลับ กรุณาประเมินใหม่อีกครั้ง',
@@ -1732,8 +1872,10 @@ async function rejectProposalReview(proposalId, reviewId, user) {
           reviewId: review._id,
           roundNo: review.roundNo || 1
         },
-        isRead: false,
-        sentAt: new Date()
+        proposal: proposalForNotification,
+        context: {
+          remarks: 'แอดมินไม่รับผลการประเมินและต้องการให้ประเมินใหม่'
+        }
       });
     } catch (err) {
       console.warn('[Proposal.rejectProposalReview] Failed to create review rejection notification:', {

@@ -4,7 +4,7 @@ const ProposalStatusLog = require('../models/ProposalStatusLog');
 const Notification = require('../models/Notification');
 const User = require('../../Auth/models/User');
 const STATUS = require('../constants/proposal-status');
-const { sendWorkflowEventEmails } = require('./workflow-notification.service');
+const { dispatchProposalWorkflowNotification, sendWorkflowEventEmails } = require('./workflow-notification.service');
 
 const MEETING_SOURCE_PROPOSAL_STATUSES = new Set([
   STATUS.OFFICE_RECEIVED,
@@ -27,6 +27,48 @@ function buildProposalStatusSnapshotMap(meeting = {}) {
   );
 }
 
+function getProposalStakeholderIds(proposal = {}) {
+  const recipientIds = new Set();
+  if (proposal && proposal.applicantUserId) {
+    recipientIds.add(String(proposal.applicantUserId));
+  }
+  (proposal && Array.isArray(proposal.committeeIds) ? proposal.committeeIds : []).forEach((userId) => {
+    const normalizedId = String(userId || '').trim();
+    if (normalizedId) recipientIds.add(normalizedId);
+  });
+  return Array.from(recipientIds);
+}
+
+async function notifyProposalStakeholders({ proposal, eventKey, title, message, payload = {}, remarks = '', proposalStatusLogId = null }) {
+  const recipientIds = getProposalStakeholderIds(proposal);
+  if (recipientIds.length === 0) return;
+
+  const emailResult = await dispatchProposalWorkflowNotification({
+    eventKey,
+    recipientIds,
+    proposal,
+    inApp: {
+      title,
+      message,
+      payload
+    },
+    context: {
+      remarks
+    },
+    proposalStatusLogId
+  });
+
+  if (emailResult && emailResult.email && (emailResult.email.failed > 0 || emailResult.email.skippedReason)) {
+    console.warn('[Meeting.notifyProposalStakeholders] Workflow email delivery issue:', {
+      proposalId: proposal && proposal._id ? String(proposal._id) : '',
+      eventKey,
+      skippedReason: emailResult.email.skippedReason || '',
+      failed: emailResult.email.failed || 0,
+      failures: emailResult.email.failures || []
+    });
+  }
+}
+
 async function applyMeetingManagedProposalStatuses(meeting, user, proposalIds, existingSnapshots = new Map()) {
   const normalizedProposalIds = normalizeIds(proposalIds);
   if (normalizedProposalIds.length === 0) return [];
@@ -34,7 +76,7 @@ async function applyMeetingManagedProposalStatuses(meeting, user, proposalIds, e
   const proposals = await Proposal.find({
     _id: { $in: normalizedProposalIds },
     isDeleted: { $ne: true }
-  });
+  }).select('_id proposalCode projectTitleTh projectTitleEn applicantUserId committeeIds currentStatus currentRound');
 
   if (proposals.length !== normalizedProposalIds.length) {
     throw new Error('ไม่พบโครงการบางรายการที่เลือกสำหรับการประชุม');
@@ -60,7 +102,7 @@ async function applyMeetingManagedProposalStatuses(meeting, user, proposalIds, e
       proposal.updatedBy = user._id;
       await proposal.save();
 
-      await new ProposalStatusLog({
+      const statusLog = await new ProposalStatusLog({
         proposalId: proposal._id,
         fromStatus: currentStatus,
         toStatus: STATUS.MEETING_IN_PROGRESS,
@@ -69,6 +111,20 @@ async function applyMeetingManagedProposalStatuses(meeting, user, proposalIds, e
         roundNo: proposal.currentRound || 1,
         changedBy: user._id
       }).save();
+
+      await notifyProposalStakeholders({
+        proposal,
+        eventKey: 'proposal_meeting_in_progress',
+        title: 'โครงการอยู่ระหว่างจัดการประชุม',
+        message: `โครงการ ${proposal.proposalCode || proposal._id} เปลี่ยนสถานะเป็นกำลังจัดการประชุม`,
+        payload: {
+          fromStatus: currentStatus,
+          toStatus: STATUS.MEETING_IN_PROGRESS,
+          meetingTitle: meeting && meeting.title ? meeting.title : ''
+        },
+        remarks: `การประชุม: ${meeting && meeting.title ? meeting.title : '-'}`,
+        proposalStatusLogId: statusLog && statusLog._id ? statusLog._id : null
+      });
     }
 
     snapshots.push({
@@ -94,7 +150,7 @@ async function restoreManagedProposalStatuses(meeting, user, targetProposalIds =
   const proposals = await Proposal.find({
     _id: { $in: proposalIdsToRestore },
     isDeleted: { $ne: true }
-  });
+  }).select('_id proposalCode projectTitleTh projectTitleEn applicantUserId committeeIds currentStatus currentRound');
   const proposalById = new Map(proposals.map((proposal) => [String(proposal._id), proposal]));
 
   for (const proposalId of proposalIdsToRestore) {
@@ -109,7 +165,7 @@ async function restoreManagedProposalStatuses(meeting, user, targetProposalIds =
     proposal.updatedBy = user._id;
     await proposal.save();
 
-    await new ProposalStatusLog({
+    const statusLog = await new ProposalStatusLog({
       proposalId: proposal._id,
       fromStatus: STATUS.MEETING_IN_PROGRESS,
       toStatus: previousStatus,
@@ -118,6 +174,20 @@ async function restoreManagedProposalStatuses(meeting, user, targetProposalIds =
       roundNo: proposal.currentRound || 1,
       changedBy: user._id
     }).save();
+
+    await notifyProposalStakeholders({
+      proposal,
+      eventKey: 'proposal_status_restored',
+      title: 'สถานะโครงการถูกปรับกลับหลังการประชุม',
+      message: `โครงการ ${proposal.proposalCode || proposal._id} ถูกปรับสถานะกลับเป็น ${previousStatus}`,
+      payload: {
+        fromStatus: STATUS.MEETING_IN_PROGRESS,
+        toStatus: previousStatus,
+        meetingTitle: meeting && meeting.title ? meeting.title : ''
+      },
+      remarks: `การประชุม: ${meeting && meeting.title ? meeting.title : '-'} | สถานะปัจจุบันกลับเป็น ${previousStatus}`,
+      proposalStatusLogId: statusLog && statusLog._id ? statusLog._id : null
+    });
   }
 
   return Array.from(snapshotMap.entries())
