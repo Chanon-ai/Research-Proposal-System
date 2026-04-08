@@ -244,10 +244,139 @@
               <strong>{{ $t('adminSettings.email.templateNoteLabel') }}:</strong>
               {{ $t('adminSettings.email.templateNote') }}
             </CCallout>
+            <div class="template-create-card mb-4">
+              <div class="template-create-card__header">
+                <div>
+                  <div class="template-create-card__title">เพิ่ม Email Template</div>
+                  <small class="text-muted">ตั้งชื่อ template แล้วเลือก action กับกลุ่มผู้รับที่จะใช้ rule นี้</small>
+                </div>
+                <CButton size="sm" color="primary" @click="addEmailTemplate">
+                  <CIcon name="cil-plus" class="mr-1" /> เพิ่ม template
+                </CButton>
+              </div>
+              <CRow>
+                <CCol md="4" class="mb-3 mb-md-0">
+                  <label class="template-meta__label">ชื่อ template</label>
+                  <input
+                    v-model="newEmailTemplate.displayName"
+                    type="text"
+                    class="form-control"
+                    placeholder="เช่น แจ้งคณะกรรมการเมื่อกำหนดประชุม"
+                  />
+                </CCol>
+                <CCol md="4" class="mb-3 mb-md-0">
+                  <label class="template-meta__label">เลือก action ที่จะส่งเมล</label>
+                  <multiselect
+                    class="template-multiselect"
+                    :value="getSelectedTemplateOptions(newEmailTemplate.eventKeys, emailTemplateActionOptions)"
+                    :options="emailTemplateActionOptions"
+                    :multiple="true"
+                    :close-on-select="false"
+                    :clear-on-select="false"
+                    :preserve-search="true"
+                    :show-labels="false"
+                    placeholder="เลือก action"
+                    label="label"
+                    track-by="value"
+                    @input="setDraftTemplateSelection('eventKeys', $event)"
+                  />
+                  <small class="template-selection-summary d-block mt-2">
+                    {{ getTemplateSelectionSummary(newEmailTemplate.eventKeys, emailTemplateActionOptions, 'ยังไม่ได้เลือก action') }}
+                  </small>
+                </CCol>
+                <CCol md="4">
+                  <label class="template-meta__label">เลือกผู้รับ</label>
+                  <multiselect
+                    class="template-multiselect"
+                    :value="getSelectedTemplateOptions(newEmailTemplate.recipientTargets, emailTemplateRecipientOptions)"
+                    :options="emailTemplateRecipientOptions"
+                    :multiple="true"
+                    :close-on-select="false"
+                    :clear-on-select="false"
+                    :preserve-search="true"
+                    :show-labels="false"
+                    placeholder="เลือกผู้รับ"
+                    label="label"
+                    track-by="value"
+                    @input="setDraftTemplateSelection('recipientTargets', $event)"
+                  />
+                  <small class="template-selection-summary d-block mt-2">
+                    {{ getTemplateSelectionSummary(newEmailTemplate.recipientTargets, emailTemplateRecipientOptions, 'ยังไม่ได้เลือกผู้รับ') }}
+                  </small>
+                </CCol>
+              </CRow>
+            </div>
             <details class="mb-3" v-for="(tpl, key) in emailTemplates" :key="key">
               <summary class="font-weight-bold mb-2">{{ getTemplateLabel(key) }}</summary>
               <div class="mt-2 template-editor">
                 <div class="template-editor__main">
+                  <div class="template-meta mb-3">
+                    <div class="template-meta__header">
+                      <div class="template-meta__title">การตั้งค่า template</div>
+                      <div class="d-flex align-items-center" style="gap: 8px;">
+                        <label class="template-toggle mb-0">
+                          <input v-model="emailTemplates[key].enabled" type="checkbox" />
+                          <span>เปิดใช้งาน</span>
+                        </label>
+                        <CButton
+                          v-if="emailTemplates[key].isCustom"
+                          size="sm"
+                          color="danger"
+                          variant="outline"
+                          @click="removeEmailTemplate(key)"
+                        >
+                          <CIcon name="cil-trash" class="mr-1" /> ลบ template
+                        </CButton>
+                      </div>
+                    </div>
+                    <CRow>
+                      <CCol md="4" class="mb-3 mb-md-0">
+                        <label class="template-meta__label">ชื่อ template</label>
+                        <input v-model="emailTemplates[key].displayName" type="text" class="form-control" placeholder="ชื่อที่ใช้แสดงในหน้าตั้งค่า" />
+                        <small class="text-muted d-block mt-1">Key: {{ key }}</small>
+                      </CCol>
+                      <CCol md="4" class="mb-3 mb-md-0">
+                        <label class="template-meta__label">Action ที่จะส่งเมล</label>
+                        <multiselect
+                          class="template-multiselect"
+                          :value="getSelectedTemplateOptions(emailTemplates[key].eventKeys, emailTemplateActionOptions)"
+                          :options="emailTemplateActionOptions"
+                          :multiple="true"
+                          :close-on-select="false"
+                          :clear-on-select="false"
+                          :preserve-search="true"
+                          :show-labels="false"
+                          placeholder="เลือก action"
+                          label="label"
+                          track-by="value"
+                          @input="setTemplateSelection(key, 'eventKeys', $event)"
+                        />
+                        <small class="template-selection-summary d-block mt-2">
+                          {{ getTemplateSelectionSummary(emailTemplates[key].eventKeys, emailTemplateActionOptions, 'ยังไม่ได้เลือก action') }}
+                        </small>
+                      </CCol>
+                      <CCol md="4">
+                        <label class="template-meta__label">ผู้รับ</label>
+                        <multiselect
+                          class="template-multiselect"
+                          :value="getSelectedTemplateOptions(emailTemplates[key].recipientTargets, emailTemplateRecipientOptions)"
+                          :options="emailTemplateRecipientOptions"
+                          :multiple="true"
+                          :close-on-select="false"
+                          :clear-on-select="false"
+                          :preserve-search="true"
+                          :show-labels="false"
+                          placeholder="เลือกผู้รับ"
+                          label="label"
+                          track-by="value"
+                          @input="setTemplateSelection(key, 'recipientTargets', $event)"
+                        />
+                        <small class="template-selection-summary d-block mt-2">
+                          {{ getTemplateSelectionSummary(emailTemplates[key].recipientTargets, emailTemplateRecipientOptions, 'ยังไม่ได้เลือกผู้รับ') }}
+                        </small>
+                      </CCol>
+                    </CRow>
+                  </div>
                   <div class="template-variable-toolbar mb-3">
                     <div class="template-variable-toolbar__label">แทรกตัวแปรในหัวข้อ</div>
                     <div class="template-variable-toolbar__chips">
@@ -578,6 +707,8 @@ import AdminUsersManagement from '@/components/admin/AdminUsersManagement.vue'
 import AdminFundingBudgetSettings from '@/ResearchFormRS/admin/AdminFundingBudgetSettings.vue'
 import AdminReviewTemplateSettings from '@/ResearchFormRS/admin/AdminReviewTemplateSettings.vue'
 import AdminRolePageAccessSettings from '@/ResearchFormRS/admin/AdminRolePageAccessSettings.vue'
+import Multiselect from 'vue-multiselect'
+import 'vue-multiselect/dist/vue-multiselect.min.css'
 import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 import Swal from 'sweetalert2'
 import {
@@ -666,6 +797,36 @@ const TEMPLATE_PREVIEW_VALUES = {
   consentRejectUrl: 'https://research.mfu.ac.th/consent/reject/MFU-RES-2026-014'
 }
 
+const EMAIL_TEMPLATE_ACTION_OPTIONS = [
+  { value: 'proposal_submitted', label: 'ยื่นข้อเสนอโครงการใหม่' },
+  { value: 'proposal_resubmitted', label: 'ส่งข้อเสนอฉบับแก้ไขกลับเข้าระบบ' },
+  { value: 'proposal_meeting_in_progress', label: 'โครงการเข้าสถานะกำลังจัดประชุม' },
+  { value: 'proposal_status_restored', label: 'โครงการถูกปรับสถานะกลับหลังประชุม' },
+  { value: 'meeting_completed', label: 'โครงการเข้าสถานะจัดเตรียมผล' },
+  { value: 'chairman_assigned', label: 'มอบหมายประธานพิจารณา' },
+  { value: 'chairman_approved', label: 'ประธานอนุมัติ' },
+  { value: 'chairman_rejected', label: 'ประธานไม่อนุมัติ' },
+  { value: 'finance_officer_assigned', label: 'มอบหมายเจ้าหน้าที่การเงิน' },
+  { value: 'finance_review_submitted', label: 'การเงินส่งผลตรวจงบประมาณ' },
+  { value: 'review_certified', label: 'แอดมินรับผลประเมิน' },
+  { value: 'review_rejected_by_admin', label: 'แอดมินตีกลับผลประเมิน' },
+  { value: 'revision_requested', label: 'ขอแก้ไขเอกสาร' },
+  { value: 'approved', label: 'อนุมัติโครงการ' },
+  { value: 'rejected', label: 'ไม่อนุมัติโครงการ' },
+  { value: 'meeting_scheduled', label: 'นัดหมายการประชุม' },
+  { value: 'committee_assigned', label: 'มอบหมายกรรมการ' },
+  { value: 'collaboration_confirmation', label: 'ขอความยินยอมเข้าร่วมโครงการ' }
+]
+
+const EMAIL_TEMPLATE_RECIPIENT_OPTIONS = [
+  { value: 'current_recipients', label: 'ผู้รับตาม flow ปัจจุบัน' },
+  { value: 'applicant', label: 'ผู้วิจัยเจ้าของโครงการ' },
+  { value: 'committee', label: 'กรรมการ' },
+  { value: 'chairman', label: 'ประธาน' },
+  { value: 'finance_officer', label: 'เจ้าหน้าที่การเงิน' },
+  { value: 'admin', label: 'ผู้ดูแลระบบ' }
+]
+
 const STATUS_ICONS = {
   draft:                  '<path d="M11 3l2 2-7 7H4v-2L11 3z"/>',
   pending_confirm:        '<circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/>',
@@ -704,7 +865,7 @@ const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'funding_budget', 'role_access', '
 export default {
   name: 'AdminSettings',
   mixins: [centerLoadingMixin],
-  components: { AdminUsersManagement, AdminFundingBudgetSettings, AdminReviewTemplateSettings, AdminRolePageAccessSettings },
+  components: { AdminUsersManagement, AdminFundingBudgetSettings, AdminReviewTemplateSettings, AdminRolePageAccessSettings, Multiselect },
   data () {
     return {
       activeTab: 0,
@@ -764,7 +925,17 @@ export default {
       manualAdminNotificationEmailEnabled: true,
       adminNotificationEmailEnabled: true,
       workflowOnlyEmailEnabled: false,
-      emailTemplates: JSON.parse(JSON.stringify(DEFAULT_TEMPLATES)),
+      emailTemplates: Object.keys(DEFAULT_TEMPLATES).reduce((accumulator, key) => {
+        accumulator[key] = {
+          ...JSON.parse(JSON.stringify(DEFAULT_TEMPLATES[key])),
+          displayName: '',
+          eventKeys: [key],
+          recipientTargets: ['current_recipients'],
+          enabled: true,
+          isCustom: false
+        }
+        return accumulator
+      }, {}),
       testRecipientEmail: '',
       testTemplateKey: '',
 
@@ -779,6 +950,11 @@ export default {
       emailWidgetFeedback: { type: '', message: '' },
       emailWidgetForm: { senderName: '', subject: '', recipientEmail: '', message: '', templateKey: '' },
       templateEditorFocus: { key: '', field: 'body' },
+      newEmailTemplate: {
+        displayName: '',
+        eventKeys: [],
+        recipientTargets: ['current_recipients']
+      },
 
       showAddSettingModal: false,
       newSetting: { key: '', value: '', group: 'general', description: '' },
@@ -809,6 +985,12 @@ export default {
     },
     templateFormattingOptions () {
       return TEMPLATE_FORMATTING_OPTIONS
+    },
+    emailTemplateActionOptions () {
+      return EMAIL_TEMPLATE_ACTION_OPTIONS
+    },
+    emailTemplateRecipientOptions () {
+      return EMAIL_TEMPLATE_RECIPIENT_OPTIONS
     }
   },
   mounted () {
@@ -835,6 +1017,176 @@ export default {
     },
     getStatusChipColor (status) {
       return STATUS_COLORS[status] || 'secondary'
+    },
+    normalizeTemplateKey (value) {
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+    },
+    normalizeTemplateSelectionList (values, allowedOptions = [], fallback = []) {
+      const allowed = new Set((Array.isArray(allowedOptions) ? allowedOptions : []).map((item) => String(item.value || '').trim()).filter(Boolean))
+      const source = Array.isArray(values) ? values : fallback
+      const normalized = Array.from(new Set((Array.isArray(source) ? source : [])
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+        .filter((item) => allowed.has(item))))
+      return normalized.length > 0 ? normalized : fallback.filter((item) => allowed.has(item))
+    },
+    normalizeEmailTemplateDefinition (key, rawTemplate = {}, fallbackTemplate = null) {
+      const fallback = fallbackTemplate || {}
+      const normalizedKey = this.normalizeTemplateKey(key)
+      return {
+        displayName: String((rawTemplate && (rawTemplate.displayName || rawTemplate.name)) || (fallback.displayName || '') || '').trim(),
+        subject: String((rawTemplate && rawTemplate.subject) || fallback.subject || '').trim(),
+        body: String((rawTemplate && rawTemplate.body) || fallback.body || ''),
+        eventKeys: this.normalizeTemplateSelectionList(rawTemplate && (rawTemplate.eventKeys || rawTemplate.actionKeys), this.emailTemplateActionOptions, fallback.eventKeys || [normalizedKey]),
+        recipientTargets: this.normalizeTemplateSelectionList(rawTemplate && (rawTemplate.recipientTargets || rawTemplate.recipients), this.emailTemplateRecipientOptions, fallback.recipientTargets || ['current_recipients']),
+        enabled: rawTemplate && rawTemplate.enabled !== undefined ? this.toBool(rawTemplate.enabled, true) : this.toBool(fallback.enabled, true),
+        isCustom: rawTemplate && rawTemplate.isCustom !== undefined ? this.toBool(rawTemplate.isCustom, false) : this.toBool(fallback.isCustom, false)
+      }
+    },
+    normalizeEmailTemplatesConfig (rawTemplates = {}) {
+      const defaults = Object.keys(DEFAULT_TEMPLATES).reduce((accumulator, key) => {
+        accumulator[key] = this.normalizeEmailTemplateDefinition(key, DEFAULT_TEMPLATES[key], {
+          subject: DEFAULT_TEMPLATES[key].subject,
+          body: DEFAULT_TEMPLATES[key].body,
+          eventKeys: [key],
+          recipientTargets: ['current_recipients'],
+          enabled: true,
+          isCustom: false
+        })
+        return accumulator
+      }, {})
+
+      if (!rawTemplates || typeof rawTemplates !== 'object' || Array.isArray(rawTemplates)) return defaults
+
+      Object.keys(rawTemplates).forEach((key) => {
+        const normalizedKey = this.normalizeTemplateKey(key)
+        if (!normalizedKey) return
+        defaults[normalizedKey] = this.normalizeEmailTemplateDefinition(normalizedKey, rawTemplates[key], {
+          ...(defaults[normalizedKey] || {}),
+          eventKeys: (defaults[normalizedKey] && defaults[normalizedKey].eventKeys) || [normalizedKey],
+          recipientTargets: (defaults[normalizedKey] && defaults[normalizedKey].recipientTargets) || ['current_recipients'],
+          enabled: defaults[normalizedKey] ? defaults[normalizedKey].enabled : true,
+          isCustom: defaults[normalizedKey] ? defaults[normalizedKey].isCustom : true
+        })
+      })
+
+      return defaults
+    },
+    getSelectedTemplateOptions (selectedValues = [], options = []) {
+      const selectedSet = new Set((Array.isArray(selectedValues) ? selectedValues : []).map((item) => String(item || '').trim()).filter(Boolean))
+      return (Array.isArray(options) ? options : []).filter((option) => selectedSet.has(String(option.value || '').trim()))
+    },
+    getTemplateSelectionSummary (selectedValues = [], options = [], emptyLabel = '-') {
+      const labels = this.getSelectedTemplateOptions(selectedValues, options)
+        .map((option) => String(option.label || '').trim())
+        .filter(Boolean)
+      return labels.length > 0 ? labels.join(' | ') : emptyLabel
+    },
+    toTemplateSelectionValues (selectedOptions = [], allowedOptions = [], fallback = []) {
+      const values = (Array.isArray(selectedOptions) ? selectedOptions : [])
+        .map((option) => (option && typeof option === 'object' ? option.value : option))
+      return this.normalizeTemplateSelectionList(values, allowedOptions, fallback)
+    },
+    setDraftTemplateSelection (field, selectedOptions = []) {
+      const allowedOptions = field === 'eventKeys' ? this.emailTemplateActionOptions : this.emailTemplateRecipientOptions
+      const fallback = field === 'recipientTargets' ? ['current_recipients'] : []
+      this.$set(this.newEmailTemplate, field, this.toTemplateSelectionValues(selectedOptions, allowedOptions, fallback))
+    },
+    toggleDraftTemplateSelection (field, value, checked) {
+      const current = Array.isArray(this.newEmailTemplate[field]) ? this.newEmailTemplate[field] : []
+      const next = checked ? [...current, value] : current.filter((item) => item !== value)
+      this.$set(this.newEmailTemplate, field, Array.from(new Set(next)))
+    },
+    setTemplateSelection (templateKey, field, selectedOptions = []) {
+      const template = this.emailTemplates[templateKey]
+      if (!template) return
+      const allowedOptions = field === 'eventKeys' ? this.emailTemplateActionOptions : this.emailTemplateRecipientOptions
+      const fallback = field === 'recipientTargets' ? ['current_recipients'] : []
+      this.$set(this.emailTemplates, templateKey, {
+        ...template,
+        [field]: this.toTemplateSelectionValues(selectedOptions, allowedOptions, fallback)
+      })
+    },
+    toggleTemplateSelection (templateKey, field, value, checked) {
+      const template = this.emailTemplates[templateKey]
+      if (!template) return
+      const current = Array.isArray(template[field]) ? template[field] : []
+      const next = checked ? [...current, value] : current.filter((item) => item !== value)
+      this.$set(this.emailTemplates, templateKey, {
+        ...template,
+        [field]: Array.from(new Set(next))
+      })
+    },
+    async addEmailTemplate () {
+      const displayName = String(this.newEmailTemplate.displayName || '').trim()
+      if (!displayName) {
+        await Swal.fire({ icon: 'warning', title: 'กรอกชื่อ template', text: 'กรุณาระบุชื่อ template อีเมลก่อนเพิ่มรายการ' })
+        return
+      }
+
+      const eventKeys = this.normalizeTemplateSelectionList(this.newEmailTemplate.eventKeys, this.emailTemplateActionOptions, [])
+      const recipientTargets = this.normalizeTemplateSelectionList(this.newEmailTemplate.recipientTargets, this.emailTemplateRecipientOptions, ['current_recipients'])
+      if (eventKeys.length === 0) {
+        await Swal.fire({ icon: 'warning', title: 'เลือก action อย่างน้อย 1 รายการ', text: 'ต้องระบุว่าต้องการให้ส่งเมลเมื่อเกิดเหตุการณ์ใดบ้าง' })
+        return
+      }
+      if (recipientTargets.length === 0) {
+        await Swal.fire({ icon: 'warning', title: 'เลือกผู้รับอย่างน้อย 1 กลุ่ม', text: 'ต้องระบุผู้รับที่จะได้รับเมลจาก template นี้' })
+        return
+      }
+
+      const baseKey = this.normalizeTemplateKey(displayName)
+      if (!baseKey) {
+        await Swal.fire({ icon: 'warning', title: 'ชื่อ template ไม่ถูกต้อง', text: 'กรุณาใช้ชื่อที่สามารถแปลงเป็น key ได้' })
+        return
+      }
+
+      let templateKey = baseKey
+      let counter = 2
+      while (this.emailTemplates[templateKey]) {
+        templateKey = `${baseKey}_${counter}`
+        counter += 1
+      }
+
+      this.$set(this.emailTemplates, templateKey, this.normalizeEmailTemplateDefinition(templateKey, {
+        displayName,
+        subject: '',
+        body: '',
+        eventKeys,
+        recipientTargets,
+        enabled: true,
+        isCustom: true
+      }, {
+        eventKeys,
+        recipientTargets,
+        enabled: true,
+        isCustom: true
+      }))
+
+      this.newEmailTemplate = {
+        displayName: '',
+        eventKeys: [],
+        recipientTargets: ['current_recipients']
+      }
+    },
+    async removeEmailTemplate (templateKey) {
+      const template = this.emailTemplates[templateKey]
+      if (!template || !template.isCustom) return
+      const result = await Swal.fire({
+        icon: 'warning',
+        title: `ลบ template ${this.getTemplateLabel(templateKey)}?`,
+        text: 'การลบนี้จะเอา template ออกจากการตั้งค่าอีเมลทันทีเมื่อบันทึก',
+        showCancelButton: true,
+        confirmButtonText: 'ลบ template',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#e55353'
+      })
+      if (!result.isConfirmed) return
+      this.$delete(this.emailTemplates, templateKey)
     },
     markTemplateFieldFocus (templateKey, field) {
       this.templateEditorFocus = { key: templateKey, field }
@@ -1091,7 +1443,7 @@ export default {
         if (parsed.generalForm) this.generalForm = { ...this.generalForm, ...parsed.generalForm }
         if (parsed.workflowForm) this.workflowForm = { ...this.workflowForm, ...parsed.workflowForm, stepDeadlines: { ...this.workflowForm.stepDeadlines, ...(parsed.workflowForm.stepDeadlines || {}) } }
         if (parsed.smtpForm) this.smtpForm = this.normalizeSmtpForm(parsed.smtpForm)
-        if (parsed.emailTemplates) this.emailTemplates = { ...this.emailTemplates, ...parsed.emailTemplates }
+        if (parsed.emailTemplates) this.emailTemplates = this.normalizeEmailTemplatesConfig(parsed.emailTemplates)
         if (Array.isArray(parsed.settings)) this.settings = parsed.settings
         const workflowMeta = parsed && parsed.__meta && parsed.__meta.workflow
         if (workflowMeta && workflowMeta.status === 'local_fallback') {
@@ -1140,8 +1492,10 @@ export default {
       if (map.email_templates_json) {
         try {
           const parsed = typeof map.email_templates_json === 'string' ? JSON.parse(map.email_templates_json) : map.email_templates_json
-          this.emailTemplates = { ...this.emailTemplates, ...parsed }
+          this.emailTemplates = this.normalizeEmailTemplatesConfig(parsed)
         } catch (e) { console.error('[AdminSettings] parse templates error:', e) }
+      } else {
+        this.emailTemplates = this.normalizeEmailTemplatesConfig()
       }
     },
     async upsertSettingByKey (key, value, description, group) {
@@ -1255,19 +1609,61 @@ export default {
       }
     },
     async saveTemplate (type) {
-      const subject = String(this.emailTemplates[type] && this.emailTemplates[type].subject ? this.emailTemplates[type].subject : '').trim()
-      if (!subject) { await Swal.fire({ icon: 'warning', title: 'หัวเรื่องว่าง', text: `กรุณากรอกหัวเรื่องสำหรับ template ${type}` }); return }
+      const template = this.emailTemplates[type]
+      if (!template) return
+      const label = this.getTemplateLabel(type)
+      const subject = String(template.subject || '').trim()
+      const displayName = String(template.displayName || '').trim()
+      const eventKeys = this.normalizeTemplateSelectionList(template.eventKeys, this.emailTemplateActionOptions, [])
+      const recipientTargets = this.normalizeTemplateSelectionList(template.recipientTargets, this.emailTemplateRecipientOptions, ['current_recipients'])
+      if (!displayName) { await Swal.fire({ icon: 'warning', title: 'ชื่อ template ว่าง', text: `กรุณากรอกชื่อ template สำหรับ ${label}` }); return }
+      if (!subject) { await Swal.fire({ icon: 'warning', title: 'หัวเรื่องว่าง', text: `กรุณากรอกหัวเรื่องสำหรับ template ${label}` }); return }
+      if (eventKeys.length === 0) { await Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือก action', text: `กรุณาเลือก action อย่างน้อย 1 รายการสำหรับ ${label}` }); return }
+      if (recipientTargets.length === 0) { await Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือกผู้รับ', text: `กรุณาเลือกผู้รับอย่างน้อย 1 กลุ่มสำหรับ ${label}` }); return }
+
+      this.$set(this.emailTemplates, type, this.normalizeEmailTemplateDefinition(type, {
+        ...template,
+        displayName,
+        eventKeys,
+        recipientTargets
+      }, template))
+
       try {
         await this.upsertSettingByKey('email_templates_json', JSON.stringify(this.emailTemplates), 'Email templates JSON', 'email')
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: `บันทึก Template ${type} สำเร็จ`, timer: 1200, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: `บันทึก Template ${label} สำเร็จ`, timer: 1200, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] saveTemplate fallback:', error)
         this.saveFallback()
         await Swal.fire({ icon: 'info', title: 'บันทึก Template ในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงใช้ local fallback' })
       }
     },
-    resetTemplate (type) { this.$set(this.emailTemplates, type, JSON.parse(JSON.stringify(DEFAULT_TEMPLATES[type]))) },
+    resetTemplate (type) {
+      const current = this.emailTemplates[type]
+      if (!current) return
+      if (current.isCustom) {
+        this.$set(this.emailTemplates, type, this.normalizeEmailTemplateDefinition(type, {
+          ...current,
+          subject: '',
+          body: '',
+          enabled: true
+        }, {
+          eventKeys: current.eventKeys,
+          recipientTargets: current.recipientTargets,
+          isCustom: true,
+          enabled: true
+        }))
+        return
+      }
+      this.$set(this.emailTemplates, type, this.normalizeEmailTemplateDefinition(type, DEFAULT_TEMPLATES[type], {
+        subject: DEFAULT_TEMPLATES[type].subject,
+        body: DEFAULT_TEMPLATES[type].body,
+        eventKeys: [type],
+        recipientTargets: ['current_recipients'],
+        enabled: true,
+        isCustom: false
+      }))
+    },
     getCurrentUserEmail () {
       const fromStore = this.$store && this.$store.getters ? this.$store.getters['Authentication/currentUser'] : null
       if (fromStore && fromStore.email) return String(fromStore.email).trim()
@@ -1386,6 +1782,9 @@ export default {
       } catch (e) { console.error('[AdminSettings] loadMoreEmailLogs error:', e); this.emailLogPage -= 1 } finally { this.emailLogLoading = false }
     },
     getTemplateLabel (key) {
+      const template = this.emailTemplates[key]
+      const displayName = template && String(template.displayName || '').trim()
+      if (displayName) return displayName
       const i18nKey = EMAIL_TEMPLATE_LABEL_KEYS[key]
       return i18nKey ? this.$t(i18nKey) : key
     },
@@ -2053,6 +2452,124 @@ body.c-dark-theme .workflow-alert strong {
   background: rgba(255, 255, 255, 0.48);
 }
 
+.template-create-card,
+.template-meta {
+  border: 1px solid rgba(140, 21, 21, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 250, 245, 0.72);
+  padding: 14px;
+}
+
+.template-create-card__header,
+.template-meta__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.template-create-card__title,
+.template-meta__title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #7f1616;
+}
+
+.template-meta__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b0f0f;
+}
+
+.template-multiselect {
+  min-width: 0;
+}
+
+.template-multiselect ::v-deep .multiselect {
+  min-height: 44px;
+}
+
+.template-multiselect ::v-deep .multiselect__tags {
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(140, 21, 21, 0.16);
+  background: rgba(255, 255, 255, 0.94);
+  padding: 8px 40px 8px 10px;
+  box-shadow: none;
+}
+
+.template-multiselect ::v-deep .multiselect__tag {
+  margin-bottom: 4px;
+  background: #7f1616;
+}
+
+.template-multiselect ::v-deep .multiselect__placeholder,
+.template-multiselect ::v-deep .multiselect__single,
+.template-multiselect ::v-deep .multiselect__input {
+  margin-bottom: 0;
+  color: #24314e;
+  background: transparent;
+}
+
+.template-multiselect ::v-deep .multiselect__content-wrapper {
+  border: 1px solid rgba(140, 21, 21, 0.16);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+}
+
+.template-multiselect ::v-deep .multiselect__option--highlight {
+  background: rgba(140, 21, 21, 0.1);
+  color: #24314e;
+}
+
+.template-multiselect ::v-deep .multiselect__option--selected {
+  background: rgba(140, 21, 21, 0.08);
+  color: #7f1616;
+  font-weight: 700;
+}
+
+.template-selection-summary {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #5a657a;
+}
+
+.template-checkbox-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.template-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(140, 21, 21, 0.08);
+  font-size: 13px;
+  color: #24314e;
+  cursor: pointer;
+}
+
+.template-checkbox input {
+  margin-top: 3px;
+}
+
+.template-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #24314e;
+}
+
 .template-editor__main {
   min-width: 0;
   display: flex;
@@ -2256,6 +2773,68 @@ body.c-dark-theme .admin-email-widget__close-btn:hover {
 body.c-dark-theme .template-editor {
   background: rgba(24, 34, 48, 0.76);
   border-color: rgba(103, 126, 154, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-create-card,
+[data-coreui-theme='dark'] .template-meta,
+body.c-dark-theme .template-create-card,
+body.c-dark-theme .template-meta {
+  background: rgba(24, 34, 48, 0.82);
+  border-color: rgba(103, 126, 154, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-create-card__title,
+[data-coreui-theme='dark'] .template-meta__title,
+[data-coreui-theme='dark'] .template-meta__label,
+[data-coreui-theme='dark'] .template-toggle,
+body.c-dark-theme .template-create-card__title,
+body.c-dark-theme .template-meta__title,
+body.c-dark-theme .template-meta__label,
+body.c-dark-theme .template-toggle {
+  color: #d8e7f8;
+}
+
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__tags,
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__content-wrapper,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__tags,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__content-wrapper {
+  background: rgba(18, 28, 42, 0.96);
+  border-color: rgba(103, 126, 154, 0.36);
+}
+
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__placeholder,
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__single,
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__input,
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__option,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__placeholder,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__single,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__input,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__option {
+  color: #edf3fb;
+}
+
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__option--highlight,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__option--highlight {
+  background: rgba(126, 164, 207, 0.18);
+  color: #edf3fb;
+}
+
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__option--selected,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__option--selected {
+  background: rgba(126, 164, 207, 0.12);
+  color: #d8e7f8;
+}
+
+[data-coreui-theme='dark'] .template-selection-summary,
+body.c-dark-theme .template-selection-summary {
+  color: #b7c9dc;
+}
+
+[data-coreui-theme='dark'] .template-checkbox,
+body.c-dark-theme .template-checkbox {
+  background: rgba(36, 50, 68, 0.9);
+  border-color: rgba(103, 126, 154, 0.24);
+  color: #edf3fb;
 }
 
 [data-coreui-theme='dark'] .template-variable-toolbar__label,
@@ -2485,6 +3064,11 @@ body.c-dark-theme .admin-settings-page::v-deep .admin-users-page .pagination .pa
 @media (max-width: 768px) {
   .template-editor {
     grid-template-columns: 1fr;
+  }
+
+  .template-create-card__header,
+  .template-meta__header {
+    flex-direction: column;
   }
 
   .template-editor__preview {

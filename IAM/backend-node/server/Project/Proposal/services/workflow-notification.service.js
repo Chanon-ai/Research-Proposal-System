@@ -82,6 +82,8 @@ const DEFAULT_EMAIL_TEMPLATES = {
   }
 };
 
+const DEFAULT_TEMPLATE_RECIPIENT_TARGETS = Object.freeze(['current_recipients']);
+
 function asString(value, fallback = '') {
   if (value === undefined || value === null) return fallback;
   const text = String(value).trim();
@@ -145,20 +147,169 @@ function renderTemplate(template = '', vars = {}) {
   });
 }
 
+function normalizeStringArray(values, fallback = []) {
+  const source = Array.isArray(values) ? values : fallback;
+  return Array.from(new Set((Array.isArray(source) ? source : [])
+    .map((item) => asString(item))
+    .filter(Boolean)));
+}
+
+function normalizeTemplateDefinition(key, rawTemplate = {}, fallbackTemplate = {}) {
+  const source = rawTemplate && typeof rawTemplate === 'object' ? rawTemplate : {};
+  const fallback = fallbackTemplate && typeof fallbackTemplate === 'object' ? fallbackTemplate : {};
+  const normalizedKey = asString(key, asString(fallback.key, 'email_template'));
+
+  return {
+    key: normalizedKey,
+    displayName: asString(source.displayName || source.name, asString(fallback.displayName || fallback.name, normalizedKey)),
+    subject: asString(source.subject, asString(fallback.subject, '')),
+    body: asString(source.body, asString(fallback.body, '')),
+    eventKeys: normalizeStringArray(source.eventKeys || source.actionKeys, normalizeStringArray(fallback.eventKeys || [normalizedKey], [normalizedKey])),
+    recipientTargets: normalizeStringArray(source.recipientTargets || source.recipients, normalizeStringArray(fallback.recipientTargets || DEFAULT_TEMPLATE_RECIPIENT_TARGETS, DEFAULT_TEMPLATE_RECIPIENT_TARGETS)),
+    enabled: source.enabled !== undefined ? toBool(source.enabled, true) : toBool(fallback.enabled, true),
+    isCustom: source.isCustom !== undefined ? toBool(source.isCustom, false) : toBool(fallback.isCustom, false)
+  };
+}
+
+function buildDefaultTemplateMap() {
+  return Object.keys(DEFAULT_EMAIL_TEMPLATES).reduce((accumulator, key) => {
+    accumulator[key] = normalizeTemplateDefinition(key, DEFAULT_EMAIL_TEMPLATES[key], {
+      key,
+      eventKeys: [key],
+      recipientTargets: DEFAULT_TEMPLATE_RECIPIENT_TARGETS,
+      enabled: true,
+      isCustom: false
+    });
+    return accumulator;
+  }, {});
+}
+
 function parseEmailTemplates(rawTemplates) {
-  if (!rawTemplates) return { ...DEFAULT_EMAIL_TEMPLATES };
+  const defaults = buildDefaultTemplateMap();
+  if (!rawTemplates) return defaults;
 
   try {
     const parsed = typeof rawTemplates === 'string' ? JSON.parse(rawTemplates) : rawTemplates;
-    if (!parsed || typeof parsed !== 'object') return { ...DEFAULT_EMAIL_TEMPLATES };
-    return {
-      ...DEFAULT_EMAIL_TEMPLATES,
-      ...parsed
-    };
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return defaults;
+
+    const normalized = { ...defaults };
+    Object.keys(parsed).forEach((key) => {
+      const normalizedKey = asString(key);
+      if (!normalizedKey) return;
+      normalized[normalizedKey] = normalizeTemplateDefinition(normalizedKey, parsed[key], defaults[normalizedKey] || {
+        key: normalizedKey,
+        eventKeys: [normalizedKey],
+        recipientTargets: DEFAULT_TEMPLATE_RECIPIENT_TARGETS,
+        enabled: true,
+        isCustom: !Object.prototype.hasOwnProperty.call(defaults, normalizedKey)
+      });
+    });
+    return normalized;
   } catch (err) {
     console.error('[WorkflowEmail] Failed to parse email templates setting:', err && err.message ? err.message : err);
-    return { ...DEFAULT_EMAIL_TEMPLATES };
+    return defaults;
   }
+}
+
+function getMatchingTemplatesForEvent(templates = {}, eventKey = '') {
+  const normalizedEventKey = asString(eventKey);
+  if (!normalizedEventKey) return [];
+
+  const matches = Object.keys(templates || {})
+    .map((key) => normalizeTemplateDefinition(key, templates[key], templates[key]))
+    .filter((template) => template.enabled !== false && Array.isArray(template.eventKeys) && template.eventKeys.includes(normalizedEventKey));
+
+  const customMatches = matches.filter((template) => template.isCustom === true);
+  return customMatches.length > 0 ? customMatches : matches;
+}
+
+function getPrimaryTemplateForEvent(templates = {}, eventKey = '') {
+  const matches = getMatchingTemplatesForEvent(templates, eventKey);
+  if (matches.length > 0) return matches[0];
+  if (templates && templates[eventKey]) return normalizeTemplateDefinition(eventKey, templates[eventKey], templates[eventKey]);
+  return {
+    key: asString(eventKey, 'email_template_fallback'),
+    displayName: asString(eventKey, 'email_template_fallback'),
+    subject: 'แจ้งเตือนจากระบบบริหารงานวิจัย MFU',
+    body: 'เรียน {{recipientName}}\n\n{{remarks}}\n\nขอแสดงความนับถือ\nระบบบริหารงานวิจัย MFU',
+    eventKeys: [asString(eventKey, 'email_template_fallback')],
+    recipientTargets: DEFAULT_TEMPLATE_RECIPIENT_TARGETS,
+    enabled: true,
+    isCustom: false
+  };
+}
+
+function getProposalApplicantIds(proposal = null) {
+  const applicantId = proposal && proposal.applicantUserId ? asString(proposal.applicantUserId) : '';
+  return applicantId ? [applicantId] : [];
+}
+
+function getProposalCommitteeIds(proposal = null) {
+  return Array.from(new Set((Array.isArray(proposal && proposal.committeeIds) ? proposal.committeeIds : [])
+    .map((id) => asString(id))
+    .filter(Boolean)));
+}
+
+function getAssignedChairmanIds(proposal = null) {
+  const assignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+    ? proposal.chairmanAssignment
+    : {};
+  return Array.from(new Set((Array.isArray(assignment.assignedChairmanIds) ? assignment.assignedChairmanIds : [])
+    .map((id) => asString(id))
+    .filter(Boolean)));
+}
+
+function getAssignedFinanceOfficerIds(proposal = null) {
+  const assignment = proposal && proposal.financeAssignment && typeof proposal.financeAssignment === 'object'
+    ? proposal.financeAssignment
+    : {};
+  return Array.from(new Set((Array.isArray(assignment.assignedFinanceOfficerIds) ? assignment.assignedFinanceOfficerIds : [])
+    .map((id) => asString(id))
+    .filter(Boolean)));
+}
+
+async function getActiveAdminIds() {
+  const admins = await User.find({
+    role: 'admin',
+    isDeleted: { $ne: true },
+    isActive: true
+  }).select('_id').lean();
+
+  return Array.from(new Set((admins || []).map((row) => asString(row && row._id)).filter(Boolean)));
+}
+
+async function resolveTemplateRecipientIds({ baseRecipientIds = [], recipientTargets = [], proposal = null } = {}) {
+  const targets = normalizeStringArray(recipientTargets, DEFAULT_TEMPLATE_RECIPIENT_TARGETS);
+  const recipientIds = new Set();
+
+  for (const target of targets) {
+    if (target === 'current_recipients') {
+      normalizeStringArray(baseRecipientIds).forEach((id) => recipientIds.add(id));
+      continue;
+    }
+    if (target === 'applicant' || target === 'researcher') {
+      getProposalApplicantIds(proposal).forEach((id) => recipientIds.add(id));
+      continue;
+    }
+    if (target === 'committee') {
+      getProposalCommitteeIds(proposal).forEach((id) => recipientIds.add(id));
+      continue;
+    }
+    if (target === 'chairman') {
+      getAssignedChairmanIds(proposal).forEach((id) => recipientIds.add(id));
+      continue;
+    }
+    if (target === 'finance_officer') {
+      getAssignedFinanceOfficerIds(proposal).forEach((id) => recipientIds.add(id));
+      continue;
+    }
+    if (target === 'admin') {
+      const adminIds = await getActiveAdminIds();
+      adminIds.forEach((id) => recipientIds.add(id));
+    }
+  }
+
+  return Array.from(recipientIds);
 }
 
 function buildTransportConfig(settings = {}) {
@@ -389,20 +540,15 @@ async function sendWorkflowEventEmails({
   createInApp = true
 }) {
   try {
-    const recipients = await resolveRecipients(recipientIds);
-    if (!recipients.length) {
-      return { attempted: false, sent: 0, failed: 0, skippedReason: 'no-valid-recipient' };
-    }
+    const baseRecipientIds = normalizeStringArray(recipientIds);
+    const recipients = await resolveRecipients(baseRecipientIds);
 
     const settings = await systemSettingService.getSettingMap();
     const templates = parseEmailTemplates(settings && settings.email_templates_json);
-    const template = templates[eventKey] || {
-      subject: 'แจ้งเตือนจากระบบบริหารงานวิจัย MFU',
-      body: 'เรียน {{recipientName}}\n\n{{remarks}}\n\nขอแสดงความนับถือ\nระบบบริหารงานวิจัย MFU'
-    };
+    const templateForInApp = getPrimaryTemplateForEvent(templates, eventKey);
 
     // --- Create in-app notifications for all resolved recipients (best-effort, independent of email delivery) ---
-    if (createInApp) {
+    if (createInApp && recipients.length > 0) {
       try {
         const inAppRecords = recipients.map(recipient => {
           const vars = {
@@ -414,8 +560,8 @@ async function sendWorkflowEventEmails({
             meetingDate: asString(context.meetingDate, '-'),
             meetingTime: asString(context.meetingTime, '-')
           };
-          const title = renderTemplate(template.subject, vars);
-          const message = renderTemplate(template.body, vars);
+          const title = renderTemplate(templateForInApp.subject, vars);
+          const message = renderTemplate(templateForInApp.body, vars);
           return new Notification({
             userId: recipient._id,
             proposalId: proposal && proposal._id ? proposal._id : null,
@@ -443,68 +589,109 @@ async function sendWorkflowEventEmails({
     const config = buildTransportConfig(settings || {});
     const transportError = validateTransportConfig({ config, settings: settings || {} });
     if (transportError) {
-      return { attempted: false, sent: 0, failed: recipients.length, skippedReason: transportError };
+      return { attempted: false, sent: 0, failed: recipients.length || baseRecipientIds.length, skippedReason: transportError };
     }
 
     const transporter = nodemailer.createTransport(config);
     const fromAddress = asString(settings.smtp_from_email || settings.smtp_username);
     const fromName = asString(settings.smtp_from_name, 'MFU Research Platform');
 
+    const matchingTemplates = getMatchingTemplatesForEvent(templates, eventKey);
+    const effectiveTemplates = matchingTemplates.length > 0
+      ? matchingTemplates
+      : [templateForInApp];
+
+    const deliveryPlans = [];
+    for (const template of effectiveTemplates) {
+      const planRecipientIds = await resolveTemplateRecipientIds({
+        baseRecipientIds,
+        recipientTargets: template.recipientTargets,
+        proposal
+      });
+      if (!planRecipientIds.length) continue;
+      if (!asString(template.subject) || !asString(template.body)) continue;
+      deliveryPlans.push({
+        template,
+        recipientIds: planRecipientIds
+      });
+    }
+
+    if (deliveryPlans.length === 0) {
+      return {
+        attempted: false,
+        sent: 0,
+        failed: 0,
+        skippedReason: effectiveTemplates.length > 0 ? 'no-valid-recipient' : 'template-not-found'
+      };
+    }
+
     let sent = 0;
     let failed = 0;
     const failures = [];
+    let attempted = false;
 
-    for (const recipient of recipients) {
-      const vars = {
-        recipientName: asString(recipient.fullName, asString(recipient.email, 'ผู้ใช้งาน')),
-        proposalCode: asString(proposal && proposal.proposalCode, '-'),
-        projectTitle: asString(proposal && proposal.projectTitleTh, '-'),
-        remarks: asString(context.remarks, '-'),
-        meetingTitle: asString(context.meetingTitle, '-'),
-        meetingDate: asString(context.meetingDate, '-'),
-        meetingTime: asString(context.meetingTime, '-')
-      };
+    for (const plan of deliveryPlans) {
+      const planRecipients = await resolveRecipients(plan.recipientIds);
+      if (!planRecipients.length) continue;
 
-      const subject = renderTemplate(template.subject, vars);
-      const text = renderTemplate(template.body, vars);
+      for (const recipient of planRecipients) {
+        attempted = true;
+        const vars = {
+          recipientName: asString(recipient.fullName, asString(recipient.email, 'ผู้ใช้งาน')),
+          proposalCode: asString(proposal && proposal.proposalCode, '-'),
+          projectTitle: asString(proposal && proposal.projectTitleTh, '-'),
+          remarks: asString(context.remarks, '-'),
+          meetingTitle: asString(context.meetingTitle, '-'),
+          meetingDate: asString(context.meetingDate, '-'),
+          meetingTime: asString(context.meetingTime, '-')
+        };
 
-      try {
-        await transporter.sendMail({
-          from: fromName ? { name: fromName, address: fromAddress } : fromAddress,
-          to: recipient.email,
-          subject,
-          text
-        });
-        sent += 1;
-        await writeEmailLog({
-          eventKey,
-          recipientEmail: recipient.email,
-          recipientUserId: recipient._id,
-          proposalId: proposal && proposal._id || null,
-          proposalRef: proposal && (proposal.proposalCode || String(proposal._id)) || null,
-          meetingId: null,
-          status: 'sent',
-          errorMessage: null
-        });
-      } catch (err) {
-        failed += 1;
-        const errMsg = err && err.message ? err.message : 'Unknown error';
-        failures.push({
-          userId: String(recipient._id),
-          email: recipient.email,
-          error: errMsg
-        });
-        await writeEmailLog({
-          eventKey,
-          recipientEmail: recipient.email,
-          recipientUserId: recipient._id,
-          proposalId: proposal && proposal._id || null,
-          proposalRef: proposal && (proposal.proposalCode || String(proposal._id)) || null,
-          meetingId: null,
-          status: 'failed',
-          errorMessage: errMsg
-        });
+        const subject = renderTemplate(plan.template.subject, vars);
+        const text = renderTemplate(plan.template.body, vars);
+
+        try {
+          await transporter.sendMail({
+            from: fromName ? { name: fromName, address: fromAddress } : fromAddress,
+            to: recipient.email,
+            subject,
+            text
+          });
+          sent += 1;
+          await writeEmailLog({
+            eventKey,
+            recipientEmail: recipient.email,
+            recipientUserId: recipient._id,
+            proposalId: proposal && proposal._id || null,
+            proposalRef: proposal && (proposal.proposalCode || String(proposal._id)) || null,
+            meetingId: null,
+            status: 'sent',
+            errorMessage: null
+          });
+        } catch (err) {
+          failed += 1;
+          const errMsg = err && err.message ? err.message : 'Unknown error';
+          failures.push({
+            templateKey: plan.template.key,
+            userId: String(recipient._id),
+            email: recipient.email,
+            error: errMsg
+          });
+          await writeEmailLog({
+            eventKey,
+            recipientEmail: recipient.email,
+            recipientUserId: recipient._id,
+            proposalId: proposal && proposal._id || null,
+            proposalRef: proposal && (proposal.proposalCode || String(proposal._id)) || null,
+            meetingId: null,
+            status: 'failed',
+            errorMessage: errMsg
+          });
+        }
       }
+    }
+
+    if (!attempted) {
+      return { attempted: false, sent: 0, failed: 0, skippedReason: 'no-valid-recipient' };
     }
 
     if (failed > 0) {
@@ -518,7 +705,7 @@ async function sendWorkflowEventEmails({
     }
 
     return {
-      attempted: true,
+      attempted,
       sent,
       failed,
       failures
