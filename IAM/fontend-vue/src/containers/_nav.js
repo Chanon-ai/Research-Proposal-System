@@ -9,7 +9,7 @@ export default [{
     {
       _name: 'CSidebarNavDropdown',
       name: 'nav.userPanel',
-      route: '/user',
+      show: false,
       icon: 'cil-user',
       roles: ['researcher'],
       items: [
@@ -155,7 +155,7 @@ export default [{
       name: 'nav.researchForm',
       to: '/research-form',
       icon: 'cil-notes',
-      roles: ['researcher', 'chairman', 'committee']
+      roles: ['chairman']
     }
   ]
 }]
