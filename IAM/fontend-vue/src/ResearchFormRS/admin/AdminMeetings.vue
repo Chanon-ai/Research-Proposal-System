@@ -297,7 +297,7 @@
                 </div>
               </template>
             </multiselect>
-            <small class="text-muted d-block mt-1">ระบบจะแสดงโครงการที่เลือกจากหน้าจัดการโครงการโดยอัตโนมัติ</small>
+            <small class="text-muted d-block mt-1">เลือกได้เฉพาะโครงการสถานะ ส่วนบริหารรับแล้ว หรือ ส่วนบริหารกำลังจัดเตรียมผล</small>
             <small v-if="proposalOptionsError" class="text-warning d-block mt-1">โหลดรายชื่อโครงการไม่สำเร็จ: {{
               proposalOptionsError }}</small>
           </div>
@@ -560,6 +560,9 @@ const MEETING_STATUS = {
   completed: { label: 'เสร็จสิ้น', color: 'success' },
   cancelled: { label: 'ยกเลิก', color: 'danger' }
 }
+
+const ALLOWED_MEETING_PROPOSAL_STATUSES = ['office_received', 'meeting_completed']
+const MEETING_MANAGED_PROPOSAL_STATUS = 'meeting_in_progress'
 
 const BASE_MEETING_START_TIME = '06:00'
 
@@ -1109,13 +1112,39 @@ export default {
       return ((leader && (leader.name || leader.fullName)) || '').toString().trim()
     },
     formatParticipantLabel(u) { if (!u) return '-'; return u.fullName || u.email || '-' },
+    getProposalCurrentStatus(proposal) {
+      return String((proposal && (proposal.currentStatus || proposal.status)) || '').trim()
+    },
+    getEditingMeetingProposalId() {
+      return (this.selectedMeeting && Array.isArray(this.selectedMeeting.proposalIds) && this.selectedMeeting.proposalIds.length)
+        ? String(this.selectedMeeting.proposalIds[0] || '').trim()
+        : ''
+    },
+    shouldKeepMeetingProposalOption(proposal) {
+      const proposalId = String((proposal && proposal._id) || '').trim()
+      if (!proposalId) return false
+      const editingProposalId = this.getEditingMeetingProposalId()
+      return Boolean(this.isEditMode && editingProposalId && proposalId === editingProposalId)
+    },
+    canSelectProposalForMeeting(proposal) {
+      const status = this.getProposalCurrentStatus(proposal)
+      if (ALLOWED_MEETING_PROPOSAL_STATUSES.includes(status)) return true
+      if (status === MEETING_MANAGED_PROPOSAL_STATUS && this.shouldKeepMeetingProposalOption(proposal)) return true
+      return false
+    },
     async fetchProposalOptions() {
       this.proposalOptionsLoading = true; this.proposalOptionsError = null
       try {
-        const response = await axios.get('/api/v1/proposals', { params: { page: 1, limit: 300 } })
+        const response = await axios.get('/api/v1/proposals', {
+          params: {
+            page: 1,
+            limit: 300,
+            status: [...ALLOWED_MEETING_PROPOSAL_STATUSES, MEETING_MANAGED_PROPOSAL_STATUS].join(',')
+          }
+        })
         const payload = (response && response.data && response.data.data) || {}
         const list = Array.isArray(payload.proposals) ? payload.proposals : (Array.isArray(payload.data) ? payload.data : [])
-        this.proposalOptions = list.map(p => {
+        this.proposalOptions = list.filter((proposal) => this.canSelectProposalForMeeting(proposal)).map(p => {
           const th = (p && p.projectTitleTh) ? String(p.projectTitleTh) : ''; const en = (p && p.projectTitleEn) ? String(p.projectTitleEn) : ''
           const code = (p && p.proposalCode) ? String(p.proposalCode) : ''; const leaderName = this.getProposalLeaderName(p)
           const searchText = [th, en, code, leaderName].filter(Boolean).join(' '); return { ...p, searchText, leaderName }
@@ -1293,6 +1322,7 @@ export default {
       this.selectedProposalOption = null; this.autoProjectTitle = ''; this.pendingParticipantIds = []; this.selectedParticipantOptions = []
       this.meetingForm = { title: '', meetingDate: '', startTime: '', endTime: '', meetingType: 'online', location: '', videoLink: '', agenda: '', status: 'scheduled' }
       this.showMeetingModal = true
+      this.fetchProposalOptions()
       if (!this.participantOptionsLoading && (!this.participantOptions || !this.participantOptions.length)) this.fetchParticipantOptions()
     },
     openEditModal(meeting) {
@@ -1304,6 +1334,7 @@ export default {
       const inferredType = meeting && meeting.meetingType ? String(meeting.meetingType) : (this.getMeetingModeLabel(meeting) === 'ออนไลน์' ? 'online' : 'onsite')
       this.meetingForm = { title: meeting.title || '', meetingDate: meeting.meetingDate || '', startTime: meeting.startTime || '', endTime: meeting.endTime || '', meetingType: inferredType, location: meeting.location || '', videoLink: meeting.videoLink || '', agenda: meeting.agenda || '', status: meeting.status || 'scheduled' }
       this.showMeetingModal = true
+      this.fetchProposalOptions()
       this.$nextTick(() => { this.resolveSelectedProposalOption(); this.resolveSelectedParticipantOptions() })
       if (!this.participantOptionsLoading && (!this.participantOptions || !this.participantOptions.length)) this.fetchParticipantOptions()
     },

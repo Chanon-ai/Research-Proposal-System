@@ -9,6 +9,22 @@ const actionItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const proposalStatusSnapshotSchema = new mongoose.Schema(
+  {
+    proposalId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Proposal',
+      required: true
+    },
+    previousStatus: {
+      type: String,
+      required: true,
+      trim: true
+    }
+  },
+  { _id: false }
+);
+
 const meetingSchema = new mongoose.Schema(
   {
     title: {
@@ -57,6 +73,10 @@ const meetingSchema = new mongoose.Schema(
     proposalIds: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: 'Proposal',
+      default: []
+    },
+    proposalStatusSnapshots: {
+      type: [proposalStatusSnapshotSchema],
       default: []
     },
     participantIds: {

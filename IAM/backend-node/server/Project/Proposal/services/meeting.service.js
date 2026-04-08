@@ -6,6 +6,125 @@ const User = require('../../Auth/models/User');
 const STATUS = require('../constants/proposal-status');
 const { sendWorkflowEventEmails } = require('./workflow-notification.service');
 
+const MEETING_SOURCE_PROPOSAL_STATUSES = new Set([
+  STATUS.OFFICE_RECEIVED,
+  STATUS.MEETING_COMPLETED
+]);
+
+function normalizeProposalStatusValue(status) {
+  return STATUS.normalizeStatus(status);
+}
+
+function buildProposalStatusSnapshotMap(meeting = {}) {
+  return new Map(
+    (Array.isArray(meeting.proposalStatusSnapshots) ? meeting.proposalStatusSnapshots : [])
+      .map((row) => {
+        const proposalId = String(row && row.proposalId ? row.proposalId : '').trim();
+        const previousStatus = normalizeProposalStatusValue(row && row.previousStatus ? row.previousStatus : '');
+        return proposalId && previousStatus ? [proposalId, previousStatus] : null;
+      })
+      .filter(Boolean)
+  );
+}
+
+async function applyMeetingManagedProposalStatuses(meeting, user, proposalIds, existingSnapshots = new Map()) {
+  const normalizedProposalIds = normalizeIds(proposalIds);
+  if (normalizedProposalIds.length === 0) return [];
+
+  const proposals = await Proposal.find({
+    _id: { $in: normalizedProposalIds },
+    isDeleted: { $ne: true }
+  });
+
+  if (proposals.length !== normalizedProposalIds.length) {
+    throw new Error('ไม่พบโครงการบางรายการที่เลือกสำหรับการประชุม');
+  }
+
+  const proposalById = new Map(proposals.map((proposal) => [String(proposal._id), proposal]));
+  const snapshots = [];
+
+  for (const proposalId of normalizedProposalIds) {
+    const proposal = proposalById.get(String(proposalId));
+    if (!proposal) continue;
+
+    const currentStatus = normalizeProposalStatusValue(proposal.currentStatus);
+    const existingPreviousStatus = existingSnapshots.get(String(proposal._id)) || '';
+    const previousStatus = existingPreviousStatus || currentStatus;
+
+    if (!existingPreviousStatus && !MEETING_SOURCE_PROPOSAL_STATUSES.has(currentStatus)) {
+      throw new Error('เลือกได้เฉพาะโครงการที่มีสถานะส่วนบริหารรับแล้ว หรือ ส่วนบริหารกำลังจัดเตรียมผล');
+    }
+
+    if (currentStatus !== STATUS.MEETING_IN_PROGRESS) {
+      proposal.currentStatus = STATUS.MEETING_IN_PROGRESS;
+      proposal.updatedBy = user._id;
+      await proposal.save();
+
+      await new ProposalStatusLog({
+        proposalId: proposal._id,
+        fromStatus: currentStatus,
+        toStatus: STATUS.MEETING_IN_PROGRESS,
+        actionKey: 'meeting_in_progress',
+        remark: `Meeting: ${meeting.title}`,
+        roundNo: proposal.currentRound || 1,
+        changedBy: user._id
+      }).save();
+    }
+
+    snapshots.push({
+      proposalId: proposal._id,
+      previousStatus
+    });
+  }
+
+  return snapshots;
+}
+
+async function restoreManagedProposalStatuses(meeting, user, targetProposalIds = []) {
+  const snapshotMap = buildProposalStatusSnapshotMap(meeting);
+  const normalizedTargetIds = normalizeIds(targetProposalIds);
+  const proposalIdsToRestore = normalizedTargetIds.length > 0
+    ? normalizedTargetIds.filter((proposalId) => snapshotMap.has(String(proposalId)))
+    : Array.from(snapshotMap.keys());
+
+  if (proposalIdsToRestore.length === 0) {
+    return Array.from(snapshotMap.entries()).map(([proposalId, previousStatus]) => ({ proposalId, previousStatus }));
+  }
+
+  const proposals = await Proposal.find({
+    _id: { $in: proposalIdsToRestore },
+    isDeleted: { $ne: true }
+  });
+  const proposalById = new Map(proposals.map((proposal) => [String(proposal._id), proposal]));
+
+  for (const proposalId of proposalIdsToRestore) {
+    const previousStatus = snapshotMap.get(String(proposalId));
+    const proposal = proposalById.get(String(proposalId));
+    if (!proposal || !previousStatus) continue;
+
+    const currentStatus = normalizeProposalStatusValue(proposal.currentStatus);
+    if (currentStatus !== STATUS.MEETING_IN_PROGRESS) continue;
+
+    proposal.currentStatus = previousStatus;
+    proposal.updatedBy = user._id;
+    await proposal.save();
+
+    await new ProposalStatusLog({
+      proposalId: proposal._id,
+      fromStatus: STATUS.MEETING_IN_PROGRESS,
+      toStatus: previousStatus,
+      actionKey: 'meeting_status_restored',
+      remark: `Meeting: ${meeting.title}`,
+      roundNo: proposal.currentRound || 1,
+      changedBy: user._id
+    }).save();
+  }
+
+  return Array.from(snapshotMap.entries())
+    .filter(([proposalId]) => !proposalIdsToRestore.includes(String(proposalId)))
+    .map(([proposalId, previousStatus]) => ({ proposalId, previousStatus }));
+}
+
 function normalizePagination(query = {}) {
   const page = Math.max(parseInt(query.page, 10) || 1, 1);
   const limit = Math.min(Math.max(parseInt(query.limit, 10) || 9, 1), 200);
@@ -396,6 +515,11 @@ async function createMeeting(payload = {}, user) {
   const saved = await meeting.save();
 
   if (saved.status === 'scheduled') {
+    saved.proposalStatusSnapshots = await applyMeetingManagedProposalStatuses(saved, user, saved.proposalIds);
+    await saved.save();
+  }
+
+  if (saved.status === 'scheduled') {
     const { recipientIds, proposals } = await resolveMeetingRecipients(saved.proposalIds, saved.participantIds);
     const proposalLabel = proposals.length > 0 ? ` สำหรับ ${proposals.length} โครงการ` : '';
     await createMeetingNotifications({
@@ -436,6 +560,10 @@ async function updateMeeting(id, payload = {}, user) {
   const meeting = await Meeting.findOne({ _id: id, isDeleted: { $ne: true } });
   if (!meeting) throw new Error('Meeting not found');
 
+  const previousStatus = String(meeting.status || '').trim().toLowerCase();
+  const previousProposalIds = normalizeIds(meeting.proposalIds);
+  const previousSnapshotMap = buildProposalStatusSnapshotMap(meeting);
+
   meeting.title = payload.title !== undefined ? payload.title : meeting.title;
   meeting.meetingDate = payload.meetingDate !== undefined ? payload.meetingDate : meeting.meetingDate;
   meeting.startTime = payload.startTime !== undefined ? payload.startTime : meeting.startTime;
@@ -458,6 +586,22 @@ async function updateMeeting(id, payload = {}, user) {
   meeting.proposalIds = nextProposalIds;
   meeting.participantIds = nextParticipantIds;
   meeting.updatedBy = user._id;
+
+  const nextStatus = String(meeting.status || '').trim().toLowerCase();
+  if (nextStatus === 'scheduled') {
+    const removedProposalIds = previousProposalIds.filter((proposalId) => !nextProposalIds.includes(proposalId));
+    if (removedProposalIds.length > 0) {
+      await restoreManagedProposalStatuses(meeting, user, removedProposalIds);
+    }
+
+    const keptSnapshotMap = new Map(
+      Array.from(previousSnapshotMap.entries()).filter(([proposalId]) => nextProposalIds.includes(proposalId))
+    );
+    meeting.proposalStatusSnapshots = await applyMeetingManagedProposalStatuses(meeting, user, nextProposalIds, keptSnapshotMap);
+  } else if (previousStatus === 'scheduled') {
+    await restoreManagedProposalStatuses(meeting, user);
+    meeting.proposalStatusSnapshots = [];
+  }
 
   await meeting.save();
 
@@ -513,6 +657,12 @@ async function deleteMeeting(id) {
   const meeting = await Meeting.findOne({ _id: id, isDeleted: { $ne: true } });
   if (!meeting) throw new Error('Meeting not found');
 
+  if (String(meeting.status || '').trim().toLowerCase() === 'scheduled') {
+    const systemUser = meeting.updatedBy || meeting.createdBy;
+    await restoreManagedProposalStatuses(meeting, { _id: systemUser || null });
+    meeting.proposalStatusSnapshots = [];
+  }
+
   meeting.isDeleted = true;
   await meeting.save();
 
@@ -532,52 +682,27 @@ async function updateMeetingMinutes(id, payload = {}, user) {
   return mapMeeting(meeting);
 }
 
-async function syncProposalStatusFromMeeting(meeting, user) {
-  const proposalIds = normalizeIds(meeting.proposalIds);
-  if (proposalIds.length === 0) return [];
-
-  const proposals = await Proposal.find({
-    _id: { $in: proposalIds },
-    isDeleted: { $ne: true }
-  });
-
-  const updated = [];
-  for (const proposal of proposals) {
-    if (![STATUS.ASSIGNED_TO_COMMITTEE, STATUS.UNDER_REVIEW].includes(proposal.currentStatus)) continue;
-
-    const fromStatus = proposal.currentStatus;
-    proposal.currentStatus = STATUS.MEETING_COMPLETED;
-    proposal.updatedBy = user._id;
-    await proposal.save();
-
-    await new ProposalStatusLog({
-      proposalId: proposal._id,
-      fromStatus,
-      toStatus: STATUS.MEETING_COMPLETED,
-      actionKey: 'meeting_completed',
-      remark: `Meeting: ${meeting.title}`,
-      roundNo: proposal.currentRound || 1,
-      changedBy: user._id
-    }).save();
-
-    updated.push(proposal);
-  }
-
-  return updated;
-}
-
 async function updateMeetingStatus(id, status, user) {
   const meeting = await Meeting.findOne({ _id: id, isDeleted: { $ne: true } });
   if (!meeting) throw new Error('Meeting not found');
 
-  meeting.status = status;
+  const nextStatus = String(status || '').trim().toLowerCase();
+  const previousStatus = String(meeting.status || '').trim().toLowerCase();
+
+  if (previousStatus === 'scheduled' && nextStatus !== 'scheduled') {
+    await restoreManagedProposalStatuses(meeting, user);
+    meeting.proposalStatusSnapshots = [];
+  } else if (previousStatus !== 'scheduled' && nextStatus === 'scheduled') {
+    meeting.proposalStatusSnapshots = await applyMeetingManagedProposalStatuses(meeting, user, meeting.proposalIds, buildProposalStatusSnapshotMap(meeting));
+  }
+
+  meeting.status = nextStatus;
   meeting.updatedBy = user._id;
   await meeting.save();
 
   const { recipientIds } = await resolveMeetingRecipients(meeting.proposalIds, meeting.participantIds);
 
-  if (status === 'completed') {
-    await syncProposalStatusFromMeeting(meeting, user);
+  if (nextStatus === 'completed') {
     await createMeetingNotifications({
       recipientIds,
       proposalIds: meeting.proposalIds,
@@ -587,7 +712,7 @@ async function updateMeetingStatus(id, status, user) {
     });
   }
 
-  if (status === 'cancelled') {
+  if (nextStatus === 'cancelled') {
     await createMeetingNotifications({
       recipientIds,
       proposalIds: meeting.proposalIds,

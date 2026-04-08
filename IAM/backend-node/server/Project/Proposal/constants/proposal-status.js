@@ -8,6 +8,7 @@ const STATUS = {
   FACULTY_APPROVED: 'faculty_approved',
   FACULTY_REJECTED: 'faculty_rejected',
   OFFICE_RECEIVED: 'office_received',
+  MEETING_IN_PROGRESS: 'meeting_in_progress',
   DOCUMENT_CHECKING: 'document_checking',
   ASSIGNED_TO_COMMITTEE: 'assigned_to_committee',
   UNDER_REVIEW: 'under_review',
