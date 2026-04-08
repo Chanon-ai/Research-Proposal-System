@@ -168,7 +168,7 @@ const DEFAULT_PROPOSAL_WORKFLOW = Object.freeze({
       faculty_review_pending: 'ประธานกำลังพิจารณา',
       faculty_approved: 'ประธานอนุมัติ',
       faculty_rejected: 'ประธานไม่อนุมัติ',
-      office_received: 'สำนักงานรับเรื่องแล้ว',
+      office_received: 'ส่วนบริหารรับแล้ว',
       finance_budget_checking: 'เจ้าหน้าที่กำลังตรวจสอบงบประมาณ',
       meeting_in_progress: 'กำลังจัดการประชุม',
       document_checking: 'ตรวจเอกสาร',

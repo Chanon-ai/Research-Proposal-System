@@ -7,7 +7,7 @@ module.exports = {
   [STATUS.FACULTY_REVIEW_PENDING]: 'ประธานกำลังพิจารณา',
   [STATUS.FACULTY_APPROVED]: 'ประธานอนุมัติ',
   [STATUS.FACULTY_REJECTED]: 'ประธานไม่อนุมัติ',
-  [STATUS.OFFICE_RECEIVED]: 'สำนักงานรับเรื่องแล้ว',
+  [STATUS.OFFICE_RECEIVED]: 'ส่วนบริหารรับแล้ว',
   [STATUS.FINANCE_BUDGET_CHECKING]: 'เจ้าหน้าที่กำลังตรวจสอบงบประมาณ',
   [STATUS.MEETING_IN_PROGRESS]: 'กำลังจัดการประชุม',
   [STATUS.DOCUMENT_CHECKING]: 'ตรวจเอกสาร',

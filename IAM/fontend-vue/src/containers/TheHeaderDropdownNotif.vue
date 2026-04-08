@@ -78,7 +78,7 @@ const STATUS_LABELS = {
   faculty_review_pending: 'ประธานกำลังพิจารณา',
   faculty_approved: 'ประธานอนุมัติ',
   faculty_rejected: 'ประธานไม่อนุมัติ',
-  office_received: 'สำนักงานรับเรื่องแล้ว',
+  office_received: 'ส่วนบริหารรับแล้ว',
   document_checking: 'ตรวจเอกสาร',
   assigned_to_committee: 'มอบหมายกรรมการแล้ว',
   under_review: 'พิจารณารอบ 1',
