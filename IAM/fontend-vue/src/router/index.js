@@ -163,79 +163,79 @@ const router = new Router({
           path: 'user/history',
           name: 'UserHistory',
           component: UserHistory,
-          meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['researcher'] }
         },
         {
           path: 'user/notification',
           name: 'UserNotification',
           component: UserNotification,
-          meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['researcher'] }
         },
         {
           path: 'user/meetings',
           name: 'UserMeetings',
           component: UserMeetings,
-          meta: { appAuth: 'research', roles: ['researcher', 'admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['researcher'] }
         },
         {
           path: 'admin-dashboard',
           name: 'AdminDashboardLegacy',
           component: AdminDashboard,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['admin'] }
         },
         {
           path: 'admin/dashboard',
           name: 'AdminDashboard',
           component: AdminDashboard,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['admin'] }
         },
         {
           path: 'admin/proposals',
           name: 'AdminProposalList',
           component: AdminProposalList,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['admin'] }
         },
         {
           path: 'admin/proposals/:id',
           name: 'AdminProposalDetail',
           component: AdminProposalDetail,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['admin'] }
         },
         {
           path: 'admin/documents',
           name: 'AdminDocuments',
           component: AdminDocuments,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['admin'] }
         },
         {
           path: 'admin/users',
           name: 'AdminUsers',
           component: AdminUsers,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['admin'] }
         },
         {
           path: 'admin/meetings',
           name: 'AdminMeetings',
           component: AdminMeetings,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['admin'] }
         },
         {
           path: 'admin/notifications',
           name: 'AdminNotifications',
           component: AdminNotifications,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['admin'] }
         },
         {
           path: 'admin/reports',
           name: 'AdminReports',
           component: AdminReports,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['admin'] }
         },
         {
           path: 'admin/settings',
           name: 'AdminSettings',
           component: AdminSettings,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['admin'] }
         },
         {
           path: 'research-form/:id?',
@@ -251,32 +251,32 @@ const router = new Router({
           path: 'committee/meetings',
           name: 'CommitteeMeetings',
           component: CommitteeMeetings,
-          meta: { appAuth: 'research', roles: ['committee', 'admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['committee'] }
         },
         {
           path: 'committee/notifications',
           name: 'CommitteeNotifications',
           component: CommitteeNotifications,
-          meta: { appAuth: 'research', roles: ['committee', 'admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['committee'] }
         },
         {
           path: 'committee/dashboard',
           name: 'CommitteeDashboard',
           component: CommitteeDashboard,
-          meta: { appAuth: 'research', roles: ['committee', 'admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['committee'] }
         },
         {
           path: 'committee/assigned',
           name: 'CommitteeAssigned',
           component: CommitteeAssigned,
-          meta: { appAuth: 'research', roles: ['committee', 'admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['committee'] }
         },
         {
           path: 'committee/proposals/:id',
           alias: '/review/proposals/:id',
           name: 'committeeProposalDetail',
           component: CommitteeProposalDetail,
-          meta: { appAuth: 'research', roles: ['committee', 'admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['committee'] }
         },
         {
           path: 'committee/logout',
@@ -286,31 +286,31 @@ const router = new Router({
           path: 'chairman/meetings',
           name: 'ChairmanMeetings',
           component: ChairmanMeetings,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['chairman'] }
         },
         {
           path: 'chairman/notifications',
           name: 'ChairmanNotifications',
           component: ChairmanNotifications,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['chairman'] }
         },
         {
           path: 'chairman/dashboard',
           name: 'ChairmanDashboard',
           component: ChairmanDashboard,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['chairman'] }
         },
         {
           path: 'chairman/assigned',
           name: 'ChairmanAssigned',
           component: ChairmanAssigned,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['chairman'] }
         },
         {
           path: 'chairman/proposals/:id',
           name: 'chairmanProposalDetail',
           component: ChairmanProposalDetail,
-          meta: { appAuth: 'research', roles: ['admin', 'chairman'] }
+          meta: { appAuth: 'research', roles: ['chairman'] }
         },
         {
           path: 'chairman/logout',

@@ -16,35 +16,35 @@ const DEFAULT_ROLE_PAGE_ACCESS_CONFIG_SOURCE = [
     label: 'หน้าหลักผู้วิจัย',
     path: '/userdashboard',
     matchMode: 'exact',
-    roles: ['researcher', 'admin', 'chairman']
+    roles: ['researcher']
   },
   {
     pageKey: 'user-profile',
     label: 'โปรไฟล์ผู้วิจัย',
     path: '/user/profile',
     matchMode: 'exact',
-    roles: ['researcher', 'admin', 'chairman']
+    roles: ['researcher']
   },
   {
     pageKey: 'user-history',
     label: 'ประวัติการยื่นโครงการ',
     path: '/user/history',
     matchMode: 'exact',
-    roles: ['researcher', 'admin', 'chairman']
+    roles: ['researcher']
   },
   {
     pageKey: 'user-notification',
     label: 'การแจ้งเตือนผู้วิจัย',
     path: '/user/notification',
     matchMode: 'exact',
-    roles: ['researcher', 'admin', 'chairman']
+    roles: ['researcher']
   },
   {
     pageKey: 'user-meetings',
     label: 'ตารางประชุมผู้วิจัย',
     path: '/user/meetings',
     matchMode: 'exact',
-    roles: ['researcher', 'admin', 'chairman']
+    roles: ['researcher']
   },
   {
     pageKey: 'research-form',
@@ -58,127 +58,127 @@ const DEFAULT_ROLE_PAGE_ACCESS_CONFIG_SOURCE = [
     label: 'แดชบอร์ดแอดมิน',
     path: '/admin/dashboard',
     matchMode: 'exact',
-    roles: ['admin', 'chairman']
+    roles: ['admin']
   },
   {
     pageKey: 'admin-proposals',
     label: 'จัดการโครงการ',
     path: '/admin/proposals',
     matchMode: 'prefix',
-    roles: ['admin', 'chairman']
+    roles: ['admin']
   },
   {
     pageKey: 'admin-documents',
     label: 'เอกสารโครงการ',
     path: '/admin/documents',
     matchMode: 'exact',
-    roles: ['admin', 'chairman']
+    roles: ['admin']
   },
   {
     pageKey: 'admin-users',
     label: 'จัดการผู้ใช้งาน',
     path: '/admin/users',
     matchMode: 'exact',
-    roles: ['admin', 'chairman']
+    roles: ['admin']
   },
   {
     pageKey: 'admin-meetings',
     label: 'จัดการประชุม',
     path: '/admin/meetings',
     matchMode: 'exact',
-    roles: ['admin', 'chairman']
+    roles: ['admin']
   },
   {
     pageKey: 'admin-notifications',
     label: 'การแจ้งเตือนแอดมิน',
     path: '/admin/notifications',
     matchMode: 'exact',
-    roles: ['admin', 'chairman']
+    roles: ['admin']
   },
   {
     pageKey: 'admin-reports',
     label: 'รายงาน',
     path: '/admin/reports',
     matchMode: 'exact',
-    roles: ['admin', 'chairman']
+    roles: ['admin']
   },
   {
     pageKey: 'admin-settings',
     label: 'ตั้งค่าระบบ',
     path: '/admin/settings',
     matchMode: 'exact',
-    roles: ['admin', 'chairman'],
-    requiredRoles: ['admin', 'chairman']
+    roles: ['admin'],
+    requiredRoles: ['admin']
   },
   {
     pageKey: 'committee-dashboard',
     label: 'แดชบอร์ดคณะกรรมการ',
     path: '/committee/dashboard',
     matchMode: 'exact',
-    roles: ['committee', 'admin', 'chairman']
+    roles: ['committee']
   },
   {
     pageKey: 'committee-assigned',
     label: 'รายการที่ได้รับมอบหมาย',
     path: '/committee/assigned',
     matchMode: 'exact',
-    roles: ['committee', 'admin', 'chairman']
+    roles: ['committee']
   },
   {
     pageKey: 'committee-meetings',
     label: 'ประชุมคณะกรรมการ',
     path: '/committee/meetings',
     matchMode: 'exact',
-    roles: ['committee', 'admin', 'chairman']
+    roles: ['committee']
   },
   {
     pageKey: 'committee-notifications',
     label: 'การแจ้งเตือนคณะกรรมการ',
     path: '/committee/notifications',
     matchMode: 'exact',
-    roles: ['committee', 'admin', 'chairman']
+    roles: ['committee']
   },
   {
     pageKey: 'committee-proposals',
     label: 'หน้าอ่านข้อเสนอของกรรมการ',
     path: '/committee/proposals',
     matchMode: 'prefix',
-    roles: ['committee', 'admin', 'chairman']
+    roles: ['committee']
   },
   {
     pageKey: 'chairman-dashboard',
     label: 'แดชบอร์ดประธานสำนัก',
     path: '/chairman/dashboard',
     matchMode: 'exact',
-    roles: ['admin', 'chairman']
+    roles: ['chairman']
   },
   {
     pageKey: 'chairman-assigned',
     label: 'รายการที่ได้รับมอบหมายประธานสำนัก',
     path: '/chairman/assigned',
     matchMode: 'exact',
-    roles: ['admin', 'chairman']
+    roles: ['chairman']
   },
   {
     pageKey: 'chairman-meetings',
     label: 'ประชุมประธานสำนัก',
     path: '/chairman/meetings',
     matchMode: 'exact',
-    roles: ['admin', 'chairman']
+    roles: ['chairman']
   },
   {
     pageKey: 'chairman-notifications',
     label: 'การแจ้งเตือนประธานสำนัก',
     path: '/chairman/notifications',
     matchMode: 'exact',
-    roles: ['admin', 'chairman']
+    roles: ['chairman']
   },
   {
     pageKey: 'chairman-proposals',
     label: 'หน้าอ่านข้อเสนอของประธานสำนัก',
     path: '/chairman/proposals',
     matchMode: 'prefix',
-    roles: ['admin', 'chairman']
+    roles: ['chairman']
   }
 ]
 
