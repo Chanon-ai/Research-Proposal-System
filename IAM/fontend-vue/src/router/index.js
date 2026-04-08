@@ -875,12 +875,12 @@ function isOwnerProfile(profile) {
 
 function getStoredRole() {
   const storeRole = store.getters && store.getters['Authentication/userRole']
-  if (storeRole) return storeRole
+  if (storeRole) return mapRoleForResearchAccess(storeRole)
   try {
     const raw = localStorage.getItem('auth_user')
     if (!raw) return null
     const parsed = JSON.parse(raw)
-    return parsed && parsed.role ? parsed.role : null
+    return parsed && parsed.role ? mapRoleForResearchAccess(parsed.role) : null
   } catch (e) {
     return null
   }
@@ -942,12 +942,12 @@ router.beforeEach(async (to, from, next) => {
       record.meta && Array.isArray(record.meta.roles) && record.meta.roles.length > 0
     ))
     if (roleRecords.length) {
-      const allowed = roleRecords.every(record => record.meta.roles.includes(researchRole))
+      const allowed = roleRecords.every(record => record.meta.roles.includes(researchRoleForAccess))
       if (!allowed) {
-        if (researchRole === 'admin') return next('/admin/dashboard')
-        if (researchRole === 'committee') return next('/committee/assigned')
-        if (researchRole === 'chairman') return next('/chairman/assigned')
-        if (researchRole === 'finance_officer') return next('/finance-officer/assigned')
+        if (researchRoleForAccess === 'admin') return next('/admin/dashboard')
+        if (researchRoleForAccess === 'committee') return next('/committee/assigned')
+        if (researchRoleForAccess === 'chairman') return next('/chairman/assigned')
+        if (researchRoleForAccess === 'finance_officer') return next('/finance-officer/assigned')
         return next('/userdashboard')
       }
     }

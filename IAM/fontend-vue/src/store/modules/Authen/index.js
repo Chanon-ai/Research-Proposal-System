@@ -9,6 +9,12 @@ const RESEARCH_TOKEN_STORAGE_KEY = 'auth_token';
 const RESEARCH_USER_STORAGE_KEY = 'auth_user';
 const RESEARCH_AVATAR_HINT_STORAGE_KEY = 'auth_avatar_hint';
 
+function normalizeResearchRole(role) {
+    const normalizedRole = String(role || '').trim().toLowerCase().replace(/-/g, '_');
+    if (normalizedRole === 'finance_office') return 'finance_officer';
+    return normalizedRole;
+}
+
 function getOrCreateDeviceId() {
     if (typeof window === 'undefined' || !window.localStorage) {
         return '';
@@ -45,7 +51,9 @@ function setTokenToLocalStorage(token) {
 function parseResearchAuth(raw) {
     if (!raw || typeof raw !== 'object') return null;
     const token = raw.token ? String(raw.token).trim() : '';
-    const user = raw.user && typeof raw.user === 'object' ? raw.user : null;
+    const user = raw.user && typeof raw.user === 'object'
+        ? Object.assign({}, raw.user, { role: normalizeResearchRole(raw.user.role) })
+        : null;
     if (!token || !user) return null;
     return { token, user };
 }
@@ -151,7 +159,7 @@ function resolveSignedInRoute() {
     }
 
     const role = store.getters && store.getters['Authentication/userRole']
-        ? String(store.getters['Authentication/userRole']).trim().toLowerCase()
+        ? normalizeResearchRole(store.getters['Authentication/userRole'])
         : '';
 
     if (role === 'admin') return '/admin/dashboard';
