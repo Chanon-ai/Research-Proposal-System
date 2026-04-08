@@ -899,6 +899,7 @@
       "submit": "Submit decision",
       "decisionOptions": {
         "approve": "Approve",
+        "revision": "Request revision",
         "reject": "Reject"
       },
       "status": {
@@ -992,11 +993,13 @@
       "reviewBudget": "Review Budget",
       "back": "Back",
       "saveDraft": "Save Draft",
+      "requestRevision": "Request Revision",
       "submitToAdmin": "Submit to Admin"
     },
     "status": {
       "idle": "Not Started",
       "pending": "Pending Review Note",
+      "revision_requested": "Revision Requested",
       "submitted": "Review Submitted"
     },
     "errors": {
@@ -1055,10 +1058,15 @@
       "saveDraftSuccess": "Draft saved",
       "saveDraftError": "Unable to save draft",
       "requireComment": "Please enter a finance review note before submitting",
+      "confirmRevisionTitle": "Confirm sending a finance revision request",
+      "confirmRevisionText": "After submission, the researcher will receive a revision request and this review can be reopened once the revised proposal is sent back.",
+      "confirmRevisionButton": "Confirm Revision Request",
       "confirmSubmitTitle": "Confirm finance review submission",
       "confirmSubmitText": "After submission, the note will be sent back to the admin and editing will be locked",
       "confirmSubmitButton": "Confirm Submit",
       "cancel": "Cancel",
+      "revisionSuccess": "Revision request sent to the researcher",
+      "revisionError": "Unable to send the revision request",
       "submitSuccess": "Finance review submitted to admin",
       "submitError": "Unable to submit finance review",
       "retry": "Please try again."

@@ -72,7 +72,8 @@
                 <div class="d-flex justify-content-end mt-4">
                   <CButton color="secondary" variant="outline" class="mr-2" @click="goBack">{{ $t('finance.actions.back') }}</CButton>
                   <CButton color="info" class="mr-2" :disabled="isLocked || isSubmitting" @click="saveDraft">{{ $t('finance.actions.saveDraft') }}</CButton>
-                  <CButton color="primary" :disabled="isLocked || isSubmitting" @click="submitReview">{{ $t('finance.actions.submitToAdmin') }}</CButton>
+                  <CButton color="warning" class="mr-2" :disabled="isLocked || isSubmitting" @click="submitReview('revision')">{{ $t('finance.actions.requestRevision') }}</CButton>
+                  <CButton color="primary" :disabled="isLocked || isSubmitting" @click="submitReview('submit')">{{ $t('finance.actions.submitToAdmin') }}</CButton>
                 </div>
               </div>
             </CCardBody>
@@ -233,18 +234,20 @@ export default {
         this.isSubmitting = false
       }
     },
-    async submitReview () {
+    async submitReview (mode = 'submit') {
       if (!String(this.form.summaryComment || '').trim()) {
         await Swal.fire({ icon: 'warning', title: this.$t('finance.alerts.requireComment') })
         return
       }
 
+      const isRevisionMode = mode === 'revision'
+
       const confirmed = await Swal.fire({
         icon: 'question',
-        title: this.$t('finance.alerts.confirmSubmitTitle'),
-        text: this.$t('finance.alerts.confirmSubmitText'),
+        title: isRevisionMode ? this.$t('finance.alerts.confirmRevisionTitle') : this.$t('finance.alerts.confirmSubmitTitle'),
+        text: isRevisionMode ? this.$t('finance.alerts.confirmRevisionText') : this.$t('finance.alerts.confirmSubmitText'),
         showCancelButton: true,
-        confirmButtonText: this.$t('finance.alerts.confirmSubmitButton'),
+        confirmButtonText: isRevisionMode ? this.$t('finance.alerts.confirmRevisionButton') : this.$t('finance.alerts.confirmSubmitButton'),
         cancelButtonText: this.$t('finance.alerts.cancel')
       })
       if (!confirmed.isConfirmed) return
@@ -253,14 +256,20 @@ export default {
       try {
         await Service.proposal.saveFinanceReview(encodeURIComponent(this.proposalId), {
           summaryComment: this.form.summaryComment,
+          decision: isRevisionMode ? 'revision' : 'submit',
           isSubmit: true
         })
         await this.fetchProposal()
-        await Swal.fire({ icon: 'success', title: this.$t('finance.alerts.submitSuccess'), timer: 1600, showConfirmButton: false })
+        await Swal.fire({
+          icon: 'success',
+          title: isRevisionMode ? this.$t('finance.alerts.revisionSuccess') : this.$t('finance.alerts.submitSuccess'),
+          timer: 1600,
+          showConfirmButton: false
+        })
       } catch (error) {
         await Swal.fire({
           icon: 'error',
-          title: this.$t('finance.alerts.submitError'),
+          title: isRevisionMode ? this.$t('finance.alerts.revisionError') : this.$t('finance.alerts.submitError'),
           text: (error && error.response && error.response.data && error.response.data.message) || this.$t('finance.alerts.retry')
         })
       } finally {

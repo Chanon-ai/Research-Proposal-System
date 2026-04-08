@@ -401,6 +401,7 @@ export default {
     decisionOptions () {
       return [
         { value: 'approve', label: this.$t('chairman.proposalDetail.decisionOptions.approve') },
+        { value: 'revision', label: this.$t('chairman.proposalDetail.decisionOptions.revision') },
         { value: 'reject', label: this.$t('chairman.proposalDetail.decisionOptions.reject') }
       ]
     }
@@ -669,7 +670,11 @@ export default {
           ...this.form,
           checklistValues: this.extractChecklistValues(review),
           comments: review.summaryComment || '',
-          decision: review.decision === 'reject' ? 'reject' : 'approve'
+          decision: review.decision === 'reject'
+            ? 'reject'
+            : (review.decision === 'revision' || review.decision === 'request_revision' || review.decision === 'revision_requested'
+                ? 'revision'
+                : 'approve')
         }
         this.signatureData = String(review && review.signatureData ? review.signatureData : '')
         this.signatureTimestamp = review && (review.signatureUpdatedAt || review.submittedAt)
@@ -678,7 +683,7 @@ export default {
         this.submittedAt = review && review.submittedAt ? String(review.submittedAt) : ''
         if (this.signatureData) this.saveSignatureToStorage()
 
-        if (isLockedReview) {
+        if (isLockedReview && !this.isPendingChairmanReview) {
           this.isEvaluationLocked = true
           this.submittedBannerVisible = true
         } else {
@@ -880,6 +885,7 @@ export default {
       const proposalId = this.proposal._id || this.proposal.id
       const decisionMap = {
         approve: 'approve',
+        revision: 'revision',
         reject: 'reject'
       }
 
