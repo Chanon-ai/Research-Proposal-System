@@ -669,9 +669,9 @@
   "chairman": {
     "meetings": {
       "hero": {
-        "eyebrow": "Office Chairman Meetings",
+        "eyebrow": "Chairman Meetings",
         "title": "กำหนดการประชุมประธานสำนัก",
-        "subtitle": "แสดงเฉพาะการประชุมที่มีชื่อของคุณ"
+        "subtitle": "แสดงเฉพาะการประชุมที่เกี่ยวข้องกับคุณ"
       }
     },
     "proposalDetail": {

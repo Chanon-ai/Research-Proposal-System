@@ -36,7 +36,39 @@ function getProposalStakeholderIds(proposal = {}) {
     const normalizedId = String(userId || '').trim();
     if (normalizedId) recipientIds.add(normalizedId);
   });
+  const chairmanAssignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+    ? proposal.chairmanAssignment
+    : {};
+  (Array.isArray(chairmanAssignment.assignedChairmanIds) ? chairmanAssignment.assignedChairmanIds : []).forEach((userId) => {
+    const normalizedId = String(userId || '').trim();
+    if (normalizedId) recipientIds.add(normalizedId);
+  });
+  if (chairmanAssignment.reviewedBy) {
+    const normalizedId = String(chairmanAssignment.reviewedBy || '').trim();
+    if (normalizedId) recipientIds.add(normalizedId);
+  }
   return Array.from(recipientIds);
+}
+
+function buildMeetingRelatedProposalFilters(user = {}) {
+  if (!user || !user._id || !user.role) return [];
+  const role = String(user.role || '').trim().toLowerCase();
+  if (role === 'researcher') {
+    return [{ applicantUserId: user._id }];
+  }
+  if (role === 'committee') {
+    return [
+      { applicantUserId: user._id },
+      { committeeIds: user._id }
+    ];
+  }
+  if (role === 'chairman') {
+    return [
+      { 'chairmanAssignment.assignedChairmanIds': user._id },
+      { 'chairmanAssignment.reviewedBy': user._id }
+    ];
+  }
+  return [];
 }
 
 async function notifyProposalStakeholders({ proposal, eventKey, title, message, payload = {}, remarks = '', proposalStatusLogId = null }) {
@@ -227,7 +259,7 @@ async function resolveMeetingParticipants(proposalIds = [], participantIds = [])
     proposals = await Proposal.find({
       _id: { $in: normalizedProposalIds },
       isDeleted: { $ne: true }
-    }).select('_id applicantUserId committeeIds');
+    }).select('_id applicantUserId committeeIds chairmanAssignment');
 
     proposals.forEach((proposal) => {
       if (proposal && proposal.applicantUserId) {
@@ -236,6 +268,15 @@ async function resolveMeetingParticipants(proposalIds = [], participantIds = [])
       (proposal && Array.isArray(proposal.committeeIds) ? proposal.committeeIds : []).forEach((userId) => {
         merged.add(String(userId));
       });
+      const chairmanAssignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+        ? proposal.chairmanAssignment
+        : {};
+      (Array.isArray(chairmanAssignment.assignedChairmanIds) ? chairmanAssignment.assignedChairmanIds : []).forEach((userId) => {
+        merged.add(String(userId));
+      });
+      if (chairmanAssignment.reviewedBy) {
+        merged.add(String(chairmanAssignment.reviewedBy));
+      }
     });
   }
 
@@ -342,16 +383,10 @@ async function listMeetings(query = {}, user) {
 
   // Access control: committee/researcher see only meetings related to them.
   // Related means: explicitly listed in participantIds OR attached to proposals where user is applicant/committee.
-  if (user && user._id && user.role && !['admin', 'chairman'].includes(user.role)) {
+  if (user && user._id && user.role && user.role !== 'admin') {
     const orFilters = [{ participantIds: user._id }];
 
-    const proposalOr = [];
-    if (user.role === 'researcher') {
-      proposalOr.push({ applicantUserId: user._id });
-    } else {
-      proposalOr.push({ applicantUserId: user._id });
-      proposalOr.push({ committeeIds: user._id });
-    }
+    const proposalOr = buildMeetingRelatedProposalFilters(user);
 
     if (proposalOr.length) {
       const relatedProposals = await Proposal.find({
@@ -450,16 +485,10 @@ async function getMeetingsSummary(query = {}, user) {
     filter.meetingDate = range;
   }
 
-  if (user && user._id && user.role && !['admin', 'chairman'].includes(user.role)) {
+  if (user && user._id && user.role && user.role !== 'admin') {
     const orFilters = [{ participantIds: user._id }];
 
-    const proposalOr = [];
-    if (user.role === 'researcher') {
-      proposalOr.push({ applicantUserId: user._id });
-    } else {
-      proposalOr.push({ applicantUserId: user._id });
-      proposalOr.push({ committeeIds: user._id });
-    }
+    const proposalOr = buildMeetingRelatedProposalFilters(user);
 
     if (proposalOr.length) {
       const relatedProposals = await Proposal.find({
@@ -507,7 +536,7 @@ async function resolveMeetingRecipients(proposalIds = [], participantIds = []) {
     proposals = await Proposal.find({
       _id: { $in: proposalIds },
       isDeleted: { $ne: true }
-    }).select('_id proposalCode projectTitleTh applicantUserId committeeIds');
+    }).select('_id proposalCode projectTitleTh applicantUserId committeeIds chairmanAssignment');
 
     proposals.forEach((proposal) => {
       if (proposal && proposal.applicantUserId) {
@@ -516,6 +545,15 @@ async function resolveMeetingRecipients(proposalIds = [], participantIds = []) {
       (proposal && Array.isArray(proposal.committeeIds) ? proposal.committeeIds : []).forEach((userId) => {
         recipientIds.add(String(userId));
       });
+      const chairmanAssignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+        ? proposal.chairmanAssignment
+        : {};
+      (Array.isArray(chairmanAssignment.assignedChairmanIds) ? chairmanAssignment.assignedChairmanIds : []).forEach((userId) => {
+        recipientIds.add(String(userId));
+      });
+      if (chairmanAssignment.reviewedBy) {
+        recipientIds.add(String(chairmanAssignment.reviewedBy));
+      }
     });
   }
 

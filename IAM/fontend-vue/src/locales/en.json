@@ -669,9 +669,9 @@
   "chairman": {
     "meetings": {
       "hero": {
-        "eyebrow": "Office Chairman Meetings",
+        "eyebrow": "Chairman Meetings",
         "title": "Chairman Meeting Schedule",
-        "subtitle": "Show only meetings that include your name"
+        "subtitle": "Show only meetings related to you"
       }
     },
     "proposalDetail": {

@@ -615,11 +615,11 @@ export default {
       try { const raw = localStorage.getItem('auth_user'); return raw ? JSON.parse(raw) : null } catch (e) { return null }
     },
     currentUserId() { const user = this.currentUser; return user && user._id ? String(user._id) : '' },
+    currentUserRole() { const user = this.currentUser || {}; return String(user.role || '').trim().toLowerCase() },
     currentUserName() { const user = this.currentUser || {}; return String(user.fullName || user.name || user.displayName || user.username || '').trim() },
     currentUserEmail() { const user = this.currentUser || {}; return String(user.email || '').trim() },
     applyMyOnlyFilter() {
-      const role = this.currentUser && this.currentUser.role ? String(this.currentUser.role) : ''
-      return Boolean(this.myOnly && ['committee', 'chairman'].includes(role) && (this.currentUserId || this.currentUserName || this.currentUserEmail))
+      return Boolean(this.myOnly && this.currentUserRole === 'committee' && (this.currentUserId || this.currentUserName || this.currentUserEmail))
     },
     canCreate() { return !this.readOnly },
     canEditDelete() { return !this.readOnly },
