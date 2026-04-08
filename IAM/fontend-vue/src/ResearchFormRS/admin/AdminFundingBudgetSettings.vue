@@ -4,14 +4,14 @@
       <CCardHeader>
         <div class="funding-budget-toolbar">
           <div>
-            <div class="font-weight-bold">ตั้งค่าประเภททุนและงบประมาณ</div>
+            <div class="font-weight-bold">{{ $t('fundingBudget.title') }}</div>
             <small class="text-muted">
-              เพิ่ม/แก้ไขประเภททุน ทุนย่อย และเพดานงบประมาณต่อทุนได้จากหน้านี้
+              {{ $t('fundingBudget.subtitle') }}
             </small>
           </div>
           <div class="funding-budget-summary">
-            <CBadge color="info">ประเภททุน {{ fundingBudgetConfig.length }}</CBadge>
-            <CBadge color="secondary">ทุนย่อย {{ totalSubOptionCount }}</CBadge>
+            <CBadge color="info">{{ $t('fundingBudget.badgeFundingType') }} {{ fundingBudgetConfig.length }}</CBadge>
+            <CBadge color="secondary">{{ $t('fundingBudget.badgeSubOption') }} {{ totalSubOptionCount }}</CBadge>
           </div>
         </div>
       </CCardHeader>
@@ -19,15 +19,15 @@
       <CCardBody>
         <div v-if="loading" class="text-center py-4">
           <CSpinner color="primary" />
-          <div class="mt-2 text-muted">กำลังโหลดการตั้งค่าทุน...</div>
+          <div class="mt-2 text-muted">{{ $t('fundingBudget.loading') }}</div>
         </div>
 
         <template v-else>
           <div v-if="fundingBudgetConfig.length === 0" class="funding-budget-empty">
-            <div class="font-weight-bold mb-2">ยังไม่มีประเภททุน</div>
-            <small class="text-muted d-block mb-3">กดปุ่ม "เพิ่มประเภททุน" เพื่อเริ่มตั้งค่า</small>
+            <div class="font-weight-bold mb-2">{{ $t('fundingBudget.emptyTitle') }}</div>
+            <small class="text-muted d-block mb-3">{{ $t('fundingBudget.emptyHint') }}</small>
             <CButton color="primary" @click="addFundingType">
-              <CIcon name="cil-plus" class="mr-1" /> เพิ่มประเภททุน
+              <CIcon name="cil-plus" class="mr-1" /> {{ $t('fundingBudget.addTypeBtn') }}
             </CButton>
           </div>
 
@@ -37,9 +37,9 @@
             class="funding-type-card mb-3"
           >
             <CCardHeader class="funding-type-card__header">
-              <div class="font-weight-bold">ประเภททุนที่ {{ typeIndex + 1 }}</div>
+              <div class="font-weight-bold">{{ $t('fundingBudget.typeHeader', { n: typeIndex + 1 }) }}</div>
               <CButton color="danger" variant="outline" size="sm" @click="removeFundingType(typeIndex)">
-                <CIcon name="cil-trash" class="mr-1" /> ลบประเภททุน
+                <CIcon name="cil-trash" class="mr-1" /> {{ $t('fundingBudget.removeTypeBtn') }}
               </CButton>
             </CCardHeader>
 
@@ -47,16 +47,16 @@
               <CRow>
                 <CCol md="4">
                   <CInput
-                    label="รหัสประเภททุน (key)"
-                    placeholder="เช่น new-researcher"
+                    :label="$t('fundingBudget.keyLabel')"
+                    :placeholder="$t('fundingBudget.keyPlaceholder')"
                     v-model.trim="type.key"
                     @blur="applyFundingTypeKey(typeIndex)"
                   />
                 </CCol>
                 <CCol md="4">
                   <CInput
-                    label="ชื่อประเภททุน"
-                    placeholder="เช่น ทุนนักวิจัยรุ่นใหม่"
+                    :label="$t('fundingBudget.nameLabel')"
+                    :placeholder="$t('fundingBudget.namePlaceholder')"
                     v-model.trim="type.label"
                   />
                 </CCol>
@@ -65,20 +65,20 @@
                     type="number"
                     min="0"
                     step="1000"
-                    label="เพดานงบประมาณ (บาท)"
+                    :label="$t('fundingBudget.budgetLimitLabel')"
                     v-model.number="type.budgetLimit"
                   />
                 </CCol>
               </CRow>
 
-              <div class="funding-suboptions-title">ตัวเลือกทุนย่อย</div>
+              <div class="funding-suboptions-title">{{ $t('fundingBudget.subOptionsTitle') }}</div>
               <div class="table-responsive funding-suboptions-table">
                 <table class="table table-bordered table-striped mb-0">
                   <thead>
                     <tr>
-                      <th style="width: 22%;">รหัสทุนย่อย</th>
-                      <th>ชื่อทุนย่อย</th>
-                      <th style="width: 120px;">จัดการ</th>
+                      <th style="width: 22%;">{{ $t('fundingBudget.subKeyCol') }}</th>
+                      <th>{{ $t('fundingBudget.subNameCol') }}</th>
+                      <th style="width: 120px;">{{ $t('fundingBudget.manageCol') }}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -90,7 +90,7 @@
                         <input
                           class="form-control"
                           :value="subOption.key"
-                          placeholder="เช่น economic-development"
+                          :placeholder="$t('fundingBudget.subKeyPlaceholder')"
                           @input="updateSubOptionKey(typeIndex, subIndex, $event.target.value)"
                           @blur="applySubOptionKey(typeIndex, subIndex)"
                         />
@@ -99,7 +99,7 @@
                         <input
                           class="form-control"
                           :value="subOption.label"
-                          placeholder="เช่น เศรษฐกิจสร้างสรรค์"
+                          :placeholder="$t('fundingBudget.subNamePlaceholder')"
                           @input="updateSubOptionLabel(typeIndex, subIndex, $event.target.value)"
                         />
                       </td>
@@ -110,12 +110,12 @@
                           size="sm"
                           @click="removeFundingSubOption(typeIndex, subIndex)"
                         >
-                          <CIcon name="cil-x" class="mr-1" /> ลบ
+                          <CIcon name="cil-x" class="mr-1" /> {{ $t('fundingBudget.deleteBtn') }}
                         </CButton>
                       </td>
                     </tr>
                     <tr v-if="!type.subOptions || type.subOptions.length === 0">
-                      <td colspan="3" class="text-center text-muted">ยังไม่มีทุนย่อยสำหรับประเภททุนนี้</td>
+                      <td colspan="3" class="text-center text-muted">{{ $t('fundingBudget.subEmpty') }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -123,7 +123,7 @@
 
               <div class="mt-3">
                 <CButton color="secondary" variant="outline" size="sm" @click="addFundingSubOption(typeIndex)">
-                  <CIcon name="cil-plus" class="mr-1" /> เพิ่มทุนย่อย
+                  <CIcon name="cil-plus" class="mr-1" /> {{ $t('fundingBudget.addSubBtn') }}
                 </CButton>
               </div>
             </CCardBody>
@@ -131,13 +131,13 @@
 
           <div class="funding-budget-actions">
             <CButton color="secondary" variant="outline" @click="addFundingType">
-              <CIcon name="cil-plus" class="mr-1" /> เพิ่มประเภททุน
+              <CIcon name="cil-plus" class="mr-1" /> {{ $t('fundingBudget.addTypeBtn') }}
             </CButton>
             <CButton color="warning" variant="outline" @click="resetToDefault">
-              <CIcon name="cil-reload" class="mr-1" /> รีเซ็ตค่าเริ่มต้น
+              <CIcon name="cil-reload" class="mr-1" /> {{ $t('fundingBudget.resetBtn') }}
             </CButton>
             <CButton color="primary" :disabled="saving" @click="saveFundingBudgetConfig">
-              <CIcon name="cil-save" class="mr-1" /> {{ saving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่าทุน' }}
+              <CIcon name="cil-save" class="mr-1" /> {{ saving ? $t('fundingBudget.saving') : $t('fundingBudget.saveBtn') }}
             </CButton>
           </div>
         </template>
@@ -148,14 +148,14 @@
       <CCardHeader>
         <div class="funding-budget-toolbar">
           <div>
-            <div class="font-weight-bold">ตั้งค่ารูปแบบตัวคูณงบประมาณ</div>
+            <div class="font-weight-bold">{{ $t('fundingBudget.multiplier.title') }}</div>
             <small class="text-muted">
-              เพิ่ม/ลด/ปรับชื่อ ค่าเริ่มต้น และค่าสูงสุดของตัวคูณในแต่ละหมวด เพื่อใช้ในหน้า BudgetSectionDemo
+              {{ $t('fundingBudget.multiplier.subtitle') }}
             </small>
           </div>
           <div class="funding-budget-summary">
-            <CBadge color="info">หมวดงบ {{ budgetMultiplierConfig.length }}</CBadge>
-            <CBadge color="secondary">ตัวคูณทั้งหมด {{ totalMultiplierCount }}</CBadge>
+            <CBadge color="info">{{ $t('fundingBudget.multiplier.badgeCategory') }} {{ budgetMultiplierConfig.length }}</CBadge>
+            <CBadge color="secondary">{{ $t('fundingBudget.multiplier.badgeTotal') }} {{ totalMultiplierCount }}</CBadge>
           </div>
         </div>
       </CCardHeader>
@@ -163,7 +163,7 @@
       <CCardBody>
         <div v-if="loading" class="text-center py-4">
           <CSpinner color="primary" />
-          <div class="mt-2 text-muted">กำลังโหลดรูปแบบตัวคูณ...</div>
+          <div class="mt-2 text-muted">{{ $t('fundingBudget.multiplier.loading') }}</div>
         </div>
 
         <template v-else>
@@ -178,7 +178,7 @@
                 <small class="text-muted ml-1">({{ category.categoryKey }})</small>
               </div>
               <CButton color="secondary" variant="outline" size="sm" @click="addBudgetMultiplier(categoryIndex)">
-                <CIcon name="cil-plus" class="mr-1" /> เพิ่มตัวคูณ
+                <CIcon name="cil-plus" class="mr-1" /> {{ $t('fundingBudget.multiplier.addBtn') }}
               </CButton>
             </CCardHeader>
             <CCardBody>
@@ -186,11 +186,11 @@
                 <table class="table table-bordered table-striped mb-0">
                   <thead>
                     <tr>
-                      <th style="width: 32%;">ชื่อตัวคูณ</th>
-                      <th style="width: 17%;">ค่าเริ่มต้น</th>
-                      <th style="width: 19%;">ค่าสูงสุดที่กรอกได้</th>
-                      <th style="width: 16%;">อนุญาตให้ผู้ใช้กรอก</th>
-                      <th style="width: 16%;">จัดการ</th>
+                      <th style="width: 32%;">{{ $t('fundingBudget.multiplier.colName') }}</th>
+                      <th style="width: 17%;">{{ $t('fundingBudget.multiplier.colDefault') }}</th>
+                      <th style="width: 19%;">{{ $t('fundingBudget.multiplier.colMax') }}</th>
+                      <th style="width: 16%;">{{ $t('fundingBudget.multiplier.colUserInput') }}</th>
+                      <th style="width: 16%;">{{ $t('fundingBudget.manageCol') }}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -234,7 +234,7 @@
                             @update:checked="(checked) => updateBudgetMultiplierUserInputAllowed(categoryIndex, multiplierIndex, checked)"
                           />
                           <small :class="multiplier.isAdmin ? 'text-muted' : 'text-success'">
-                            {{ multiplier.isAdmin ? 'ปิด' : 'เปิด' }}
+                            {{ multiplier.isAdmin ? $t('fundingBudget.multiplier.off') : $t('fundingBudget.multiplier.on') }}
                           </small>
                         </div>
                       </td>
@@ -251,15 +251,15 @@
                       </td>
                     </tr>
                     <tr v-if="!category.multipliers || category.multipliers.length === 0">
-                      <td colspan="5" class="text-center text-muted">ยังไม่มีตัวคูณในหมวดนี้</td>
+                      <td colspan="5" class="text-center text-muted">{{ $t('fundingBudget.multiplier.empty') }}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              <div class="funding-suboptions-title mt-3">รายการเฉพาะในหมวด (Override)</div>
+              <div class="funding-suboptions-title mt-3">{{ $t('fundingBudget.override.sectionTitle') }}</div>
               <small class="text-muted d-block mb-2">
-                ระบบจะใช้รูปแบบตัวคูณนี้เมื่อชื่อรายการมีคำที่ระบุ เช่น ผู้ให้ข้อมูล
+                {{ $t('fundingBudget.override.sectionNote') }}
               </small>
 
               <div
@@ -268,29 +268,29 @@
                 class="budget-item-override-card"
               >
                 <div class="d-flex justify-content-between align-items-center flex-wrap mb-2" style="gap: 8px;">
-                  <strong>รายการเฉพาะ {{ overrideIndex + 1 }}</strong>
+                  <strong>{{ $t('fundingBudget.override.itemHeader', { n: overrideIndex + 1 }) }}</strong>
                   <CButton
                     color="danger"
                     variant="outline"
                     size="sm"
                     @click="removeBudgetItemOverride(categoryIndex, overrideIndex)"
                   >
-                    <CIcon name="cil-x" class="mr-1" /> ลบรายการเฉพาะ
+                    <CIcon name="cil-x" class="mr-1" /> {{ $t('fundingBudget.override.removeBtn') }}
                   </CButton>
                 </div>
 
                 <div class="mb-2">
-                  <label class="mb-1 font-weight-bold">คำที่ใช้จับคู่ในชื่อรายการ</label>
+                  <label class="mb-1 font-weight-bold">{{ $t('fundingBudget.override.matchLabel') }}</label>
                   <input
                     class="form-control"
                     :value="itemOverride.matchText"
-                    placeholder="เช่น ผู้ให้ข้อมูล"
+                    :placeholder="$t('fundingBudget.override.matchPlaceholder')"
                     @input="updateBudgetItemOverrideMatchText(categoryIndex, overrideIndex, $event.target.value)"
                   />
                 </div>
 
                 <div class="mb-3">
-                  <label class="mb-1 font-weight-bold d-block">ปรับใช้ข้อกำหนดตัวคูณกับทุน</label>
+                  <label class="mb-1 font-weight-bold d-block">{{ $t('fundingBudget.override.applyToLabel') }}</label>
                   <div class="d-flex flex-wrap" style="gap: 12px;">
                     <label class="mb-0 d-inline-flex align-items-center" style="gap: 6px;">
                       <input
@@ -298,7 +298,7 @@
                         :checked="isOverrideAppliedToAllFundingTypes(itemOverride)"
                         @change="toggleBudgetItemOverrideApplyAllFundingTypes(categoryIndex, overrideIndex, $event.target.checked)"
                       >
-                      <span>ทั้งหมด</span>
+                      <span>{{ $t('fundingBudget.override.applyAll') }}</span>
                     </label>
                     <label
                       v-for="option in fundingTypeSelectionOptions"
@@ -316,7 +316,7 @@
                     </label>
                   </div>
                   <small class="text-muted d-block mt-1">
-                    เมื่อเลือก "ทั้งหมด" ระบบจะใช้ข้อกำหนดนี้กับทุกประเภททุน
+                    {{ $t('fundingBudget.override.applyAllNote') }}
                   </small>
                 </div>
 
@@ -324,11 +324,11 @@
                   <table class="table table-bordered table-striped mb-0">
                     <thead>
                       <tr>
-                        <th style="width: 32%;">ชื่อตัวคูณ</th>
-                        <th style="width: 17%;">ค่าเริ่มต้น</th>
-                        <th style="width: 19%;">ค่าสูงสุดที่กรอกได้</th>
-                        <th style="width: 16%;">อนุญาตให้ผู้ใช้กรอก</th>
-                        <th style="width: 16%;">จัดการ</th>
+                        <th style="width: 32%;">{{ $t('fundingBudget.multiplier.colName') }}</th>
+                        <th style="width: 17%;">{{ $t('fundingBudget.multiplier.colDefault') }}</th>
+                        <th style="width: 19%;">{{ $t('fundingBudget.multiplier.colMax') }}</th>
+                        <th style="width: 16%;">{{ $t('fundingBudget.multiplier.colUserInput') }}</th>
+                        <th style="width: 16%;">{{ $t('fundingBudget.manageCol') }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -372,7 +372,7 @@
                               @update:checked="(checked) => updateBudgetItemOverrideMultiplierUserInputAllowed(categoryIndex, overrideIndex, overrideMultiplierIndex, checked)"
                             />
                             <small :class="overrideMultiplier.isAdmin ? 'text-muted' : 'text-success'">
-                              {{ overrideMultiplier.isAdmin ? 'ปิด' : 'เปิด' }}
+                              {{ overrideMultiplier.isAdmin ? $t('fundingBudget.multiplier.off') : $t('fundingBudget.multiplier.on') }}
                             </small>
                           </div>
                         </td>
@@ -399,14 +399,14 @@
                     size="sm"
                     @click="addBudgetItemOverrideMultiplier(categoryIndex, overrideIndex)"
                   >
-                    <CIcon name="cil-plus" class="mr-1" /> เพิ่มตัวคูณของรายการนี้
+                    <CIcon name="cil-plus" class="mr-1" /> {{ $t('fundingBudget.override.addMultiplierBtn') }}
                   </CButton>
                 </div>
               </div>
 
               <div class="mt-2">
                 <CButton color="secondary" variant="outline" size="sm" @click="addBudgetItemOverride(categoryIndex)">
-                  <CIcon name="cil-plus" class="mr-1" /> เพิ่มรายการเฉพาะในหมวดนี้
+                  <CIcon name="cil-plus" class="mr-1" /> {{ $t('fundingBudget.override.addItemBtn') }}
                 </CButton>
               </div>
             </CCardBody>
@@ -414,10 +414,10 @@
 
           <div class="funding-budget-actions">
             <CButton color="warning" variant="outline" @click="resetBudgetMultipliersToDefault">
-              <CIcon name="cil-reload" class="mr-1" /> รีเซ็ตค่าเริ่มต้น
+              <CIcon name="cil-reload" class="mr-1" /> {{ $t('fundingBudget.resetBtn') }}
             </CButton>
             <CButton color="primary" :disabled="savingMultiplier" @click="saveBudgetMultiplierConfig">
-              <CIcon name="cil-save" class="mr-1" /> {{ savingMultiplier ? 'กำลังบันทึก...' : 'บันทึกรูปแบบตัวคูณ' }}
+              <CIcon name="cil-save" class="mr-1" /> {{ savingMultiplier ? $t('fundingBudget.saving') : $t('fundingBudget.multiplier.saveBtn') }}
             </CButton>
           </div>
         </template>

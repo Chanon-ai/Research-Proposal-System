@@ -1,16 +1,16 @@
 <template>
   <div class="review-template-settings">
     <CAlert show color="info" class="mt-3">
-      ใช้หน้านี้แก้ไข template สำหรับ checklist ของประธาน และ rubric การประเมินของคณะกรรมการ โดยจะบันทึกเป็น setting ของระบบเพื่อให้หน้า review ใช้งานชุดข้อมูลเดียวกัน
+      {{ $t('reviewTemplate.alert') }}
     </CAlert>
 
     <CCard class="mt-3">
-      <CCardHeader>Import Template จาก PDF</CCardHeader>
+      <CCardHeader>{{ $t('reviewTemplate.import.cardTitle') }}</CCardHeader>
       <CCardBody>
         <CRow>
           <CCol md="4">
             <CSelect
-              label="ประเภท template ที่ต้องการ import"
+              :label="$t('reviewTemplate.import.typeLabel')"
               :value="templateImport.targetType"
               :options="templateImportTargetOptions"
               @change="handleImportTargetChange(getSelectValue($event))"
@@ -26,7 +26,7 @@
 
         <div class="template-toolbar mt-2">
           <div class="template-import-file">
-            <label class="d-block font-weight-bold mb-1">ไฟล์ PDF</label>
+            <label class="d-block font-weight-bold mb-1">{{ $t('reviewTemplate.import.fileLabel') }}</label>
             <input
               class="form-control"
               type="file"
@@ -36,15 +36,15 @@
             <div v-if="templateImport.fileName" class="small text-muted mt-1">{{ templateImport.fileName }}</div>
           </div>
           <div class="template-toolbar__actions">
-            <CButton size="sm" color="secondary" variant="outline" @click="clearTemplateImportState">ล้าง Preview</CButton>
-            <CButton size="sm" color="primary" :disabled="!canPreviewTemplateImport" @click="previewTemplateImport">Preview จาก PDF</CButton>
+            <CButton size="sm" color="secondary" variant="outline" @click="clearTemplateImportState">{{ $t('reviewTemplate.import.clearBtn') }}</CButton>
+            <CButton size="sm" color="primary" :disabled="!canPreviewTemplateImport" @click="previewTemplateImport">{{ $t('reviewTemplate.import.previewBtn') }}</CButton>
           </div>
         </div>
 
         <div v-if="templateImport.error" class="text-danger small mt-3">{{ templateImport.error }}</div>
 
         <div v-if="templateImport.preview" class="template-preview mt-3">
-          <div class="template-preview__title">Preview ก่อนอนุมัติ</div>
+          <div class="template-preview__title">{{ $t('reviewTemplate.import.previewTitle') }}</div>
           <div class="text-muted small mb-3">{{ templateImport.preview.fileName }} · {{ templateImportTargetLabel }}</div>
 
           <div class="import-summary-grid">
@@ -63,7 +63,7 @@
           </div>
 
           <div v-if="templateImport.preview.warnings && templateImport.preview.warnings.length" class="mt-3">
-            <div class="font-weight-bold small mb-1">คำเตือนจาก parser</div>
+            <div class="font-weight-bold small mb-1">{{ $t('reviewTemplate.import.parserWarnings') }}</div>
             <ul class="template-preview__list mb-0">
               <li v-for="(warning, warningIndex) in templateImport.preview.warnings" :key="`warning-${warningIndex}`">{{ warning }}</li>
             </ul>
@@ -71,36 +71,36 @@
 
           <CTextarea
             class="mt-3"
-            label="ข้อความที่ parser อ่านได้จาก PDF (ตัวอย่าง)"
+            :label="$t('reviewTemplate.import.extractedTextLabel')"
             rows="10"
             :value="templateImport.preview.extractedTextPreview"
             readonly
           />
 
           <div class="template-toolbar__actions mt-3">
-            <CButton size="sm" color="info" variant="outline" @click="applyImportedDraftToForm">โหลด draft ลงแบบฟอร์มด้านล่าง</CButton>
-            <CButton size="sm" color="success" :disabled="templateImport.applying" @click="approveImportedDraft">อนุมัติและบันทึกเข้าระบบ</CButton>
+            <CButton size="sm" color="info" variant="outline" @click="applyImportedDraftToForm">{{ $t('reviewTemplate.import.loadDraftBtn') }}</CButton>
+            <CButton size="sm" color="success" :disabled="templateImport.applying" @click="approveImportedDraft">{{ $t('reviewTemplate.import.approveBtn') }}</CButton>
           </div>
         </div>
       </CCardBody>
     </CCard>
 
     <CCard class="mt-3">
-      <CCardHeader>Template Checklist ของประธาน</CCardHeader>
+      <CCardHeader>{{ $t('reviewTemplate.chairman.cardTitle') }}</CCardHeader>
       <CCardBody>
         <CRow class="template-two-pane">
           <CCol lg="4" class="mb-3 mb-lg-0">
             <div class="template-two-pane__preview">
               <CSelect
                 class="template-toolbar__select"
-                label="Preview ตามประเภททุน"
+                :label="$t('reviewTemplate.chairman.previewLabel')"
                 :value="chairmanPreviewFundingType"
                 :options="chairmanFundingTypeOptions"
                 @change="chairmanPreviewFundingType = getSelectValue($event)"
               />
 
               <div v-if="chairmanPreviewTemplate" class="template-preview template-preview--sticky template-preview--with-select-gap">
-                <div class="template-preview__title">ตัวอย่าง Checklist</div>
+                <div class="template-preview__title">{{ $t('reviewTemplate.chairman.previewTitle') }}</div>
                 <div class="text-muted small mb-2">{{ chairmanPreviewTemplate.fundingTypeLabel }}</div>
                 <div v-for="section in chairmanPreviewTemplate.sections" :key="section.sectionKey" class="template-preview__block">
                   <div class="font-weight-bold">{{ section.sectionLabel }}</div>
@@ -117,12 +117,12 @@
             <div class="template-two-pane__editor">
               <div class="template-toolbar mb-3">
                 <div class="template-pane-context" v-if="chairmanSelectedFundingTemplate">
-                  <div class="template-pane-context__label">กำลังแก้ไข</div>
+                  <div class="template-pane-context__label">{{ $t('reviewTemplate.editing') }}</div>
                   <div class="template-pane-context__value">{{ chairmanSelectedFundingTemplate.fundingTypeLabel || chairmanSelectedFundingTemplate.fundingTypeKey }}</div>
                 </div>
                 <div class="template-toolbar__actions ml-auto">
-                  <CButton size="sm" color="warning" variant="outline" @click="resetChairmanTemplate">รีเซ็ตค่าเริ่มต้น</CButton>
-                  <CButton size="sm" color="primary" @click="saveChairmanTemplate">บันทึก Template ประธาน</CButton>
+                  <CButton size="sm" color="warning" variant="outline" @click="resetChairmanTemplate">{{ $t('reviewTemplate.resetBtn') }}</CButton>
+                  <CButton size="sm" color="primary" @click="saveChairmanTemplate">{{ $t('reviewTemplate.chairman.saveBtn') }}</CButton>
                 </div>
               </div>
 
@@ -133,46 +133,46 @@
                   <CCol md="4"><CInput label="Reviewer Label" v-model="chairmanForm.reviewerLabel" /></CCol>
                 </CRow>
                 <CRow>
-                  <CCol md="12"><CTextarea label="หมายเหตุ" rows="3" v-model="chairmanForm.note" /></CCol>
+                  <CCol md="12"><CTextarea :label="$t('reviewTemplate.noteLabel')" rows="3" v-model="chairmanForm.note" /></CCol>
                 </CRow>
 
                 <div class="template-section-header mt-3">
                   <div>
                     <div class="template-section-title">Funding Templates</div>
-                    <div class="text-muted small">จัดการ checklist แยกตามประเภททุน</div>
+                    <div class="text-muted small">{{ $t('reviewTemplate.chairman.fundingDesc') }}</div>
                   </div>
-                  <CButton size="sm" color="success" variant="outline" @click="addChairmanFundingTemplate">เพิ่มประเภททุน</CButton>
+                  <CButton size="sm" color="success" variant="outline" @click="addChairmanFundingTemplate">{{ $t('reviewTemplate.addFundingTypeBtn') }}</CButton>
                 </div>
 
                 <div v-if="chairmanSelectedFundingTemplate" class="editor-card mt-3">
                   <div class="editor-card__header">
-                    <div class="editor-card__title">ประเภททุน {{ chairmanSelectedFundingTemplateIndex + 1 }}</div>
-                    <CButton size="sm" color="danger" variant="outline" @click="removeChairmanFundingTemplate(chairmanSelectedFundingTemplateIndex)">ลบประเภททุน</CButton>
+                    <div class="editor-card__title">{{ $t('reviewTemplate.fundingTypeN', { n: chairmanSelectedFundingTemplateIndex + 1 }) }}</div>
+                    <CButton size="sm" color="danger" variant="outline" @click="removeChairmanFundingTemplate(chairmanSelectedFundingTemplateIndex)">{{ $t('reviewTemplate.removeFundingTypeBtn') }}</CButton>
                   </div>
                   <CInput label="Funding Type Label" v-model="chairmanSelectedFundingTemplate.fundingTypeLabel" />
 
                   <div class="template-section-header template-section-header--inner">
                     <div class="template-section-title">Sections</div>
-                    <CButton size="sm" color="info" variant="outline" @click="addChairmanSection(chairmanSelectedFundingTemplateIndex)">เพิ่ม Section</CButton>
+                    <CButton size="sm" color="info" variant="outline" @click="addChairmanSection(chairmanSelectedFundingTemplateIndex)">{{ $t('reviewTemplate.addSectionBtn') }}</CButton>
                   </div>
 
                   <div v-for="(section, sectionIndex) in chairmanSelectedFundingTemplate.sections" :key="`section-${chairmanSelectedFundingTemplateIndex}-${sectionIndex}`" class="editor-card editor-card--nested mt-2">
                     <div class="editor-card__header">
-                      <div class="editor-card__title">Section {{ sectionIndex + 1 }}</div>
-                      <CButton size="sm" color="danger" variant="outline" @click="removeChairmanSection(chairmanSelectedFundingTemplateIndex, sectionIndex)">ลบ Section</CButton>
+                      <div class="editor-card__title">{{ $t('reviewTemplate.sectionN', { n: sectionIndex + 1 }) }}</div>
+                      <CButton size="sm" color="danger" variant="outline" @click="removeChairmanSection(chairmanSelectedFundingTemplateIndex, sectionIndex)">{{ $t('reviewTemplate.removeSectionBtn') }}</CButton>
                     </div>
                     <CInput label="Section Label" v-model="section.sectionLabel" />
                     <CTextarea label="Section Description" rows="2" v-model="section.description" />
 
                     <div class="template-section-header template-section-header--inner">
                       <div class="template-section-title">Items</div>
-                      <CButton size="sm" color="info" variant="outline" @click="addChairmanItem(chairmanSelectedFundingTemplateIndex, sectionIndex)">เพิ่ม Item</CButton>
+                      <CButton size="sm" color="info" variant="outline" @click="addChairmanItem(chairmanSelectedFundingTemplateIndex, sectionIndex)">{{ $t('reviewTemplate.addItemBtn') }}</CButton>
                     </div>
 
                     <div v-for="(item, itemIndex) in section.items" :key="`item-${chairmanSelectedFundingTemplateIndex}-${sectionIndex}-${itemIndex}`" class="editor-card editor-card--subnested mt-2">
                       <div class="editor-card__header">
-                        <div class="editor-card__title">Item {{ itemIndex + 1 }}</div>
-                        <CButton size="sm" color="danger" variant="outline" @click="removeChairmanItem(chairmanSelectedFundingTemplateIndex, sectionIndex, itemIndex)">ลบ Item</CButton>
+                        <div class="editor-card__title">{{ $t('reviewTemplate.itemN', { n: itemIndex + 1 }) }}</div>
+                        <CButton size="sm" color="danger" variant="outline" @click="removeChairmanItem(chairmanSelectedFundingTemplateIndex, sectionIndex, itemIndex)">{{ $t('reviewTemplate.removeItemBtn') }}</CButton>
                       </div>
                       <CTextarea label="Label" rows="3" v-model="item.label" />
                     </div>
@@ -188,29 +188,29 @@
     </CCard>
 
     <CCard class="mt-3">
-      <CCardHeader>Template Rubric ของคณะกรรมการ</CCardHeader>
+      <CCardHeader>{{ $t('reviewTemplate.committee.cardTitle') }}</CCardHeader>
       <CCardBody>
         <CRow class="template-two-pane">
           <CCol lg="4" class="mb-3 mb-lg-0">
             <div class="template-two-pane__preview">
               <CSelect
                 class="template-toolbar__select"
-                label="Preview น้ำหนักคะแนนตามประเภททุน"
+                :label="$t('reviewTemplate.committee.previewLabel')"
                 :value="committeePreviewFundType"
                 :options="committeeFundTypeOptions"
                 @change="committeePreviewFundType = getSelectValue($event)"
               />
 
               <div v-if="committeePreviewConfig" class="template-preview template-preview--sticky template-preview--with-select-gap">
-                <div class="template-preview__title">ตัวอย่าง Rubric</div>
+                <div class="template-preview__title">{{ $t('reviewTemplate.committee.previewTitle') }}</div>
                 <div class="text-muted small mb-2">{{ committeePreviewFundTypeLabel }}</div>
                 <div class="table-responsive">
                   <table class="table table-sm table-bordered mb-0">
                     <thead>
                       <tr>
-                        <th style="width:64px;">ข้อ</th>
-                        <th>หัวข้อ</th>
-                        <th style="width:120px;">น้ำหนัก</th>
+                        <th style="width:64px;">{{ $t('reviewTemplate.committee.colNo') }}</th>
+                        <th>{{ $t('reviewTemplate.committee.colTitle') }}</th>
+                        <th style="width:120px;">{{ $t('reviewTemplate.committee.colWeight') }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -230,12 +230,12 @@
             <div class="template-two-pane__editor">
               <div class="template-toolbar mb-3">
                 <div class="template-pane-context" v-if="committeeSelectedFundTypeOption">
-                  <div class="template-pane-context__label">กำลังแก้ไข</div>
+                  <div class="template-pane-context__label">{{ $t('reviewTemplate.editing') }}</div>
                   <div class="template-pane-context__value">{{ committeeSelectedFundTypeOption.label || committeeSelectedFundTypeOption.value }}</div>
                 </div>
                 <div class="template-toolbar__actions ml-auto">
-                  <CButton size="sm" color="warning" variant="outline" @click="resetCommitteeTemplate">รีเซ็ตค่าเริ่มต้น</CButton>
-                  <CButton size="sm" color="primary" @click="saveCommitteeTemplate">บันทึก Template กรรมการ</CButton>
+                  <CButton size="sm" color="warning" variant="outline" @click="resetCommitteeTemplate">{{ $t('reviewTemplate.resetBtn') }}</CButton>
+                  <CButton size="sm" color="primary" @click="saveCommitteeTemplate">{{ $t('reviewTemplate.committee.saveBtn') }}</CButton>
                 </div>
               </div>
 
@@ -248,16 +248,16 @@
 
                 <div class="template-section-header mt-3">
                   <div>
-                    <div class="template-section-title">ประเภททุนสำหรับ rubric</div>
-                    <div class="text-muted small">กำหนด key ที่ใช้จับคู่กับน้ำหนักคะแนน</div>
+                    <div class="template-section-title">{{ $t('reviewTemplate.committee.fundingSection') }}</div>
+                    <div class="text-muted small">{{ $t('reviewTemplate.committee.fundingDesc') }}</div>
                   </div>
-                  <CButton size="sm" color="success" variant="outline" @click="addCommitteeFundTypeOption">เพิ่มประเภททุน</CButton>
+                  <CButton size="sm" color="success" variant="outline" @click="addCommitteeFundTypeOption">{{ $t('reviewTemplate.addFundingTypeBtn') }}</CButton>
                 </div>
 
                 <div v-if="committeeSelectedFundTypeOption" class="editor-card mt-2">
                   <div class="editor-card__header">
-                    <div class="editor-card__title">ประเภททุน {{ committeeSelectedFundTypeIndex + 1 }}</div>
-                    <CButton size="sm" color="danger" variant="outline" @click="removeCommitteeFundTypeOption(committeeSelectedFundTypeIndex)">ลบประเภททุน</CButton>
+                    <div class="editor-card__title">{{ $t('reviewTemplate.fundingTypeN', { n: committeeSelectedFundTypeIndex + 1 }) }}</div>
+                    <CButton size="sm" color="danger" variant="outline" @click="removeCommitteeFundTypeOption(committeeSelectedFundTypeIndex)">{{ $t('reviewTemplate.removeFundingTypeBtn') }}</CButton>
                   </div>
                   <CRow>
                     <CCol md="4"><CInput label="Value" v-model="committeeSelectedFundTypeOption.value" /></CCol>
@@ -268,15 +268,15 @@
                 <div class="template-section-header mt-3">
                   <div>
                     <div class="template-section-title">Rubric Rows</div>
-                    <div class="text-muted small">แก้หัวข้อประเมินและน้ำหนักคะแนนของแต่ละประเภททุน</div>
+                    <div class="text-muted small">{{ $t('reviewTemplate.committee.rubricDesc') }}</div>
                   </div>
-                  <CButton size="sm" color="success" variant="outline" @click="addCommitteeRubricRow">เพิ่มหัวข้อ</CButton>
+                  <CButton size="sm" color="success" variant="outline" @click="addCommitteeRubricRow">{{ $t('reviewTemplate.committee.addRowBtn') }}</CButton>
                 </div>
 
                 <div v-for="(row, rowIndex) in committeeForm.rubricRows" :key="`committee-row-${rowIndex}`" class="editor-card mt-3">
                   <div class="editor-card__header">
-                    <div class="editor-card__title">หัวข้อประเมิน {{ rowIndex + 1 }}</div>
-                    <CButton size="sm" color="danger" variant="outline" @click="removeCommitteeRubricRow(rowIndex)">ลบหัวข้อ</CButton>
+                    <div class="editor-card__title">{{ $t('reviewTemplate.committee.rowN', { n: rowIndex + 1 }) }}</div>
+                    <CButton size="sm" color="danger" variant="outline" @click="removeCommitteeRubricRow(rowIndex)">{{ $t('reviewTemplate.committee.removeRowBtn') }}</CButton>
                   </div>
 
                   <CRow>
@@ -288,7 +288,7 @@
                   <div class="weights-grid">
                     <div v-if="committeeSelectedFundTypeOption" :key="`weight-${rowIndex}-${committeeSelectedFundTypeOption.value}`" class="weights-grid__item">
                       <CInput
-                        :label="`น้ำหนัก: ${committeeSelectedFundTypeOption.label || committeeSelectedFundTypeOption.value}`"
+                        :label="`${$t('reviewTemplate.committee.weightLabel')}: ${committeeSelectedFundTypeOption.label || committeeSelectedFundTypeOption.value}`"
                         type="number"
                         :value="row.weights[committeeSelectedFundTypeOption.value]"
                         @input="updateCommitteeWeight(rowIndex, committeeSelectedFundTypeOption.value, $event)"
@@ -351,12 +351,12 @@ export default {
   computed: {
     templateImportTargetOptions () {
       return [
-        { value: 'chairman', label: 'Chairman Checklist' },
-        { value: 'committee', label: 'Committee Rubric' }
+        { value: 'chairman', label: this.$t('reviewTemplate.import.typeChairman') },
+        { value: 'committee', label: this.$t('reviewTemplate.import.typeCommittee') }
       ]
     },
     templateImportTargetLabel () {
-      return this.templateImport.targetType === 'committee' ? 'Committee Rubric' : 'Chairman Checklist'
+      return this.templateImport.targetType === 'committee' ? this.$t('reviewTemplate.import.typeCommittee') : this.$t('reviewTemplate.import.typeChairman')
     },
     canPreviewTemplateImport () {
       if (!this.templateImport.file) return false
@@ -585,7 +585,7 @@ export default {
         this.applyImportedDraftToForm()
         await this.loadTemplates()
         this.clearTemplateImportState()
-        await Swal.fire({ icon: 'success', title: 'นำเข้า template สำเร็จ', timer: 1400, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('reviewTemplate.import.successMsg'), timer: 1400, showConfirmButton: false })
       } catch (error) {
         this.templateImport.error = (error && error.response && error.response.data && error.response.data.message) || error.message || 'บันทึก import ไม่สำเร็จ'
       } finally {
@@ -703,7 +703,7 @@ export default {
         setChairmanChecklistRuntimeConfig(parsed)
         this.chairmanForm = this.normalizeChairmanEditorForm(parsed)
         await this.loadTemplates()
-        await Swal.fire({ icon: 'success', title: 'บันทึก template ประธานสำเร็จ', timer: 1400, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('reviewTemplate.chairman.saveSuccess'), timer: 1400, showConfirmButton: false })
       } catch (error) {
         this.chairmanTemplateError = (error && error.response && error.response.data && error.response.data.message) || error.message || 'บันทึกไม่สำเร็จ'
       }
@@ -721,7 +721,7 @@ export default {
       }, {})
       return {
         no: (this.committeeForm.rubricRows || []).length + 1,
-        title: 'หัวข้อใหม่',
+        title: this.$t('reviewTemplate.committee.newRowTitle'),
         desc: '0–2',
         weights
       }

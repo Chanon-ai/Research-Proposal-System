@@ -5,8 +5,8 @@
         <div class="settings-hero__row">
           <div class="settings-hero__left">
             <div class="settings-hero__pill">ADMIN SETTINGS</div>
-            <h2 class="settings-hero__title">ตั้งค่าระบบ</h2>
-            <p class="settings-hero__subtitle">กำหนดค่า Workflow, อีเมล และการแสดงผลของระบบ</p>
+            <h2 class="settings-hero__title">{{ $t('adminSettings.hero.title') }}</h2>
+            <p class="settings-hero__subtitle">{{ $t('adminSettings.hero.subtitle') }}</p>
           </div>
         </div>
       </CCardBody>
@@ -14,34 +14,34 @@
 
     <div v-if="loadingSettings" class="text-center py-4">
       <CSpinner color="primary" />
-      <div class="mt-2 text-muted">กำลังโหลดการตั้งค่า...</div>
+      <div class="mt-2 text-muted">{{ $t('adminSettings.loading') }}</div>
     </div>
 
     <CTabs :active-tab.sync="activeTab" tabs class="settings-tabs nav-underline nav-underline-primary">
       <CTab>
-        <template slot="title">ทั่วไป</template>
+        <template slot="title">{{ $t('adminSettings.tabs.general') }}</template>
 
         <CCard class="mt-3">
-          <CCardHeader>ข้อมูลระบบ</CCardHeader>
+          <CCardHeader>{{ $t('adminSettings.general.systemInfo') }}</CCardHeader>
           <CCardBody>
             <CRow>
-              <CCol md="6"><CInput label="ชื่อระบบ" v-model="generalForm.systemName" /></CCol>
-              <CCol md="6"><CInput label="ชื่อมหาวิทยาลัย" v-model="generalForm.universityName" /></CCol>
-              <CCol md="4"><CInput type="number" label="ปีงบประมาณปัจจุบัน" v-model.number="generalForm.fiscalYear" /></CCol>
-              <CCol md="4"><CInput type="date" label="วันสิ้นสุดรับโครงการ" v-model="generalForm.submissionDeadline" /></CCol>
-              <CCol md="4"><CInput type="number" label="จำนวนโครงการสูงสุดต่อนักวิจัย" v-model.number="generalForm.maxProposalsPerResearcher" /></CCol>
+              <CCol md="6"><CInput :label="$t('adminSettings.general.systemName')" v-model="generalForm.systemName" /></CCol>
+              <CCol md="6"><CInput :label="$t('adminSettings.general.universityName')" v-model="generalForm.universityName" /></CCol>
+              <CCol md="4"><CInput type="number" :label="$t('adminSettings.general.fiscalYear')" v-model.number="generalForm.fiscalYear" /></CCol>
+              <CCol md="4"><CInput type="date" :label="$t('adminSettings.general.submissionDeadline')" v-model="generalForm.submissionDeadline" /></CCol>
+              <CCol md="4"><CInput type="number" :label="$t('adminSettings.general.maxProposals')" v-model.number="generalForm.maxProposalsPerResearcher" /></CCol>
             </CRow>
-            <CButton color="primary" @click="saveGeneralSettings"><CIcon name="cil-save" class="mr-1" /> บันทึกการตั้งค่า</CButton>
+            <CButton color="primary" @click="saveGeneralSettings"><CIcon name="cil-save" class="mr-1" /> {{ $t('adminSettings.general.saveBtn') }}</CButton>
           </CCardBody>
         </CCard>
 
         <CCard>
-          <CCardHeader>การแสดงผล</CCardHeader>
+          <CCardHeader>{{ $t('adminSettings.general.display') }}</CCardHeader>
           <CCardBody>
             <CRow>
               <CCol md="3">
                 <CSelect
-                  label="ภาษาเริ่มต้น"
+                  :label="$t('adminSettings.general.defaultLanguage')"
                   :value="generalForm.language"
                   :options="[
                     { value: 'th', label: 'ไทย' },
@@ -63,7 +63,7 @@
               </CCol>
               <CCol md="3">
                 <CSelect
-                  label="รูปแบบวันที่"
+                  :label="$t('adminSettings.general.dateFormat')"
                   :value="generalForm.dateFormat"
                   :options="[
                     { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
@@ -73,31 +73,31 @@
                   @change="generalForm.dateFormat = getSelectValue($event)"
                 />
               </CCol>
-              <CCol md="3"><CInput type="number" label="จำนวนรายการต่อหน้า" v-model.number="generalForm.itemsPerPage" /></CCol>
+              <CCol md="3"><CInput type="number" :label="$t('adminSettings.general.itemsPerPage')" v-model.number="generalForm.itemsPerPage" /></CCol>
             </CRow>
-            <CButton color="primary" @click="saveGeneralSettings"><CIcon name="cil-save" class="mr-1" /> บันทึก</CButton>
+            <CButton color="primary" @click="saveGeneralSettings"><CIcon name="cil-save" class="mr-1" /> {{ $t('adminSettings.general.saveDisplayBtn') }}</CButton>
           </CCardBody>
         </CCard>
 
         <CCard class="mt-3">
-          <CCardHeader>ข้อมูลระบบ (Read-only)</CCardHeader>
+          <CCardHeader>{{ $t('adminSettings.general.readOnly') }}</CCardHeader>
           <CCardBody>
-            <div><strong>เวอร์ชันระบบ:</strong> 1.0.0</div>
+            <div><strong>{{ $t('adminSettings.general.version') }}:</strong> 1.0.0</div>
             <div><strong>Backend:</strong> Node.js + Express</div>
             <div><strong>Database:</strong> MongoDB</div>
-            <div><strong>สถานะระบบ:</strong> <span class="text-success">ปกติ</span></div>
-            <div><strong>เชื่อมต่อ Database:</strong> <span :class="settings.length > 0 || apiConnected ? 'text-success' : 'text-warning'">{{ settings.length > 0 || apiConnected ? 'เชื่อมต่อได้' : 'ยังไม่ยืนยัน' }}</span></div>
+            <div><strong>{{ $t('adminSettings.general.systemStatus') }}:</strong> <span class="text-success">{{ $t('adminSettings.general.statusNormal') }}</span></div>
+            <div><strong>{{ $t('adminSettings.general.dbConnection') }}:</strong> <span :class="settings.length > 0 || apiConnected ? 'text-success' : 'text-warning'">{{ settings.length > 0 || apiConnected ? $t('adminSettings.general.dbConnected') : $t('adminSettings.general.dbUnverified') }}</span></div>
           </CCardBody>
         </CCard>
       </CTab>
 
       <CTab>
-        <template slot="title">ทุนและงบประมาณ</template>
+        <template slot="title">{{ $t('adminSettings.tabs.funding') }}</template>
         <AdminFundingBudgetSettings />
       </CTab>
 
       <CTab>
-        <template slot="title">สิทธิ์การเข้าถึง</template>
+        <template slot="title">{{ $t('adminSettings.tabs.access') }}</template>
         <AdminRolePageAccessSettings />
       </CTab>
 
@@ -109,11 +109,11 @@
           class="mt-3 workflow-alert workflow-alert--source"
           :color="workflowDataSource === 'database' ? 'success' : (workflowDataSource === 'local_fallback' ? 'warning' : 'secondary')"
         >
-          <strong>แหล่งข้อมูลที่กำลังใช้งาน:</strong>
-          <span v-if="workflowDataSource === 'database'"> ฐานข้อมูล (Database)</span>
-          <span v-else-if="workflowDataSource === 'local_fallback'"> local fallback ในเครื่อง</span>
-          <span v-else> ยังไม่สามารถยืนยันแหล่งข้อมูลได้</span>
-          <span v-if="workflowDataSource === 'local_fallback' && workflowFallbackSavedAt"> (อัปเดตล่าสุด {{ formatLogDate(workflowFallbackSavedAt) }})</span>
+          <strong>{{ $t('adminSettings.workflow.dataSourceLabel') }}</strong>
+          <span v-if="workflowDataSource === 'database'"> {{ $t('adminSettings.workflow.dataSource.database') }}</span>
+          <span v-else-if="workflowDataSource === 'local_fallback'"> {{ $t('adminSettings.workflow.dataSource.local') }}</span>
+          <span v-else> {{ $t('adminSettings.workflow.dataSource.unknown') }}</span>
+          <span v-if="workflowDataSource === 'local_fallback' && workflowFallbackSavedAt"> ({{ $t('adminSettings.workflow.dataSource.updatedAt') }} {{ formatLogDate(workflowFallbackSavedAt) }})</span>
         </CAlert>
 
         <CAlert
@@ -126,16 +126,16 @@
         </CAlert>
 
         <CCard class="mt-3">
-          <CCardHeader>กำหนดระยะเวลา (Deadline per Step)</CCardHeader>
+          <CCardHeader>{{ $t('adminSettings.workflow.deadlineCard') }}</CCardHeader>
           <CCardBody>
             <div class="table-responsive">
               <table class="table table-bordered table-striped mb-0">
                 <thead>
                   <tr>
-                    <th>ขั้นตอน</th>
-                    <th>คำอธิบาย</th>
-                    <th style="width: 180px;">ระยะเวลา (วัน)</th>
-                    <th style="width: 100px;">แก้ไข</th>
+                    <th>{{ $t('adminSettings.workflow.tableStep') }}</th>
+                    <th>{{ $t('adminSettings.workflow.tableDesc') }}</th>
+                    <th style="width: 180px;">{{ $t('adminSettings.workflow.tableDuration') }}</th>
+                    <th style="width: 100px;">{{ $t('adminSettings.workflow.tableEdit') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -143,7 +143,7 @@
                     <td>{{ step.title }}</td>
                     <td>{{ step.description }}</td>
                     <td><CInput type="number" v-model.number="workflowForm.stepDeadlines[step.key]" /></td>
-                    <td><CButton size="sm" color="primary" @click="saveWorkflowSettings"><CIcon name="cil-save" class="mr-1" /> บันทึก</CButton></td>
+                    <td><CButton size="sm" color="primary" @click="saveWorkflowSettings"><CIcon name="cil-save" class="mr-1" /> {{ $t('adminSettings.workflow.saveStepBtn') }}</CButton></td>
                   </tr>
                 </tbody>
               </table>
@@ -152,30 +152,30 @@
         </CCard>
 
         <CCard>
-          <CCardHeader>การอนุมัติ</CCardHeader>
+          <CCardHeader>{{ $t('adminSettings.workflow.approvalCard') }}</CCardHeader>
           <CCardBody>
             <CRow>
-              <CCol md="3"><CInput type="number" label="ต้องมีคะแนนขั้นต่ำ (%)" v-model.number="workflowForm.minScore" /></CCol>
-              <CCol md="3"><CInput type="number" label="จำนวนกรรมการขั้นต่ำต่อโครงการ" v-model.number="workflowForm.minCommittee" /></CCol>
-              <CCol md="3"><CInput type="number" label="รอบพิจารณาอ้างอิง (ไม่หยุดอัตโนมัติ)" v-model.number="workflowForm.maxRounds" /></CCol>
+              <CCol md="3"><CInput type="number" :label="$t('adminSettings.workflow.minScore')" v-model.number="workflowForm.minScore" /></CCol>
+              <CCol md="3"><CInput type="number" :label="$t('adminSettings.workflow.minCommittee')" v-model.number="workflowForm.minCommittee" /></CCol>
+              <CCol md="3"><CInput type="number" :label="$t('adminSettings.workflow.maxRounds')" v-model.number="workflowForm.maxRounds" /></CCol>
               <CCol md="3">
-                <label class="d-block mb-1">เปิดให้แก้ไขหลังประชุม</label>
+                <label class="d-block mb-1">{{ $t('adminSettings.workflow.allowRevision') }}</label>
                 <CSwitch color="success" :checked.sync="workflowForm.allowRevisionAfterMeeting" />
               </CCol>
             </CRow>
             <small class="text-muted d-block mb-3">
-              หมายเหตุ: Workflow ปัจจุบันจะวนรอบพิจารณา/ขอแก้ไขได้ต่อเนื่อง จนกว่าแอดมินจะสรุปผลและประกาศผล
+              {{ $t('adminSettings.workflow.note') }}
             </small>
-            <CButton color="primary" @click="saveWorkflowSettings"><CIcon name="cil-save" class="mr-1" /> บันทึกการตั้งค่า Workflow</CButton>
+            <CButton color="primary" @click="saveWorkflowSettings"><CIcon name="cil-save" class="mr-1" /> {{ $t('adminSettings.workflow.saveBtn') }}</CButton>
           </CCardBody>
         </CCard>
 
-        <!-- ✅ STATUS FLOW CARD (แทนที่ของเดิม) -->
+        <!-- ✅ STATUS FLOW CARD -->
         <CCard>
-          <CCardHeader>สถานะที่อนุญาต (Read-only)</CCardHeader>
+          <CCardHeader>{{ $t('adminSettings.workflow.statusCard') }}</CCardHeader>
           <CCardBody>
             <small class="text-muted d-block mb-3">
-              แผนภาพนี้อ้างอิงพฤติกรรม backend ปัจจุบัน โดยสถานะรอบถัดไปสามารถวนซ้ำได้จนกว่าจะมีการประกาศผล
+              {{ $t('adminSettings.workflow.statusNote') }}
             </small>
             <div class="status-flow-list">
               <div
@@ -208,32 +208,32 @@
       </CTab>
 
       <CTab>
-        <template slot="title">Template ประเมิน</template>
+        <template slot="title">{{ $t('adminSettings.tabs.templates') }}</template>
         <AdminReviewTemplateSettings />
       </CTab>
 
       <CTab>
-        <template slot="title">อีเมล</template>
+        <template slot="title">{{ $t('adminSettings.tabs.email') }}</template>
 
         <CCard class="mt-3">
-          <CCardHeader>การแจ้งเตือนทางอีเมล</CCardHeader>
+          <CCardHeader>{{ $t('adminSettings.email.notificationsCard') }}</CCardHeader>
           <CCardBody>
             <CRow>
               <CCol md="6" class="mb-2">
-                <label class="d-block mb-1">ส่งอีเมลอัตโนมัติจากระบบ</label>
+                <label class="d-block mb-1">{{ $t('adminSettings.email.autoSendLabel') }}</label>
                 <CSwitch color="success" :checked.sync="emailNotificationsEnabled" />
-                <small class="text-muted d-block">ควบคุมการส่งอีเมลจากเหตุการณ์สำคัญของระบบ เช่น เปลี่ยนสถานะโครงการ ประกาศผล และคอมเมนต์สำคัญ</small>
+                <small class="text-muted d-block">{{ $t('adminSettings.email.autoSendDesc') }}</small>
               </CCol>
               <CCol md="6" class="mb-2">
-                <label class="d-block mb-1">อนุญาตให้แอดมินส่งอีเมลจากหน้า Notifications</label>
+                <label class="d-block mb-1">{{ $t('adminSettings.email.manualSendLabel') }}</label>
                 <CSwitch color="success" :checked.sync="manualAdminNotificationEmailEnabled" />
-                <small class="text-muted d-block">เมื่อเปิดไว้ ผู้ดูแลระบบสามารถส่งแจ้งเตือนจากหน้า Notifications พร้อมส่งอีเมลถึงผู้รับได้</small>
+                <small class="text-muted d-block">{{ $t('adminSettings.email.manualSendDesc') }}</small>
               </CCol>
             </CRow>
 
-            <small class="text-muted d-block mb-3">ระบบยังคงจัดการค่าขั้นสูงภายในให้อัตโนมัติ เพื่อคงความเข้ากันได้กับการตั้งค่าเดิม</small>
+            <small class="text-muted d-block mb-3">{{ $t('adminSettings.email.advancedNote') }}</small>
 
-            <CButton color="primary" @click="saveEmailPolicySettings"><CIcon name="cil-save" class="mr-1" /> บันทึกการตั้งค่าอีเมล</CButton>
+            <CButton color="primary" @click="saveEmailPolicySettings"><CIcon name="cil-save" class="mr-1" /> {{ $t('adminSettings.email.saveBtn') }}</CButton>
           </CCardBody>
         </CCard>
 
@@ -241,19 +241,19 @@
           <CCardHeader>Email Templates</CCardHeader>
           <CCardBody>
             <CCallout color="warning" class="mb-3">
-              <strong>หมายเหตุ:</strong>
-              การกด "บันทึก Templates ทั้งหมด" จะบันทึก <strong>ทุก Template พร้อมกัน</strong>ในครั้งเดียว ไม่ใช่เฉพาะ Template ที่เปิดอยู่ กรุณาแก้ไขให้ครบถ้วนก่อนกดบันทึก
+              <strong>{{ $t('adminSettings.email.templateNoteLabel') }}:</strong>
+              {{ $t('adminSettings.email.templateNote') }}
             </CCallout>
             <details class="mb-3" v-for="(tpl, key) in emailTemplates" :key="key">
               <summary class="font-weight-bold mb-2">{{ getTemplateLabel(key) }}</summary>
               <div class="mt-2">
-                <CInput label="หัวเรื่อง" v-model="emailTemplates[key].subject" />
-                <label>เนื้อหา</label>
+                <CInput :label="$t('adminSettings.email.subjectLabel')" v-model="emailTemplates[key].subject" />
+                <label>{{ $t('adminSettings.email.bodyLabel') }}</label>
                 <textarea class="form-control mb-2" rows="6" v-model="emailTemplates[key].body" />
                 <small v-pre class="text-muted d-block mb-2">ตัวแปรที่ใช้ได้: {{recipientName}} {{proposalCode}} {{projectTitle}} {{remarks}} {{meetingTitle}} {{meetingDate}} {{meetingTime}} {{participantRole}} {{consentViewUrl}} {{consentAcceptUrl}} {{consentRejectUrl}}</small>
                 <div class="d-flex" style="gap: 8px;">
-                  <CButton size="sm" color="primary" @click="saveTemplate(key)"><CIcon name="cil-save" class="mr-1" /> บันทึก Templates ทั้งหมด</CButton>
-                  <CButton size="sm" color="secondary" variant="outline" @click="resetTemplate(key)"><CIcon name="cil-reload" class="mr-1" /> รีเซ็ตค่าเริ่มต้น</CButton>
+                  <CButton size="sm" color="primary" @click="saveTemplate(key)"><CIcon name="cil-save" class="mr-1" /> {{ $t('adminSettings.email.saveTplBtn') }}</CButton>
+                  <CButton size="sm" color="secondary" variant="outline" @click="resetTemplate(key)"><CIcon name="cil-reload" class="mr-1" /> {{ $t('adminSettings.email.resetTplBtn') }}</CButton>
                 </div>
               </div>
             </details>
@@ -262,41 +262,41 @@
 
         <CCard class="mt-3">
           <CCardHeader class="d-flex justify-content-between align-items-center flex-wrap" style="gap:8px;">
-            <span>Email Log (ล่าสุด)</span>
+            <span>{{ $t('adminSettings.email.logCard') }}</span>
             <div class="d-flex align-items-center" style="gap:8px;">
               <CSelect
                 style="width:130px;margin-bottom:0;"
                 :value="emailLogFilter"
                 :options="[
-                  { value: '', label: 'ทุกสถานะ' },
-                  { value: 'sent', label: 'สำเร็จ' },
-                  { value: 'failed', label: 'ล้มเหลว' },
-                  { value: 'skipped', label: 'ข้ามการส่ง' }
+                  { value: '', label: $t('adminSettings.email.logFilterAll') },
+                  { value: 'sent', label: $t('adminSettings.email.logFilterSent') },
+                  { value: 'failed', label: $t('adminSettings.email.logFilterFailed') },
+                  { value: 'skipped', label: $t('adminSettings.email.logFilterSkipped') }
                 ]"
                 @change="onEmailLogFilterChange"
               />
               <CButton size="sm" color="secondary" variant="outline" @click="fetchEmailLogs" :disabled="emailLogLoading">
-                <CIcon name="cil-reload" class="mr-1" /> {{ emailLogLoading ? 'โหลด...' : 'รีเฟรช' }}
+                <CIcon name="cil-reload" class="mr-1" /> {{ emailLogLoading ? $t('adminSettings.email.logLoading') : $t('adminSettings.email.logRefresh') }}
               </CButton>
             </div>
           </CCardHeader>
           <CCardBody>
             <div v-if="emailLogLoading && emailLogs.length === 0" class="text-center py-3">
-              <CSpinner color="primary" size="sm" /> กำลังโหลด...
+              <CSpinner color="primary" size="sm" /> {{ $t('adminSettings.email.logLoadingFull') }}
             </div>
             <div v-else-if="emailLogs.length === 0" class="text-muted text-center py-3">
-              ยังไม่มีบันทึกการส่งอีเมล
+              {{ $t('adminSettings.email.logEmpty') }}
             </div>
             <div v-else class="table-responsive">
               <table class="table table-bordered table-striped table-sm mb-0">
                 <thead>
                   <tr>
-                    <th style="min-width:140px;">เวลา</th>
+                    <th style="min-width:140px;">{{ $t('adminSettings.email.logTimeCol') }}</th>
                     <th>Event</th>
-                    <th>อีเมลผู้รับ</th>
-                    <th>โครงการ</th>
-                    <th style="width:90px;">สถานะ</th>
-                    <th>ข้อผิดพลาด</th>
+                    <th>{{ $t('adminSettings.email.logRecipientCol') }}</th>
+                    <th>{{ $t('adminSettings.email.logProjectCol') }}</th>
+                    <th style="width:90px;">{{ $t('adminSettings.email.logStatusCol') }}</th>
+                    <th>{{ $t('adminSettings.email.logErrorCol') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -307,7 +307,7 @@
                     <td><small>{{ log.proposalRef || '-' }}</small></td>
                     <td>
                       <CBadge :color="log.status === 'sent' ? 'success' : 'danger'">
-                        {{ log.status === 'sent' ? 'สำเร็จ' : 'ล้มเหลว' }}
+                        {{ log.status === 'sent' ? $t('adminSettings.email.logStatusSent') : $t('adminSettings.email.logStatusFailed') }}
                       </CBadge>
                     </td>
                     <td><small class="text-danger">{{ log.errorMessage || '' }}</small></td>
@@ -317,7 +317,7 @@
             </div>
             <div v-if="emailLogTotal > emailLogs.length" class="text-center mt-2">
               <CButton size="sm" color="secondary" variant="outline" @click="loadMoreEmailLogs" :disabled="emailLogLoading">
-                <CIcon name="cil-chevron-right" class="mr-1" /> โหลดเพิ่มเติม ({{ emailLogs.length }}/{{ emailLogTotal }})
+                <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminSettings.email.loadMoreBtn', { current: emailLogs.length, total: emailLogTotal }) }}
               </CButton>
             </div>
           </CCardBody>
@@ -325,14 +325,14 @@
       </CTab>
 
       <CTab>
-        <template slot="title">ผู้ใช้งาน</template>
+        <template slot="title">{{ $t('adminSettings.tabs.users') }}</template>
         <div class="mt-3">
           <AdminUsersManagement />
         </div>
       </CTab>
     </CTabs>
 
-    <CModal class="send-modal" :show.sync="showAddSettingModal" centered title="เพิ่ม Setting ใหม่" :close-on-backdrop="false">
+    <CModal class="send-modal" :show.sync="showAddSettingModal" centered :title="$t('adminSettings.modal.addTitle')" :close-on-backdrop="false">
       <template #body-wrapper>
         <div class="send-modal-inner" style="padding-left:36px;padding-right:36px;box-sizing:border-box;">
           <div class="form-group">
@@ -354,13 +354,13 @@
             ]"
             @change="newSetting.group = getSelectValue($event)"
           />
-          <CInput label="คำอธิบาย" v-model="newSetting.description" />
+          <CInput :label="$t('adminSettings.modal.descLabel')" v-model="newSetting.description" />
         </div>
       </template>
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100" style="padding: 0.875rem 1.5rem 1rem; gap: 10px; border-top: 1px solid #e4e7ea; background: #f8f9fa;">
-          <CButton color="secondary" variant="outline" class="modal-btn modal-btn--secondary" @click="showAddSettingModal = false"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
-          <CButton color="primary" class="modal-btn modal-btn--primary" @click="addSetting"><CIcon name="cil-plus" class="mr-1" /> + เพิ่ม</CButton>
+          <CButton color="secondary" variant="outline" class="modal-btn modal-btn--secondary" @click="showAddSettingModal = false"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminSettings.modal.cancelBtn') }}</CButton>
+          <CButton color="primary" class="modal-btn modal-btn--primary" @click="addSetting"><CIcon name="cil-plus" class="mr-1" /> {{ $t('adminSettings.modal.addBtn') }}</CButton>
         </div>
       </template>
     </CModal>
@@ -389,13 +389,13 @@ const SECRET_KEY_PATTERNS = [
   /private[_-]?key/i
 ]
 
-const EMAIL_TEMPLATE_LABELS = {
-  revision_requested: 'ขอแก้ไขเอกสาร',
-  approved: 'อนุมัติโครงการ',
-  rejected: 'ไม่อนุมัติโครงการ',
-  meeting_scheduled: 'นัดประชุม',
-  committee_assigned: 'มอบหมายกรรมการ',
-  collaboration_confirmation: 'ขอความยินยอมเข้าร่วมโครงการ (ผู้ร่วมโครงการ/ที่ปรึกษา)'
+const EMAIL_TEMPLATE_LABEL_KEYS = {
+  revision_requested: 'adminSettings.emailTemplateLabels.revision_requested',
+  approved: 'adminSettings.emailTemplateLabels.approved',
+  rejected: 'adminSettings.emailTemplateLabels.rejected',
+  meeting_scheduled: 'adminSettings.emailTemplateLabels.meeting_scheduled',
+  committee_assigned: 'adminSettings.emailTemplateLabels.committee_assigned',
+  collaboration_confirmation: 'adminSettings.emailTemplateLabels.collaboration_confirmation'
 }
 
 const DEFAULT_TEMPLATES = {
@@ -563,13 +563,17 @@ export default {
       editingSettingDescription: '',
       editingSettingIsSecret: false,
 
-      allowedTransitions: STATUS_FLOW_ALLOWED_TRANSITIONS,
-      workflowSteps: [
-        { key: 'step1', title: '1. ยื่นโครงการ', description: 'รับโดยส่วนบริหาร' },
-        { key: 'step2', title: '2. ตรวจสอบเอกสาร', description: 'มอบหมายกรรมการ' },
-        { key: 'step3', title: '3. กรรมการพิจารณา', description: 'ประชุม' },
-        { key: 'step4', title: '4. ขอแก้ไข', description: 'นักวิจัยส่งกลับ' },
-        { key: 'step5', title: '5. ส่งแก้ไข', description: 'เข้าสู่รอบพิจารณาถัดไป (วนซ้ำ)' }
+      allowedTransitions: STATUS_FLOW_ALLOWED_TRANSITIONS
+    }
+  },
+  computed: {
+    workflowSteps () {
+      return [
+        { key: 'step1', title: this.$t('adminSettings.workflow.step1Title'), description: this.$t('adminSettings.workflow.step1Desc') },
+        { key: 'step2', title: this.$t('adminSettings.workflow.step2Title'), description: this.$t('adminSettings.workflow.step2Desc') },
+        { key: 'step3', title: this.$t('adminSettings.workflow.step3Title'), description: this.$t('adminSettings.workflow.step3Desc') },
+        { key: 'step4', title: this.$t('adminSettings.workflow.step4Title'), description: this.$t('adminSettings.workflow.step4Desc') },
+        { key: 'step5', title: this.$t('adminSettings.workflow.step5Title'), description: this.$t('adminSettings.workflow.step5Desc') }
       ]
     }
   },
@@ -589,8 +593,8 @@ export default {
   methods: {
     // ─── Status flow helpers ───────────────────────────────────────────────
     getStatusLabel (status) {
-      if (status === 'second_round_review') return 'พิจารณารอบถัดไป'
-      return STATUS_LABELS[status] || status
+      const key = 'proposalStatus.' + status
+      return this.$te(key) ? this.$t(key) : (STATUS_LABELS[status] || status)
     },
     getStatusIcon (status) {
       return STATUS_ICONS[status] || ''
@@ -1085,7 +1089,10 @@ export default {
         this.emailLogTotal = (data && data.total) ? Number(data.total) : this.emailLogTotal
       } catch (e) { console.error('[AdminSettings] loadMoreEmailLogs error:', e); this.emailLogPage -= 1 } finally { this.emailLogLoading = false }
     },
-    getTemplateLabel (key) { return EMAIL_TEMPLATE_LABELS[key] || key },
+    getTemplateLabel (key) {
+      const i18nKey = EMAIL_TEMPLATE_LABEL_KEYS[key]
+      return i18nKey ? this.$t(i18nKey) : key
+    },
     onEmailWidgetKeydown (event) { if (!this.isEmailWidgetOpen) return; if (event && event.key === 'Escape') this.closeEmailWidget() },
     toggleEmailWidget () {
       if (this.isEmailWidgetOpen) { this.closeEmailWidget(); return }

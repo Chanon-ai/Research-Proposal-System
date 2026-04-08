@@ -4,14 +4,14 @@
       <CCardHeader>
         <div class="role-access-toolbar">
           <div>
-            <div class="font-weight-bold">กำหนดสิทธิ์การเข้าถึงหน้าระบบตาม Role</div>
+            <div class="font-weight-bold">{{ $t('roleAccess.title') }}</div>
             <small class="text-muted">
-              กำหนดได้ว่าบทบาทใดสามารถเข้าแต่ละหน้าของ ResearchFormRS ได้
+              {{ $t('roleAccess.subtitle') }}
             </small>
           </div>
           <div class="role-access-summary">
-            <CBadge color="info">จำนวนหน้า {{ rolePageAccessConfig.length }}</CBadge>
-            <CBadge color="secondary">สิทธิ์รวม {{ totalRoleAssignments }}</CBadge>
+            <CBadge color="info">{{ $t('roleAccess.badgePages') }} {{ rolePageAccessConfig.length }}</CBadge>
+            <CBadge color="secondary">{{ $t('roleAccess.badgeTotal') }} {{ totalRoleAssignments }}</CBadge>
           </div>
         </div>
       </CCardHeader>
@@ -19,35 +19,35 @@
       <CCardBody>
         <div v-if="loading" class="text-center py-4">
           <CSpinner color="primary" />
-          <div class="mt-2 text-muted">กำลังโหลดการตั้งค่าสิทธิ์การเข้าถึง...</div>
+          <div class="mt-2 text-muted">{{ $t('roleAccess.loading') }}</div>
         </div>
 
         <template v-else>
           <CRow class="mb-3">
             <CCol md="6">
               <CInput
-                label="ค้นหาหน้า"
-                placeholder="เช่น admin, committee, profile"
+                :label="$t('roleAccess.searchLabel')"
+                :placeholder="$t('roleAccess.searchPlaceholder')"
                 v-model.trim="searchKeyword"
               />
             </CCol>
           </CRow>
 
           <div v-if="filteredRows.length === 0" class="text-center text-muted py-3">
-            ไม่พบหน้าที่ตรงกับคำค้นหา
+            {{ $t('roleAccess.noResults') }}
           </div>
 
           <div v-else class="table-responsive role-access-table-wrap">
             <table class="table table-bordered table-striped mb-0 role-access-table">
               <thead>
                 <tr>
-                  <th class="role-access-table__page-col">หน้าในระบบ</th>
+                  <th class="role-access-table__page-col">{{ $t('roleAccess.colPage') }}</th>
                   <th
                     v-for="role in roleOptions"
                     :key="`role-head-${role.value}`"
                     class="text-center role-access-table__role-col"
                   >
-                    {{ role.label }}
+                    {{ $t('roleAccess.roles.' + role.value) }}
                   </th>
                 </tr>
               </thead>
@@ -58,7 +58,7 @@
                 >
                   <td>
                     <div class="role-access-page-label">
-                      {{ row.page.label || row.page.pageKey }}
+                      {{ $te('roleAccess.pages.' + row.page.pageKey) ? $t('roleAccess.pages.' + row.page.pageKey) : (row.page.label || row.page.pageKey) }}
                     </div>
                     <div class="role-access-page-path">
                       {{ row.page.path }}
@@ -79,7 +79,7 @@
                       @change="onToggleRole(row.index, role.value, $event.target.checked)"
                     />
                     <div v-if="isRequiredRole(row.page, role.value)" class="role-access-required-text">
-                      บังคับ
+                      {{ $t('roleAccess.required') }}
                     </div>
                   </td>
                 </tr>
@@ -89,10 +89,10 @@
 
           <div class="role-access-actions">
             <CButton color="warning" variant="outline" @click="resetToDefault">
-              <CIcon name="cil-reload" class="mr-1" /> รีเซ็ตค่าเริ่มต้น
+              <CIcon name="cil-reload" class="mr-1" /> {{ $t('roleAccess.resetBtn') }}
             </CButton>
             <CButton color="primary" :disabled="saving" @click="saveRolePageAccessConfig">
-              <CIcon name="cil-save" class="mr-1" /> {{ saving ? 'กำลังบันทึก...' : 'บันทึกสิทธิ์การเข้าถึง' }}
+              <CIcon name="cil-save" class="mr-1" /> {{ saving ? $t('roleAccess.saving') : $t('roleAccess.saveBtn') }}
             </CButton>
           </div>
         </template>
@@ -247,11 +247,11 @@ export default {
     async resetToDefault () {
       const result = await Swal.fire({
         icon: 'warning',
-        title: 'รีเซ็ตสิทธิ์การเข้าถึงเป็นค่าเริ่มต้น?',
-        text: 'การแก้ไขที่ยังไม่ได้บันทึกจะถูกแทนที่ด้วยค่าเริ่มต้น',
+        title: this.$t('roleAccess.resetConfirmTitle'),
+        text: this.$t('roleAccess.resetConfirmText'),
         showCancelButton: true,
-        confirmButtonText: 'รีเซ็ต',
-        cancelButtonText: 'ยกเลิก'
+        confirmButtonText: this.$t('roleAccess.resetConfirmBtn'),
+        cancelButtonText: this.$t('roleAccess.cancelBtn')
       })
       if (!result.isConfirmed) return
       this.rolePageAccessConfig = createDefaultRolePageAccessConfig()
@@ -272,7 +272,7 @@ export default {
         await this.fetchRolePageAccessConfig()
         await Swal.fire({
           icon: 'success',
-          title: 'บันทึกสิทธิ์การเข้าถึงสำเร็จ',
+          title: this.$t('roleAccess.saveSuccess'),
           timer: 1300,
           showConfirmButton: false
         })
@@ -280,8 +280,8 @@ export default {
         this.saveFallback()
         await Swal.fire({
           icon: 'info',
-          title: 'บันทึกในเครื่องแล้ว',
-          text: 'API ยังไม่พร้อม จึงบันทึกสิทธิ์แบบ local fallback'
+          title: this.$t('roleAccess.saveFallbackTitle'),
+          text: this.$t('roleAccess.saveFallbackText')
         })
       } finally {
         this.saving = false
