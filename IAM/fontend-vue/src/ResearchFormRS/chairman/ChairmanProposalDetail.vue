@@ -133,6 +133,75 @@
                 </CCardBody>
               </CCard>
 
+              <CCard class="chairman-signature-card mb-3">
+                <CCardHeader class="chairman-signature-card__header">
+                  <div>
+                    <div class="chairman-signature-card__title">{{ $t('chairman.proposalDetail.signature.title') }}</div>
+                    <div class="chairman-signature-card__subtitle text-muted small">{{ $t('chairman.proposalDetail.signature.help') }}</div>
+                  </div>
+                  <CBadge color="warning">{{ $t('chairman.proposalDetail.signature.required') }}</CBadge>
+                </CCardHeader>
+                <CCardBody class="chairman-signature-card__body">
+                  <div v-if="!isEvaluationLocked" class="chairman-signature-card__toolbar">
+                    <div class="chairman-signature-card__toolbar-actions">
+                      <input
+                        ref="signatureUpload"
+                        type="file"
+                        accept="image/*"
+                        class="d-none"
+                        @change="onSignatureUpload"
+                      >
+                      <CButton size="sm" color="primary" variant="outline" @click="openSignatureUpload">
+                        <CIcon name="cil-cloud-upload" class="mr-1" /> {{ $t('chairman.proposalDetail.signature.upload') }}
+                      </CButton>
+                      <CButton size="sm" color="success" variant="outline" :disabled="!hasSignatureData" @click="saveSignature">
+                        <CIcon name="cil-save" class="mr-1" /> {{ $t('chairman.proposalDetail.signature.save') }}
+                      </CButton>
+                    </div>
+                    <CButton size="sm" color="secondary" variant="outline" :disabled="!signatureData" @click="clearSignature">
+                      <CIcon name="cil-trash" class="mr-1" /> {{ $t('chairman.proposalDetail.signature.clear') }}
+                    </CButton>
+                  </div>
+
+                  <div class="chairman-signature-card__surface">
+                    <div v-if="!isEvaluationLocked" class="chairman-signature-card__draw-panel">
+                      <div class="chairman-signature-card__canvas-wrap">
+                        <canvas
+                          ref="signatureCanvas"
+                          class="chairman-signature-card__canvas"
+                          @mousedown="startSignatureDrawing"
+                          @mousemove="drawSignature"
+                          @mouseup="stopSignatureDrawing"
+                          @mouseleave="stopSignatureDrawing"
+                          @touchstart.prevent="startSignatureDrawing"
+                          @touchmove.prevent="drawSignature"
+                          @touchend.prevent="stopSignatureDrawing"
+                        ></canvas>
+                      </div>
+                      <div class="chairman-signature-card__hint text-muted small">{{ $t('chairman.proposalDetail.signature.drawHint') }}</div>
+                      <div v-if="signatureSavedAt" class="chairman-signature-card__saved text-success small">
+                        {{ $t('chairman.proposalDetail.signature.savedAt', { date: formatDateTime(signatureSavedAt) }) }}
+                      </div>
+                    </div>
+
+                    <div v-else class="chairman-signature-card__preview" :class="{ 'is-empty': !signatureData }">
+                      <img v-if="signatureData" :src="signatureData" :alt="$t('chairman.proposalDetail.signature.previewAlt')" class="chairman-signature-card__image">
+                      <div v-else class="chairman-signature-card__empty">{{ $t('chairman.proposalDetail.signature.empty') }}</div>
+                    </div>
+                  </div>
+
+                  <div class="chairman-signature-card__meta">
+                    <div>{{ $t('chairman.proposalDetail.signature.signedBy', { username: currentUserSignatureName }) }}</div>
+                    <div>{{ $t('chairman.proposalDetail.signature.committeeAffiliation', { affiliation: chairmanAffiliationText }) }}</div>
+                    <div>{{ $t('chairman.proposalDetail.signature.submittedOn', { date: chairmanSubmittedAtDisplay }) }}</div>
+                  </div>
+
+                  <CAlert v-if="!hasSignatureData" color="warning" show class="mb-0 mt-3 chairman-signature-card__alert">
+                    {{ $t('chairman.proposalDetail.signature.missing') }}
+                  </CAlert>
+                </CCardBody>
+              </CCard>
+
               <CForm @submit.prevent>
                 <CTextarea
                   :label="$t('chairman.proposalDetail.comments')"
@@ -205,6 +274,12 @@ export default {
       submittedBannerVisible: false,
       isEvaluationLocked: false,
       evaluationFileName: '',
+      signatureData: '',
+      signatureTimestamp: '',
+      submittedAt: '',
+      signatureSavedAt: '',
+      isSignatureDrawing: false,
+      signatureHasStroke: false,
       form: {
         checklistValues: {},
         comments: '',
@@ -213,15 +288,48 @@ export default {
     }
   },
   computed: {
+    currentUser () {
+      const user = this.$store && this.$store.getters
+        ? this.$store.getters['Authentication/currentUser']
+        : null
+      if (user && typeof user === 'object') return user
+      try {
+        const raw = localStorage.getItem('auth_user')
+        return raw ? JSON.parse(raw) : null
+      } catch (_) {
+        return null
+      }
+    },
     proposalId () {
       return this.proposal && this.proposal._id ? this.proposal._id : (this.$route.params.id || '')
     },
     currentUserId () {
-      const user = this.$store && this.$store.getters
-        ? this.$store.getters['Authentication/currentUser']
-        : null
+      const user = this.currentUser
       const id = user && (user._id || user.id)
       return id ? String(id) : ''
+    },
+    currentUserDisplayName () {
+      const user = this.currentUser
+      return (user && (user.fullName || user.email || user.username)) || '-'
+    },
+    currentUserSignatureName () {
+      const user = this.currentUser
+      return (user && (user.username || user.fullName || user.email)) || '-'
+    },
+    chairmanAffiliationText () {
+      const user = this.currentUser
+      if (!user || typeof user !== 'object') return '-'
+      const department = user.department && typeof user.department === 'object'
+        ? (user.department.name || user.department.title || user.department.departmentName)
+        : user.department
+      const faculty = user.faculty && typeof user.faculty === 'object'
+        ? (user.faculty.name || user.faculty.title || user.faculty.facultyName)
+        : user.faculty
+      const affiliation = user.affiliation || department || faculty || user.organization || user.unit || ''
+      return String(affiliation || '').trim() || '-'
+    },
+    chairmanSubmittedAtDisplay () {
+      return this.submittedAt ? this.formatDateTime(this.submittedAt) : '-'
     },
     activeRoundNo () {
       const round = Number(this.proposal && this.proposal.currentRound)
@@ -265,7 +373,10 @@ export default {
       return note || this.$t('chairman.proposalDetail.importPlaceholderFallback')
     },
     canSubmit () {
-      return !!this.proposal && !this.isEvaluationLocked && this.isPendingChairmanReview
+      return !!this.proposal && !this.isEvaluationLocked && this.isPendingChairmanReview && this.hasSignatureData
+    },
+    hasSignatureData () {
+      return typeof this.signatureData === 'string' && this.signatureData.startsWith('data:image/')
     },
     isPendingChairmanReview () {
       const status = String(this.proposal && this.proposal.currentStatus ? this.proposal.currentStatus : '').trim().toLowerCase()
@@ -318,6 +429,124 @@ export default {
       const key = this.resolveChecklistItemId(section, item)
       const checked = Boolean(event && event.target && event.target.checked)
       this.$set(this.form.checklistValues, key, checked)
+    },
+    formatDateTime (value) {
+      if (!value) return '-'
+      const d = new Date(value)
+      if (Number.isNaN(d.getTime())) return '-'
+      return d.toLocaleString(this.$i18n && this.$i18n.locale === 'en' ? 'en-GB' : 'th-TH', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    },
+    initializeSignatureCanvas () {
+      const canvas = this.$refs.signatureCanvas
+      if (!canvas) return
+      const ratio = Math.max(window.devicePixelRatio || 1, 1)
+      const width = Math.max(Math.floor(canvas.clientWidth || 560), 320)
+      const height = 180
+      canvas.width = width * ratio
+      canvas.height = height * ratio
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.scale(ratio, ratio)
+      ctx.clearRect(0, 0, width, height)
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, width, height)
+      ctx.lineWidth = 2
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.strokeStyle = '#8b1212'
+      this.signatureHasStroke = false
+      if (this.signatureData) {
+        this.renderSignatureToCanvas()
+      }
+    },
+    renderSignatureToCanvas () {
+      const canvas = this.$refs.signatureCanvas
+      if (!canvas || !this.signatureData) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      const image = new Image()
+      image.onload = () => {
+        const width = canvas.clientWidth || 560
+        const height = 180
+        ctx.clearRect(0, 0, width, height)
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, width, height)
+
+        const scale = Math.min(width / image.width, height / image.height, 1)
+        const drawWidth = image.width * scale
+        const drawHeight = image.height * scale
+        const offsetX = (width - drawWidth) / 2
+        const offsetY = (height - drawHeight) / 2
+        ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight)
+        this.signatureHasStroke = true
+      }
+      image.src = this.signatureData
+    },
+    signaturePointFromEvent (event) {
+      const canvas = this.$refs.signatureCanvas
+      if (!canvas) return null
+      const rect = canvas.getBoundingClientRect()
+      const source = event && event.touches && event.touches[0]
+        ? event.touches[0]
+        : (event && event.changedTouches && event.changedTouches[0] ? event.changedTouches[0] : event)
+      if (!source) return null
+      return {
+        x: source.clientX - rect.left,
+        y: source.clientY - rect.top
+      }
+    },
+    startSignatureDrawing (event) {
+      if (this.isEvaluationLocked) return
+      const canvas = this.$refs.signatureCanvas
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      const point = this.signaturePointFromEvent(event)
+      if (!ctx || !point) return
+      this.isSignatureDrawing = true
+      ctx.beginPath()
+      ctx.moveTo(point.x, point.y)
+    },
+    drawSignature (event) {
+      if (!this.isSignatureDrawing || this.isEvaluationLocked) return
+      const canvas = this.$refs.signatureCanvas
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      const point = this.signaturePointFromEvent(event)
+      if (!ctx || !point) return
+      ctx.lineTo(point.x, point.y)
+      ctx.stroke()
+      this.signatureHasStroke = true
+    },
+    stopSignatureDrawing () {
+      if (!this.isSignatureDrawing) return
+      this.isSignatureDrawing = false
+      const canvas = this.$refs.signatureCanvas
+      if (!canvas || !this.signatureHasStroke) return
+      this.signatureData = canvas.toDataURL('image/png')
+      this.signatureTimestamp = new Date().toISOString()
+    },
+    clearSignature () {
+      this.signatureData = ''
+      this.signatureTimestamp = ''
+      this.signatureSavedAt = ''
+      this.signatureHasStroke = false
+      try {
+        localStorage.removeItem(this.signatureKey())
+      } catch (_) {
+        // ignore local storage cleanup errors
+      }
+      const upload = this.$refs.signatureUpload
+      if (upload) upload.value = ''
+      this.$nextTick(() => {
+        if (!this.isEvaluationLocked) this.initializeSignatureCanvas()
+      })
     },
     checklistSnapshot () {
       return this.templateSections.map((section) => ({
@@ -377,6 +606,12 @@ export default {
       this.submittedBannerVisible = false
       this.isEvaluationLocked = false
       this.evaluationFileName = ''
+      this.signatureData = ''
+      this.signatureTimestamp = ''
+      this.submittedAt = ''
+      this.signatureSavedAt = ''
+      this.isSignatureDrawing = false
+      this.signatureHasStroke = false
       this.form = {
         checklistValues: {},
         comments: '',
@@ -399,9 +634,13 @@ export default {
         this.loading = false
       }
 
+      if (this.proposal) this.loadSavedSignature()
       if (this.proposal) this.loadDraft()
       if (this.proposal) await this.loadSavedReview()
       if (this.proposal) this.loadLocalSubmissionLock()
+      this.$nextTick(() => {
+        if (!this.isEvaluationLocked) this.initializeSignatureCanvas()
+      })
     },
     async loadSavedReview () {
       if (!this.proposal) return
@@ -417,6 +656,7 @@ export default {
           this.clearLocalSubmissionLock()
           this.isEvaluationLocked = false
           this.submittedBannerVisible = false
+          this.submittedAt = ''
           return
         }
 
@@ -426,6 +666,12 @@ export default {
           comments: review.summaryComment || '',
           decision: review.decision === 'reject' ? 'reject' : 'approve'
         }
+        this.signatureData = String(review && review.signatureData ? review.signatureData : '')
+        this.signatureTimestamp = review && (review.signatureUpdatedAt || review.submittedAt)
+          ? String(review.signatureUpdatedAt || review.submittedAt)
+          : ''
+        this.submittedAt = review && review.submittedAt ? String(review.submittedAt) : ''
+        if (this.signatureData) this.saveSignatureToStorage()
 
         if (isLockedReview) {
           this.isEvaluationLocked = true
@@ -434,6 +680,7 @@ export default {
           this.clearLocalSubmissionLock()
           this.isEvaluationLocked = false
           this.submittedBannerVisible = false
+          this.submittedAt = ''
         }
       } catch (error) {
         const status = error && error.response ? error.response.status : null
@@ -441,6 +688,7 @@ export default {
           this.clearLocalSubmissionLock()
           this.isEvaluationLocked = false
           this.submittedBannerVisible = false
+          this.submittedAt = ''
           return
         }
         console.warn('Load saved chairman review failed:', error)
@@ -455,6 +703,7 @@ export default {
         if (String(parsed.userId || '') !== String(this.currentUserId || '')) return
         this.isEvaluationLocked = true
         this.submittedBannerVisible = true
+        this.submittedAt = String(parsed.submittedAt || this.submittedAt || '')
       } catch (_) {
         return undefined
       }
@@ -470,9 +719,28 @@ export default {
       const userId = this.currentUserId || 'unknown'
       return proposalId ? `chairmanSubmission:${proposalId}:round:${this.activeRoundNo}:user:${userId}` : ''
     },
+    signatureKey () {
+      const proposalId = this.proposal ? (this.proposal._id || this.proposal.id) : ''
+      const userId = this.currentUserId || 'unknown'
+      return proposalId ? `chairmanSignature:${proposalId}:user:${userId}` : ''
+    },
     clearLocalSubmissionLock () {
       try {
         localStorage.removeItem(this.submissionKey())
+      } catch (_) {
+        return undefined
+      }
+      return undefined
+    },
+    loadSavedSignature () {
+      try {
+        const raw = localStorage.getItem(this.signatureKey())
+        if (!raw) return
+        const saved = JSON.parse(raw)
+        if (!saved || typeof saved !== 'object') return
+        this.signatureData = String(saved.signatureData || '')
+        this.signatureTimestamp = String(saved.signatureTimestamp || '')
+        this.signatureSavedAt = String(saved.savedAt || '')
       } catch (_) {
         return undefined
       }
@@ -493,6 +761,10 @@ export default {
           decision: String(form && form.decision ? form.decision : 'approve') || 'approve'
         }
         this.evaluationFileName = String(draft && draft.evaluationFileName ? draft.evaluationFileName : '')
+        if (draft && draft.signatureData) {
+          this.signatureData = String(draft.signatureData)
+          this.signatureTimestamp = String(draft.signatureTimestamp || '')
+        }
       } catch (_) {
         return undefined
       }
@@ -505,6 +777,8 @@ export default {
           form: {
             ...this.form
           },
+          signatureData: this.signatureData,
+          signatureTimestamp: this.signatureTimestamp,
           evaluationFileName: this.evaluationFileName,
           savedAt: new Date().toISOString(),
           userId: this.currentUserId || ''
@@ -512,8 +786,64 @@ export default {
       } catch (_) {
         return undefined
       }
+      this.saveSignatureToStorage()
       this.draftSaved = true
       return undefined
+    },
+    saveSignatureToStorage () {
+      if (!this.proposal || !this.hasSignatureData) return false
+      const savedAt = new Date().toISOString()
+      try {
+        localStorage.setItem(this.signatureKey(), JSON.stringify({
+          proposalId: this.proposal._id || this.proposal.id || '',
+          userId: this.currentUserId || '',
+          signatureData: this.signatureData,
+          signatureTimestamp: this.signatureTimestamp || savedAt,
+          savedAt
+        }))
+        this.signatureSavedAt = savedAt
+        return true
+      } catch (_) {
+        return false
+      }
+    },
+    async saveSignature () {
+      if (!this.hasSignatureData) {
+        await this.showAlert({
+          icon: 'warning',
+          title: this.$t('chairman.proposalDetail.alerts.signatureRequiredTitle'),
+          text: this.$t('chairman.proposalDetail.alerts.signatureRequiredText')
+        })
+        return
+      }
+      const ok = this.saveSignatureToStorage()
+      await this.showAlert({
+        icon: ok ? 'success' : 'error',
+        title: ok
+          ? this.$t('chairman.proposalDetail.signature.saveSuccessTitle')
+          : this.$t('chairman.proposalDetail.signature.saveErrorTitle'),
+        text: ok
+          ? this.$t('chairman.proposalDetail.signature.saveSuccessText')
+          : this.$t('chairman.proposalDetail.alerts.retry')
+      })
+    },
+    openSignatureUpload () {
+      if (this.isEvaluationLocked) return
+      const input = this.$refs.signatureUpload
+      if (input && typeof input.click === 'function') input.click()
+    },
+    onSignatureUpload (event) {
+      if (this.isEvaluationLocked) return
+      const file = event && event.target && event.target.files && event.target.files[0] ? event.target.files[0] : null
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = () => {
+        this.signatureData = typeof reader.result === 'string' ? reader.result : ''
+        this.signatureTimestamp = this.signatureData ? new Date().toISOString() : ''
+        this.$nextTick(() => this.renderSignatureToCanvas())
+        if (event && event.target) event.target.value = ''
+      }
+      reader.readAsDataURL(file)
     },
     async submitEvaluation () {
       if (!this.proposal || this.isSubmitting) return
@@ -533,6 +863,14 @@ export default {
         })
         return
       }
+      if (!this.hasSignatureData) {
+        await this.showAlert({
+          icon: 'warning',
+          title: this.$t('chairman.proposalDetail.alerts.signatureRequiredTitle'),
+          text: this.$t('chairman.proposalDetail.alerts.signatureRequiredText')
+        })
+        return
+      }
 
       const proposalId = this.proposal._id || this.proposal.id
       const decisionMap = {
@@ -547,20 +885,26 @@ export default {
         decision: decisionMap[this.form.decision] || null,
         summaryComment: this.form.comments || '',
         totalScore: null,
+        signatureData: this.signatureData,
         isSubmit: true
       }
 
       this.isSubmitting = true
       try {
+        const submittedAt = new Date().toISOString()
         await Service.proposal.saveReview(encodeURIComponent(proposalId), payload)
 
         localStorage.setItem(this.submissionKey(), JSON.stringify({
           ...payload,
           userId: this.currentUserId || '',
-          submittedAt: new Date().toISOString(),
-          form: { ...this.form }
+          submittedAt,
+          form: { ...this.form },
+          signatureData: this.signatureData,
+          signatureTimestamp: this.signatureTimestamp
         }))
         localStorage.removeItem(this.draftKey())
+        this.saveSignatureToStorage()
+        this.submittedAt = submittedAt
 
         this.isEvaluationLocked = true
         this.submittedBannerVisible = true
@@ -768,6 +1112,108 @@ export default {
   font-size: 0.875rem;
 }
 
+.chairman-signature-card {
+  border: 1px solid #e8d6ad;
+  border-radius: 0.9rem;
+  overflow: hidden;
+}
+
+.chairman-signature-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, rgba(139, 18, 18, 0.04) 0%, rgba(197, 155, 58, 0.14) 100%);
+}
+
+.chairman-signature-card__title {
+  font-weight: 700;
+  color: #7f1d1d;
+}
+
+.chairman-signature-card__body {
+  background: #fffdf8;
+}
+
+.chairman-signature-card__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.chairman-signature-card__toolbar-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chairman-signature-card__surface {
+  display: grid;
+}
+
+.chairman-signature-card__canvas-wrap,
+.chairman-signature-card__preview {
+  border: 1px dashed #d5b46d;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  min-height: 190px;
+}
+
+.chairman-signature-card__canvas {
+  display: block;
+  width: 100%;
+  height: 190px;
+  touch-action: none;
+  border-radius: 0.9rem;
+}
+
+.chairman-signature-card__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.chairman-signature-card__preview.is-empty {
+  background: #fffaf0;
+}
+
+.chairman-signature-card__image {
+  max-width: 100%;
+  max-height: 170px;
+  object-fit: contain;
+}
+
+.chairman-signature-card__empty {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.chairman-signature-card__meta {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
+.chairman-signature-card__hint {
+  margin-top: 0.5rem;
+}
+
+.chairman-signature-card__saved {
+  margin-top: 0.35rem;
+  font-weight: 600;
+}
+
+.chairman-signature-card__alert {
+  border-color: #f4d38b;
+}
+
 .decision-readonly {
   padding: 0.625rem 0.75rem;
   border-radius: 0.5rem;
@@ -783,5 +1229,13 @@ export default {
 .form-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+@media (max-width: 576px) {
+  .chairman-signature-card__header,
+  .chairman-signature-card__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 </style>

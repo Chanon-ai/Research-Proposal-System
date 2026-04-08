@@ -461,6 +461,9 @@ exports.saveReview = async (req, res, next) => {
     if (err && err.message === 'Unauthorized') {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
+    if (err && (err.message === 'Signature is required' || err.message === 'Signature format is invalid' || err.message === 'Signature payload is too large')) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
     next(err);
   }
 };

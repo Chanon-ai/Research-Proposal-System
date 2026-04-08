@@ -92,6 +92,21 @@ function isReviewLockedStatus(status) {
   return normalized === REVIEW_STATUS.SUBMITTED || normalized === REVIEW_STATUS.CERTIFIED;
 }
 
+function asString(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function validateReviewSignatureData(signatureData, { required = false } = {}) {
+  const raw = asString(signatureData);
+  if (!raw) {
+    if (required) throw new Error('Signature is required');
+    return '';
+  }
+  if (!raw.startsWith('data:image/')) throw new Error('Signature format is invalid');
+  if (raw.length > 8 * 1024 * 1024) throw new Error('Signature payload is too large');
+  return raw;
+}
+
 function getAssignedChairmanIdsFromProposal(proposal = {}) {
   const assignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
     ? proposal.chairmanAssignment
@@ -1600,7 +1615,8 @@ async function saveReview(proposalId, payload, user) {
     decision,
     summaryComment,
     totalScore,
-    isSubmit
+    isSubmit,
+    signatureData
   } = payload;
   if (!user || !user._id) throw new Error('Unauthorized');
 
@@ -1637,6 +1653,11 @@ async function saveReview(proposalId, payload, user) {
     ? REVIEW_STATUS.SUBMITTED
     : (existing && existing.reviewStatus ? existing.reviewStatus : REVIEW_STATUS.IN_PROGRESS);
 
+  const isChairmanReviewer = isChairmanRole(reviewerRole);
+  const savedSignature = isChairmanReviewer
+    ? validateReviewSignatureData(signatureData, { required: nextStatus === REVIEW_STATUS.SUBMITTED })
+    : '';
+
   const update = {
     proposalId,
     reviewerUserId: user._id,
@@ -1648,6 +1669,11 @@ async function saveReview(proposalId, payload, user) {
     totalScore,
     reviewStatus: nextStatus
   };
+
+  if (isChairmanReviewer) {
+    update.signatureData = savedSignature;
+    update.signatureUpdatedAt = savedSignature ? new Date() : null;
+  }
 
   if (nextStatus === REVIEW_STATUS.SUBMITTED) {
     update.submittedAt = new Date();

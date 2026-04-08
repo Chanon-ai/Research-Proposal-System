@@ -104,6 +104,14 @@ const proposalReviewSchema = new mongoose.Schema(
       type: [scoreItemSchema],
       default: []
     },
+    signatureData: {
+      type: String,
+      default: ''
+    },
+    signatureUpdatedAt: {
+      type: Date,
+      default: null
+    },
     submittedAt: {
       type: Date,
       default: null
