@@ -138,10 +138,24 @@ export function getLatestProposalActivity(item) {
   return item && (item.lastStatusActionAt || item.currentStatusUpdatedAt || item.statusUpdatedAt || item.updatedAt || item.createdAt || null)
 }
 
-export function getFinanceAssignmentStatusLabel(item) {
+export function getFinanceAssignmentStatusKey(item) {
   const assignment = getFinanceAssignment(item)
   const status = String(assignment.status || '').trim().toLowerCase()
-  if (status === 'submitted') return 'ส่งผลการตรวจสอบแล้ว'
-  if (status === 'pending') return 'รอบันทึกผลการตรวจสอบ'
-  return 'ยังไม่เริ่มต้น'
+  if (status === 'submitted') return 'submitted'
+  if (status === 'pending') return 'pending'
+  return 'idle'
+}
+
+export function getFinanceAssignmentStatusLabel(item, translate = null) {
+  const statusKey = getFinanceAssignmentStatusKey(item)
+  if (typeof translate === 'function') {
+    return translate(`finance.status.${statusKey}`)
+  }
+
+  const fallbackMap = {
+    idle: 'Not started',
+    pending: 'Pending review note',
+    submitted: 'Review submitted'
+  }
+  return fallbackMap[statusKey] || fallbackMap.idle
 }

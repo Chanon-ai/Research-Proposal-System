@@ -160,25 +160,25 @@ export default [{
     {
       _name: 'CSidebarNavTitle',
       roles: ['finance_officer'],
-      _children: ['Finance Officer']
+      _children: ['nav.financeMenu']
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'ภาพรวมงบประมาณ',
+      name: 'nav.financeDashboard',
       to: '/finance-officer/dashboard',
       icon: 'cil-speedometer',
       roles: ['finance_officer']
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'โครงการที่ได้รับมอบหมาย',
+      name: 'nav.financeAssigned',
       to: '/finance-officer/assigned',
       icon: 'cil-wallet',
       roles: ['finance_officer']
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'Notifications',
+      name: 'header.notifications',
       to: '/finance-officer/notifications',
       icon: 'cil-bell',
       roles: ['finance_officer']

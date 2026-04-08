@@ -95,7 +95,7 @@
               <template #actions="{ item }">
                 <td class="text-nowrap">
                   <CButton color="primary" size="sm" class="mr-1 admin-proposal-action-btn" @click="onView(item)"><CIcon name="cil-folder-open" class="mr-1" /> {{ $t('adminProposalList.view') }}</CButton>
-                  <CButton v-if="canOpenFinanceAssign(item)" color="info" size="sm" class="mr-1 admin-proposal-action-btn" @click="openFinanceModal(item)">มอบหมายการเงิน</CButton>
+                  <CButton v-if="canOpenFinanceAssign(item)" color="info" size="sm" class="mr-1 admin-proposal-action-btn" @click="openFinanceModal(item)">{{ $t('adminProposalList.financeActionAssign') }}</CButton>
                 </td>
               </template>
             </CDataTable>
@@ -258,16 +258,16 @@
       :show.sync="showFinanceModal"
       :close-on-backdrop="false"
       centered
-      title="มอบหมายเจ้าหน้าที่การเงิน"
+      :title="$t('adminProposalList.modals.assignFinance.title')"
     >
       <template #body-wrapper>
         <div v-if="selectedProposal">
-          <div class="mb-2"><strong>รหัสโครงการ</strong> {{ selectedProposal.proposalCode || '-' }}</div>
-          <div class="mb-3"><strong>ชื่อโครงการ</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
+          <div class="mb-2"><strong>{{ $t('adminProposalList.modals.assignFinance.proposalCode') }}</strong> {{ selectedProposal.proposalCode || '-' }}</div>
+          <div class="mb-3"><strong>{{ $t('adminProposalList.modals.assignFinance.projectTitle') }}</strong> {{ selectedProposal.projectTitleTh || '-' }}</div>
 
           <div v-if="financeLoading" class="text-center py-3">
             <CSpinner size="sm" color="primary" />
-            <div class="small text-muted mt-2">กำลังโหลดรายชื่อเจ้าหน้าที่การเงิน...</div>
+            <div class="small text-muted mt-2">{{ $t('adminProposalList.modals.assignFinance.loading') }}</div>
           </div>
 
           <CAlert v-else-if="financeError" color="warning" show>
@@ -276,7 +276,7 @@
 
           <CSelect
             v-else
-            label="เลือกเจ้าหน้าที่การเงิน"
+            :label="$t('adminProposalList.modals.assignFinance.select')"
             :value="selectedFinanceOfficerId"
             :options="financeOptions"
             @change="onFinanceOfficerChange"
@@ -286,13 +286,13 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100">
-          <CButton color="secondary" class="mr-2" @click="closeFinanceModal">ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-2" @click="closeFinanceModal">{{ $t('adminProposalList.modals.assignFinance.cancel') }}</CButton>
           <CButton
             color="info"
             :disabled="!selectedFinanceOfficerId || submittingFinance"
             @click="confirmAssignFinanceOfficer"
           >
-            {{ submittingFinance ? 'กำลังบันทึก...' : 'ยืนยันการมอบหมาย' }}
+            {{ submittingFinance ? $t('adminProposalList.modals.assignFinance.saving') : $t('adminProposalList.modals.assignFinance.confirm') }}
           </CButton>
         </div>
       </template>
@@ -441,7 +441,7 @@ export default {
     },
     financeOptions () {
       return [
-        { value: '', label: 'เลือกเจ้าหน้าที่การเงิน' },
+        { value: '', label: this.$t('adminProposalList.modals.assignFinance.selectPlaceholder') },
         ...(this.financeUsers || []).map(user => ({
           value: user && user._id ? String(user._id) : '',
           label: user && user.fullName ? `${user.fullName}${user.department ? ` (${user.department})` : ''}` : '-'
@@ -527,8 +527,8 @@ export default {
       const assignment = this.getFinanceAssignment(proposal)
       const status = String(assignment.status || '').trim().toLowerCase()
       const names = this.getFinanceNames(proposal)
-      if (status === 'pending') return names ? `มอบหมายให้ ${names} ตรวจสอบงบประมาณ` : 'มอบหมายเจ้าหน้าที่การเงินแล้ว'
-      if (status === 'submitted') return names ? `${names} ส่งผลการตรวจสอบงบประมาณแล้ว` : 'ส่งผลการตรวจสอบงบประมาณแล้ว'
+      if (status === 'pending') return names ? this.$t('adminProposalList.financeAssignedWithName', { name: names }) : this.$t('adminProposalList.financeAssigned')
+      if (status === 'submitted') return names ? this.$t('adminProposalList.financeSubmittedWithName', { name: names }) : this.$t('adminProposalList.financeSubmitted')
       return ''
     },
     getChairmanActionLabel (proposal) {
@@ -580,7 +580,7 @@ export default {
           : (payload && Array.isArray(payload.data) ? payload.data : [])
       } catch (error) {
         this.financeUsers = []
-        this.financeError = (error && error.response && error.response.data && error.response.data.message) || error.message || 'ไม่สามารถโหลดรายชื่อเจ้าหน้าที่การเงินได้'
+        this.financeError = (error && error.response && error.response.data && error.response.data.message) || error.message || this.$t('adminProposalList.financeLoadError')
       } finally {
         this.financeLoading = false
       }
@@ -738,14 +738,14 @@ export default {
         await this.fetchProposals()
         await Swal.fire({
           icon: 'success',
-          title: 'มอบหมายเจ้าหน้าที่การเงินสำเร็จ',
+          title: this.$t('adminProposalList.assignFinanceSuccess'),
           timer: 1600,
           showConfirmButton: false
         })
       } catch (error) {
         await Swal.fire({
           icon: 'error',
-          title: 'มอบหมายเจ้าหน้าที่การเงินไม่สำเร็จ',
+          title: this.$t('adminProposalList.assignFinanceError'),
           text: (error && error.response && error.response.data && error.response.data.message) || this.$t('adminProposalList.genericRetry')
         })
       } finally {

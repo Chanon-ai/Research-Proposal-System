@@ -277,12 +277,12 @@
 import { instance as axios } from '@/service/api'
 import Swal from 'sweetalert2'
 
-const ROLES = {
-  admin: 'ผู้ดูแลระบบ',
-  chairman: 'ประธานสำนัก',
-  committee: 'คณะกรรมการ',
-  finance_officer: 'เจ้าหน้าที่การเงิน',
-  researcher: 'นักวิจัย'
+const ROLE_LABEL_KEYS = {
+  admin: 'roleAccess.roles.admin',
+  chairman: 'roleAccess.roles.chairman',
+  committee: 'roleAccess.roles.committee',
+  finance_officer: 'roleAccess.roles.finance_officer',
+  researcher: 'roleAccess.roles.researcher'
 }
 
 const ROLE_BADGE_COLORS = {
@@ -395,11 +395,11 @@ export default {
     roleFilterOptions () {
       return [
         { value: '', label: 'ทุก Role' },
-        ...Object.keys(ROLES).map(role => ({ value: role, label: ROLES[role] }))
+        ...Object.keys(ROLE_LABEL_KEYS).map(role => ({ value: role, label: this.getRoleLabel(role) }))
       ]
     },
     roleInputOptions () {
-      return Object.keys(ROLES).map(role => ({ value: role, label: ROLES[role] }))
+      return Object.keys(ROLE_LABEL_KEYS).map(role => ({ value: role, label: this.getRoleLabel(role) }))
     },
     departmentFilterOptions () {
       return [
@@ -585,7 +585,8 @@ export default {
       this.fetchUsers()
     },
     getRoleLabel (role) {
-      return ROLES[role] || role || '-'
+      const key = ROLE_LABEL_KEYS[role]
+      return key ? this.$t(key) : (role || '-')
     },
     getRoleColor (role) {
       return ROLE_BADGE_COLORS[role] || 'secondary'

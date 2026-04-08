@@ -192,6 +192,7 @@ export default {
         admin: 'userProfile.roles.admin',
         researcher: 'userProfile.roles.researcher',
         committee: 'userProfile.roles.committee',
+        finance_officer: 'userProfile.roles.finance_officer',
         chairman: 'userProfile.roles.chairman'
       }
       return map[roleKey] ? this.$t(map[roleKey]) : (role || '-')

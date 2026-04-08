@@ -2,7 +2,7 @@
   <div>
     <div v-if="loading" class="text-center py-5">
       <CSpinner color="primary" />
-      <div class="mt-2 text-muted">กำลังโหลดรายละเอียดโครงการ...</div>
+      <div class="mt-2 text-muted">{{ $t('finance.detail.loading') }}</div>
     </div>
 
     <CAlert v-else-if="error" color="danger" show>
@@ -17,67 +17,67 @@
         <div class="finance-detail-sticky">
           <CCard class="mb-3 finance-detail-card">
             <CCardHeader>
-              <strong>สรุปงบประมาณโครงการ</strong>
+              <strong>{{ $t('finance.detail.summaryTitle') }}</strong>
             </CCardHeader>
             <CCardBody>
               <div class="finance-metric-grid">
                 <div class="finance-metric-box">
-                  <small class="text-muted d-block">ประเภททุน</small>
+                  <small class="text-muted d-block">{{ $t('finance.detail.fundingType') }}</small>
                   <strong>{{ fundingDisplay }}</strong>
                 </div>
                 <div class="finance-metric-box">
-                  <small class="text-muted d-block">สถานะงาน</small>
+                  <small class="text-muted d-block">{{ $t('finance.detail.assignmentStatus') }}</small>
                   <CBadge :color="assignmentBadgeColor">{{ assignmentLabel }}</CBadge>
                 </div>
                 <div class="finance-metric-box">
-                  <small class="text-muted d-block">งบที่เสนอ</small>
+                  <small class="text-muted d-block">{{ $t('finance.labels.proposedBudget') }}</small>
                   <strong>{{ formatMoney(budgetTotal) }}</strong>
                 </div>
                 <div class="finance-metric-box">
-                  <small class="text-muted d-block">เพดานงบ</small>
+                  <small class="text-muted d-block">{{ $t('finance.labels.budgetLimit') }}</small>
                   <strong>{{ budgetLimit > 0 ? formatMoney(budgetLimit) : '-' }}</strong>
                 </div>
                 <div class="finance-metric-box">
-                  <small class="text-muted d-block">คงเหลือ</small>
+                  <small class="text-muted d-block">{{ $t('finance.labels.remainingBudget') }}</small>
                   <strong :class="remainingClass">{{ budgetLimit > 0 ? formatMoney(remainingBudget) : '-' }}</strong>
                 </div>
                 <div class="finance-metric-box">
-                  <small class="text-muted d-block">ผู้รับผิดชอบ</small>
+                  <small class="text-muted d-block">{{ $t('finance.detail.applicant') }}</small>
                   <strong>{{ applicantName }}</strong>
                 </div>
               </div>
               <div class="mt-3 text-muted small">
-                สถานะปัจจุบันของโครงการ: {{ proposal.currentStatus || '-' }}
+                {{ $t('finance.detail.currentStatus', { status: currentStatusLabel }) }}
               </div>
             </CCardBody>
           </CCard>
 
           <CCard class="finance-detail-card">
             <CCardHeader class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
-              <strong>บันทึกผลการตรวจสอบงบประมาณ</strong>
-              <small class="text-muted">ผลการบันทึกจะถูกส่งกลับไปยังแอดมิน</small>
+              <strong>{{ $t('finance.detail.reviewTitle') }}</strong>
+              <small class="text-muted">{{ $t('finance.detail.reviewHint') }}</small>
             </CCardHeader>
             <CCardBody>
               <CTextarea
                 v-model="form.summaryComment"
-                label="บันทึกผลการตรวจสอบ"
+                :label="$t('finance.detail.reviewLabel')"
                 rows="8"
-                placeholder="ระบุข้อสังเกต ข้อเสนอแนะ หรือประเด็นที่ต้องการให้แอดมินติดตาม"
+                :placeholder="$t('finance.detail.reviewPlaceholder')"
                 :disabled="isLocked"
               />
 
               <CAlert v-if="budgetLimit > 0 && budgetTotal > budgetLimit" color="warning" show class="mt-3 mb-0">
-                งบประมาณที่เสนอเกินเพดานงบที่กำหนด
+                {{ $t('finance.detail.overLimit') }}
               </CAlert>
 
               <CAlert v-if="submittedAtText" color="success" show class="mt-3 mb-0">
-                ส่งผลการตรวจสอบแล้วเมื่อ {{ submittedAtText }}
+                {{ $t('finance.detail.submittedAt', { date: submittedAtText }) }}
               </CAlert>
 
               <div class="d-flex justify-content-end mt-4">
-                <CButton color="secondary" variant="outline" class="mr-2" @click="goBack">กลับ</CButton>
-                <CButton color="info" class="mr-2" :disabled="isLocked || isSubmitting" @click="saveDraft">บันทึกฉบับร่าง</CButton>
-                <CButton color="primary" :disabled="isLocked || isSubmitting" @click="submitReview">ส่งผลให้แอดมิน</CButton>
+                <CButton color="secondary" variant="outline" class="mr-2" @click="goBack">{{ $t('finance.actions.back') }}</CButton>
+                <CButton color="info" class="mr-2" :disabled="isLocked || isSubmitting" @click="saveDraft">{{ $t('finance.actions.saveDraft') }}</CButton>
+                <CButton color="primary" :disabled="isLocked || isSubmitting" @click="submitReview">{{ $t('finance.actions.submitToAdmin') }}</CButton>
               </div>
             </CCardBody>
           </CCard>
@@ -102,10 +102,12 @@ import {
   getBudgetLimit,
   getBudgetRemaining,
   getFinanceAssignment,
+  getFinanceAssignmentStatusKey,
   getFinanceAssignmentStatusLabel,
   getFundingDisplay,
   resolveBudgetTotal
 } from '@/ResearchFormRS/utils/financeBudget'
+import { normalizeProposalStatus } from '@/ResearchFormRS/constants/proposalWorkflow'
 
 export default {
   name: 'FinanceOfficerProposalDetail',
@@ -158,14 +160,22 @@ export default {
     financeAssignment () {
       return getFinanceAssignment(this.proposal)
     },
+    assignmentStatusKey () {
+      return getFinanceAssignmentStatusKey(this.proposal)
+    },
     assignmentLabel () {
-      return getFinanceAssignmentStatusLabel(this.proposal)
+      return getFinanceAssignmentStatusLabel(this.proposal, key => this.$t(key))
     },
     assignmentBadgeColor () {
-      return this.assignmentLabel === 'ส่งผลการตรวจสอบแล้ว' ? 'success' : 'warning'
+      return this.assignmentStatusKey === 'submitted' ? 'success' : 'warning'
     },
     isLocked () {
-      return this.assignmentLabel === 'ส่งผลการตรวจสอบแล้ว' || String(this.proposal && this.proposal.currentStatus || '') !== 'finance_budget_checking'
+      return this.assignmentStatusKey === 'submitted' || String(this.proposal && this.proposal.currentStatus || '') !== 'finance_budget_checking'
+    },
+    currentStatusLabel () {
+      const statusKey = normalizeProposalStatus(this.proposal && this.proposal.currentStatus)
+      if (!statusKey) return '-'
+      return this.$te(`proposalStatus.${statusKey}`) ? this.$t(`proposalStatus.${statusKey}`) : statusKey
     },
     remainingClass () {
       return this.budgetLimit > 0 && this.budgetTotal > this.budgetLimit ? 'text-danger' : 'text-success'
@@ -174,7 +184,7 @@ export default {
       const submittedAt = this.financeAssignment && this.financeAssignment.submittedAt
       if (!submittedAt) return ''
       const date = new Date(submittedAt)
-      return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('th-TH')
+      return Number.isNaN(date.getTime()) ? '' : date.toLocaleString(this.$i18n.locale === 'en' ? 'en-US' : 'th-TH')
     }
   },
   watch: {
@@ -210,7 +220,7 @@ export default {
           : ''
       } catch (error) {
         this.proposal = null
-        this.error = (error && error.response && error.response.data && error.response.data.message) || error.message || 'ไม่สามารถโหลดรายละเอียดโครงการได้'
+        this.error = (error && error.response && error.response.data && error.response.data.message) || error.message || this.$t('finance.errors.loadDetail')
       } finally {
         this.loading = false
       }
@@ -223,12 +233,12 @@ export default {
           isSubmit: false
         })
         await this.fetchProposal()
-        await Swal.fire({ icon: 'success', title: 'บันทึกฉบับร่างแล้ว', timer: 1400, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('finance.alerts.saveDraftSuccess'), timer: 1400, showConfirmButton: false })
       } catch (error) {
         await Swal.fire({
           icon: 'error',
-          title: 'บันทึกฉบับร่างไม่สำเร็จ',
-          text: (error && error.response && error.response.data && error.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+          title: this.$t('finance.alerts.saveDraftError'),
+          text: (error && error.response && error.response.data && error.response.data.message) || this.$t('finance.alerts.retry')
         })
       } finally {
         this.isSubmitting = false
@@ -236,17 +246,17 @@ export default {
     },
     async submitReview () {
       if (!String(this.form.summaryComment || '').trim()) {
-        await Swal.fire({ icon: 'warning', title: 'กรุณาระบุบันทึกผลการตรวจสอบก่อนส่ง' })
+        await Swal.fire({ icon: 'warning', title: this.$t('finance.alerts.requireComment') })
         return
       }
 
       const confirmed = await Swal.fire({
         icon: 'question',
-        title: 'ยืนยันการส่งผลการตรวจสอบงบประมาณ',
-        text: 'เมื่อส่งแล้ว ระบบจะส่งบันทึกนี้กลับไปยังแอดมินและล็อกการแก้ไข',
+        title: this.$t('finance.alerts.confirmSubmitTitle'),
+        text: this.$t('finance.alerts.confirmSubmitText'),
         showCancelButton: true,
-        confirmButtonText: 'ยืนยันการส่ง',
-        cancelButtonText: 'ยกเลิก'
+        confirmButtonText: this.$t('finance.alerts.confirmSubmitButton'),
+        cancelButtonText: this.$t('finance.alerts.cancel')
       })
       if (!confirmed.isConfirmed) return
 
@@ -257,12 +267,12 @@ export default {
           isSubmit: true
         })
         await this.fetchProposal()
-        await Swal.fire({ icon: 'success', title: 'ส่งผลการตรวจสอบให้แอดมินแล้ว', timer: 1600, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('finance.alerts.submitSuccess'), timer: 1600, showConfirmButton: false })
       } catch (error) {
         await Swal.fire({
           icon: 'error',
-          title: 'ส่งผลการตรวจสอบไม่สำเร็จ',
-          text: (error && error.response && error.response.data && error.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+          title: this.$t('finance.alerts.submitError'),
+          text: (error && error.response && error.response.data && error.response.data.message) || this.$t('finance.alerts.retry')
         })
       } finally {
         this.isSubmitting = false
@@ -272,7 +282,7 @@ export default {
       this.$router.push('/finance-officer/assigned')
     },
     formatMoney (value) {
-      return `${Number(value || 0).toLocaleString('th-TH', { maximumFractionDigits: 2 })} บาท`
+      return `${Number(value || 0).toLocaleString(this.$i18n.locale === 'en' ? 'en-US' : 'th-TH', { maximumFractionDigits: 2 })} ${this.$t('finance.common.currency')}`
     }
   }
 }

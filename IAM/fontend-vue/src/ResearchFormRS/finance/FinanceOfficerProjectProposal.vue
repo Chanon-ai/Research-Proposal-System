@@ -19,13 +19,13 @@
 
     <CCard>
       <CCardHeader class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
-        <strong>รายการโครงการที่ได้รับมอบหมายด้านงบประมาณ</strong>
-        <CInput class="finance-search" :value.sync="searchQuery" placeholder="ค้นหาชื่อโครงการ หรือ รหัสโครงการ" />
+        <strong>{{ $t('finance.assigned.title') }}</strong>
+        <CInput class="finance-search" :value.sync="searchQuery" :placeholder="$t('finance.assigned.searchPlaceholder')" />
       </CCardHeader>
       <CCardBody>
         <div v-if="loading" class="text-center py-5">
           <CSpinner color="primary" />
-          <div class="mt-2 text-muted">กำลังโหลดรายการ...</div>
+          <div class="mt-2 text-muted">{{ $t('finance.assigned.loading') }}</div>
         </div>
         <CAlert v-else-if="fetchError" color="danger" show>
           {{ fetchError }}
@@ -39,7 +39,7 @@
             bordered
             small
             :items-per-page="10"
-            :no-items-view="{ noResults: 'ไม่พบข้อมูลที่ค้นหา', noItems: 'ยังไม่มีโครงการที่ได้รับมอบหมาย' }"
+            :no-items-view="{ noResults: $t('finance.assigned.noResults'), noItems: $t('finance.assigned.noItems') }"
           >
             <template #projectTitleTh="{ item }">
               <td>
@@ -63,7 +63,7 @@
             </template>
             <template #actions="{ item }">
               <td>
-                <CButton size="sm" color="primary" @click="viewProposal(item)">ตรวจสอบงบประมาณ</CButton>
+                <CButton size="sm" color="primary" @click="viewProposal(item)">{{ $t('finance.actions.reviewBudget') }}</CButton>
               </td>
             </template>
           </CDataTable>
@@ -85,6 +85,7 @@ import {
   getApplicantName,
   getBudgetLimit,
   getBudgetRemaining,
+  getFinanceAssignmentStatusKey,
   getFinanceAssignmentStatusLabel,
   resolveBudgetTotal
 } from '@/ResearchFormRS/utils/financeBudget'
@@ -99,16 +100,7 @@ export default {
       proposalsRaw: [],
       fundingBudgetConfig: createDefaultFundingBudgetConfig(),
       searchQuery: '',
-      filterStatus: 'all',
-      fields: [
-        { key: 'proposalCode', label: 'รหัสโครงการ' },
-        { key: 'projectTitleTh', label: 'ชื่อโครงการ' },
-        { key: 'budgetTotal', label: 'งบที่เสนอ' },
-        { key: 'budgetLimit', label: 'เพดานงบ' },
-        { key: 'remainingBudget', label: 'คงเหลือ' },
-        { key: 'assignmentLabel', label: 'สถานะงาน' },
-        { key: 'actions', label: '' }
-      ]
+      filterStatus: 'all'
     }
   },
   async mounted () {
@@ -120,20 +112,33 @@ export default {
     centerLoadingActive () {
       return Boolean(this.loading)
     },
+    fields () {
+      return [
+        { key: 'proposalCode', label: this.$t('finance.assigned.fields.proposalCode') },
+        { key: 'projectTitleTh', label: this.$t('finance.assigned.fields.projectTitle') },
+        { key: 'budgetTotal', label: this.$t('finance.assigned.fields.budgetTotal') },
+        { key: 'budgetLimit', label: this.$t('finance.assigned.fields.budgetLimit') },
+        { key: 'remainingBudget', label: this.$t('finance.assigned.fields.remainingBudget') },
+        { key: 'assignmentLabel', label: this.$t('finance.assigned.fields.assignmentStatus') },
+        { key: 'actions', label: '' }
+      ]
+    },
     proposals () {
       return (this.proposalsRaw || []).map(item => {
         const budgetTotal = resolveBudgetTotal(item)
         const budgetLimit = getBudgetLimit(item, this.fundingBudgetConfig)
         const remainingBudget = getBudgetRemaining(item, this.fundingBudgetConfig)
-        const assignmentLabel = getFinanceAssignmentStatusLabel(item)
+        const assignmentStatusKey = getFinanceAssignmentStatusKey(item)
+        const assignmentLabel = getFinanceAssignmentStatusLabel(item, key => this.$t(key))
         return {
           ...item,
           applicantName: getApplicantName(item),
           budgetTotal,
           budgetLimit,
           remainingBudget,
+          assignmentStatusKey,
           assignmentLabel,
-          assignmentColor: assignmentLabel === 'ส่งผลการตรวจสอบแล้ว' ? 'success' : 'warning',
+          assignmentColor: assignmentStatusKey === 'submitted' ? 'success' : 'warning',
           remainingClass: budgetLimit > 0 && budgetTotal > budgetLimit ? 'text-danger font-weight-bold' : 'text-success font-weight-bold'
         }
       })
@@ -141,8 +146,8 @@ export default {
     displayItems () {
       const keyword = String(this.searchQuery || '').trim().toLowerCase()
       return this.proposals.filter(item => {
-        if (this.filterStatus === 'pending' && item.assignmentLabel === 'ส่งผลการตรวจสอบแล้ว') return false
-        if (this.filterStatus === 'submitted' && item.assignmentLabel !== 'ส่งผลการตรวจสอบแล้ว') return false
+        if (this.filterStatus === 'pending' && item.assignmentStatusKey === 'submitted') return false
+        if (this.filterStatus === 'submitted' && item.assignmentStatusKey !== 'submitted') return false
         if (this.filterStatus === 'over_limit' && !(item.budgetLimit > 0 && item.budgetTotal > item.budgetLimit)) return false
         if (!keyword) return true
         return [item.proposalCode, item.projectTitleTh, item.projectTitleEn, item.applicantName]
@@ -151,14 +156,14 @@ export default {
       })
     },
     summaryTiles () {
-      const submittedCount = this.proposals.filter(item => item.assignmentLabel === 'ส่งผลการตรวจสอบแล้ว').length
-      const pendingCount = this.proposals.filter(item => item.assignmentLabel !== 'ส่งผลการตรวจสอบแล้ว').length
+      const submittedCount = this.proposals.filter(item => item.assignmentStatusKey === 'submitted').length
+      const pendingCount = this.proposals.filter(item => item.assignmentStatusKey !== 'submitted').length
       const overLimitCount = this.proposals.filter(item => item.budgetLimit > 0 && item.budgetTotal > item.budgetLimit).length
       return [
-        { key: 'all', label: 'ทั้งหมด', value: this.proposals.length },
-        { key: 'pending', label: 'รอบันทึกผล', value: pendingCount },
-        { key: 'submitted', label: 'ส่งผลแล้ว', value: submittedCount },
-        { key: 'over_limit', label: 'เกินเพดานงบ', value: overLimitCount }
+        { key: 'all', label: this.$t('finance.assigned.tiles.all'), value: this.proposals.length },
+        { key: 'pending', label: this.$t('finance.assigned.tiles.pending'), value: pendingCount },
+        { key: 'submitted', label: this.$t('finance.assigned.tiles.submitted'), value: submittedCount },
+        { key: 'over_limit', label: this.$t('finance.assigned.tiles.overLimit'), value: overLimitCount }
       ]
     }
   },
@@ -180,7 +185,7 @@ export default {
           : (Array.isArray(payload.data) ? payload.data : [])
       } catch (error) {
         this.proposalsRaw = []
-        this.fetchError = (error && error.response && error.response.data && error.response.data.message) || error.message || 'ไม่สามารถโหลดข้อมูลได้'
+        this.fetchError = (error && error.response && error.response.data && error.response.data.message) || error.message || this.$t('finance.errors.loadData')
       } finally {
         this.loading = false
       }
@@ -189,7 +194,7 @@ export default {
       this.$router.push(`/finance-officer/proposals/${item._id}`)
     },
     formatMoney (value) {
-      return `${Number(value || 0).toLocaleString('th-TH', { maximumFractionDigits: 2 })} บาท`
+      return `${Number(value || 0).toLocaleString(this.$i18n.locale === 'en' ? 'en-US' : 'th-TH', { maximumFractionDigits: 2 })} ${this.$t('finance.common.currency')}`
     }
   }
 }

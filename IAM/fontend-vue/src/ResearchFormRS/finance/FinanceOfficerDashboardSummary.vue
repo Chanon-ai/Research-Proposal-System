@@ -2,7 +2,7 @@
   <div class="finance-dashboard-page">
     <div v-if="loading" class="text-center py-5">
       <CSpinner color="primary" />
-      <div class="mt-2 text-muted">กำลังโหลดข้อมูลงบประมาณ...</div>
+      <div class="mt-2 text-muted">{{ $t('finance.dashboard.loading') }}</div>
     </div>
 
     <CAlert v-else-if="fetchError" color="danger" show>
@@ -13,25 +13,25 @@
       <CRow class="mb-4">
         <CCol sm="6" lg="3" class="mb-3 mb-lg-0">
           <CCallout color="primary" class="finance-summary-card mb-0">
-            <small class="text-muted">โครงการที่ได้รับมอบหมาย</small><br>
+            <small class="text-muted">{{ $t('finance.dashboard.cards.assigned') }}</small><br>
             <strong class="h4">{{ summary.assignedCount }}</strong>
           </CCallout>
         </CCol>
         <CCol sm="6" lg="3" class="mb-3 mb-lg-0">
           <CCallout color="warning" class="finance-summary-card mb-0">
-            <small class="text-muted">รอบันทึกผล</small><br>
+            <small class="text-muted">{{ $t('finance.dashboard.cards.pending') }}</small><br>
             <strong class="h4">{{ summary.pendingCount }}</strong>
           </CCallout>
         </CCol>
         <CCol sm="6" lg="3" class="mb-3 mb-sm-0">
           <CCallout color="success" class="finance-summary-card mb-0">
-            <small class="text-muted">ส่งผลแล้ว</small><br>
+            <small class="text-muted">{{ $t('finance.dashboard.cards.submitted') }}</small><br>
             <strong class="h4">{{ summary.submittedCount }}</strong>
           </CCallout>
         </CCol>
         <CCol sm="6" lg="3">
           <CCallout color="info" class="finance-summary-card mb-0">
-            <small class="text-muted">งบรวมที่ได้รับมอบหมาย</small><br>
+            <small class="text-muted">{{ $t('finance.dashboard.cards.totalBudget') }}</small><br>
             <strong class="h5">{{ formatMoney(summary.totalBudget) }}</strong>
           </CCallout>
         </CCol>
@@ -39,11 +39,11 @@
 
       <CCard class="finance-highlight-card mb-4">
         <CCardHeader class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
-          <strong>การ์ดสรุปงบประมาณโครงการที่ได้รับมอบหมาย</strong>
-          <CButton size="sm" color="primary" variant="outline" @click="$router.push('/finance-officer/assigned')">ดูรายการทั้งหมด</CButton>
+          <strong>{{ $t('finance.dashboard.cardTitle') }}</strong>
+          <CButton size="sm" color="primary" variant="outline" @click="$router.push('/finance-officer/assigned')">{{ $t('common.viewAll') }}</CButton>
         </CCardHeader>
         <CCardBody>
-          <div v-if="cards.length === 0" class="text-muted text-center py-4">ยังไม่มีโครงการที่ได้รับมอบหมาย</div>
+          <div v-if="cards.length === 0" class="text-muted text-center py-4">{{ $t('finance.dashboard.empty') }}</div>
           <div v-else class="finance-card-grid">
             <div v-for="item in cards" :key="item._id" class="finance-project-card">
               <div class="finance-project-card__top">
@@ -54,24 +54,24 @@
                 <CBadge :color="item.assignmentColor">{{ item.assignmentLabel }}</CBadge>
               </div>
               <div class="finance-project-card__meta">{{ item.fundingDisplay }}</div>
-              <div class="finance-project-card__leader">หัวหน้าโครงการ: {{ item.applicantName }}</div>
+              <div class="finance-project-card__leader">{{ $t('finance.dashboard.projectLeader', { name: item.applicantName }) }}</div>
               <div class="finance-project-card__stats">
                 <div>
-                  <small class="text-muted d-block">งบที่เสนอ</small>
+                  <small class="text-muted d-block">{{ $t('finance.labels.proposedBudget') }}</small>
                   <strong>{{ formatMoney(item.budgetTotal) }}</strong>
                 </div>
                 <div>
-                  <small class="text-muted d-block">เพดานงบ</small>
+                  <small class="text-muted d-block">{{ $t('finance.labels.budgetLimit') }}</small>
                   <strong>{{ formatMoney(item.budgetLimit) }}</strong>
                 </div>
                 <div>
-                  <small class="text-muted d-block">คงเหลือ</small>
+                  <small class="text-muted d-block">{{ $t('finance.labels.remainingBudget') }}</small>
                   <strong :class="item.remainingClass">{{ formatMoney(item.remainingBudget) }}</strong>
                 </div>
               </div>
               <div class="finance-project-card__footer">
-                <small class="text-muted">อัปเดตล่าสุด {{ formatDate(item.latestActivityAt) }}</small>
-                <CButton size="sm" color="primary" @click="viewProposal(item)">ตรวจสอบงบประมาณ</CButton>
+                <small class="text-muted">{{ $t('finance.dashboard.latestUpdated', { date: formatDate(item.latestActivityAt) }) }}</small>
+                <CButton size="sm" color="primary" @click="viewProposal(item)">{{ $t('finance.actions.reviewBudget') }}</CButton>
               </div>
             </div>
           </div>
@@ -93,6 +93,7 @@ import {
   getApplicantName,
   getBudgetLimit,
   getBudgetRemaining,
+  getFinanceAssignmentStatusKey,
   getFinanceAssignmentStatusLabel,
   getFundingDisplay,
   getLatestProposalActivity,
@@ -125,7 +126,8 @@ export default {
           const budgetTotal = resolveBudgetTotal(item)
           const budgetLimit = getBudgetLimit(item, this.fundingBudgetConfig)
           const remainingBudget = getBudgetRemaining(item, this.fundingBudgetConfig)
-          const assignmentLabel = getFinanceAssignmentStatusLabel(item)
+          const assignmentStatusKey = getFinanceAssignmentStatusKey(item)
+          const assignmentLabel = getFinanceAssignmentStatusLabel(item, key => this.$t(key))
           return {
             ...item,
             applicantName: getApplicantName(item),
@@ -134,8 +136,9 @@ export default {
             remainingBudget,
             fundingDisplay: getFundingDisplay(item, this.fundingBudgetConfig),
             latestActivityAt: getLatestProposalActivity(item),
+            assignmentStatusKey,
             assignmentLabel,
-            assignmentColor: assignmentLabel === 'ส่งผลการตรวจสอบแล้ว' ? 'success' : 'warning',
+            assignmentColor: assignmentStatusKey === 'submitted' ? 'success' : 'warning',
             remainingClass: budgetLimit > 0 && budgetTotal > budgetLimit ? 'text-danger' : 'text-success'
           }
         })
@@ -145,7 +148,7 @@ export default {
       return this.proposals.reduce((acc, item) => {
         acc.assignedCount += 1
         acc.totalBudget += item.budgetTotal
-        if (item.assignmentLabel === 'ส่งผลการตรวจสอบแล้ว') {
+        if (item.assignmentStatusKey === 'submitted') {
           acc.submittedCount += 1
         } else {
           acc.pendingCount += 1
@@ -180,7 +183,7 @@ export default {
           : (Array.isArray(payload.data) ? payload.data : [])
       } catch (error) {
         this.proposalsRaw = []
-        this.fetchError = (error && error.response && error.response.data && error.response.data.message) || error.message || 'ไม่สามารถโหลดข้อมูลได้'
+        this.fetchError = (error && error.response && error.response.data && error.response.data.message) || error.message || this.$t('finance.errors.loadData')
       } finally {
         this.loading = false
       }
@@ -189,13 +192,13 @@ export default {
       this.$router.push(`/finance-officer/proposals/${item._id}`)
     },
     formatMoney (value) {
-      return `${Number(value || 0).toLocaleString('th-TH', { maximumFractionDigits: 2 })} บาท`
+      return `${Number(value || 0).toLocaleString(this.$i18n.locale === 'en' ? 'en-US' : 'th-TH', { maximumFractionDigits: 2 })} ${this.$t('finance.common.currency')}`
     },
     formatDate (value) {
       if (!value) return '-'
       const date = new Date(value)
       if (Number.isNaN(date.getTime())) return '-'
-      return date.toLocaleString('th-TH')
+      return date.toLocaleString(this.$i18n.locale === 'en' ? 'en-US' : 'th-TH')
     }
   }
 }

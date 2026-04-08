@@ -24,6 +24,7 @@
     "adminMenu": "เมนูผู้ดูแลระบบ",
     "committeeMenu": "เมนูคณะกรรมการ",
     "chairmanMenu": "เมนูประธานสำนัก",
+    "financeMenu": "เมนูเจ้าหน้าที่การเงิน",
     "userPanel": "แผงผู้ใช้",
     "userDashboard": "โครงการของฉัน",
     "userMeetings": "กำหนดการประชุม",
@@ -35,7 +36,9 @@
     "settings": "ตั้งค่า",
     "assignedTasks": "งานที่ได้รับมอบหมาย",
     "committeeSummary": "สรุปภาพรวม",
-    "researchForm": "แบบฟอร์มวิจัย"
+    "researchForm": "แบบฟอร์มวิจัย",
+    "financeDashboard": "ภาพรวมงบประมาณ",
+    "financeAssigned": "โครงการที่ได้รับมอบหมาย"
   },
   "status": {
     "draft": "แบบร่าง",
@@ -44,6 +47,7 @@
     "faculty_approved": "ประธานอนุมัติ",
     "faculty_rejected": "ประธานไม่อนุมัติ",
     "office_received": "ส่วนบริหารรับแล้ว",
+    "finance_budget_checking": "เจ้าหน้าที่กำลังตรวจสอบงบประมาณ",
     "document_checking": "ตรวจสอบเอกสาร",
     "assigned_to_committee": "มอบหมายกรรมการแล้ว",
     "under_review": "พิจารณารอบ 1",
@@ -291,6 +295,7 @@
       "admin": "ผู้ดูแลระบบ",
       "researcher": "นักวิจัย",
       "committee": "คณะกรรมการ",
+      "finance_officer": "เจ้าหน้าที่การเงิน",
       "chairman": "ประธานสำนัก"
     },
     "toasts": {
@@ -441,13 +446,21 @@
     "chairmanActionResend": "ส่งให้ประธานอีกครั้ง",
     "chairmanActionApproved": "ประธานอนุมัติแล้ว",
     "chairmanActionSend": "ส่งให้ประธาน",
+    "financeActionAssign": "มอบหมายการเงิน",
+    "financeAssigned": "มอบหมายเจ้าหน้าที่การเงินแล้ว",
+    "financeAssignedWithName": "มอบหมายให้ {name} ตรวจสอบงบประมาณ",
+    "financeSubmitted": "ส่งผลการตรวจสอบงบประมาณแล้ว",
+    "financeSubmittedWithName": "{name} ส่งผลการตรวจสอบงบประมาณแล้ว",
     "chairmanLoadError": "ไม่สามารถโหลดรายชื่อประธานได้",
+    "financeLoadError": "ไม่สามารถโหลดรายชื่อเจ้าหน้าที่การเงินได้",
     "loadErrorTitle": "โหลดข้อมูลไม่สำเร็จ",
     "loadErrorText": "ไม่สามารถดึงรายการโครงการได้ กรุณาลองใหม่อีกครั้ง",
     "changeStatusSuccess": "เปลี่ยนสถานะสำเร็จ",
     "changeStatusError": "เปลี่ยนสถานะไม่สำเร็จ",
     "assignCommitteeSuccess": "มอบหมายกรรมการสำเร็จ",
     "assignCommitteeError": "มอบหมายกรรมการไม่สำเร็จ",
+    "assignFinanceSuccess": "มอบหมายเจ้าหน้าที่การเงินสำเร็จ",
+    "assignFinanceError": "มอบหมายเจ้าหน้าที่การเงินไม่สำเร็จ",
     "genericRetry": "กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง",
     "modals": {
       "changeStatus": {
@@ -480,6 +493,17 @@
         "placeholder": "เช่น 65fa..., 65fb..., 65fc...",
         "cancel": "ยกเลิก",
         "confirm": "ยืนยัน",
+        "saving": "กำลังบันทึก..."
+      },
+      "assignFinance": {
+        "title": "มอบหมายเจ้าหน้าที่การเงิน",
+        "proposalCode": "รหัสโครงการ:",
+        "projectTitle": "ชื่อโครงการ:",
+        "loading": "กำลังโหลดรายชื่อเจ้าหน้าที่การเงิน...",
+        "select": "เลือกเจ้าหน้าที่การเงิน",
+        "selectPlaceholder": "เลือกเจ้าหน้าที่การเงิน",
+        "cancel": "ยกเลิก",
+        "confirm": "ยืนยันการมอบหมาย",
         "saving": "กำลังบันทึก..."
       }
     },
@@ -866,6 +890,7 @@
     "faculty_approved": "ประธานอนุมัติ",
     "faculty_rejected": "ประธานไม่อนุมัติ",
     "office_received": "ส่วนบริหารรับแล้ว",
+    "finance_budget_checking": "เจ้าหน้าที่กำลังตรวจสอบงบประมาณ",
     "document_checking": "ตรวจสอบเอกสาร",
     "assigned_to_committee": "มอบหมายกรรมการแล้ว",
     "under_review": "พิจารณารอบ 1",
@@ -877,6 +902,91 @@
     "approved": "อนุมัติ",
     "rejected": "ปฏิเสธ",
     "announced": "ประกาศผล"
+  },
+  "finance": {
+    "common": {
+      "currency": "บาท"
+    },
+    "labels": {
+      "proposedBudget": "งบที่เสนอ",
+      "budgetLimit": "เพดานงบ",
+      "remainingBudget": "คงเหลือ"
+    },
+    "actions": {
+      "reviewBudget": "ตรวจสอบงบประมาณ",
+      "back": "กลับ",
+      "saveDraft": "บันทึกฉบับร่าง",
+      "submitToAdmin": "ส่งผลให้แอดมิน"
+    },
+    "status": {
+      "idle": "ยังไม่เริ่มต้น",
+      "pending": "รอบันทึกผลการตรวจสอบ",
+      "submitted": "ส่งผลการตรวจสอบแล้ว"
+    },
+    "errors": {
+      "loadData": "ไม่สามารถโหลดข้อมูลได้",
+      "loadDetail": "ไม่สามารถโหลดรายละเอียดโครงการได้"
+    },
+    "dashboard": {
+      "loading": "กำลังโหลดข้อมูลงบประมาณ...",
+      "cardTitle": "การ์ดสรุปงบประมาณโครงการที่ได้รับมอบหมาย",
+      "empty": "ยังไม่มีโครงการที่ได้รับมอบหมาย",
+      "projectLeader": "หัวหน้าโครงการ: {name}",
+      "latestUpdated": "อัปเดตล่าสุด {date}",
+      "cards": {
+        "assigned": "โครงการที่ได้รับมอบหมาย",
+        "pending": "รอบันทึกผล",
+        "submitted": "ส่งผลแล้ว",
+        "totalBudget": "งบรวมที่ได้รับมอบหมาย"
+      }
+    },
+    "assigned": {
+      "title": "รายการโครงการที่ได้รับมอบหมายด้านงบประมาณ",
+      "searchPlaceholder": "ค้นหาชื่อโครงการ หรือ รหัสโครงการ",
+      "loading": "กำลังโหลดรายการ...",
+      "noResults": "ไม่พบข้อมูลที่ค้นหา",
+      "noItems": "ยังไม่มีโครงการที่ได้รับมอบหมาย",
+      "tiles": {
+        "all": "ทั้งหมด",
+        "pending": "รอบันทึกผล",
+        "submitted": "ส่งผลแล้ว",
+        "overLimit": "เกินเพดานงบ"
+      },
+      "fields": {
+        "proposalCode": "รหัสโครงการ",
+        "projectTitle": "ชื่อโครงการ",
+        "budgetTotal": "งบที่เสนอ",
+        "budgetLimit": "เพดานงบ",
+        "remainingBudget": "คงเหลือ",
+        "assignmentStatus": "สถานะงาน"
+      }
+    },
+    "detail": {
+      "loading": "กำลังโหลดรายละเอียดโครงการ...",
+      "summaryTitle": "สรุปงบประมาณโครงการ",
+      "fundingType": "ประเภททุน",
+      "assignmentStatus": "สถานะงาน",
+      "applicant": "ผู้รับผิดชอบ",
+      "currentStatus": "สถานะปัจจุบันของโครงการ: {status}",
+      "reviewTitle": "บันทึกผลการตรวจสอบงบประมาณ",
+      "reviewHint": "ผลการบันทึกจะถูกส่งกลับไปยังแอดมิน",
+      "reviewLabel": "บันทึกผลการตรวจสอบ",
+      "reviewPlaceholder": "ระบุข้อสังเกต ข้อเสนอแนะ หรือประเด็นที่ต้องการให้แอดมินติดตาม",
+      "overLimit": "งบประมาณที่เสนอเกินเพดานงบที่กำหนด",
+      "submittedAt": "ส่งผลการตรวจสอบแล้วเมื่อ {date}"
+    },
+    "alerts": {
+      "saveDraftSuccess": "บันทึกฉบับร่างแล้ว",
+      "saveDraftError": "บันทึกฉบับร่างไม่สำเร็จ",
+      "requireComment": "กรุณาระบุบันทึกผลการตรวจสอบก่อนส่ง",
+      "confirmSubmitTitle": "ยืนยันการส่งผลการตรวจสอบงบประมาณ",
+      "confirmSubmitText": "เมื่อส่งแล้ว ระบบจะส่งบันทึกนี้กลับไปยังแอดมินและล็อกการแก้ไข",
+      "confirmSubmitButton": "ยืนยันการส่ง",
+      "cancel": "ยกเลิก",
+      "submitSuccess": "ส่งผลการตรวจสอบให้แอดมินแล้ว",
+      "submitError": "ส่งผลการตรวจสอบไม่สำเร็จ",
+      "retry": "กรุณาลองใหม่อีกครั้ง"
+    }
   },
   "roleAccess": {
     "title": "กำหนดสิทธิ์การเข้าถึงหน้าระบบตาม Role",
@@ -902,6 +1012,7 @@
     "roles": {
       "researcher": "นักวิจัย",
       "committee": "คณะกรรมการ",
+      "finance_officer": "เจ้าหน้าที่การเงิน",
       "admin": "ผู้ดูแลระบบ",
       "chairman": "ประธานสำนัก"
     },
@@ -929,7 +1040,11 @@
       "chairman-assigned": "รายการที่ได้รับมอบหมายประธานสำนัก",
       "chairman-meetings": "ประชุมประธานสำนัก",
       "chairman-notifications": "การแจ้งเตือนประธานสำนัก",
-      "chairman-proposals": "หน้าอ่านข้อเสนอของประธานสำนัก"
+      "chairman-proposals": "หน้าอ่านข้อเสนอของประธานสำนัก",
+      "finance-dashboard": "แดชบอร์ดเจ้าหน้าที่การเงิน",
+      "finance-assigned": "โครงการที่ได้รับมอบหมายด้านงบประมาณ",
+      "finance-notifications": "การแจ้งเตือนเจ้าหน้าที่การเงิน",
+      "finance-proposals": "หน้าอ่านข้อเสนอโครงการของเจ้าหน้าที่การเงิน"
     }
   },
   "fundingBudget": {

@@ -24,6 +24,7 @@
     "adminMenu": "Admin Menu",
     "committeeMenu": "Committee Menu",
     "chairmanMenu": "Chairman Menu",
+    "financeMenu": "Finance Officer Menu",
     "userPanel": "User Panel",
     "userDashboard": "My Projects",
     "userMeetings": "My Meetings",
@@ -35,7 +36,9 @@
     "settings": "Settings",
     "assignedTasks": "Assigned Tasks",
     "committeeSummary": "Overview",
-    "researchForm": "Research Form"
+    "researchForm": "Research Form",
+    "financeDashboard": "Budget Overview",
+    "financeAssigned": "Assigned Projects"
   },
   "status": {
     "draft": "Draft",
@@ -44,6 +47,7 @@
     "faculty_approved": "Chair Approved",
     "faculty_rejected": "Chair Rejected",
     "office_received": "Office Received",
+    "finance_budget_checking": "Finance Budget Checking",
     "document_checking": "Document Checking",
     "assigned_to_committee": "Assigned to Committee",
     "under_review": "Under Review",
@@ -291,6 +295,7 @@
       "admin": "Administrator",
       "researcher": "Researcher",
       "committee": "Committee",
+      "finance_officer": "Finance Officer",
       "chairman": "Chairman"
     },
     "toasts": {
@@ -441,13 +446,21 @@
     "chairmanActionResend": "Resend to chairman",
     "chairmanActionApproved": "Chairman already approved",
     "chairmanActionSend": "Send to chairman",
+    "financeActionAssign": "Assign finance",
+    "financeAssigned": "Finance officer assigned",
+    "financeAssignedWithName": "Assigned {name} to review the budget",
+    "financeSubmitted": "Finance review submitted",
+    "financeSubmittedWithName": "{name} submitted the finance review",
     "chairmanLoadError": "Unable to load chairman list",
+    "financeLoadError": "Unable to load finance officer list",
     "loadErrorTitle": "Unable to load data",
     "loadErrorText": "Unable to fetch project list. Please try again.",
     "changeStatusSuccess": "Status updated successfully",
     "changeStatusError": "Unable to update status",
     "assignCommitteeSuccess": "Committee assigned successfully",
     "assignCommitteeError": "Unable to assign committee",
+    "assignFinanceSuccess": "Finance officer assigned successfully",
+    "assignFinanceError": "Unable to assign finance officer",
     "genericRetry": "Please verify the information and try again.",
     "modals": {
       "changeStatus": {
@@ -480,6 +493,17 @@
         "placeholder": "For example 65fa..., 65fb..., 65fc...",
         "cancel": "Cancel",
         "confirm": "Confirm",
+        "saving": "Saving..."
+      },
+      "assignFinance": {
+        "title": "Assign finance officer",
+        "proposalCode": "Proposal code:",
+        "projectTitle": "Project title:",
+        "loading": "Loading finance officer list...",
+        "select": "Select finance officer",
+        "selectPlaceholder": "Select finance officer",
+        "cancel": "Cancel",
+        "confirm": "Confirm assignment",
         "saving": "Saving..."
       }
     },
@@ -866,6 +890,7 @@
     "faculty_approved": "Dean Approved",
     "faculty_rejected": "Dean Rejected",
     "office_received": "Office Received",
+    "finance_budget_checking": "Finance Budget Checking",
     "document_checking": "Document Checking",
     "assigned_to_committee": "Assigned to Committee",
     "under_review": "Under Review (Round 1)",
@@ -877,6 +902,91 @@
     "approved": "Approved",
     "rejected": "Rejected",
     "announced": "Announced"
+  },
+  "finance": {
+    "common": {
+      "currency": "THB"
+    },
+    "labels": {
+      "proposedBudget": "Proposed Budget",
+      "budgetLimit": "Budget Limit",
+      "remainingBudget": "Remaining"
+    },
+    "actions": {
+      "reviewBudget": "Review Budget",
+      "back": "Back",
+      "saveDraft": "Save Draft",
+      "submitToAdmin": "Submit to Admin"
+    },
+    "status": {
+      "idle": "Not Started",
+      "pending": "Pending Review Note",
+      "submitted": "Review Submitted"
+    },
+    "errors": {
+      "loadData": "Unable to load data",
+      "loadDetail": "Unable to load proposal details"
+    },
+    "dashboard": {
+      "loading": "Loading budget data...",
+      "cardTitle": "Budget summary cards for assigned proposals",
+      "empty": "No assigned proposals yet",
+      "projectLeader": "Project leader: {name}",
+      "latestUpdated": "Last updated {date}",
+      "cards": {
+        "assigned": "Assigned Proposals",
+        "pending": "Pending Notes",
+        "submitted": "Submitted",
+        "totalBudget": "Total Assigned Budget"
+      }
+    },
+    "assigned": {
+      "title": "Assigned Budget Review Proposals",
+      "searchPlaceholder": "Search by project title or proposal code",
+      "loading": "Loading proposals...",
+      "noResults": "No matching results found",
+      "noItems": "No assigned proposals yet",
+      "tiles": {
+        "all": "All",
+        "pending": "Pending Notes",
+        "submitted": "Submitted",
+        "overLimit": "Over Limit"
+      },
+      "fields": {
+        "proposalCode": "Proposal Code",
+        "projectTitle": "Project Title",
+        "budgetTotal": "Proposed Budget",
+        "budgetLimit": "Budget Limit",
+        "remainingBudget": "Remaining",
+        "assignmentStatus": "Assignment Status"
+      }
+    },
+    "detail": {
+      "loading": "Loading proposal details...",
+      "summaryTitle": "Project Budget Summary",
+      "fundingType": "Funding Type",
+      "assignmentStatus": "Assignment Status",
+      "applicant": "Owner",
+      "currentStatus": "Current project status: {status}",
+      "reviewTitle": "Finance Review Note",
+      "reviewHint": "The saved note will be sent back to the admin team",
+      "reviewLabel": "Finance review note",
+      "reviewPlaceholder": "Describe observations, recommendations, or issues that the admin should follow up on",
+      "overLimit": "The proposed budget exceeds the configured budget limit",
+      "submittedAt": "Review submitted on {date}"
+    },
+    "alerts": {
+      "saveDraftSuccess": "Draft saved",
+      "saveDraftError": "Unable to save draft",
+      "requireComment": "Please enter a finance review note before submitting",
+      "confirmSubmitTitle": "Confirm finance review submission",
+      "confirmSubmitText": "After submission, the note will be sent back to the admin and editing will be locked",
+      "confirmSubmitButton": "Confirm Submit",
+      "cancel": "Cancel",
+      "submitSuccess": "Finance review submitted to admin",
+      "submitError": "Unable to submit finance review",
+      "retry": "Please try again."
+    }
   },
   "roleAccess": {
     "title": "Role-based Page Access Settings",
@@ -902,6 +1012,7 @@
     "roles": {
       "researcher": "Researcher",
       "committee": "Committee",
+      "finance_officer": "Finance Officer",
       "admin": "Admin",
       "chairman": "Dean"
     },
@@ -929,7 +1040,11 @@
       "chairman-assigned": "Dean Assigned Reviews",
       "chairman-meetings": "Dean Meetings",
       "chairman-notifications": "Dean Notifications",
-      "chairman-proposals": "Dean Proposal View"
+      "chairman-proposals": "Dean Proposal View",
+      "finance-dashboard": "Finance Officer Dashboard",
+      "finance-assigned": "Assigned Budget Review Proposals",
+      "finance-notifications": "Finance Officer Notifications",
+      "finance-proposals": "Finance Officer Proposal View"
     }
   },
   "fundingBudget": {
