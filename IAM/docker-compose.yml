@@ -11,8 +11,8 @@ services:
       REDIS_ENABLED: ${REDIS_ENABLED:-true}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
-    ports:
-      - "${PORT:-8081}:${PORT:-8081}"
+    expose:
+      - "${PORT:-8081}"
     depends_on:
       mongo:
         condition: service_healthy
@@ -37,8 +37,8 @@ services:
       context: ./fontend-vue
       dockerfile: Dockerfile
       args:
-        VUE_APP_API_BASE_URL: ${VUE_APP_API_BASE_URL:-http://localhost:8081}
-        VUE_APP_API_URL: ${VUE_APP_API_URL:-http://localhost:8081}
+        VUE_APP_API_BASE_URL: ${VUE_APP_API_BASE_URL:-/}
+        VUE_APP_API_URL: ${VUE_APP_API_URL:-/}
         VUE_APP_CLIENTID: ${VUE_APP_CLIENTID:-}
         VUE_APP_SCOPE: ${VUE_APP_SCOPE:-profile email}
         VUE_APP_PROMPT: ${VUE_APP_PROMPT:-select_account}
@@ -49,13 +49,19 @@ services:
       backend:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   mongo:
     image: mongo:7
     container_name: iam-mongo
     restart: unless-stopped
-    ports:
-      - "27017:27017"
+    expose:
+      - "27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:
@@ -69,8 +75,8 @@ services:
     image: redis:7-alpine
     container_name: iam-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    expose:
+      - "6379"
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data

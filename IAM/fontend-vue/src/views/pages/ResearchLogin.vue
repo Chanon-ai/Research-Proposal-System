@@ -3,8 +3,8 @@
     <div class="auth-card card shadow border-0">
       <div class="card-body p-4 p-md-5">
         <div class="text-center mb-4">
-          <h2 class="mb-1">MFU Research Platform</h2>
-          <p class="text-muted mb-0">Research proposal management</p>
+          <h2 class="mb-1">researchproposal.mfu.ac.th</h2>
+          <p class="text-muted mb-0">Research proposal management platform</p>
           <router-link to="/pages/login" class="small text-primary mt-2 d-inline-block">
             &larr; Back to Google Sign-In
           </router-link>
