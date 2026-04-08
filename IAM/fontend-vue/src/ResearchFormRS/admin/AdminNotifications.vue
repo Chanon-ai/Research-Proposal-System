@@ -229,26 +229,67 @@
     >
       <template #body-wrapper>
         <div v-if="selectedNotification" class="admin-notification-detail">
-          <div class="admin-notification-detail__row">
-            <div class="admin-notification-detail__label">ประเภท</div>
-            <div class="admin-notification-detail__value">{{ getTypeLabel(selectedNotification.type) }}</div>
+          <div class="admin-notification-detail__hero" :class="`tone-${getTypeBadgeColor(selectedNotification.type)}`">
+            <div class="admin-notification-detail__hero-icon-shell">
+              <div class="admin-notification-detail__hero-icon" :class="`tone-${getTypeBadgeColor(selectedNotification.type)}`">
+                <CIcon :name="getTypeIconName(selectedNotification.type)" height="26" />
+              </div>
+            </div>
+            <div class="admin-notification-detail__hero-main">
+              <div class="admin-notification-detail__eyebrow">Notification Overview</div>
+              <div class="admin-notification-detail__headline">{{ selectedNotification.title || '-' }}</div>
+              <div class="admin-notification-detail__chips">
+                <span class="admin-notification-detail__chip admin-notification-detail__chip--type">{{ getTypeLabel(selectedNotification.type) }}</span>
+                <span class="admin-notification-detail__chip" :class="selectedNotification.isRead ? 'admin-notification-detail__chip--read' : 'admin-notification-detail__chip--unread'">
+                  {{ selectedNotification.isRead ? 'อ่านแล้ว' : 'ยังไม่อ่าน' }}
+                </span>
+              </div>
+            </div>
+            <div class="admin-notification-detail__hero-side">
+              <div class="admin-notification-detail__hero-time">{{ formatDate(selectedNotification.sentAt || selectedNotification.createdAt) }}</div>
+            </div>
           </div>
-          <div class="admin-notification-detail__row">
-            <div class="admin-notification-detail__label">ส่งเมื่อ</div>
-            <div class="admin-notification-detail__value">{{ formatDate(selectedNotification.sentAt || selectedNotification.createdAt) }}</div>
+
+          <div class="admin-notification-detail__message-panel">
+            <div class="admin-notification-detail__message-title">ข้อความ</div>
+            <div class="admin-notification-detail__message-box">{{ selectedNotification.message || '-' }}</div>
           </div>
-          <div class="admin-notification-detail__row">
-            <div class="admin-notification-detail__label">ผู้รับ</div>
-            <div class="admin-notification-detail__value">{{ selectedNotification.recipientName || selectedNotification.recipientEmail || '-' }}</div>
+
+          <div class="admin-notification-detail__grid">
+            <div class="admin-notification-detail__row">
+              <div class="admin-notification-detail__label">ผู้รับ</div>
+              <div class="admin-notification-detail__value">{{ selectedNotification.recipientName || selectedNotification.recipientEmail || '-' }}</div>
+            </div>
+            <div class="admin-notification-detail__row">
+              <div class="admin-notification-detail__label">ส่งเมื่อ</div>
+              <div class="admin-notification-detail__value admin-notification-detail__value--strong">{{ formatDate(selectedNotification.sentAt || selectedNotification.createdAt) }}</div>
+            </div>
+            <div class="admin-notification-detail__row" v-if="selectedNotification.proposalCode || selectedNotification.proposalTitle">
+              <div class="admin-notification-detail__label">โครงการ</div>
+              <div class="admin-notification-detail__value">
+                <span class="admin-notification-detail__proposal-code">{{ selectedNotification.proposalCode || '-' }}</span>
+                <span v-if="selectedNotification.proposalTitle" class="admin-notification-detail__proposal-title">{{ selectedNotification.proposalTitle }}</span>
+              </div>
+            </div>
           </div>
-          <div class="admin-notification-detail__row" v-if="selectedNotification.proposalCode || selectedNotification.proposalTitle">
-            <div class="admin-notification-detail__label">โครงการ</div>
-            <div class="admin-notification-detail__value">{{ selectedNotification.proposalCode || '-' }}<span v-if="selectedNotification.proposalTitle"> | {{ selectedNotification.proposalTitle }}</span></div>
+
+          <div v-if="selectedNotification.payload && Object.keys(selectedNotification.payload || {}).length > 0" class="admin-notification-detail__payload-card">
+            <div class="admin-notification-detail__message-title">ข้อมูลเพิ่มเติม</div>
+            <div class="admin-notification-detail__payload-list">
+              <div v-if="selectedNotification.payload.fromStatus" class="admin-notification-detail__payload-item">
+                <span class="admin-notification-detail__payload-key">from</span>
+                <span class="admin-notification-detail__payload-value">{{ humanizeKey(selectedNotification.payload.fromStatus) }}</span>
+              </div>
+              <div v-if="selectedNotification.payload.toStatus" class="admin-notification-detail__payload-item">
+                <span class="admin-notification-detail__payload-key">to</span>
+                <span class="admin-notification-detail__payload-value">{{ humanizeKey(selectedNotification.payload.toStatus) }}</span>
+              </div>
+              <div v-if="selectedNotification.payload.remark || selectedNotification.payload.remarks" class="admin-notification-detail__payload-item admin-notification-detail__payload-item--wide">
+                <span class="admin-notification-detail__payload-key">remark</span>
+                <span class="admin-notification-detail__payload-value">{{ selectedNotification.payload.remark || selectedNotification.payload.remarks }}</span>
+              </div>
+            </div>
           </div>
-          <div class="admin-notification-detail__message-title">หัวข้อ</div>
-          <div class="admin-notification-detail__message-box">{{ selectedNotification.title || '-' }}</div>
-          <div class="admin-notification-detail__message-title">ข้อความ</div>
-          <div class="admin-notification-detail__message-box">{{ selectedNotification.message || '-' }}</div>
         </div>
       </template>
       <template #footer-wrapper>
@@ -421,6 +462,20 @@ export default {
       if (STATUS_LABELS[key]) return 'info'
       if (STATUS_LABELS[tailKey]) return 'info'
       return 'secondary'
+    },
+    getTypeIconName (type) {
+      const raw = String(type || '').trim().toLowerCase()
+      const key = raw.includes('.') ? raw.split('.').pop() : raw
+      if (key.includes('approved')) return 'cil-check-circle'
+      if (key.includes('rejected')) return 'cil-x-circle'
+      if (key.includes('revision') || key.includes('document_required')) return 'cil-warning'
+      if (key.includes('committee_assigned')) return 'cil-user-follow'
+      if (key.includes('committee_valuated')) return 'cil-task'
+      if (key.includes('meeting')) return 'cil-calendar'
+      if (key.includes('collaboration')) return 'cil-people'
+      if (key.includes('status_changed')) return 'cil-sync'
+      if (key.includes('announcement')) return 'cil-bell'
+      return 'cil-bell'
     },
     proposalIdOf (notif) {
       if (!notif) return ''
@@ -1115,12 +1170,169 @@ body.c-dark-theme .preview-box__text {
 
 .admin-notification-detail {
   display: grid;
+  gap: 18px;
+  padding: 1.1rem;
+  background:
+    radial-gradient(circle at top right, rgba(197, 155, 58, 0.1), transparent 28%),
+    linear-gradient(180deg, #fcfcfb 0%, #ffffff 100%);
+}
+
+.admin-notification-detail__hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(139, 18, 18, 0.06) 0%, rgba(197, 155, 58, 0.12) 100%);
+  color: #0f172a;
+  border: 1px solid rgba(197, 155, 58, 0.24);
+  box-shadow: 0 10px 24px rgba(139, 18, 18, 0.05);
+}
+
+.admin-notification-detail__hero-icon-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  min-width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(139, 18, 18, 0.12) 0%, rgba(197, 155, 58, 0.24) 100%);
+  border: 1px solid rgba(197, 155, 58, 0.28);
+}
+
+.admin-notification-detail__hero-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--am-accent, #8b1212);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(197, 155, 58, 0.24);
+}
+
+.admin-notification-detail__hero-icon.tone-success {
+  color: #7c5b12;
+}
+
+.admin-notification-detail__hero-icon.tone-danger {
+  color: #8b1212;
+}
+
+.admin-notification-detail__hero-icon.tone-warning {
+  color: #9a6700;
+}
+
+.admin-notification-detail__hero-icon .c-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.admin-notification-detail__hero.tone-warning {
+  background: linear-gradient(135deg, rgba(139, 18, 18, 0.08) 0%, rgba(197, 155, 58, 0.18) 100%);
+}
+
+.admin-notification-detail__hero.tone-success {
+  background: linear-gradient(135deg, rgba(197, 155, 58, 0.12) 0%, rgba(255, 255, 255, 0.96) 100%);
+}
+
+.admin-notification-detail__hero.tone-danger {
+  background: linear-gradient(135deg, rgba(139, 18, 18, 0.12) 0%, rgba(255, 255, 255, 0.96) 100%);
+}
+
+.admin-notification-detail__hero-main {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-notification-detail__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(139, 18, 18, 0.72);
+}
+
+.admin-notification-detail__headline {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0f172a;
+}
+
+.admin-notification-detail__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-notification-detail__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.admin-notification-detail__chip--type {
+  background: rgba(139, 18, 18, 0.08);
+  color: var(--am-accent, #8b1212);
+}
+
+.admin-notification-detail__chip--unread {
+  background: rgba(197, 155, 58, 0.18);
+  color: #7c5b12;
+}
+
+.admin-notification-detail__chip--read {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.admin-notification-detail__hero-side {
+  display: flex;
+  align-items: flex-start;
+}
+
+.admin-notification-detail__hero-time {
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(197, 155, 58, 0.18);
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.admin-notification-detail__message-panel,
+.admin-notification-detail__payload-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(197, 155, 58, 0.14);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+}
+
+.admin-notification-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
 }
 
 .admin-notification-detail__row {
   display: grid;
-  gap: 4px;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(197, 155, 58, 0.14);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.03);
 }
 
 .admin-notification-detail__label,
@@ -1129,17 +1341,70 @@ body.c-dark-theme .preview-box__text {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #8b1212;
+  color: rgba(139, 18, 18, 0.74);
 }
 
 .admin-notification-detail__value,
 .admin-notification-detail__message-box {
   padding: 12px 14px;
   border-radius: 14px;
-  background: #fff9ef;
-  border: 1px solid rgba(181, 133, 34, 0.18);
-  color: #3f2d17;
+  background: linear-gradient(180deg, rgba(255, 250, 240, 0.96) 0%, rgba(255, 255, 255, 1) 100%);
+  border: 1px solid rgba(197, 155, 58, 0.16);
+  color: #1e293b;
   white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.75;
+}
+
+.admin-notification-detail__value--strong {
+  font-weight: 700;
+}
+
+.admin-notification-detail__proposal-code {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(197, 155, 58, 0.18);
+  color: #7c5b12;
+  font-weight: 700;
+}
+
+.admin-notification-detail__proposal-title {
+  color: #334155;
+}
+
+.admin-notification-detail__payload-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.admin-notification-detail__payload-item {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fbf8f1;
+  border: 1px solid rgba(197, 155, 58, 0.14);
+}
+
+.admin-notification-detail__payload-item--wide {
+  grid-column: 1 / -1;
+}
+
+.admin-notification-detail__payload-key {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.admin-notification-detail__payload-value {
+  color: #1e293b;
+  line-height: 1.6;
   word-break: break-word;
 }
 
@@ -1148,15 +1413,38 @@ body.c-dark-theme .preview-box__text {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 0 1rem 1rem;
+  padding: 0 1.1rem 1.1rem;
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail,
+body.c-dark-theme .admin-notification-detail {
+  background:
+    radial-gradient(circle at top right, rgba(197, 155, 58, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(15, 23, 42, 0.98) 100%);
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail__hero,
+body.c-dark-theme .admin-notification-detail__hero {
+  background: linear-gradient(135deg, rgba(139, 18, 18, 0.2) 0%, rgba(197, 155, 58, 0.12) 100%);
+  border-color: rgba(197, 155, 58, 0.2);
+  box-shadow: 0 14px 32px rgba(2, 6, 23, 0.24);
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail__hero.tone-warning,
+body.c-dark-theme .admin-notification-detail__hero.tone-warning,
+[data-coreui-theme='dark'] .admin-notification-detail__hero.tone-success,
+body.c-dark-theme .admin-notification-detail__hero.tone-success,
+[data-coreui-theme='dark'] .admin-notification-detail__hero.tone-danger,
+body.c-dark-theme .admin-notification-detail__hero.tone-danger {
+  background: linear-gradient(135deg, rgba(139, 18, 18, 0.2) 0%, rgba(197, 155, 58, 0.12) 100%);
 }
 
 [data-coreui-theme='dark'] .admin-notification-detail__value,
 body.c-dark-theme .admin-notification-detail__value,
 [data-coreui-theme='dark'] .admin-notification-detail__message-box,
 body.c-dark-theme .admin-notification-detail__message-box {
-  background: rgba(23, 30, 45, 0.9);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.82);
+  border-color: rgba(197, 155, 58, 0.16);
   color: #e5edf5;
 }
 
@@ -1167,7 +1455,72 @@ body.c-dark-theme .admin-notification-detail__message-title {
   color: #f5d28c;
 }
 
+[data-coreui-theme='dark'] .admin-notification-detail__row,
+body.c-dark-theme .admin-notification-detail__row,
+[data-coreui-theme='dark'] .admin-notification-detail__message-panel,
+body.c-dark-theme .admin-notification-detail__message-panel,
+[data-coreui-theme='dark'] .admin-notification-detail__payload-card,
+body.c-dark-theme .admin-notification-detail__payload-card,
+[data-coreui-theme='dark'] .admin-notification-detail__payload-item,
+body.c-dark-theme .admin-notification-detail__payload-item {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(197, 155, 58, 0.16);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.2);
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail__headline,
+body.c-dark-theme .admin-notification-detail__headline,
+[data-coreui-theme='dark'] .admin-notification-detail__payload-value,
+body.c-dark-theme .admin-notification-detail__payload-value {
+  color: #f8fafc;
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail__eyebrow,
+body.c-dark-theme .admin-notification-detail__eyebrow,
+[data-coreui-theme='dark'] .admin-notification-detail__proposal-title,
+body.c-dark-theme .admin-notification-detail__proposal-title,
+[data-coreui-theme='dark'] .admin-notification-detail__payload-key,
+body.c-dark-theme .admin-notification-detail__payload-key {
+  color: #cbd5e1;
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail__chip--type,
+body.c-dark-theme .admin-notification-detail__chip--type {
+  background: rgba(139, 18, 18, 0.24);
+  color: #f8d7d7;
+  border-color: rgba(139, 18, 18, 0.24);
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail__chip--unread,
+body.c-dark-theme .admin-notification-detail__chip--unread {
+  background: rgba(197, 155, 58, 0.22);
+  color: #fde7aa;
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail__chip--read,
+body.c-dark-theme .admin-notification-detail__chip--read {
+  background: rgba(51, 65, 85, 0.8);
+  color: #e2e8f0;
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail__hero-time,
+body.c-dark-theme .admin-notification-detail__hero-time {
+  background: rgba(15, 23, 42, 0.82);
+  border-color: rgba(197, 155, 58, 0.16);
+  color: #cbd5e1;
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail__proposal-code,
+body.c-dark-theme .admin-notification-detail__proposal-code {
+  background: rgba(197, 155, 58, 0.18);
+  color: #fde7aa;
+}
+
 @media (max-width: 768px) {
+  .admin-notification-detail__hero {
+    flex-direction: column;
+  }
+
   .send-modal-inner {
     padding: 1rem;
     max-height: calc(100vh - 230px);

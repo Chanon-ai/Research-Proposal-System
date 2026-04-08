@@ -130,30 +130,53 @@
           >
             <template #body-wrapper>
               <div v-if="selectedNotification" class="notification-detail">
-                <div class="notification-detail__hero">
-                  <div class="notification-detail__icon" :class="selectedNotification.iconClass">
-                    <span>{{ selectedNotification.title ? selectedNotification.title.slice(0, 1) : '!' }}</span>
+                <div class="notification-detail__hero" :class="selectedNotification.iconClass">
+                  <div class="notification-detail__icon-shell">
+                    <div class="notification-detail__icon" :class="selectedNotification.iconClass">
+                      <CIcon :name="selectedNotification.detailIcon || 'cil-bell'" height="24" />
+                    </div>
                   </div>
                   <div class="notification-detail__hero-copy">
+                    <div class="notification-detail__eyebrow">{{ $t('userNotification.details.fields.type') }}</div>
                     <div class="notification-detail__title">{{ selectedNotification.title }}</div>
-                    <div class="notification-detail__time">{{ selectedNotification.timeAbsolute }}</div>
+                    <div class="notification-detail__meta-line">
+                      <span class="notification-detail__chip notification-detail__chip--solid">{{ getNotificationTypeLabel(selectedNotification.eventKey) }}</span>
+                      <span class="notification-detail__chip" :class="selectedNotification.read ? 'notification-detail__chip--muted' : 'notification-detail__chip--fresh'">
+                        {{ selectedNotification.read ? 'อ่านแล้ว' : 'ยังไม่อ่าน' }}
+                      </span>
+                      <span class="notification-detail__meta-sep"></span>
+                      <div class="notification-detail__time">{{ selectedNotification.timeAbsolute }}</div>
+                    </div>
                   </div>
                 </div>
 
-                <div class="notification-detail__message">{{ selectedNotification.desc }}</div>
+                <div class="notification-detail__message-card">
+                  <div class="notification-detail__section-title">ข้อความแจ้งเตือน</div>
+                  <div class="notification-detail__message">{{ selectedNotification.desc }}</div>
+                </div>
+
+                <div
+                  v-if="selectedNotification.payload && selectedNotification.payload.fromStatus && selectedNotification.payload.toStatus"
+                  class="notification-detail__transition"
+                >
+                  <div class="notification-detail__transition-status">
+                    <span class="notification-detail__status-pill notification-detail__status-pill--from">{{ humanizeStatus(selectedNotification.payload.fromStatus) }}</span>
+                    <span class="notification-detail__transition-arrow">→</span>
+                    <span class="notification-detail__status-pill notification-detail__status-pill--to">{{ humanizeStatus(selectedNotification.payload.toStatus) }}</span>
+                  </div>
+                </div>
 
                 <div class="notification-detail__grid">
                   <div class="notification-detail__field">
-                    <div class="notification-detail__label">{{ $t('userNotification.details.fields.type') }}</div>
-                    <div class="notification-detail__value">{{ getNotificationTypeLabel(selectedNotification.eventKey) }}</div>
-                  </div>
-                  <div class="notification-detail__field">
                     <div class="notification-detail__label">{{ $t('userNotification.details.fields.sentAt') }}</div>
-                    <div class="notification-detail__value">{{ selectedNotification.timeAbsolute }}</div>
+                    <div class="notification-detail__value notification-detail__value--strong">{{ selectedNotification.timeAbsolute }}</div>
                   </div>
-                  <div class="notification-detail__field" v-if="selectedNotification.proposalCode || selectedNotification.proposalTitle">
+                  <div class="notification-detail__field notification-detail__field--wide" v-if="selectedNotification.proposalCode || selectedNotification.proposalTitle">
                     <div class="notification-detail__label">{{ $t('userNotification.details.fields.proposal') }}</div>
-                    <div class="notification-detail__value">{{ selectedNotification.proposalCode || '-' }}<span v-if="selectedNotification.proposalTitle"> | {{ selectedNotification.proposalTitle }}</span></div>
+                    <div class="notification-detail__value">
+                      <span class="notification-detail__proposal-code">{{ selectedNotification.proposalCode || '-' }}</span>
+                      <span v-if="selectedNotification.proposalTitle" class="notification-detail__proposal-title">{{ selectedNotification.proposalTitle }}</span>
+                    </div>
                   </div>
                   <div class="notification-detail__field" v-if="selectedNotification.payload && selectedNotification.payload.fromStatus">
                     <div class="notification-detail__label">{{ $t('userNotification.details.fields.fromStatus') }}</div>
@@ -318,6 +341,7 @@ export default {
         eventKey,
         group,
         icon: this.iconByEvent(eventKey),
+        detailIcon: this.detailIconByEvent(eventKey),
         iconClass: this.iconClassByEvent(eventKey),
         title: n && n.title ? n.title : this.$t('userNotification.defaultTitle'),
         desc: n && n.message ? n.message : '-',
@@ -363,6 +387,17 @@ export default {
       if (eventKey.includes('revision') || eventKey.includes('reject')) return 'icon-orange'
       if (eventKey.includes('assign')) return 'icon-blue'
       return 'icon-gray'
+    },
+
+    detailIconByEvent (eventKey) {
+      if (eventKey.includes('approved') || eventKey.includes('certified')) return 'cil-check-circle'
+      if (eventKey.includes('reject')) return 'cil-x-circle'
+      if (eventKey.includes('revision') || eventKey.includes('document_required')) return 'cil-warning'
+      if (eventKey.includes('assign') || eventKey.includes('committee') || eventKey.includes('chairman')) return 'cil-user-follow'
+      if (eventKey.includes('meeting')) return 'cil-calendar'
+      if (eventKey.includes('submit') || eventKey.includes('resubmit')) return 'cil-description'
+      if (eventKey.includes('status')) return 'cil-sync'
+      return 'cil-bell'
     },
 
     timeAgo (dateStr) {
@@ -1054,13 +1089,34 @@ export default {
 
 .notification-detail {
   display: grid;
-  gap: 16px;
+  gap: 18px;
+  padding: 1.1rem;
+  background:
+    radial-gradient(circle at top right, rgba(197, 155, 58, 0.10), transparent 32%),
+    linear-gradient(180deg, #fcfcfb 0%, #ffffff 100%);
 }
 
 .notification-detail__hero {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   align-items: center;
+  padding: 18px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(139, 18, 18, 0.06) 0%, rgba(197, 155, 58, 0.12) 100%);
+  color: #0f172a;
+  border: 1px solid rgba(197, 155, 58, 0.28);
+  box-shadow: 0 10px 24px rgba(139, 18, 18, 0.06);
+}
+
+.notification-detail__icon-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(139, 18, 18, 0.12) 0%, rgba(197, 155, 58, 0.24) 100%);
+  border: 1px solid rgba(197, 155, 58, 0.28);
 }
 
 .notification-detail__icon {
@@ -1071,45 +1127,171 @@ export default {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: #1f2937;
-  background: #e5e7eb;
+  color: var(--am-accent, #8b1212);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(197, 155, 58, 0.24);
+}
+
+.notification-detail__icon .c-icon {
+  width: 24px;
+  height: 24px;
 }
 
 .notification-detail__hero-copy {
   min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.notification-detail__eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(139, 18, 18, 0.7);
 }
 
 .notification-detail__title {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
-  color: #111827;
+  color: #0f172a;
+  line-height: 1.3;
 }
 
 .notification-detail__time {
   font-size: 13px;
-  color: #6b7280;
+  color: #475569;
+}
+
+.notification-detail__meta-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.notification-detail__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.notification-detail__chip--solid {
+  background: rgba(139, 18, 18, 0.08);
+  color: var(--am-accent, #8b1212);
+  border: 1px solid rgba(139, 18, 18, 0.14);
+}
+
+.notification-detail__chip--fresh {
+  background: rgba(197, 155, 58, 0.16);
+  color: #7c5b12;
+  border: 1px solid rgba(197, 155, 58, 0.22);
+}
+
+.notification-detail__chip--muted {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.notification-detail__meta-sep {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.notification-detail__message-card {
+  padding: 16px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(197, 155, 58, 0.16);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.notification-detail__section-title {
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--am-accent, #8b1212);
 }
 
 .notification-detail__message {
-  padding: 14px 16px;
+  padding: 16px 18px;
   border-radius: 14px;
-  background: #f8fafc;
-  color: #1f2937;
-  line-height: 1.7;
+  background: linear-gradient(180deg, rgba(255, 250, 240, 0.96) 0%, rgba(255, 255, 255, 1) 100%);
+  color: #1e293b;
+  line-height: 1.8;
   white-space: pre-wrap;
+  border: 1px solid rgba(197, 155, 58, 0.18);
+}
+
+.notification-detail__transition {
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(197, 155, 58, 0.16);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.notification-detail__transition-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.notification-detail__status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.notification-detail__status-pill--from {
+  background: rgba(139, 18, 18, 0.08);
+  color: var(--am-accent, #8b1212);
+}
+
+.notification-detail__status-pill--to {
+  background: rgba(197, 155, 58, 0.18);
+  color: #7c5b12;
+}
+
+.notification-detail__transition-arrow {
+  font-size: 20px;
+  font-weight: 700;
+  color: rgba(139, 18, 18, 0.66);
 }
 
 .notification-detail__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .notification-detail__field {
-  padding: 12px 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(197, 155, 58, 0.14);
+  border-radius: 18px;
   background: #ffffff;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.03);
+}
+
+.notification-detail__field--wide {
+  grid-column: 1 / -1;
 }
 
 .notification-detail__label {
@@ -1117,14 +1299,34 @@ export default {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #9ca3af;
-  margin-bottom: 6px;
+  color: rgba(139, 18, 18, 0.74);
+  margin-bottom: 8px;
 }
 
 .notification-detail__value {
   font-size: 14px;
-  color: #111827;
+  color: #0f172a;
   word-break: break-word;
+  line-height: 1.6;
+}
+
+.notification-detail__value--strong {
+  font-weight: 700;
+}
+
+.notification-detail__proposal-code {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(197, 155, 58, 0.18);
+  color: #7c5b12;
+  font-weight: 700;
+}
+
+.notification-detail__proposal-title {
+  color: #334155;
 }
 
 .notification-detail__footer {
@@ -1132,13 +1334,43 @@ export default {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 0 1rem 1rem;
+  padding: 0 1.1rem 1.1rem;
+}
+
+.page-wrapper.is-dark .notification-detail {
+  background:
+    radial-gradient(circle at top right, rgba(197, 155, 58, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(15, 23, 42, 0.98) 100%);
+}
+
+.page-wrapper.is-dark .notification-detail__hero {
+  background: linear-gradient(135deg, rgba(139, 18, 18, 0.22) 0%, rgba(197, 155, 58, 0.12) 100%);
+  border-color: rgba(197, 155, 58, 0.2);
+  box-shadow: 0 14px 32px rgba(2, 6, 23, 0.26);
+}
+
+.page-wrapper.is-dark .notification-detail__icon-shell {
+  background: rgba(139, 18, 18, 0.22);
+  border-color: rgba(197, 155, 58, 0.22);
+}
+
+.page-wrapper.is-dark .notification-detail__icon {
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(148, 163, 184, 0.18);
 }
 
 .page-wrapper.is-dark .notification-detail__message,
 .page-wrapper.is-dark .notification-detail__field {
-  background: rgba(17, 24, 39, 0.72);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.82);
+  border-color: rgba(197, 155, 58, 0.16);
+}
+
+.page-wrapper.is-dark .notification-detail__message-card,
+.page-wrapper.is-dark .notification-detail__transition {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(197, 155, 58, 0.18);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.2);
 }
 
 .page-wrapper.is-dark .notification-detail__title,
@@ -1146,9 +1378,67 @@ export default {
   color: #f9fafb;
 }
 
-.page-wrapper.is-dark .notification-detail__time,
+.page-wrapper.is-dark .notification-detail__section-title,
 .page-wrapper.is-dark .notification-detail__label {
+  color: #f5d28c;
+}
+
+.page-wrapper.is-dark .notification-detail__time,
+.page-wrapper.is-dark .notification-detail__proposal-title,
+.page-wrapper.is-dark .notification-detail__meta-sep {
   color: #cbd5e1;
+}
+
+.page-wrapper.is-dark .notification-detail__chip--solid {
+  background: rgba(139, 18, 18, 0.24);
+  color: #f8d7d7;
+  border-color: rgba(139, 18, 18, 0.24);
+}
+
+.page-wrapper.is-dark .notification-detail__chip--fresh {
+  background: rgba(197, 155, 58, 0.22);
+  color: #fde7aa;
+  border-color: rgba(197, 155, 58, 0.22);
+}
+
+.page-wrapper.is-dark .notification-detail__chip--muted {
+  background: rgba(51, 65, 85, 0.8);
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+.page-wrapper.is-dark .notification-detail__status-pill--from {
+  background: rgba(139, 18, 18, 0.22);
+  color: #f8d7d7;
+}
+
+.page-wrapper.is-dark .notification-detail__status-pill--to {
+  background: rgba(197, 155, 58, 0.22);
+  color: #fde7aa;
+}
+
+.page-wrapper.is-dark .notification-detail__proposal-code {
+  background: rgba(197, 155, 58, 0.18);
+  color: #fde7aa;
+}
+
+@media (max-width: 768px) {
+  .notification-detail {
+    padding: 0.85rem;
+  }
+
+  .notification-detail__hero {
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .notification-detail__meta-line {
+    align-items: flex-start;
+  }
+
+  .notification-detail__transition-status {
+    flex-direction: column;
+  }
 }
 
 /* Meta */
