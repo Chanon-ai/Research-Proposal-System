@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="chairman-proposal-detail" :class="{ 'is-dark': isDarkTheme }">
     <div v-if="loading" class="text-center py-4">
       <CSpinner color="primary" />
       <div class="text-muted mt-2">{{ $t('chairman.proposalDetail.loading') }}</div>
@@ -279,7 +279,7 @@
                         <span class="text-truncate">{{ evaluationFileName }}</span>
                       </button>
                       <div class="evaluation-file-item__actions">
-                        <span class="evaluation-file-item__status text-muted small">กำลังอัปโหลด...</span>
+                        <span class="evaluation-file-item__status text-muted small">{{ $t('chairman.proposalDetail.uploading') }}</span>
                       </div>
                     </div>
                     <div v-for="fileItem in evaluationFiles" :key="resolveFileId(fileItem)" class="evaluation-file-item">
@@ -408,6 +408,9 @@ export default {
     }
   },
   computed: {
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
     currentUser () {
       const user = this.$store && this.$store.getters
         ? this.$store.getters['Authentication/currentUser']
@@ -570,6 +573,15 @@ export default {
     }
   },
   watch: {
+    isDarkTheme () {
+      this.$nextTick(() => {
+        if (!this.isEvaluationLocked) {
+          this.initializeSignatureCanvas()
+          return
+        }
+        if (this.signatureData) this.renderSignatureToCanvas()
+      })
+    },
     $route: {
       immediate: true,
       handler () {
@@ -585,7 +597,8 @@ export default {
       return Swal.fire(options)
     },
     resolveChecklistText (entity, field) {
-      const locale = this.$i18n && this.$i18n.locale === 'en' ? 'en' : 'th'
+      const rawLocale = String(this.$i18n && this.$i18n.locale ? this.$i18n.locale : '').trim().toLowerCase()
+      const locale = rawLocale === 'en' || rawLocale.startsWith('en-') || rawLocale.startsWith('en_') ? 'en' : 'th'
       const source = entity && typeof entity === 'object' ? entity : null
       if (!source) return ''
 
@@ -660,15 +673,66 @@ export default {
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.scale(ratio, ratio)
       ctx.clearRect(0, 0, width, height)
-      ctx.fillStyle = '#ffffff'
+      ctx.fillStyle = this.isDarkTheme ? '#0b1220' : '#ffffff'
       ctx.fillRect(0, 0, width, height)
       ctx.lineWidth = 2
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
-      ctx.strokeStyle = '#8b1212'
+      ctx.strokeStyle = this.isDarkTheme ? '#e6edf7' : '#8b1212'
       this.signatureHasStroke = false
       if (this.signatureData) {
         this.renderSignatureToCanvas()
+      }
+    },
+    normalizeSignatureBackground (dataUrl) {
+      return new Promise((resolve) => {
+        const source = typeof dataUrl === 'string' ? dataUrl : ''
+        if (!source.startsWith('data:image/')) return resolve('')
+        const image = new Image()
+        image.onload = () => {
+          try {
+            const off = document.createElement('canvas')
+            off.width = image.width || 1
+            off.height = image.height || 1
+            const offCtx = off.getContext('2d')
+            if (!offCtx) return resolve(source)
+            offCtx.clearRect(0, 0, off.width, off.height)
+            offCtx.drawImage(image, 0, 0)
+            const imgData = offCtx.getImageData(0, 0, off.width, off.height)
+            const data = imgData.data
+            const bgR = data[0]
+            const bgG = data[1]
+            const bgB = data[2]
+            const threshold = 20
+            for (let i = 0; i < data.length; i += 4) {
+              const dr = Math.abs(data[i] - bgR)
+              const dg = Math.abs(data[i + 1] - bgG)
+              const db = Math.abs(data[i + 2] - bgB)
+              if (dr + dg + db <= threshold) data[i + 3] = 0
+            }
+            offCtx.putImageData(imgData, 0, 0)
+            return resolve(off.toDataURL('image/png'))
+          } catch (_) {
+            return resolve(source)
+          }
+        }
+        image.onerror = () => resolve(source)
+        image.src = source
+      })
+    },
+    updateStoredSignatureData (dataUrl) {
+      try {
+        if (!dataUrl) return
+        const raw = localStorage.getItem(this.signatureKey())
+        if (!raw) return
+        const saved = JSON.parse(raw)
+        if (!saved || typeof saved !== 'object') return
+        localStorage.setItem(this.signatureKey(), JSON.stringify({
+          ...saved,
+          signatureData: dataUrl
+        }))
+      } catch (_) {
+        // ignore storage errors
       }
     },
     renderSignatureToCanvas () {
@@ -681,7 +745,7 @@ export default {
         const width = canvas.clientWidth || 560
         const height = 180
         ctx.clearRect(0, 0, width, height)
-        ctx.fillStyle = '#ffffff'
+        ctx.fillStyle = this.isDarkTheme ? '#0b1220' : '#ffffff'
         ctx.fillRect(0, 0, width, height)
 
         const scale = Math.min(width / image.width, height / image.height, 1)
@@ -689,7 +753,34 @@ export default {
         const drawHeight = image.height * scale
         const offsetX = (width - drawWidth) / 2
         const offsetY = (height - drawHeight) / 2
-        ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight)
+        try {
+          const off = document.createElement('canvas')
+          off.width = image.width || 1
+          off.height = image.height || 1
+          const offCtx = off.getContext('2d')
+          if (offCtx) {
+            offCtx.clearRect(0, 0, off.width, off.height)
+            offCtx.drawImage(image, 0, 0)
+            const imgData = offCtx.getImageData(0, 0, off.width, off.height)
+            const data = imgData.data
+            const bgR = data[0]
+            const bgG = data[1]
+            const bgB = data[2]
+            const threshold = 20
+            for (let i = 0; i < data.length; i += 4) {
+              const dr = Math.abs(data[i] - bgR)
+              const dg = Math.abs(data[i + 1] - bgG)
+              const db = Math.abs(data[i + 2] - bgB)
+              if (dr + dg + db <= threshold) data[i + 3] = 0
+            }
+            offCtx.putImageData(imgData, 0, 0)
+            ctx.drawImage(off, offsetX, offsetY, drawWidth, drawHeight)
+          } else {
+            ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight)
+          }
+        } catch (_) {
+          ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight)
+        }
         this.signatureHasStroke = true
       }
       image.src = this.signatureData
@@ -734,8 +825,12 @@ export default {
       this.isSignatureDrawing = false
       const canvas = this.$refs.signatureCanvas
       if (!canvas || !this.signatureHasStroke) return
-      this.signatureData = canvas.toDataURL('image/png')
-      this.signatureTimestamp = new Date().toISOString()
+      const raw = canvas.toDataURL('image/png')
+      this.normalizeSignatureBackground(raw).then((normalized) => {
+        this.signatureData = normalized || raw
+        this.signatureTimestamp = new Date().toISOString()
+        this.updateStoredSignatureData(this.signatureData)
+      })
     },
     clearSignature () {
       this.signatureData = ''
@@ -969,6 +1064,14 @@ export default {
         this.signatureData = String(saved.signatureData || '')
         this.signatureTimestamp = String(saved.signatureTimestamp || '')
         this.signatureSavedAt = String(saved.savedAt || '')
+        if (this.signatureData) {
+          this.normalizeSignatureBackground(this.signatureData).then((normalized) => {
+            if (!normalized || normalized === this.signatureData) return
+            this.signatureData = normalized
+            this.updateStoredSignatureData(normalized)
+            this.$nextTick(() => this.renderSignatureToCanvas())
+          })
+        }
       } catch (_) {
         return undefined
       }
@@ -1260,8 +1363,8 @@ export default {
         if (input) input.value = ''
         await this.showAlert({
           icon: 'warning',
-          title: 'ไฟล์ไม่รองรับ',
-          text: 'กรุณาแนบไฟล์ PDF / Word / Excel'
+          title: this.$t('chairman.proposalDetail.fileNotSupportedTitle'),
+          text: this.$t('chairman.proposalDetail.fileNotSupportedText')
         })
         return
       }
@@ -1289,7 +1392,7 @@ export default {
         }
         await this.showAlert({
           icon: 'success',
-          title: 'อัปโหลดไฟล์สำเร็จ',
+          title: this.$t('chairman.proposalDetail.uploadSuccessTitle'),
           text: file.name,
           timer: 1500,
           showConfirmButton: false
@@ -1297,8 +1400,8 @@ export default {
       } catch (error) {
         await this.showAlert({
           icon: 'error',
-          title: 'อัปโหลดไฟล์ไม่สำเร็จ',
-          text: (error && error.response && error.response.data && error.response.data.message) || 'กรุณาลองใหม่อีกครั้ง'
+          title: this.$t('chairman.proposalDetail.uploadErrorTitle'),
+          text: (error && error.response && error.response.data && error.response.data.message) || this.$t('chairman.proposalDetail.uploadErrorText')
         })
       } finally {
         this.evaluationFileUploading = false
@@ -2000,6 +2103,201 @@ export default {
 
 .checklist-row {
   transition: none;
+}
+
+.chairman-proposal-detail.is-dark {
+  color: #e5e7eb;
+}
+
+.chairman-proposal-detail.is-dark .evaluation-card__body {
+  background: #0b1220;
+}
+
+.chairman-proposal-detail.is-dark .evaluation-card__header {
+  background: linear-gradient(135deg, #111827 0%, #0f172a 60%, #1f2937 140%);
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+}
+
+.chairman-proposal-detail.is-dark .evaluation-file-panel,
+.chairman-proposal-detail.is-dark .decision-block,
+.chairman-proposal-detail.is-dark .checklist-items,
+.chairman-proposal-detail.is-dark .chairman-signature-card,
+.chairman-proposal-detail.is-dark .chairman-signature-card__body,
+.chairman-proposal-detail.is-dark .rubric-card__body {
+  background: #0b1220;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.chairman-proposal-detail.is-dark .chairman-signature-card__header {
+  background: #0b1220;
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+}
+
+.chairman-proposal-detail.is-dark .chairman-signature-card__subtitle,
+.chairman-proposal-detail.is-dark .chairman-signature-card__hint,
+.chairman-proposal-detail.is-dark .chairman-signature-card__meta,
+.chairman-proposal-detail.is-dark .chairman-signature-card__empty {
+  color: rgba(229, 231, 235, 0.75) !important;
+}
+
+.chairman-proposal-detail.is-dark .chairman-signature-card__saved {
+  color: #86efac !important;
+}
+
+.chairman-proposal-detail.is-dark .chairman-signature-card__canvas-wrap,
+.chairman-proposal-detail.is-dark .chairman-signature-card__preview {
+  background: #0b1220;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.chairman-proposal-detail.is-dark .chairman-signature-card__header .badge-warning {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.chairman-proposal-detail.is-dark .chairman-signature-card__alert.alert-warning {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.28);
+  color: rgba(251, 191, 36, 0.95);
+}
+
+.chairman-proposal-detail.is-dark .chairman-signature-card__toolbar .btn-outline-primary,
+.chairman-proposal-detail.is-dark .chairman-signature-card__toolbar .btn-outline-success,
+.chairman-proposal-detail.is-dark .chairman-signature-card__toolbar .btn-outline-secondary {
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.38);
+}
+
+.chairman-proposal-detail.is-dark .chairman-signature-card__toolbar .btn-outline-primary:hover:not(:disabled),
+.chairman-proposal-detail.is-dark .chairman-signature-card__toolbar .btn-outline-success:hover:not(:disabled),
+.chairman-proposal-detail.is-dark .chairman-signature-card__toolbar .btn-outline-secondary:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.10);
+  border-color: rgba(148, 163, 184, 0.5);
+  color: #e5e7eb;
+}
+
+.chairman-proposal-detail.is-dark .rubric-toolbar__label,
+.chairman-proposal-detail.is-dark .evaluation-file-panel__title,
+.chairman-proposal-detail.is-dark .decision-block__title,
+.chairman-proposal-detail.is-dark .chairman-signature-card__title,
+.chairman-proposal-detail.is-dark .checklist-table-header {
+  color: #e5e7eb;
+}
+
+.chairman-proposal-detail.is-dark .rubric-fund-readonly {
+  background: rgba(148, 163, 184, 0.08);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #e5e7eb;
+}
+
+.chairman-proposal-detail.is-dark .checklist-table-header {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.10) 0%, rgba(148, 163, 184, 0.04) 100%);
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+}
+
+.chairman-proposal-detail.is-dark .checklist-row {
+  border-bottom-color: rgba(148, 163, 184, 0.12);
+}
+
+.chairman-proposal-detail.is-dark .checklist-row__no {
+  color: rgba(229, 231, 235, 0.75);
+}
+
+.chairman-proposal-detail.is-dark .floating-field__input {
+  background: #0b1220;
+  border-color: rgba(148, 163, 184, 0.18);
+  color: #e5e7eb;
+}
+
+.chairman-proposal-detail.is-dark .floating-field__label {
+  color: rgba(229, 231, 235, 0.85);
+}
+
+.chairman-proposal-detail.is-dark .floating-field__input:focus + .floating-field__label,
+.chairman-proposal-detail.is-dark .floating-field__input:not(:placeholder-shown) + .floating-field__label {
+  background: #0b1220;
+}
+
+.chairman-proposal-detail.is-dark .evaluation-file-item {
+  background: rgba(148, 163, 184, 0.06);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.chairman-proposal-detail.is-dark .evaluation-file-item--pending {
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.chairman-proposal-detail.is-dark .evaluation-file-item__name {
+  color: #e5e7eb;
+}
+
+.chairman-proposal-detail.is-dark .evaluation-file-panel__pick-btn {
+  border-color: rgba(148, 163, 184, 0.35);
+  color: #e5e7eb;
+}
+
+.chairman-proposal-detail.is-dark .evaluation-file-panel__pick-btn:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.10);
+  border-color: rgba(148, 163, 184, 0.45);
+  color: #e5e7eb;
+}
+
+.chairman-proposal-detail.is-dark .decision-badge {
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(148, 163, 184, 0.08);
+  color: #e5e7eb;
+}
+
+.chairman-proposal-detail.is-dark .decision-badge.is-approve,
+.chairman-proposal-detail.is-dark .decision-badge.is-reject {
+  background: rgba(148, 163, 184, 0.08);
+  color: #e5e7eb;
+}
+
+.chairman-proposal-detail.is-dark .decision-choice__control,
+.chairman-proposal-detail.is-dark .checklist-choice__control {
+  border-color: rgba(229, 231, 235, 0.65);
+  background: #0b1220;
+}
+
+.chairman-proposal-detail.is-dark .decision-choice__control::after,
+.chairman-proposal-detail.is-dark .checklist-choice__control::after {
+  background: #e5e7eb;
+}
+
+.chairman-proposal-detail.is-dark .decision-choice input:checked + .decision-choice__control,
+.chairman-proposal-detail.is-dark .checklist-choice input:checked + .checklist-choice__control {
+  border-color: #e5e7eb;
+  box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.18);
+}
+
+.chairman-proposal-detail.is-dark .decision-choice input:focus-visible + .decision-choice__control,
+.chairman-proposal-detail.is-dark .checklist-choice input:focus-visible + .checklist-choice__control {
+  box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.22);
+}
+
+.chairman-proposal-detail.is-dark .evaluation-card__body .btn-primary {
+  background-color: #e5e7eb;
+  border-color: #e5e7eb;
+  color: #111827;
+}
+
+.chairman-proposal-detail.is-dark .evaluation-card__body .btn-primary:hover {
+  background-color: #f3f4f6;
+  border-color: #f3f4f6;
+  color: #111827;
+}
+
+.chairman-proposal-detail.is-dark .evaluation-card__body .btn-outline-secondary {
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.38);
+}
+
+.chairman-proposal-detail.is-dark .evaluation-card__body .btn-outline-secondary:hover {
+  background: rgba(148, 163, 184, 0.10);
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.5);
 }
 
 @media (max-width: 991px) {
