@@ -508,20 +508,23 @@
       <div v-if="showAdminFooterBar" class="footer-fixed admin-footer-fixed" :style="{ left: isSidebarOpen ? '256px' : '0px' }">
         <div class="d-flex justify-content-between align-items-center w-100 px-2 flex-wrap" style="gap: 12px;">
           <div class="d-flex align-items-center" style="gap: 12px;">
-            <span class="fw-bold text-muted">การดำเนินการ:</span>
+            <span class="fw-bold text-muted">{{ $t('researchFormAdminFooter.actionLabel') }}</span>
             <StatusBadge :status="currentStatus" role="admin" :round-source="loadedProposal" />
           </div>
 
           <div class="d-flex justify-content-end flex-wrap" style="gap: 10px;">
             <template v-if="!isAnnouncedStatus">
-              <CButton color="warning" size="sm" @click="openAdminStatusModal"><CIcon name="cil-loop-circular" class="mr-1" /> เปลี่ยนสถานะ</CButton>
+              <CButton color="warning" size="sm" @click="openAdminStatusModal"><CIcon name="cil-loop-circular" class="mr-1" /> {{ $t('researchFormAdminFooter.buttons.changeStatus') }}</CButton>
               <CButton color="success" size="sm" @click="openAdminCommitteeModal">
-                <CIcon name="cil-user-follow" class="mr-1" /> {{ adminHasAssignedCommittee ? 'เปลี่ยนคณะกรรมการ' : 'มอบหมายคณะกรรมการ' }}
+                <CIcon name="cil-user-follow" class="mr-1" /> {{ adminHasAssignedCommittee ? $t('researchFormAdminFooter.buttons.reassignCommittee') : $t('researchFormAdminFooter.buttons.assignCommittee') }}
               </CButton>
               <CButton v-if="adminCanShowChairmanAction" color="warning" variant="outline" size="sm" @click="openAdminChairmanModal">
-                <CIcon name="cil-user-follow" class="mr-1" /> ส่งเอกสารให้ประธาน
+                <CIcon name="cil-user-follow" class="mr-1" /> {{ $t('researchFormAdminFooter.buttons.sendToChairman') }}
               </CButton>
-              <CButton size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage"><CIcon name="cil-group" :content="$options.icons.cilPeople" class="mr-1" /> จัดการประชุม</CButton>
+              <CButton v-if="adminCanShowFinanceAction" color="info" variant="outline" size="sm" @click="openAdminFinanceModal">
+                <CIcon name="cil-dollar" class="mr-1" /> {{ adminFinanceActionLabel }}
+              </CButton>
+              <CButton size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage"><CIcon name="cil-group" :content="$options.icons.cilPeople" class="mr-1" /> {{ $t('researchFormAdminFooter.buttons.manageMeeting') }}</CButton>
             </template>
             <button
               v-else
@@ -545,16 +548,16 @@
         centered
         size="lg"
         scrollable
-        title="เปลี่ยนสถานะโครงการ"
+        :title="$t('researchFormAdminFooter.changeStatus.title')"
       >
         <template #body-wrapper>
           <div v-if="loadedProposal" class="status-modal-body" style="padding: 20px 24px 8px; max-height: calc(100vh - 220px); overflow-y: auto;">
             <div class="status-modal-proposal">
-              <div class="status-modal-meta"><strong>รหัสโครงการ:</strong> {{ loadedProposal.proposalCode || '-' }}</div>
-              <div class="status-modal-meta"><strong>ชื่อโครงการ:</strong> {{ loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || '-' }}</div>
+              <div class="status-modal-meta"><strong>{{ $t('researchFormAdminFooter.common.proposalCode') }}</strong> {{ loadedProposal.proposalCode || '-' }}</div>
+              <div class="status-modal-meta"><strong>{{ $t('researchFormAdminFooter.common.projectTitle') }}</strong> {{ loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || '-' }}</div>
             </div>
             <div class="status-modal-current">
-              <strong>สถานะปัจจุบัน:</strong>
+              <strong>{{ $t('researchFormAdminFooter.changeStatus.currentStatus') }}</strong>
               <CBadge :color="adminGetStatusBadgeColor(currentStatus)" class="ml-1">
                 {{ adminGetStatusLabel(currentStatus) }}
               </CBadge>
@@ -562,27 +565,27 @@
 
             <CSelect
               class="status-modal-select"
-              label="เปลี่ยนสถานะเป็น"
+              :label="$t('researchFormAdminFooter.changeStatus.toStatus')"
               :value="adminNewStatus"
               :options="adminNextStatusOptions"
               @change="onAdminNewStatusChange"
             />
 
-            <label class="status-modal-remark-label">หมายเหตุ / เหตุผล</label>
+            <label class="status-modal-remark-label">{{ $t('researchFormAdminFooter.changeStatus.remarkLabel') }}</label>
             <textarea
               v-model="adminStatusRemark"
               class="form-control"
               rows="3"
-              placeholder="ระบุหมายเหตุเพิ่มเติม (ไม่บังคับ)"
+              :placeholder="$t('researchFormAdminFooter.changeStatus.remarkPlaceholder')"
             />
           </div>
         </template>
 
         <template #footer-wrapper>
           <div class="status-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
-            <CButton color="secondary" class="mr-2" @click="closeAdminStatusModal"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
+            <CButton color="secondary" class="mr-2" @click="closeAdminStatusModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('researchFormAdminFooter.common.cancel') }}</CButton>
             <CButton color="primary" :disabled="!adminNewStatus || adminSubmittingStatus" @click="confirmAdminChangeStatus">
-              <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingStatus ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+              <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingStatus ? $t('researchFormAdminFooter.common.saving') : $t('researchFormAdminFooter.common.confirm') }}
             </CButton>
           </div>
         </template>
@@ -592,25 +595,25 @@
         :show.sync="adminShowChairmanModal"
         :close-on-backdrop="false"
         centered
-        title="ส่งเอกสารให้ประธาน"
+        :title="$t('researchFormAdminFooter.assignChairman.title')"
       >
         <template #body-wrapper>
           <div v-if="loadedProposal" class="status-modal-body" style="padding: 20px 24px 8px;">
             <div class="status-modal-proposal">
-              <div class="status-modal-meta"><strong>รหัสโครงการ:</strong> {{ loadedProposal.proposalCode || '-' }}</div>
-              <div class="status-modal-meta"><strong>ชื่อโครงการ:</strong> {{ loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || '-' }}</div>
+              <div class="status-modal-meta"><strong>{{ $t('researchFormAdminFooter.common.proposalCode') }}</strong> {{ loadedProposal.proposalCode || '-' }}</div>
+              <div class="status-modal-meta"><strong>{{ $t('researchFormAdminFooter.common.projectTitle') }}</strong> {{ loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || '-' }}</div>
             </div>
 
             <div v-if="adminChairmanUsersLoading" class="text-center py-3">
               <CSpinner size="sm" color="primary" />
-              <span class="text-muted ml-2">กำลังโหลดรายชื่อประธาน...</span>
+              <span class="text-muted ml-2">{{ $t('researchFormAdminFooter.assignChairman.loading') }}</span>
             </div>
             <CAlert v-else-if="adminChairmanUsersError" color="warning" show>
-              ไม่สามารถโหลดรายชื่อประธานได้: {{ adminChairmanUsersError }}
+              {{ $t('researchFormAdminFooter.assignChairman.loadError') }}: {{ adminChairmanUsersError }}
             </CAlert>
             <CSelect
               v-else
-              label="เลือกประธาน"
+              :label="$t('researchFormAdminFooter.assignChairman.selectLabel')"
               :value="adminSelectedChairmanId"
               :options="adminChairmanOptions"
               @change="onAdminChairmanChange"
@@ -620,9 +623,9 @@
 
         <template #footer-wrapper>
           <div class="status-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
-            <CButton color="secondary" class="mr-2" @click="closeAdminChairmanModal"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
+            <CButton color="secondary" class="mr-2" @click="closeAdminChairmanModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('researchFormAdminFooter.common.cancel') }}</CButton>
             <CButton color="warning" :disabled="!adminSelectedChairmanId || adminSubmittingChairman" @click="confirmAdminAssignChairman">
-              <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingChairman ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+              <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingChairman ? $t('researchFormAdminFooter.common.saving') : $t('researchFormAdminFooter.common.confirm') }}
             </CButton>
           </div>
         </template>
@@ -634,20 +637,20 @@
         centered
         size="lg"
         scrollable
-        title="มอบหมายคณะกรรมการ"
+        :title="$t('researchFormAdminFooter.assignCommittee.title')"
       >
         <template #body-wrapper>
           <div v-if="loadedProposal" class="committee-modal-body" style="padding: 20px 24px 8px; max-height: calc(100vh - 220px); overflow-y: auto;">
             <div class="committee-modal-proposal">
-              <div class="committee-modal-meta"><strong>รหัสโครงการ:</strong> {{ loadedProposal.proposalCode || '-' }}</div>
-              <div class="committee-modal-meta"><strong>ชื่อโครงการ:</strong> {{ loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || '-' }}</div>
+              <div class="committee-modal-meta"><strong>{{ $t('researchFormAdminFooter.common.proposalCode') }}</strong> {{ loadedProposal.proposalCode || '-' }}</div>
+              <div class="committee-modal-meta"><strong>{{ $t('researchFormAdminFooter.common.projectTitle') }}</strong> {{ loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || '-' }}</div>
             </div>
 
             <div class="committee-selection-panel">
-              <div class="mb-2"><strong>คณะกรรมการที่เลือก ({{ adminSelectedCommitteeIds.length }} คน)</strong></div>
-              <small class="text-muted d-block mb-2">ต้องมีกรรมการอย่างน้อย {{ adminRequiredCommitteeCount }} คนตามนโยบายระบบ</small>
+              <div class="mb-2"><strong>{{ $t('researchFormAdminFooter.assignCommittee.selectedCount', { count: adminSelectedCommitteeIds.length }) }}</strong></div>
+              <small class="text-muted d-block mb-2">{{ $t('researchFormAdminFooter.assignCommittee.minRequired', { count: adminRequiredCommitteeCount }) }}</small>
               <div class="committee-selection-summary">
-                <span v-if="adminSelectedCommitteeProfiles.length === 0" class="text-muted">ยังไม่ได้เลือกคณะกรรมการ</span>
+                <span v-if="adminSelectedCommitteeProfiles.length === 0" class="text-muted">{{ $t('researchFormAdminFooter.assignCommittee.noneSelected') }}</span>
                 <span
                   v-for="u in adminSelectedCommitteeProfiles"
                   :key="`sel-${u._id}`"
@@ -669,20 +672,20 @@
 
             <div class="committee-tools row align-items-end">
               <div class="col-md-12 mb-2">
-                <label class="mb-1"><strong>ค้นหา</strong></label>
-                <input v-model="adminCommitteeSearch" type="text" class="form-control" placeholder="ชื่อ / อีเมล / หน่วยงาน" />
+                <label class="mb-1"><strong>{{ $t('researchFormAdminFooter.assignCommittee.searchLabel') }}</strong></label>
+                <input v-model="adminCommitteeSearch" type="text" class="form-control" :placeholder="$t('researchFormAdminFooter.assignCommittee.searchPlaceholder')" />
               </div>
             </div>
 
             <div v-if="adminCommitteeUsersLoading" class="text-center py-3">
               <CSpinner size="sm" color="primary" />
-              <span class="text-muted ml-2">กำลังโหลดรายชื่อกรรมการ...</span>
+              <span class="text-muted ml-2">{{ $t('researchFormAdminFooter.assignCommittee.loading') }}</span>
             </div>
             <CAlert v-else-if="adminCommitteeUsersError" color="warning" show>
-              ไม่สามารถโหลดรายชื่อกรรมการได้: {{ adminCommitteeUsersError }}
+              {{ $t('researchFormAdminFooter.assignCommittee.loadError') }}: {{ adminCommitteeUsersError }}
             </CAlert>
             <div v-else class="committee-user-list mt-2">
-              <div v-if="adminFilteredCommitteeUsers.length === 0" class="text-muted py-2">ไม่พบรายชื่อกรรมการ</div>
+              <div v-if="adminFilteredCommitteeUsers.length === 0" class="text-muted py-2">{{ $t('researchFormAdminFooter.assignCommittee.noUsers') }}</div>
               <div
                 v-for="u in adminFilteredCommitteeUsers"
                 :key="u._id"
@@ -710,9 +713,49 @@
 
         <template #footer-wrapper>
           <div class="committee-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
-            <CButton color="secondary" class="mr-2" @click="closeAdminCommitteeModal"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
+            <CButton color="secondary" class="mr-2" @click="closeAdminCommitteeModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('researchFormAdminFooter.common.cancel') }}</CButton>
             <CButton color="success" :disabled="adminSubmittingCommittee || adminSelectedCommitteeIds.length < adminRequiredCommitteeCount" @click="confirmAdminAssignCommittee">
-              <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingCommittee ? 'กำลังบันทึก...' : 'ยืนยัน' }}
+              <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingCommittee ? $t('researchFormAdminFooter.common.saving') : $t('researchFormAdminFooter.common.confirm') }}
+            </CButton>
+          </div>
+        </template>
+      </CModal>
+
+      <CModal
+        :show.sync="adminShowFinanceModal"
+        :close-on-backdrop="false"
+        centered
+        :title="adminIsSendToFinanceAction ? $t('researchFormAdminFooter.assignFinance.titleSend') : $t('researchFormAdminFooter.assignFinance.titleAssign')"
+      >
+        <template #body-wrapper>
+          <div v-if="loadedProposal" class="status-modal-body" style="padding: 20px 24px 8px;">
+            <div class="status-modal-proposal">
+              <div class="status-modal-meta"><strong>{{ $t('researchFormAdminFooter.common.proposalCode') }}</strong> {{ loadedProposal.proposalCode || '-' }}</div>
+              <div class="status-modal-meta"><strong>{{ $t('researchFormAdminFooter.common.projectTitle') }}</strong> {{ loadedProposal.projectTitleTh || loadedProposal.projectTitleEn || '-' }}</div>
+            </div>
+
+            <div v-if="adminFinanceUsersLoading" class="text-center py-3">
+              <CSpinner size="sm" color="primary" />
+              <span class="text-muted ml-2">{{ $t('researchFormAdminFooter.assignFinance.loading') }}</span>
+            </div>
+            <CAlert v-else-if="adminFinanceUsersError" color="warning" show>
+              {{ $t('researchFormAdminFooter.assignFinance.loadError') }}: {{ adminFinanceUsersError }}
+            </CAlert>
+            <CSelect
+              v-else
+              :label="$t('researchFormAdminFooter.assignFinance.selectLabel')"
+              :value="adminSelectedFinanceOfficerId"
+              :options="adminFinanceOptions"
+              @change="onAdminFinanceOfficerChange"
+            />
+          </div>
+        </template>
+
+        <template #footer-wrapper>
+          <div class="status-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
+            <CButton color="secondary" class="mr-2" @click="closeAdminFinanceModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('researchFormAdminFooter.common.cancel') }}</CButton>
+            <CButton color="info" :disabled="!adminSelectedFinanceOfficerId || adminSubmittingFinance" @click="confirmAdminAssignFinanceOfficer">
+              <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingFinance ? $t('researchFormAdminFooter.common.saving') : (adminIsSendToFinanceAction ? $t('researchFormAdminFooter.assignFinance.confirmSend') : $t('researchFormAdminFooter.assignFinance.confirmAssign')) }}
             </CButton>
           </div>
         </template>
@@ -1030,6 +1073,12 @@ export default {
       adminChairmanUsersError: null,
       adminChairmanUsers: [],
       adminSelectedChairmanId: '',
+      adminShowFinanceModal: false,
+      adminSubmittingFinance: false,
+      adminFinanceUsersLoading: false,
+      adminFinanceUsersError: null,
+      adminFinanceUsers: [],
+      adminSelectedFinanceOfficerId: '',
       workflowApprovalPolicy: {
         minScore: 60,
         minCommittee: 3,
@@ -1365,19 +1414,31 @@ export default {
     adminCanShowChairmanAction () {
       return this.isAdminView && String(normalizeProposalStatus(this.currentStatus)).trim().toLowerCase() === 'submitted'
     },
+    adminCanShowFinanceAction () {
+      if (!this.isAdminView || !this.viewProposalId) return false
+      const currentStatus = String(normalizeProposalStatus(this.currentStatus)).trim().toLowerCase()
+      return currentStatus === 'office_received' || currentStatus === 'finance_budget_checking'
+    },
+    adminIsSendToFinanceAction () {
+      return String(normalizeProposalStatus(this.currentStatus)).trim().toLowerCase() === 'office_received'
+    },
+    adminFinanceActionLabel () {
+      if (this.adminIsSendToFinanceAction) return this.$t('researchFormAdminFooter.buttons.sendToFinance')
+      return this.$t('researchFormAdminFooter.buttons.reassignFinance')
+    },
     adminHasAssignedCommittee () {
       return Array.isArray(this.loadedProposal && this.loadedProposal.committeeIds) && this.loadedProposal.committeeIds.length > 0
     },
     adminNextStatusOptions () {
       const current = String(this.currentStatus || '').trim()
       const statuses = (ADMIN_ALLOWED_TRANSITIONS[current] || []).filter(status => !this.isAdminManualStatusBlocked(status))
-      if (!statuses.length) return [{ value: '', label: 'ไม่มีสถานะถัดไปที่อนุญาต' }]
+      if (!statuses.length) return [{ value: '', label: this.$t('researchFormAdminFooter.changeStatus.nextStatusNone') }]
       return [{
         value: '',
-        label: 'เลือกสถานะ'
+        label: this.$t('researchFormAdminFooter.changeStatus.nextStatusSelect')
       }, ...statuses.map(s => ({
         value: s,
-        label: s === 'second_round_review' ? 'ส่งให้คณะกรรมการพิจารณา' : this.adminGetStatusLabel(s)
+        label: s === 'second_round_review' ? this.$t('researchFormAdminFooter.changeStatus.nextStatusSecondRound') : this.adminGetStatusLabel(s)
       }))]
     },
     adminFilteredCommitteeUsers () {
@@ -1402,8 +1463,17 @@ export default {
     },
     adminChairmanOptions () {
       return [
-        { value: '', label: 'เลือกประธาน' },
+        { value: '', label: this.$t('researchFormAdminFooter.assignChairman.selectPlaceholder') },
         ...(this.adminChairmanUsers || []).map(user => ({
+          value: user && user._id ? String(user._id) : '',
+          label: user && user.fullName ? `${user.fullName}${user.department ? ` (${user.department})` : ''}` : '-'
+        }))
+      ]
+    },
+    adminFinanceOptions () {
+      return [
+        { value: '', label: this.$t('researchFormAdminFooter.assignFinance.selectPlaceholder') },
+        ...(this.adminFinanceUsers || []).map(user => ({
           value: user && user._id ? String(user._id) : '',
           label: user && user.fullName ? `${user.fullName}${user.department ? ` (${user.department})` : ''}` : '-'
         }))
@@ -2490,7 +2560,7 @@ export default {
     async confirmAdminChangeStatus () {
       if (!this.isAdminView || !this.viewProposalId || !this.adminNewStatus) return
       if (this.isAdminManualStatusBlocked(this.adminNewStatus)) {
-        await Swal.fire('เปลี่ยนสถานะไม่สำเร็จ', 'แอดมินไม่สามารถเปลี่ยนสถานะเป็นอนุมัติหรือไม่อนุมัติได้', 'error')
+        await Swal.fire(this.$t('researchFormAdminFooter.changeStatus.errorTitle'), this.$t('researchFormAdminFooter.changeStatus.blockedText'), 'error')
         return
       }
       this.adminSubmittingStatus = true
@@ -2501,9 +2571,9 @@ export default {
         })
         await this.loadProposalById(this.viewProposalId)
         this.adminShowStatusModal = false
-        await Swal.fire({ icon: 'success', title: 'เปลี่ยนสถานะสำเร็จ', timer: 1500, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('researchFormAdminFooter.changeStatus.successTitle'), timer: 1500, showConfirmButton: false })
       } catch (err) {
-        await Swal.fire('เปลี่ยนสถานะไม่สำเร็จ', (err && err.response && err.response.data && err.response.data.message) || 'ลองใหม่อีกครั้ง', 'error')
+        await Swal.fire(this.$t('researchFormAdminFooter.changeStatus.errorTitle'), (err && err.response && err.response.data && err.response.data.message) || this.$t('researchFormAdminFooter.common.retry'), 'error')
       } finally {
         this.adminSubmittingStatus = false
       }
@@ -2528,12 +2598,25 @@ export default {
       this.adminShowChairmanModal = true
       await this.fetchAdminChairmanUsers()
     },
+    async openAdminFinanceModal () {
+      if (!this.adminCanShowFinanceAction) return
+      this.adminSelectedFinanceOfficerId = ''
+      this.adminShowFinanceModal = true
+      await this.fetchAdminFinanceUsers()
+    },
     closeAdminChairmanModal () {
       this.adminShowChairmanModal = false
       this.adminSelectedChairmanId = ''
     },
+    closeAdminFinanceModal () {
+      this.adminShowFinanceModal = false
+      this.adminSelectedFinanceOfficerId = ''
+    },
     onAdminChairmanChange (val) {
       this.adminSelectedChairmanId = this.adminGetSelectValue(val)
+    },
+    onAdminFinanceOfficerChange (val) {
+      this.adminSelectedFinanceOfficerId = this.adminGetSelectValue(val)
     },
     isAdminSelectedCommittee (id) {
       const key = String(id)
@@ -2621,6 +2704,30 @@ export default {
         this.adminChairmanUsersLoading = false
       }
     },
+    async fetchAdminFinanceUsers () {
+      this.adminFinanceUsersLoading = true
+      this.adminFinanceUsersError = null
+      try {
+        const proposalId = String(this.viewProposalId || '')
+        const res = await Service.proposal.getCommitteeUsers({ role: 'finance_officer', limit: 100, proposalId })
+        const payload = res && res.data ? res.data : null
+        if (payload && payload.data && !Array.isArray(payload.data)) {
+          const wrapped = payload.data
+          this.adminFinanceUsers = Array.isArray(wrapped.items) ? wrapped.items : []
+        } else if (payload && Array.isArray(payload.data)) {
+          this.adminFinanceUsers = payload.data
+        } else {
+          this.adminFinanceUsers = []
+        }
+      } catch (err) {
+        this.adminFinanceUsers = []
+        this.adminFinanceUsersError = (err && err.response && err.response.data && err.response.data.message)
+          || err.message
+          || 'Unknown error'
+      } finally {
+        this.adminFinanceUsersLoading = false
+      }
+    },
     async confirmAdminAssignChairman () {
       if (!this.isAdminView || !this.viewProposalId || !this.adminSelectedChairmanId) return
       this.adminSubmittingChairman = true
@@ -2628,18 +2735,42 @@ export default {
         await Service.proposal.assignChairman(this.viewProposalId, { chairmanIds: [this.adminSelectedChairmanId] })
         await this.loadProposalById(this.viewProposalId)
         this.adminShowChairmanModal = false
-        await Swal.fire({ icon: 'success', title: 'ส่งให้ประธานสำเร็จ', timer: 1500, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('researchFormAdminFooter.assignChairman.successTitle'), timer: 1500, showConfirmButton: false })
       } catch (err) {
-        await Swal.fire('ส่งให้ประธานไม่สำเร็จ', (err && err.response && err.response.data && err.response.data.message) || 'ลองใหม่อีกครั้ง', 'error')
+        await Swal.fire(this.$t('researchFormAdminFooter.assignChairman.errorTitle'), (err && err.response && err.response.data && err.response.data.message) || this.$t('researchFormAdminFooter.common.retry'), 'error')
       } finally {
         this.adminSubmittingChairman = false
+      }
+    },
+    async confirmAdminAssignFinanceOfficer () {
+      if (!this.isAdminView || !this.viewProposalId || !this.adminSelectedFinanceOfficerId) return
+      this.adminSubmittingFinance = true
+      const isSendToFinanceAction = this.adminIsSendToFinanceAction
+      try {
+        await Service.proposal.assignFinanceOfficer(this.viewProposalId, { financeOfficerIds: [this.adminSelectedFinanceOfficerId] })
+        await this.loadProposalById(this.viewProposalId)
+        this.adminShowFinanceModal = false
+        await Swal.fire({
+          icon: 'success',
+          title: isSendToFinanceAction ? this.$t('researchFormAdminFooter.assignFinance.successTitleSend') : this.$t('researchFormAdminFooter.assignFinance.successTitleAssign'),
+          timer: 1500,
+          showConfirmButton: false
+        })
+      } catch (err) {
+        await Swal.fire(
+          isSendToFinanceAction ? this.$t('researchFormAdminFooter.assignFinance.errorTitleSend') : this.$t('researchFormAdminFooter.assignFinance.errorTitleAssign'),
+          (err && err.response && err.response.data && err.response.data.message) || this.$t('researchFormAdminFooter.common.retry'),
+          'error'
+        )
+      } finally {
+        this.adminSubmittingFinance = false
       }
     },
     async confirmAdminAssignCommittee () {
       if (!this.isAdminView || !this.viewProposalId) return
       const minRequired = this.adminRequiredCommitteeCount
       if (this.adminSelectedCommitteeIds.length < minRequired) {
-        await Swal.fire('กรุณาเลือกคณะกรรมการ', `ต้องเลือกอย่างน้อย ${minRequired} คนตามนโยบายระบบ`, 'warning')
+        await Swal.fire(this.$t('researchFormAdminFooter.assignCommittee.warningTitle'), this.$t('researchFormAdminFooter.assignCommittee.warningText', { count: minRequired }), 'warning')
         return
       }
       this.adminSubmittingCommittee = true
@@ -2648,9 +2779,9 @@ export default {
         await Service.proposal.assignCommittee(this.viewProposalId, { committeeIds })
         await this.loadProposalById(this.viewProposalId)
         this.adminShowCommitteeModal = false
-        await Swal.fire({ icon: 'success', title: 'มอบหมายคณะกรรมการสำเร็จ', timer: 1500, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('researchFormAdminFooter.assignCommittee.successTitle'), timer: 1500, showConfirmButton: false })
       } catch (err) {
-        await Swal.fire('ไม่สำเร็จ', (err && err.response && err.response.data && err.response.data.message) || 'ลองใหม่อีกครั้ง', 'error')
+        await Swal.fire(this.$t('researchFormAdminFooter.assignCommittee.errorTitle'), (err && err.response && err.response.data && err.response.data.message) || this.$t('researchFormAdminFooter.common.retry'), 'error')
       } finally {
         this.adminSubmittingCommittee = false
       }

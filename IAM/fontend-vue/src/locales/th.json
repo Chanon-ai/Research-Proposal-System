@@ -572,6 +572,77 @@
       "saveEdit": "บันทึกการแก้ไข"
     }
   },
+  "researchFormAdminFooter": {
+    "actionLabel": "การดำเนินการ:",
+    "common": {
+      "proposalCode": "รหัสโครงการ:",
+      "projectTitle": "ชื่อโครงการ:",
+      "cancel": "ยกเลิก",
+      "confirm": "ยืนยัน",
+      "saving": "กำลังบันทึก...",
+      "retry": "ลองใหม่อีกครั้ง"
+    },
+    "buttons": {
+      "changeStatus": "เปลี่ยนสถานะ",
+      "assignCommittee": "มอบหมายคณะกรรมการ",
+      "reassignCommittee": "เปลี่ยนคณะกรรมการ",
+      "sendToChairman": "ส่งเอกสารให้ประธาน",
+      "sendToFinance": "ส่งให้ฝ่ายการเงินตรวจสอบ",
+      "reassignFinance": "เปลี่ยนผู้ตรวจสอบการเงิน",
+      "manageMeeting": "จัดการประชุม"
+    },
+    "changeStatus": {
+      "title": "เปลี่ยนสถานะโครงการ",
+      "currentStatus": "สถานะปัจจุบัน:",
+      "toStatus": "เปลี่ยนสถานะเป็น",
+      "remarkLabel": "หมายเหตุ / เหตุผล",
+      "remarkPlaceholder": "ระบุหมายเหตุเพิ่มเติม (ไม่บังคับ)",
+      "nextStatusNone": "ไม่มีสถานะถัดไปที่อนุญาต",
+      "nextStatusSelect": "เลือกสถานะ",
+      "nextStatusSecondRound": "ส่งให้คณะกรรมการพิจารณา",
+      "blockedText": "แอดมินไม่สามารถเปลี่ยนสถานะเป็นอนุมัติหรือไม่อนุมัติได้",
+      "successTitle": "เปลี่ยนสถานะสำเร็จ",
+      "errorTitle": "เปลี่ยนสถานะไม่สำเร็จ"
+    },
+    "assignChairman": {
+      "title": "ส่งเอกสารให้ประธาน",
+      "loading": "กำลังโหลดรายชื่อประธาน...",
+      "loadError": "ไม่สามารถโหลดรายชื่อประธานได้",
+      "selectLabel": "เลือกประธาน",
+      "selectPlaceholder": "เลือกประธาน",
+      "successTitle": "ส่งให้ประธานสำเร็จ",
+      "errorTitle": "ส่งให้ประธานไม่สำเร็จ"
+    },
+    "assignCommittee": {
+      "title": "มอบหมายคณะกรรมการ",
+      "selectedCount": "คณะกรรมการที่เลือก ({count} คน)",
+      "minRequired": "ต้องมีกรรมการอย่างน้อย {count} คนตามนโยบายระบบ",
+      "noneSelected": "ยังไม่ได้เลือกคณะกรรมการ",
+      "searchLabel": "ค้นหา",
+      "searchPlaceholder": "ชื่อ / อีเมล / หน่วยงาน",
+      "loading": "กำลังโหลดรายชื่อกรรมการ...",
+      "loadError": "ไม่สามารถโหลดรายชื่อกรรมการได้",
+      "noUsers": "ไม่พบรายชื่อกรรมการ",
+      "warningTitle": "กรุณาเลือกคณะกรรมการ",
+      "warningText": "ต้องเลือกอย่างน้อย {count} คนตามนโยบายระบบ",
+      "successTitle": "มอบหมายคณะกรรมการสำเร็จ",
+      "errorTitle": "ไม่สำเร็จ"
+    },
+    "assignFinance": {
+      "titleSend": "ส่งให้ฝ่ายการเงินตรวจสอบ",
+      "titleAssign": "มอบหมายเจ้าหน้าที่การเงิน",
+      "loading": "กำลังโหลดรายชื่อเจ้าหน้าที่การเงิน...",
+      "loadError": "ไม่สามารถโหลดรายชื่อเจ้าหน้าที่การเงินได้",
+      "selectLabel": "เลือกเจ้าหน้าที่การเงิน",
+      "selectPlaceholder": "เลือกเจ้าหน้าที่การเงิน",
+      "confirmSend": "ยืนยันส่งให้ฝ่ายการเงิน",
+      "confirmAssign": "ยืนยันการมอบหมาย",
+      "successTitleSend": "ส่งให้ฝ่ายการเงินตรวจสอบสำเร็จ",
+      "successTitleAssign": "มอบหมายเจ้าหน้าที่การเงินสำเร็จ",
+      "errorTitleSend": "ส่งให้ฝ่ายการเงินตรวจสอบไม่สำเร็จ",
+      "errorTitleAssign": "มอบหมายเจ้าหน้าที่การเงินไม่สำเร็จ"
+    }
+  },
   "committee": {
     "meetings": {
       "hero": {

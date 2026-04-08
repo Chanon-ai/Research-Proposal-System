@@ -572,6 +572,77 @@
       "saveEdit": "Save changes"
     }
   },
+  "researchFormAdminFooter": {
+    "actionLabel": "Actions:",
+    "common": {
+      "proposalCode": "Proposal code:",
+      "projectTitle": "Project title:",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "saving": "Saving...",
+      "retry": "Please try again"
+    },
+    "buttons": {
+      "changeStatus": "Change status",
+      "assignCommittee": "Assign committee",
+      "reassignCommittee": "Reassign committee",
+      "sendToChairman": "Send to chairman",
+      "sendToFinance": "Send to finance review",
+      "reassignFinance": "Reassign finance reviewer",
+      "manageMeeting": "Manage meeting"
+    },
+    "changeStatus": {
+      "title": "Change proposal status",
+      "currentStatus": "Current status:",
+      "toStatus": "Change status to",
+      "remarkLabel": "Remark / reason",
+      "remarkPlaceholder": "Optional additional remark",
+      "nextStatusNone": "No allowed next status",
+      "nextStatusSelect": "Select status",
+      "nextStatusSecondRound": "Send to committee review",
+      "blockedText": "Admin cannot manually change the status to approved or rejected.",
+      "successTitle": "Status updated successfully",
+      "errorTitle": "Unable to update status"
+    },
+    "assignChairman": {
+      "title": "Send document to chairman",
+      "loading": "Loading chairman list...",
+      "loadError": "Unable to load chairman list",
+      "selectLabel": "Select chairman",
+      "selectPlaceholder": "Select chairman",
+      "successTitle": "Sent to chairman successfully",
+      "errorTitle": "Unable to send to chairman"
+    },
+    "assignCommittee": {
+      "title": "Assign committee",
+      "selectedCount": "Selected committees ({count})",
+      "minRequired": "At least {count} committee members are required by policy",
+      "noneSelected": "No committee selected yet",
+      "searchLabel": "Search",
+      "searchPlaceholder": "Name / email / department",
+      "loading": "Loading committee list...",
+      "loadError": "Unable to load committee list",
+      "noUsers": "No committee members found",
+      "warningTitle": "Please select committee members",
+      "warningText": "You must select at least {count} members based on the workflow policy",
+      "successTitle": "Committee assigned successfully",
+      "errorTitle": "Action failed"
+    },
+    "assignFinance": {
+      "titleSend": "Send to finance review",
+      "titleAssign": "Assign finance officer",
+      "loading": "Loading finance officer list...",
+      "loadError": "Unable to load finance officer list",
+      "selectLabel": "Select finance officer",
+      "selectPlaceholder": "Select finance officer",
+      "confirmSend": "Confirm send to finance",
+      "confirmAssign": "Confirm assignment",
+      "successTitleSend": "Sent to finance review successfully",
+      "successTitleAssign": "Finance officer assigned successfully",
+      "errorTitleSend": "Unable to send to finance review",
+      "errorTitleAssign": "Unable to assign finance officer"
+    }
+  },
   "committee": {
     "meetings": {
       "hero": {
