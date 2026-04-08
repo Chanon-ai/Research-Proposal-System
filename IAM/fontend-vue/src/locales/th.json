@@ -447,6 +447,8 @@
     "chairmanActionApproved": "ประธานอนุมัติแล้ว",
     "chairmanActionSend": "ส่งให้ประธาน",
     "financeActionAssign": "มอบหมายการเงิน",
+    "financeActionSend": "ส่งให้ฝ่ายการเงินตรวจสอบ",
+    "financeActionReassign": "เปลี่ยนผู้ตรวจสอบการเงิน",
     "financeAssigned": "มอบหมายเจ้าหน้าที่การเงินแล้ว",
     "financeAssignedWithName": "มอบหมายให้ {name} ตรวจสอบงบประมาณ",
     "financeSubmitted": "ส่งผลการตรวจสอบงบประมาณแล้ว",
@@ -460,6 +462,7 @@
     "assignCommitteeSuccess": "มอบหมายกรรมการสำเร็จ",
     "assignCommitteeError": "มอบหมายกรรมการไม่สำเร็จ",
     "assignFinanceSuccess": "มอบหมายเจ้าหน้าที่การเงินสำเร็จ",
+    "sendToFinanceSuccess": "ส่งให้ฝ่ายการเงินตรวจสอบสำเร็จ",
     "assignFinanceError": "มอบหมายเจ้าหน้าที่การเงินไม่สำเร็จ",
     "genericRetry": "กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง",
     "modals": {
@@ -497,6 +500,7 @@
       },
       "assignFinance": {
         "title": "มอบหมายเจ้าหน้าที่การเงิน",
+        "titleSend": "ส่งให้ฝ่ายการเงินตรวจสอบ",
         "proposalCode": "รหัสโครงการ:",
         "projectTitle": "ชื่อโครงการ:",
         "loading": "กำลังโหลดรายชื่อเจ้าหน้าที่การเงิน...",
@@ -504,6 +508,7 @@
         "selectPlaceholder": "เลือกเจ้าหน้าที่การเงิน",
         "cancel": "ยกเลิก",
         "confirm": "ยืนยันการมอบหมาย",
+        "confirmSend": "ยืนยันส่งให้ฝ่ายการเงิน",
         "saving": "กำลังบันทึก..."
       }
     },
@@ -1115,6 +1120,7 @@
       "general": "ทั่วไป",
       "funding": "ทุนและงบประมาณ",
       "access": "สิทธิ์การเข้าถึง",
+      "workflow": "Workflow",
       "templates": "Template ประเมิน",
       "email": "อีเมล",
       "users": "ผู้ใช้งาน"
@@ -1167,13 +1173,20 @@
       "step1Title": "1. ยื่นโครงการ",
       "step1Desc": "รับโดยส่วนบริหาร",
       "step2Title": "2. ตรวจสอบเอกสาร",
-      "step2Desc": "มอบหมายกรรมการ",
+      "step2Desc": "ตรวจสอบงบประมาณและเอกสารก่อนมอบหมายกรรมการ",
       "step3Title": "3. กรรมการพิจารณา",
-      "step3Desc": "ประชุม",
+      "step3Desc": "ประชุมและสรุปผลการพิจารณา",
       "step4Title": "4. ขอแก้ไข",
       "step4Desc": "นักวิจัยส่งกลับ",
       "step5Title": "5. ส่งแก้ไข",
-      "step5Desc": "เข้าสู่รอบพิจารณาถัดไป (วนซ้ำ)"
+      "step5Desc": "เข้าสู่รอบพิจารณาถัดไป (วนซ้ำ)",
+      "messages": {
+        "savedToDatabase": "บันทึก Workflow Settings ลงฐานข้อมูลสำเร็จ",
+        "savedLocallyTitle": "บันทึกเฉพาะในเครื่องชั่วคราว",
+        "savedLocally": "ไม่สามารถบันทึกลงฐานข้อมูลได้ ข้อมูลถูกเก็บไว้เฉพาะในเครื่องชั่วคราว",
+        "saveFailedTitle": "บันทึกไม่สำเร็จ",
+        "saveFailed": "ไม่สามารถบันทึกได้ทั้งฐานข้อมูลและเครื่องนี้ กรุณาลองใหม่"
+      }
     },
     "email": {
       "notificationsCard": "การแจ้งเตือนทางอีเมล",

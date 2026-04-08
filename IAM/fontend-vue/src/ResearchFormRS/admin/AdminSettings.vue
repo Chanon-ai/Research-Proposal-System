@@ -102,7 +102,7 @@
       </CTab>
 
       <CTab>
-        <template slot="title">Workflow</template>
+        <template slot="title">{{ $t('adminSettings.tabs.workflow') }}</template>
 
         <CAlert
           show
@@ -376,6 +376,7 @@ import AdminRolePageAccessSettings from '@/ResearchFormRS/admin/AdminRolePageAcc
 import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 import Swal from 'sweetalert2'
 import {
+  PROPOSAL_ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
   PROPOSAL_STATUS_LABELS_TH_ADMIN as STATUS_LABELS
 } from '@/ResearchFormRS/constants/proposalWorkflow'
@@ -426,27 +427,6 @@ const DEFAULT_TEMPLATES = {
   }
 }
 
-// flat SVG icon paths — keyed by status
-const STATUS_FLOW_ALLOWED_TRANSITIONS = Object.freeze({
-  draft: ['pending_confirm'],
-  pending_confirm: ['submitted'],
-  submitted: ['faculty_review_pending'],
-  faculty_review_pending: ['faculty_approved', 'rejected'],
-  faculty_approved: ['office_received'],
-  faculty_rejected: ['rejected'],
-  office_received: ['document_checking'],
-  document_checking: ['assigned_to_committee'],
-  assigned_to_committee: ['under_review'],
-  under_review: ['committee_valuated'],
-  committee_valuated: ['meeting_completed'],
-  meeting_completed: ['announced'],
-  revision_requested: ['resubmitted'],
-  resubmitted: ['second_round_review'],
-  second_round_review: ['committee_valuated'],
-  approved: ['announced'],
-  rejected: ['announced']
-})
-
 const STATUS_ICONS = {
   draft:                  '<path d="M11 3l2 2-7 7H4v-2L11 3z"/>',
   pending_confirm:        '<circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/>',
@@ -455,6 +435,8 @@ const STATUS_ICONS = {
   faculty_approved:       '<path d="M3 8l4 4 6-6"/>',
   faculty_rejected:       '<path d="M4 4l8 8M12 4l-8 8"/>',
   office_received:        '<path d="M8 14V6M5 9l3-3 3 3"/><rect x="2" y="3" width="12" height="2" rx="1"/>',
+  finance_budget_checking:'<path d="M3 4h10"/><path d="M4 4l1 8h6l1-8"/><path d="M6 7h4"/><path d="M8 2v3"/>',
+  meeting_in_progress:    '<rect x="2" y="3" width="12" height="11" rx="1"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M8 9v2.5l1.5 1.5"/>',
   document_checking:      '<circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/>',
   assigned_to_committee:  '<rect x="2" y="2" width="12" height="12" rx="1"/><path d="M5 6h6M5 9h4"/>',
   under_review:           '<circle cx="8" cy="8" r="6"/><path d="M8 5v3h3"/>',
@@ -563,12 +545,16 @@ export default {
       editingSettingId: null,
       editingSettingValue: '',
       editingSettingDescription: '',
-      editingSettingIsSecret: false,
-
-      allowedTransitions: STATUS_FLOW_ALLOWED_TRANSITIONS
+      editingSettingIsSecret: false
     }
   },
   computed: {
+    allowedTransitions () {
+      return PROPOSAL_ALLOWED_TRANSITIONS
+    },
+    centerLoadingActive () {
+      return Boolean(this.loadingSettings || this.emailLogLoading || this.emailWidgetSending)
+    },
     workflowSteps () {
       return [
         { key: 'step1', title: this.$t('adminSettings.workflow.step1Title'), description: this.$t('adminSettings.workflow.step1Desc') },
@@ -587,11 +573,6 @@ export default {
   },
   beforeDestroy () {
     document.removeEventListener('keydown', this.onEmailWidgetKeydown)
-  },
-  computed: {
-    centerLoadingActive () {
-      return Boolean(this.loadingSettings || this.emailLogLoading || this.emailWidgetSending)
-    }
   },
   watch: {
     '$route.query.tab' () { this.applyTabFromRoute() },
@@ -870,8 +851,8 @@ export default {
           { key: 'workflow_max_rounds', value: this.workflowForm.maxRounds, valueType: 'number', label: 'รอบพิจารณาอ้างอิง (ไม่หยุดอัตโนมัติ)' },
           { key: 'workflow_allow_revision_after_meeting', value: this.workflowForm.allowRevisionAfterMeeting, valueType: 'boolean', label: 'เปิดให้แก้ไขหลังประชุม' },
           { key: 'workflow_step1_days', value: d.step1, valueType: 'number', label: 'ยื่นโครงการ -> รับโดยส่วนบริหาร' },
-          { key: 'workflow_step2_days', value: d.step2, valueType: 'number', label: 'ตรวจสอบเอกสาร -> มอบหมายกรรมการ' },
-          { key: 'workflow_step3_days', value: d.step3, valueType: 'number', label: 'กรรมการพิจารณา -> ประชุม' },
+          { key: 'workflow_step2_days', value: d.step2, valueType: 'number', label: 'ตรวจสอบงบประมาณและเอกสาร -> มอบหมายกรรมการ' },
+          { key: 'workflow_step3_days', value: d.step3, valueType: 'number', label: 'กรรมการพิจารณา -> สรุปผลการประชุม' },
           { key: 'workflow_step4_days', value: d.step4, valueType: 'number', label: 'ขอแก้ไข -> นักวิจัยส่งกลับ' },
           { key: 'workflow_step5_days', value: d.step5, valueType: 'number', label: 'ส่งแก้ไข -> เข้ารอบพิจารณาถัดไป (วนซ้ำ)' }
         ]
@@ -945,8 +926,8 @@ export default {
         this.clearWorkflowFallbackMeta()
         this.workflowDataSource = 'database'
         this.workflowSaveStatus = 'db_saved'
-        this.workflowSaveMessage = 'บันทึก Workflow Settings ลงฐานข้อมูลสำเร็จ'
-        await Swal.fire({ icon: 'success', title: 'บันทึก Workflow Settings ลงฐานข้อมูลสำเร็จ', timer: 1400, showConfirmButton: false })
+        this.workflowSaveMessage = this.$t('adminSettings.workflow.messages.savedToDatabase')
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.workflow.messages.savedToDatabase'), timer: 1400, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] saveWorkflowSettings fallback:', error)
         const savedAt = new Date().toISOString()
@@ -955,13 +936,13 @@ export default {
           this.workflowDataSource = 'local_fallback'
           this.workflowFallbackSavedAt = savedAt
           this.workflowSaveStatus = 'local_fallback'
-          this.workflowSaveMessage = 'ไม่สามารถบันทึกลงฐานข้อมูลได้ ข้อมูลถูกเก็บไว้เฉพาะในเครื่องชั่วคราว'
-          await Swal.fire({ icon: 'warning', title: 'บันทึกเฉพาะในเครื่องชั่วคราว', text: 'ไม่สามารถบันทึกลงฐานข้อมูลได้ ข้อมูลถูกเก็บไว้เฉพาะในเครื่องชั่วคราว' })
+          this.workflowSaveMessage = this.$t('adminSettings.workflow.messages.savedLocally')
+          await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.workflow.messages.savedLocallyTitle'), text: this.$t('adminSettings.workflow.messages.savedLocally') })
         } catch (fallbackError) {
           console.error('[AdminSettings] workflow fallback save failed:', fallbackError)
           this.workflowSaveStatus = 'failed'
-          this.workflowSaveMessage = 'ไม่สามารถบันทึกข้อมูลได้ ทั้งฐานข้อมูลและ local fallback'
-          await Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: 'ไม่สามารถบันทึกได้ทั้งฐานข้อมูลและเครื่องนี้ กรุณาลองใหม่' })
+          this.workflowSaveMessage = this.$t('adminSettings.workflow.messages.saveFailed')
+          await Swal.fire({ icon: 'error', title: this.$t('adminSettings.workflow.messages.saveFailedTitle'), text: this.$t('adminSettings.workflow.messages.saveFailed') })
         }
       }
     },

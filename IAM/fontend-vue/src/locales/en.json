@@ -447,6 +447,8 @@
     "chairmanActionApproved": "Chairman already approved",
     "chairmanActionSend": "Send to chairman",
     "financeActionAssign": "Assign finance",
+    "financeActionSend": "Send to finance review",
+    "financeActionReassign": "Reassign finance reviewer",
     "financeAssigned": "Finance officer assigned",
     "financeAssignedWithName": "Assigned {name} to review the budget",
     "financeSubmitted": "Finance review submitted",
@@ -460,6 +462,7 @@
     "assignCommitteeSuccess": "Committee assigned successfully",
     "assignCommitteeError": "Unable to assign committee",
     "assignFinanceSuccess": "Finance officer assigned successfully",
+    "sendToFinanceSuccess": "Sent to finance review successfully",
     "assignFinanceError": "Unable to assign finance officer",
     "genericRetry": "Please verify the information and try again.",
     "modals": {
@@ -497,6 +500,7 @@
       },
       "assignFinance": {
         "title": "Assign finance officer",
+        "titleSend": "Send to finance review",
         "proposalCode": "Proposal code:",
         "projectTitle": "Project title:",
         "loading": "Loading finance officer list...",
@@ -504,6 +508,7 @@
         "selectPlaceholder": "Select finance officer",
         "cancel": "Cancel",
         "confirm": "Confirm assignment",
+        "confirmSend": "Confirm send to finance",
         "saving": "Saving..."
       }
     },
@@ -1115,6 +1120,7 @@
       "general": "General",
       "funding": "Funding & Budget",
       "access": "Access Rights",
+      "workflow": "Workflow",
       "templates": "Review Templates",
       "email": "Email",
       "users": "Users"
@@ -1167,13 +1173,20 @@
       "step1Title": "1. Submit Proposal",
       "step1Desc": "Received by administration",
       "step2Title": "2. Document Review",
-      "step2Desc": "Assign committee",
+      "step2Desc": "Review budget and documents before committee assignment",
       "step3Title": "3. Committee Review",
-      "step3Desc": "Meeting",
+      "step3Desc": "Meeting and decision summary",
       "step4Title": "4. Revision Request",
       "step4Desc": "Researcher resubmits",
       "step5Title": "5. Submit Revision",
-      "step5Desc": "Enter next review round (repeatable)"
+      "step5Desc": "Enter next review round (repeatable)",
+      "messages": {
+        "savedToDatabase": "Workflow settings saved to the database",
+        "savedLocallyTitle": "Temporarily saved on this device",
+        "savedLocally": "Unable to save to the database. The workflow settings were stored locally for now.",
+        "saveFailedTitle": "Save failed",
+        "saveFailed": "Unable to save to either the database or this device. Please try again."
+      }
     },
     "email": {
       "notificationsCard": "Email Notifications",

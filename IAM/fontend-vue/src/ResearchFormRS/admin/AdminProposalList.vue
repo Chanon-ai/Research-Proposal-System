@@ -95,7 +95,7 @@
               <template #actions="{ item }">
                 <td class="text-nowrap">
                   <CButton color="primary" size="sm" class="mr-1 admin-proposal-action-btn" @click="onView(item)"><CIcon name="cil-folder-open" class="mr-1" /> {{ $t('adminProposalList.view') }}</CButton>
-                  <CButton v-if="canOpenFinanceAssign(item)" color="info" size="sm" class="mr-1 admin-proposal-action-btn" @click="openFinanceModal(item)">{{ $t('adminProposalList.financeActionAssign') }}</CButton>
+                  <CButton v-if="canOpenFinanceAssign(item)" color="info" size="sm" class="mr-1 admin-proposal-action-btn" @click="openFinanceModal(item)">{{ getFinanceActionLabel(item) }}</CButton>
                 </td>
               </template>
             </CDataTable>
@@ -258,7 +258,7 @@
       :show.sync="showFinanceModal"
       :close-on-backdrop="false"
       centered
-      :title="$t('adminProposalList.modals.assignFinance.title')"
+      :title="getFinanceModalTitle()"
     >
       <template #body-wrapper>
         <div v-if="selectedProposal">
@@ -292,7 +292,7 @@
             :disabled="!selectedFinanceOfficerId || submittingFinance"
             @click="confirmAssignFinanceOfficer"
           >
-            {{ submittingFinance ? $t('adminProposalList.modals.assignFinance.saving') : $t('adminProposalList.modals.assignFinance.confirm') }}
+            {{ submittingFinance ? $t('adminProposalList.modals.assignFinance.saving') : getFinanceModalConfirmLabel() }}
           </CButton>
         </div>
       </template>
@@ -531,6 +531,23 @@ export default {
       if (status === 'submitted') return names ? this.$t('adminProposalList.financeSubmittedWithName', { name: names }) : this.$t('adminProposalList.financeSubmitted')
       return ''
     },
+    getFinanceActionLabel (proposal) {
+      const currentStatus = normalizeProposalStatus(proposal && proposal.currentStatus)
+      const assignmentStatus = String(this.getFinanceAssignment(proposal).status || '').trim().toLowerCase()
+      if (currentStatus === 'office_received') return this.$t('adminProposalList.financeActionSend')
+      if (assignmentStatus === 'pending') return this.$t('adminProposalList.financeActionReassign')
+      return this.$t('adminProposalList.financeActionAssign')
+    },
+    getFinanceModalTitle () {
+      return this.selectedProposal && normalizeProposalStatus(this.selectedProposal.currentStatus) === 'office_received'
+        ? this.$t('adminProposalList.modals.assignFinance.titleSend')
+        : this.$t('adminProposalList.modals.assignFinance.title')
+    },
+    getFinanceModalConfirmLabel () {
+      return this.selectedProposal && normalizeProposalStatus(this.selectedProposal.currentStatus) === 'office_received'
+        ? this.$t('adminProposalList.modals.assignFinance.confirmSend')
+        : this.$t('adminProposalList.modals.assignFinance.confirm')
+    },
     getChairmanActionLabel (proposal) {
       const status = String(this.getChairmanAssignment(proposal).status || '').trim().toLowerCase()
       if (status === 'pending') return this.$t('adminProposalList.chairmanActionSent')
@@ -731,6 +748,7 @@ export default {
       if (!this.selectedProposal || !this.selectedFinanceOfficerId) return
       this.submittingFinance = true
       try {
+        const isSendToFinanceAction = normalizeProposalStatus(this.selectedProposal.currentStatus) === 'office_received'
         await Service.proposal.assignFinanceOfficer(this.selectedProposal._id, {
           financeOfficerIds: [this.selectedFinanceOfficerId]
         })
@@ -738,7 +756,9 @@ export default {
         await this.fetchProposals()
         await Swal.fire({
           icon: 'success',
-          title: this.$t('adminProposalList.assignFinanceSuccess'),
+          title: isSendToFinanceAction
+            ? this.$t('adminProposalList.sendToFinanceSuccess')
+            : this.$t('adminProposalList.assignFinanceSuccess'),
           timer: 1600,
           showConfirmButton: false
         })
