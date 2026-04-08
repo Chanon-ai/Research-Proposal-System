@@ -4,7 +4,7 @@
       <CCardBody class="settings-hero__body">
         <div class="settings-hero__row">
           <div class="settings-hero__left">
-            <div class="settings-hero__pill">ADMIN SETTINGS</div>
+            <div class="settings-hero__pill">{{ $t('adminSettings.hero.eyebrow') }}</div>
             <h2 class="settings-hero__title">{{ $t('adminSettings.hero.title') }}</h2>
             <p class="settings-hero__subtitle">{{ $t('adminSettings.hero.subtitle') }}</p>
           </div>
@@ -52,7 +52,7 @@
               </CCol>
               <CCol md="3">
                 <CSelect
-                  label="Timezone"
+                  :label="$t('adminSettings.general.timezone')"
                   :value="generalForm.timezone"
                   :options="[
                     { value: 'Asia/Bangkok', label: 'Asia/Bangkok' },
@@ -83,8 +83,8 @@
           <CCardHeader>{{ $t('adminSettings.general.readOnly') }}</CCardHeader>
           <CCardBody>
             <div><strong>{{ $t('adminSettings.general.version') }}:</strong> 1.0.0</div>
-            <div><strong>Backend:</strong> Node.js + Express</div>
-            <div><strong>Database:</strong> MongoDB</div>
+            <div><strong>{{ $t('adminSettings.general.backend') }}:</strong> Node.js + Express</div>
+            <div><strong>{{ $t('adminSettings.general.database') }}:</strong> MongoDB</div>
             <div><strong>{{ $t('adminSettings.general.systemStatus') }}:</strong> <span class="text-success">{{ $t('adminSettings.general.statusNormal') }}</span></div>
             <div><strong>{{ $t('adminSettings.general.dbConnection') }}:</strong> <span :class="settings.length > 0 || apiConnected ? 'text-success' : 'text-warning'">{{ settings.length > 0 || apiConnected ? $t('adminSettings.general.dbConnected') : $t('adminSettings.general.dbUnverified') }}</span></div>
           </CCardBody>
@@ -238,7 +238,7 @@
         </CCard>
 
         <CCard class="mt-3">
-          <CCardHeader>Email Templates</CCardHeader>
+          <CCardHeader>{{ $t('adminSettings.email.templatesCard') }}</CCardHeader>
           <CCardBody>
             <CCallout color="warning" class="mb-3">
               <strong>{{ $t('adminSettings.email.templateNoteLabel') }}:</strong>
@@ -247,25 +247,25 @@
             <div class="template-create-card mb-4">
               <div class="template-create-card__header">
                 <div>
-                  <div class="template-create-card__title">เพิ่ม Email Template</div>
-                  <small class="text-muted">ตั้งชื่อ template แล้วเลือก action กับกลุ่มผู้รับที่จะใช้ rule นี้</small>
+                  <div class="template-create-card__title">{{ $t('adminSettings.email.templateBuilder.createTitle') }}</div>
+                  <small class="text-muted">{{ $t('adminSettings.email.templateBuilder.createDescription') }}</small>
                 </div>
                 <CButton size="sm" color="primary" @click="addEmailTemplate">
-                  <CIcon name="cil-plus" class="mr-1" /> เพิ่ม template
+                  <CIcon name="cil-plus" class="mr-1" /> {{ $t('adminSettings.email.templateBuilder.addButton') }}
                 </CButton>
               </div>
               <CRow>
                 <CCol md="4" class="mb-3 mb-md-0">
-                  <label class="template-meta__label">ชื่อ template</label>
+                  <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.nameLabel') }}</label>
                   <input
                     v-model="newEmailTemplate.displayName"
                     type="text"
                     class="form-control"
-                    placeholder="เช่น แจ้งคณะกรรมการเมื่อกำหนดประชุม"
+                    :placeholder="$t('adminSettings.email.templateBuilder.namePlaceholder')"
                   />
                 </CCol>
                 <CCol md="4" class="mb-3 mb-md-0">
-                  <label class="template-meta__label">เลือก action ที่จะส่งเมล</label>
+                  <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.actionLabel') }}</label>
                   <multiselect
                     class="template-multiselect"
                     :value="getSelectedTemplateOptions(newEmailTemplate.eventKeys, emailTemplateActionOptions)"
@@ -275,17 +275,17 @@
                     :clear-on-select="false"
                     :preserve-search="true"
                     :show-labels="false"
-                    placeholder="เลือก action"
+                    :placeholder="$t('adminSettings.email.templateBuilder.actionPlaceholder')"
                     label="label"
                     track-by="value"
                     @input="setDraftTemplateSelection('eventKeys', $event)"
                   />
                   <small class="template-selection-summary d-block mt-2">
-                    {{ getTemplateSelectionSummary(newEmailTemplate.eventKeys, emailTemplateActionOptions, 'ยังไม่ได้เลือก action') }}
+                    {{ getTemplateSelectionSummary(newEmailTemplate.eventKeys, emailTemplateActionOptions, $t('adminSettings.email.templateBuilder.emptyActions')) }}
                   </small>
                 </CCol>
                 <CCol md="4">
-                  <label class="template-meta__label">เลือกผู้รับ</label>
+                  <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.recipientLabel') }}</label>
                   <multiselect
                     class="template-multiselect"
                     :value="getSelectedTemplateOptions(newEmailTemplate.recipientTargets, emailTemplateRecipientOptions)"
@@ -295,13 +295,13 @@
                     :clear-on-select="false"
                     :preserve-search="true"
                     :show-labels="false"
-                    placeholder="เลือกผู้รับ"
+                    :placeholder="$t('adminSettings.email.templateBuilder.recipientPlaceholder')"
                     label="label"
                     track-by="value"
                     @input="setDraftTemplateSelection('recipientTargets', $event)"
                   />
                   <small class="template-selection-summary d-block mt-2">
-                    {{ getTemplateSelectionSummary(newEmailTemplate.recipientTargets, emailTemplateRecipientOptions, 'ยังไม่ได้เลือกผู้รับ') }}
+                    {{ getTemplateSelectionSummary(newEmailTemplate.recipientTargets, emailTemplateRecipientOptions, $t('adminSettings.email.templateBuilder.emptyRecipients')) }}
                   </small>
                 </CCol>
               </CRow>
@@ -312,11 +312,11 @@
                 <div class="template-editor__main">
                   <div class="template-meta mb-3">
                     <div class="template-meta__header">
-                      <div class="template-meta__title">การตั้งค่า template</div>
+                      <div class="template-meta__title">{{ $t('adminSettings.email.templateBuilder.settingsTitle') }}</div>
                       <div class="d-flex align-items-center" style="gap: 8px;">
                         <label class="template-toggle mb-0">
                           <input v-model="emailTemplates[key].enabled" type="checkbox" />
-                          <span>เปิดใช้งาน</span>
+                          <span>{{ $t('adminSettings.email.templateBuilder.enabledLabel') }}</span>
                         </label>
                         <CButton
                           v-if="emailTemplates[key].isCustom"
@@ -325,18 +325,18 @@
                           variant="outline"
                           @click="removeEmailTemplate(key)"
                         >
-                          <CIcon name="cil-trash" class="mr-1" /> ลบ template
+                          <CIcon name="cil-trash" class="mr-1" /> {{ $t('adminSettings.email.templateBuilder.removeButton') }}
                         </CButton>
                       </div>
                     </div>
                     <CRow>
                       <CCol md="4" class="mb-3 mb-md-0">
-                        <label class="template-meta__label">ชื่อ template</label>
-                        <input v-model="emailTemplates[key].displayName" type="text" class="form-control" placeholder="ชื่อที่ใช้แสดงในหน้าตั้งค่า" />
-                        <small class="text-muted d-block mt-1">Key: {{ key }}</small>
+                        <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.nameLabel') }}</label>
+                        <input v-model="emailTemplates[key].displayName" type="text" class="form-control" :placeholder="$t('adminSettings.email.templateBuilder.displayNamePlaceholder')" />
+                        <small class="text-muted d-block mt-1">{{ $t('adminSettings.email.templateBuilder.keyLabel', { key }) }}</small>
                       </CCol>
                       <CCol md="4" class="mb-3 mb-md-0">
-                        <label class="template-meta__label">Action ที่จะส่งเมล</label>
+                        <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.actionLabel') }}</label>
                         <multiselect
                           class="template-multiselect"
                           :value="getSelectedTemplateOptions(emailTemplates[key].eventKeys, emailTemplateActionOptions)"
@@ -346,17 +346,17 @@
                           :clear-on-select="false"
                           :preserve-search="true"
                           :show-labels="false"
-                          placeholder="เลือก action"
+                          :placeholder="$t('adminSettings.email.templateBuilder.actionPlaceholder')"
                           label="label"
                           track-by="value"
                           @input="setTemplateSelection(key, 'eventKeys', $event)"
                         />
                         <small class="template-selection-summary d-block mt-2">
-                          {{ getTemplateSelectionSummary(emailTemplates[key].eventKeys, emailTemplateActionOptions, 'ยังไม่ได้เลือก action') }}
+                          {{ getTemplateSelectionSummary(emailTemplates[key].eventKeys, emailTemplateActionOptions, $t('adminSettings.email.templateBuilder.emptyActions')) }}
                         </small>
                       </CCol>
                       <CCol md="4">
-                        <label class="template-meta__label">ผู้รับ</label>
+                        <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.recipientLabel') }}</label>
                         <multiselect
                           class="template-multiselect"
                           :value="getSelectedTemplateOptions(emailTemplates[key].recipientTargets, emailTemplateRecipientOptions)"
@@ -366,19 +366,19 @@
                           :clear-on-select="false"
                           :preserve-search="true"
                           :show-labels="false"
-                          placeholder="เลือกผู้รับ"
+                          :placeholder="$t('adminSettings.email.templateBuilder.recipientPlaceholder')"
                           label="label"
                           track-by="value"
                           @input="setTemplateSelection(key, 'recipientTargets', $event)"
                         />
                         <small class="template-selection-summary d-block mt-2">
-                          {{ getTemplateSelectionSummary(emailTemplates[key].recipientTargets, emailTemplateRecipientOptions, 'ยังไม่ได้เลือกผู้รับ') }}
+                          {{ getTemplateSelectionSummary(emailTemplates[key].recipientTargets, emailTemplateRecipientOptions, $t('adminSettings.email.templateBuilder.emptyRecipients')) }}
                         </small>
                       </CCol>
                     </CRow>
                   </div>
                   <div class="template-variable-toolbar mb-3">
-                    <div class="template-variable-toolbar__label">แทรกตัวแปรในหัวข้อ</div>
+                    <div class="template-variable-toolbar__label">{{ $t('adminSettings.email.templateBuilder.variableSubjectLabel') }}</div>
                     <div class="template-variable-toolbar__chips">
                       <button
                         v-for="variable in templateVariableOptions"
@@ -404,7 +404,7 @@
                     />
                   </div>
                   <div class="template-variable-toolbar mb-2">
-                    <div class="template-variable-toolbar__label">แทรกตัวแปรในเนื้อหา</div>
+                    <div class="template-variable-toolbar__label">{{ $t('adminSettings.email.templateBuilder.variableBodyLabel') }}</div>
                     <div class="template-variable-toolbar__chips">
                       <button
                         v-for="variable in templateVariableOptions"
@@ -418,7 +418,7 @@
                     </div>
                   </div>
                   <div class="template-variable-toolbar mb-2">
-                    <div class="template-variable-toolbar__label">จัดรูปแบบข้อความพื้นฐาน</div>
+                    <div class="template-variable-toolbar__label">{{ $t('adminSettings.email.templateBuilder.formattingLabel') }}</div>
                     <div class="template-variable-toolbar__chips">
                       <button
                         v-for="formatting in templateFormattingOptions"
@@ -443,7 +443,7 @@
                       @click="markTemplateFieldFocus(key, 'body')"
                     />
                   </div>
-                  <small class="text-muted d-block mb-2">กดปุ่มตัวแปรเพื่อแทรกลงในตำแหน่งเคอร์เซอร์ เช่น <span class="template-variable-toolbar__token">{{proposalCode}}</span></small>
+                  <small class="text-muted d-block mb-2">{{ $t('adminSettings.email.templateBuilder.insertHint') }} <span class="template-variable-toolbar__token">{{proposalCode}}</span></small>
                   <div class="d-flex" style="gap: 8px;">
                     <CButton size="sm" color="primary" @click="saveTemplate(key)"><CIcon name="cil-save" class="mr-1" /> {{ $t('adminSettings.email.saveTplBtn') }}</CButton>
                     <CButton size="sm" color="secondary" variant="outline" @click="resetTemplate(key)"><CIcon name="cil-reload" class="mr-1" /> {{ $t('adminSettings.email.resetTplBtn') }}</CButton>
@@ -452,15 +452,15 @@
                 <div class="template-editor__preview">
                   <div class="template-preview">
                   <div class="template-preview__header">
-                    <span class="template-preview__title">Preview</span>
-                    <small class="text-muted">แสดงผลตัวอย่างหลังแทนค่าตัวแปรแบบคร่าว ๆ</small>
+                    <span class="template-preview__title">{{ $t('adminSettings.email.templateBuilder.previewTitle') }}</span>
+                    <small class="text-muted">{{ $t('adminSettings.email.templateBuilder.previewDescription') }}</small>
                   </div>
                   <div class="template-preview__field">
-                    <div class="template-preview__label">หัวข้อ</div>
+                    <div class="template-preview__label">{{ $t('adminSettings.email.templateBuilder.previewSubjectLabel') }}</div>
                     <div class="template-preview__value">{{ renderTemplatePreview(emailTemplates[key].subject) }}</div>
                   </div>
                   <div class="template-preview__field">
-                    <div class="template-preview__label">เนื้อหา</div>
+                    <div class="template-preview__label">{{ $t('adminSettings.email.templateBuilder.previewBodyLabel') }}</div>
                     <div class="template-preview__value template-preview__value--body">{{ renderTemplatePreview(emailTemplates[key].body) }}</div>
                   </div>
                 </div>
@@ -502,7 +502,7 @@
                 <thead>
                   <tr>
                     <th style="min-width:140px;">{{ $t('adminSettings.email.logTimeCol') }}</th>
-                    <th>Event</th>
+                    <th>{{ $t('adminSettings.email.logEventCol') }}</th>
                     <th>{{ $t('adminSettings.email.logRecipientCol') }}</th>
                     <th>{{ $t('adminSettings.email.logProjectCol') }}</th>
                     <th style="width:90px;">{{ $t('adminSettings.email.logStatusCol') }}</th>
@@ -556,18 +556,18 @@
       class="admin-email-widget__panel"
       role="dialog"
       aria-modal="true"
-      aria-label="ทดสอบส่งอีเมล"
+      :aria-label="$t('adminSettings.email.widget.dialogLabel')"
     >
       <div class="admin-email-widget__header d-flex align-items-start justify-content-between px-3 py-3">
         <div>
-          <div class="admin-email-widget__eyebrow">QUICK EMAIL TEST</div>
-          <h5 class="mb-1">ทดสอบส่งอีเมล</h5>
-          <small class="text-muted d-block">ใช้ค่า SMTP ปัจจุบันจากหน้าตั้งค่านี้ในการส่งอีเมลทดสอบ</small>
+          <div class="admin-email-widget__eyebrow">{{ $t('adminSettings.email.widget.eyebrow') }}</div>
+          <h5 class="mb-1">{{ $t('adminSettings.email.widget.title') }}</h5>
+          <small class="text-muted d-block">{{ $t('adminSettings.email.widget.description') }}</small>
         </div>
         <button
           type="button"
           class="admin-email-widget__close-btn"
-          aria-label="ปิดหน้าต่างทดสอบอีเมล"
+          :aria-label="$t('adminSettings.email.widget.closeLabel')"
           @click="closeEmailWidget"
         >
           <CIcon name="cil-x" />
@@ -585,14 +585,14 @@
         </CAlert>
 
         <div class="form-group mb-3">
-          <label for="admin-email-widget-template">แม่แบบอีเมล</label>
+          <label for="admin-email-widget-template">{{ $t('adminSettings.email.widget.templateLabel') }}</label>
           <select
             id="admin-email-widget-template"
             class="form-control"
             :value="emailWidgetForm.templateKey"
             @change="onWidgetTemplateChange"
           >
-            <option value="">ไม่ใช้แม่แบบ</option>
+            <option value="">{{ $t('adminSettings.email.widget.noTemplateOption') }}</option>
             <option
               v-for="(template, key) in emailTemplates"
               :key="`widget-template-${key}`"
@@ -606,42 +606,42 @@
         <CInput
           id="admin-email-widget-recipient"
           class="mb-3"
-          label="อีเมลผู้รับ"
+          :label="$t('adminSettings.email.widget.recipientLabel')"
           type="email"
           v-model="emailWidgetForm.recipientEmail"
-          placeholder="name@mfu.ac.th"
+          :placeholder="$t('adminSettings.email.widget.recipientPlaceholder')"
         />
 
         <CInput
           id="admin-email-widget-sender"
           class="mb-3"
-          label="ชื่อผู้ส่ง"
+          :label="$t('adminSettings.email.widget.senderLabel')"
           v-model="emailWidgetForm.senderName"
-          placeholder="ผู้ดูแลระบบ"
+          :placeholder="$t('adminSettings.email.widget.senderPlaceholder')"
         />
 
         <CInput
           id="admin-email-widget-subject"
           class="mb-3"
-          label="หัวข้ออีเมล"
+          :label="$t('adminSettings.email.subjectLabel')"
           v-model="emailWidgetForm.subject"
-          placeholder="กรอกหัวข้ออีเมล"
+          :placeholder="$t('adminSettings.email.widget.subjectPlaceholder')"
         />
 
         <div class="form-group mb-0">
-          <label for="admin-email-widget-message">ข้อความอีเมล</label>
+          <label for="admin-email-widget-message">{{ $t('adminSettings.email.bodyLabel') }}</label>
           <textarea
             id="admin-email-widget-message"
             v-model="emailWidgetForm.message"
             class="form-control admin-email-widget__textarea"
             rows="7"
-            placeholder="กรอกข้อความอีเมลที่ต้องการส่ง"
+            :placeholder="$t('adminSettings.email.widget.messagePlaceholder')"
           />
         </div>
       </div>
 
       <div class="admin-email-widget__footer d-flex align-items-center justify-content-between px-3 py-3">
-        <small class="text-muted pr-3">กด Esc หรือคลิกพื้นหลังเพื่อปิดหน้าต่างนี้</small>
+        <small class="text-muted pr-3">{{ $t('adminSettings.email.widget.closeHint') }}</small>
         <CButton
           color="primary"
           :disabled="emailWidgetSending"
@@ -649,7 +649,7 @@
         >
           <CSpinner v-if="emailWidgetSending" size="sm" class="mr-2" />
           <CIcon v-else name="cil-paper-plane" class="mr-1" />
-          {{ emailWidgetSending ? 'กำลังส่ง...' : 'ส่งอีเมลทดสอบ' }}
+          {{ emailWidgetSending ? $t('adminSettings.email.widget.sendingButton') : $t('adminSettings.email.widget.sendButton') }}
         </CButton>
       </div>
     </div>
@@ -660,7 +660,7 @@
       :class="{ 'is-open': isEmailWidgetOpen }"
       :aria-expanded="String(isEmailWidgetOpen)"
       aria-controls="admin-email-widget-panel"
-      :aria-label="isEmailWidgetOpen ? 'ปิดหน้าต่างทดสอบอีเมล' : 'เปิดหน้าต่างทดสอบอีเมล'"
+      :aria-label="isEmailWidgetOpen ? $t('adminSettings.email.widget.closeFabLabel') : $t('adminSettings.email.widget.openFabLabel')"
       @click="toggleEmailWidget"
     >
       <CIcon :name="isEmailWidgetOpen ? 'cil-x' : 'cil-envelope-closed'" size="lg" />
@@ -670,21 +670,21 @@
       <template #body-wrapper>
         <div class="send-modal-inner" style="padding-left:36px;padding-right:36px;box-sizing:border-box;">
           <div class="form-group">
-            <label>Key <span class="text-required">*</span></label>
-            <input class="form-control" v-model="newSetting.key" placeholder="use_snake_case" />
+            <label>{{ $t('adminSettings.modal.keyLabel') }} <span class="text-required">*</span></label>
+            <input class="form-control" v-model="newSetting.key" :placeholder="$t('adminSettings.modal.keyPlaceholder')" />
           </div>
           <div class="form-group">
-            <label>Value <span class="text-required">*</span></label>
+            <label>{{ $t('adminSettings.modal.valueLabel') }} <span class="text-required">*</span></label>
             <input class="form-control" v-model="newSetting.value" />
           </div>
           <CSelect
-            label="Group"
+            :label="$t('adminSettings.modal.groupLabel')"
             :value="newSetting.group"
             :options="[
-              { value: 'general', label: 'general' },
-              { value: 'workflow', label: 'workflow' },
-              { value: 'email', label: 'email' },
-              { value: 'system', label: 'system' }
+              { value: 'general', label: $t('adminSettings.modal.groupOptions.general') },
+              { value: 'workflow', label: $t('adminSettings.modal.groupOptions.workflow') },
+              { value: 'email', label: $t('adminSettings.modal.groupOptions.email') },
+              { value: 'system', label: $t('adminSettings.modal.groupOptions.system') }
             ]"
             @change="newSetting.group = getSelectValue($event)"
           />
@@ -764,23 +764,23 @@ const DEFAULT_TEMPLATES = {
 }
 
 const TEMPLATE_VARIABLE_OPTIONS = [
-  { label: 'ชื่อผู้รับ', token: '{{recipientName}}' },
-  { label: 'รหัสโครงการ', token: '{{proposalCode}}' },
-  { label: 'ชื่อโครงการ', token: '{{projectTitle}}' },
-  { label: 'หมายเหตุ', token: '{{remarks}}' },
-  { label: 'ชื่อประชุม', token: '{{meetingTitle}}' },
-  { label: 'วันที่ประชุม', token: '{{meetingDate}}' },
-  { label: 'เวลาประชุม', token: '{{meetingTime}}' },
-  { label: 'บทบาทผู้เข้าร่วม', token: '{{participantRole}}' },
-  { label: 'ลิงก์รายละเอียด', token: '{{consentViewUrl}}' },
-  { label: 'ลิงก์ยินยอม', token: '{{consentAcceptUrl}}' },
-  { label: 'ลิงก์ปฏิเสธ', token: '{{consentRejectUrl}}' }
+  { labelKey: 'adminSettings.email.templateVariables.recipientName', token: '{{recipientName}}' },
+  { labelKey: 'adminSettings.email.templateVariables.proposalCode', token: '{{proposalCode}}' },
+  { labelKey: 'adminSettings.email.templateVariables.projectTitle', token: '{{projectTitle}}' },
+  { labelKey: 'adminSettings.email.templateVariables.remarks', token: '{{remarks}}' },
+  { labelKey: 'adminSettings.email.templateVariables.meetingTitle', token: '{{meetingTitle}}' },
+  { labelKey: 'adminSettings.email.templateVariables.meetingDate', token: '{{meetingDate}}' },
+  { labelKey: 'adminSettings.email.templateVariables.meetingTime', token: '{{meetingTime}}' },
+  { labelKey: 'adminSettings.email.templateVariables.participantRole', token: '{{participantRole}}' },
+  { labelKey: 'adminSettings.email.templateVariables.consentViewUrl', token: '{{consentViewUrl}}' },
+  { labelKey: 'adminSettings.email.templateVariables.consentAcceptUrl', token: '{{consentAcceptUrl}}' },
+  { labelKey: 'adminSettings.email.templateVariables.consentRejectUrl', token: '{{consentRejectUrl}}' }
 ]
 
 const TEMPLATE_FORMATTING_OPTIONS = [
-  { label: 'ขึ้นบรรทัดใหม่', text: '\n' },
-  { label: 'คำขึ้นต้น', text: 'เรียน {{recipientName}}\n\n' },
-  { label: 'ลายเซ็น', text: '\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง' }
+  { labelKey: 'adminSettings.email.templateFormatting.newLine', text: '\n' },
+  { labelKey: 'adminSettings.email.templateFormatting.greeting', text: 'เรียน {{recipientName}}\n\n' },
+  { labelKey: 'adminSettings.email.templateFormatting.signature', text: '\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง' }
 ]
 
 const TEMPLATE_PREVIEW_VALUES = {
@@ -798,33 +798,33 @@ const TEMPLATE_PREVIEW_VALUES = {
 }
 
 const EMAIL_TEMPLATE_ACTION_OPTIONS = [
-  { value: 'proposal_submitted', label: 'ยื่นข้อเสนอโครงการใหม่' },
-  { value: 'proposal_resubmitted', label: 'ส่งข้อเสนอฉบับแก้ไขกลับเข้าระบบ' },
-  { value: 'proposal_meeting_in_progress', label: 'โครงการเข้าสถานะกำลังจัดประชุม' },
-  { value: 'proposal_status_restored', label: 'โครงการถูกปรับสถานะกลับหลังประชุม' },
-  { value: 'meeting_completed', label: 'โครงการเข้าสถานะจัดเตรียมผล' },
-  { value: 'chairman_assigned', label: 'มอบหมายประธานพิจารณา' },
-  { value: 'chairman_approved', label: 'ประธานอนุมัติ' },
-  { value: 'chairman_rejected', label: 'ประธานไม่อนุมัติ' },
-  { value: 'finance_officer_assigned', label: 'มอบหมายเจ้าหน้าที่การเงิน' },
-  { value: 'finance_review_submitted', label: 'การเงินส่งผลตรวจงบประมาณ' },
-  { value: 'review_certified', label: 'แอดมินรับผลประเมิน' },
-  { value: 'review_rejected_by_admin', label: 'แอดมินตีกลับผลประเมิน' },
-  { value: 'revision_requested', label: 'ขอแก้ไขเอกสาร' },
-  { value: 'approved', label: 'อนุมัติโครงการ' },
-  { value: 'rejected', label: 'ไม่อนุมัติโครงการ' },
-  { value: 'meeting_scheduled', label: 'นัดหมายการประชุม' },
-  { value: 'committee_assigned', label: 'มอบหมายกรรมการ' },
-  { value: 'collaboration_confirmation', label: 'ขอความยินยอมเข้าร่วมโครงการ' }
+  { value: 'proposal_submitted', labelKey: 'adminSettings.email.templateActions.proposal_submitted' },
+  { value: 'proposal_resubmitted', labelKey: 'adminSettings.email.templateActions.proposal_resubmitted' },
+  { value: 'proposal_meeting_in_progress', labelKey: 'adminSettings.email.templateActions.proposal_meeting_in_progress' },
+  { value: 'proposal_status_restored', labelKey: 'adminSettings.email.templateActions.proposal_status_restored' },
+  { value: 'meeting_completed', labelKey: 'adminSettings.email.templateActions.meeting_completed' },
+  { value: 'chairman_assigned', labelKey: 'adminSettings.email.templateActions.chairman_assigned' },
+  { value: 'chairman_approved', labelKey: 'adminSettings.email.templateActions.chairman_approved' },
+  { value: 'chairman_rejected', labelKey: 'adminSettings.email.templateActions.chairman_rejected' },
+  { value: 'finance_officer_assigned', labelKey: 'adminSettings.email.templateActions.finance_officer_assigned' },
+  { value: 'finance_review_submitted', labelKey: 'adminSettings.email.templateActions.finance_review_submitted' },
+  { value: 'review_certified', labelKey: 'adminSettings.email.templateActions.review_certified' },
+  { value: 'review_rejected_by_admin', labelKey: 'adminSettings.email.templateActions.review_rejected_by_admin' },
+  { value: 'revision_requested', labelKey: 'adminSettings.email.templateActions.revision_requested' },
+  { value: 'approved', labelKey: 'adminSettings.email.templateActions.approved' },
+  { value: 'rejected', labelKey: 'adminSettings.email.templateActions.rejected' },
+  { value: 'meeting_scheduled', labelKey: 'adminSettings.email.templateActions.meeting_scheduled' },
+  { value: 'committee_assigned', labelKey: 'adminSettings.email.templateActions.committee_assigned' },
+  { value: 'collaboration_confirmation', labelKey: 'adminSettings.email.templateActions.collaboration_confirmation' }
 ]
 
 const EMAIL_TEMPLATE_RECIPIENT_OPTIONS = [
-  { value: 'current_recipients', label: 'ผู้รับตาม flow ปัจจุบัน' },
-  { value: 'applicant', label: 'ผู้วิจัยเจ้าของโครงการ' },
-  { value: 'committee', label: 'กรรมการ' },
-  { value: 'chairman', label: 'ประธาน' },
-  { value: 'finance_officer', label: 'เจ้าหน้าที่การเงิน' },
-  { value: 'admin', label: 'ผู้ดูแลระบบ' }
+  { value: 'current_recipients', labelKey: 'adminSettings.email.templateRecipients.current_recipients' },
+  { value: 'applicant', labelKey: 'adminSettings.email.templateRecipients.applicant' },
+  { value: 'committee', labelKey: 'adminSettings.email.templateRecipients.committee' },
+  { value: 'chairman', labelKey: 'adminSettings.email.templateRecipients.chairman' },
+  { value: 'finance_officer', labelKey: 'adminSettings.email.templateRecipients.finance_officer' },
+  { value: 'admin', labelKey: 'adminSettings.email.templateRecipients.admin' }
 ]
 
 const STATUS_ICONS = {
@@ -981,16 +981,28 @@ export default {
       ]
     },
     templateVariableOptions () {
-      return TEMPLATE_VARIABLE_OPTIONS
+      return TEMPLATE_VARIABLE_OPTIONS.map((option) => ({
+        ...option,
+        label: this.$t(option.labelKey)
+      }))
     },
     templateFormattingOptions () {
-      return TEMPLATE_FORMATTING_OPTIONS
+      return TEMPLATE_FORMATTING_OPTIONS.map((option) => ({
+        ...option,
+        label: this.$t(option.labelKey)
+      }))
     },
     emailTemplateActionOptions () {
-      return EMAIL_TEMPLATE_ACTION_OPTIONS
+      return EMAIL_TEMPLATE_ACTION_OPTIONS.map((option) => ({
+        ...option,
+        label: this.$t(option.labelKey)
+      }))
     },
     emailTemplateRecipientOptions () {
-      return EMAIL_TEMPLATE_RECIPIENT_OPTIONS
+      return EMAIL_TEMPLATE_RECIPIENT_OPTIONS.map((option) => ({
+        ...option,
+        label: this.$t(option.labelKey)
+      }))
     }
   },
   mounted () {
@@ -1124,24 +1136,24 @@ export default {
     async addEmailTemplate () {
       const displayName = String(this.newEmailTemplate.displayName || '').trim()
       if (!displayName) {
-        await Swal.fire({ icon: 'warning', title: 'กรอกชื่อ template', text: 'กรุณาระบุชื่อ template อีเมลก่อนเพิ่มรายการ' })
+        await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.addNameRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.addNameRequiredText') })
         return
       }
 
       const eventKeys = this.normalizeTemplateSelectionList(this.newEmailTemplate.eventKeys, this.emailTemplateActionOptions, [])
       const recipientTargets = this.normalizeTemplateSelectionList(this.newEmailTemplate.recipientTargets, this.emailTemplateRecipientOptions, ['current_recipients'])
       if (eventKeys.length === 0) {
-        await Swal.fire({ icon: 'warning', title: 'เลือก action อย่างน้อย 1 รายการ', text: 'ต้องระบุว่าต้องการให้ส่งเมลเมื่อเกิดเหตุการณ์ใดบ้าง' })
+        await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.addActionRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.addActionRequiredText') })
         return
       }
       if (recipientTargets.length === 0) {
-        await Swal.fire({ icon: 'warning', title: 'เลือกผู้รับอย่างน้อย 1 กลุ่ม', text: 'ต้องระบุผู้รับที่จะได้รับเมลจาก template นี้' })
+        await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.addRecipientRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.addRecipientRequiredText') })
         return
       }
 
       const baseKey = this.normalizeTemplateKey(displayName)
       if (!baseKey) {
-        await Swal.fire({ icon: 'warning', title: 'ชื่อ template ไม่ถูกต้อง', text: 'กรุณาใช้ชื่อที่สามารถแปลงเป็น key ได้' })
+        await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.invalidNameTitle'), text: this.$t('adminSettings.email.templateMessages.invalidNameText') })
         return
       }
 
@@ -1178,11 +1190,11 @@ export default {
       if (!template || !template.isCustom) return
       const result = await Swal.fire({
         icon: 'warning',
-        title: `ลบ template ${this.getTemplateLabel(templateKey)}?`,
-        text: 'การลบนี้จะเอา template ออกจากการตั้งค่าอีเมลทันทีเมื่อบันทึก',
+        title: this.$t('adminSettings.email.templateMessages.removeConfirmTitle', { label: this.getTemplateLabel(templateKey) }),
+        text: this.$t('adminSettings.email.templateMessages.removeConfirmText'),
         showCancelButton: true,
-        confirmButtonText: 'ลบ template',
-        cancelButtonText: 'ยกเลิก',
+        confirmButtonText: this.$t('adminSettings.email.templateBuilder.removeButton'),
+        cancelButtonText: this.$t('adminSettings.modal.cancelBtn'),
         confirmButtonColor: '#e55353'
       })
       if (!result.isConfirmed) return
@@ -1340,11 +1352,11 @@ export default {
       const fromEmail = String(this.smtpForm.smtp_from_email || '').trim()
       const username = String(this.smtpForm.smtp_username || '').trim()
       const password = String(this.smtpForm.smtp_password || '').trim()
-      if (!host) return 'กรุณากรอก SMTP Host'
-      if (!Number.isFinite(port) || port < 1 || port > 65535) return 'SMTP Port ไม่ถูกต้อง'
-      if (!fromEmail || !this.isValidEmail(fromEmail)) return 'กรุณากรอก From Email ให้ถูกต้อง'
-      if (username && !requirePassword && !password && !this.smtpPasswordConfigured) return 'กรุณากรอก SMTP Password'
-      if (requirePassword && username && !password && !this.smtpPasswordConfigured) return 'กรุณากรอก SMTP Password สำหรับทดสอบการส่งอีเมล'
+      if (!host) return this.$t('adminSettings.email.smtpValidation.hostRequired')
+      if (!Number.isFinite(port) || port < 1 || port > 65535) return this.$t('adminSettings.email.smtpValidation.portInvalid')
+      if (!fromEmail || !this.isValidEmail(fromEmail)) return this.$t('adminSettings.email.smtpValidation.fromEmailInvalid')
+      if (username && !requirePassword && !password && !this.smtpPasswordConfigured) return this.$t('adminSettings.email.smtpValidation.passwordRequired')
+      if (requirePassword && username && !password && !this.smtpPasswordConfigured) return this.$t('adminSettings.email.smtpValidation.passwordRequiredForTest')
       return ''
     },
     getSmtpDebugSnapshot () {
@@ -1541,7 +1553,7 @@ export default {
           throw new Error('bulk email policy save returned failed keys')
         }
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'บันทึกนโยบายการส่งอีเมลสำเร็จ', timer: 1400, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.email.policyMessages.savedTitle'), timer: 1400, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] saveEmailPolicySettings fallback:', error)
         this.saveFallback({
@@ -1551,7 +1563,7 @@ export default {
             reason: (error && error.message) ? error.message : 'unknown_error'
           }
         })
-        await Swal.fire({ icon: 'warning', title: 'บันทึกเฉพาะในเครื่องชั่วคราว', text: 'ไม่สามารถบันทึกนโยบายการส่งอีเมลลงฐานข้อมูลได้' })
+        await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.policyMessages.savedLocalTitle'), text: this.$t('adminSettings.email.policyMessages.savedLocalText') })
       }
     },
     async saveGeneralSettings () {
@@ -1568,11 +1580,11 @@ export default {
           this.upsertSettingByKey('items_per_page', this.generalForm.itemsPerPage, 'จำนวนรายการต่อหน้า', 'general')
         ])
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'บันทึกการตั้งค่าทั่วไปสำเร็จ', timer: 1400, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.general.messages.savedTitle'), timer: 1400, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] saveGeneralSettings fallback:', error)
         this.saveFallback()
-        await Swal.fire({ icon: 'info', title: 'บันทึกในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
+        await Swal.fire({ icon: 'info', title: this.$t('adminSettings.general.messages.savedLocalTitle'), text: this.$t('adminSettings.general.messages.savedLocalText') })
       }
     },
     async saveWorkflowSettings () {
@@ -1616,10 +1628,10 @@ export default {
       const displayName = String(template.displayName || '').trim()
       const eventKeys = this.normalizeTemplateSelectionList(template.eventKeys, this.emailTemplateActionOptions, [])
       const recipientTargets = this.normalizeTemplateSelectionList(template.recipientTargets, this.emailTemplateRecipientOptions, ['current_recipients'])
-      if (!displayName) { await Swal.fire({ icon: 'warning', title: 'ชื่อ template ว่าง', text: `กรุณากรอกชื่อ template สำหรับ ${label}` }); return }
-      if (!subject) { await Swal.fire({ icon: 'warning', title: 'หัวเรื่องว่าง', text: `กรุณากรอกหัวเรื่องสำหรับ template ${label}` }); return }
-      if (eventKeys.length === 0) { await Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือก action', text: `กรุณาเลือก action อย่างน้อย 1 รายการสำหรับ ${label}` }); return }
-      if (recipientTargets.length === 0) { await Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือกผู้รับ', text: `กรุณาเลือกผู้รับอย่างน้อย 1 กลุ่มสำหรับ ${label}` }); return }
+      if (!displayName) { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.saveNameRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.saveNameRequiredText', { label }) }); return }
+      if (!subject) { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.subjectRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.subjectRequiredText', { label }) }); return }
+      if (eventKeys.length === 0) { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.actionRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.actionRequiredText', { label }) }); return }
+      if (recipientTargets.length === 0) { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.recipientRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.recipientRequiredText', { label }) }); return }
 
       this.$set(this.emailTemplates, type, this.normalizeEmailTemplateDefinition(type, {
         ...template,
@@ -1631,11 +1643,11 @@ export default {
       try {
         await this.upsertSettingByKey('email_templates_json', JSON.stringify(this.emailTemplates), 'Email templates JSON', 'email')
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: `บันทึก Template ${label} สำเร็จ`, timer: 1200, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.email.templateMessages.savedTitle', { label }), timer: 1200, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] saveTemplate fallback:', error)
         this.saveFallback()
-        await Swal.fire({ icon: 'info', title: 'บันทึก Template ในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงใช้ local fallback' })
+        await Swal.fire({ icon: 'info', title: this.$t('adminSettings.email.templateMessages.savedLocalTitle'), text: this.$t('adminSettings.email.templateMessages.savedLocalText') })
       }
     },
     resetTemplate (type) {
@@ -1679,21 +1691,21 @@ export default {
     async addSetting () {
       const key = (this.newSetting.key || '').trim()
       const value = this.newSetting.value
-      if (!key || value === undefined || value === null || value === '') { await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'ต้องกรอก key และ value' }); return }
-      if (/\s/.test(key)) { await Swal.fire({ icon: 'warning', title: 'Key ไม่ถูกต้อง', text: 'Key ต้องไม่มีช่องว่าง และควรเป็น snake_case' }); return }
+      if (!key || value === undefined || value === null || value === '') { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.settingMessages.missingRequiredTitle'), text: this.$t('adminSettings.settingMessages.missingRequiredText') }); return }
+      if (/\s/.test(key)) { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.settingMessages.invalidKeyTitle'), text: this.$t('adminSettings.settingMessages.invalidKeyText') }); return }
       try {
         await axios.post('/api/v1/setting', { key, value, description: this.newSetting.description, group: this.newSetting.group })
         this.showAddSettingModal = false
         this.newSetting = { key: '', value: '', group: 'general', description: '' }
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'เพิ่ม Setting สำเร็จ', timer: 1200, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.settingMessages.addedTitle'), timer: 1200, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] addSetting fallback:', error)
         this.settings.push({ _id: `local-${Date.now()}`, key, value: this.newSetting.value, description: this.newSetting.description, group: this.newSetting.group })
         this.saveFallback()
         this.showAddSettingModal = false
         this.newSetting = { key: '', value: '', group: 'general', description: '' }
-        await Swal.fire({ icon: 'info', title: 'เพิ่มในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
+        await Swal.fire({ icon: 'info', title: this.$t('adminSettings.settingMessages.addedLocalTitle'), text: this.$t('adminSettings.settingMessages.addedLocalText') })
       }
     },
     startEditSetting (s) {
@@ -1711,7 +1723,7 @@ export default {
         await axios.put(`/api/v1/setting/${s._id}`, payload)
         this.cancelEditSetting()
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'แก้ไขสำเร็จ', timer: 1200, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.settingMessages.editedTitle'), timer: 1200, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] editSetting fallback:', error)
         const idx = this.settings.findIndex(x => (x._id || x.key) === (s._id || s.key))
@@ -1721,28 +1733,28 @@ export default {
           this.saveFallback()
         }
         this.cancelEditSetting()
-        await Swal.fire({ icon: 'info', title: 'แก้ไขในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
+        await Swal.fire({ icon: 'info', title: this.$t('adminSettings.settingMessages.editedLocalTitle'), text: this.$t('adminSettings.settingMessages.editedLocalText') })
       }
     },
     async deleteSetting (s) {
-      const result = await Swal.fire({ icon: 'warning', title: `ยืนยันการลบ setting ${s.key}?`, showCancelButton: true, confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#e55353' })
+      const result = await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.settingMessages.deleteConfirmTitle', { key: s.key }), showCancelButton: true, confirmButtonText: this.$t('adminSettings.settingMessages.deleteConfirmButton'), cancelButtonText: this.$t('adminSettings.modal.cancelBtn'), confirmButtonColor: '#e55353' })
       if (!result.isConfirmed) return
       try {
         if (s._id && String(s._id).startsWith('local-')) throw new Error('local fallback row')
         await axios.delete(`/api/v1/setting/${s._id}`)
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1200, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.settingMessages.deletedTitle'), timer: 1200, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] deleteSetting fallback:', error)
         this.settings = this.settings.filter(x => (x._id || x.key) !== (s._id || s.key))
         this.saveFallback()
-        await Swal.fire({ icon: 'info', title: 'ลบในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
+        await Swal.fire({ icon: 'info', title: this.$t('adminSettings.settingMessages.deletedLocalTitle'), text: this.$t('adminSettings.settingMessages.deletedLocalText') })
       }
     },
     async clearCache () {
-      const result = await Swal.fire({ icon: 'warning', title: 'ยืนยันการล้างข้อมูล Cache?', showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก' })
+      const result = await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.cacheMessages.confirmTitle'), showCancelButton: true, confirmButtonText: this.$t('adminSettings.cacheMessages.confirmButton'), cancelButtonText: this.$t('adminSettings.modal.cancelBtn') })
       if (!result.isConfirmed) return
-      try { await axios.post('/api/v1/setting/clear-cache', {}); await Swal.fire({ icon: 'success', title: 'ล้าง Cache สำเร็จ' }) } catch (error) { await Swal.fire({ icon: 'info', title: 'กำลังพัฒนา', text: 'ฟีเจอร์ล้าง Cache อยู่ระหว่างพัฒนา' }) }
+      try { await axios.post('/api/v1/setting/clear-cache', {}); await Swal.fire({ icon: 'success', title: this.$t('adminSettings.cacheMessages.clearedTitle') }) } catch (error) { await Swal.fire({ icon: 'info', title: this.$t('adminSettings.cacheMessages.developingTitle'), text: this.$t('adminSettings.cacheMessages.developingText') }) }
     },
     exportSettings () {
       const blob = new Blob([JSON.stringify(this.settings, null, 2)], { type: 'application/json' })
@@ -1792,7 +1804,7 @@ export default {
     toggleEmailWidget () {
       if (this.isEmailWidgetOpen) { this.closeEmailWidget(); return }
       this.emailWidgetFeedback = { type: '', message: '' }
-      this.emailWidgetForm = { ...this.emailWidgetForm, senderName: this.emailWidgetForm.senderName || 'ผู้ดูแลระบบ', recipientEmail: this.emailWidgetForm.recipientEmail || this.getPreferredTestRecipientEmail(), templateKey: this.emailWidgetForm.templateKey || this.testTemplateKey || '' }
+      this.emailWidgetForm = { ...this.emailWidgetForm, senderName: this.emailWidgetForm.senderName || this.$t('adminSettings.email.widget.defaultSenderName'), recipientEmail: this.emailWidgetForm.recipientEmail || this.getPreferredTestRecipientEmail(), templateKey: this.emailWidgetForm.templateKey || this.testTemplateKey || '' }
       this.isEmailWidgetOpen = true
     },
     closeEmailWidget () { this.isEmailWidgetOpen = false },
@@ -1805,13 +1817,13 @@ export default {
       if (!String(this.emailWidgetForm.message || '').trim()) this.emailWidgetForm.message = String(template.body || '').trim()
     },
     validateWidgetEmailForm () {
-      if (!String(this.emailWidgetForm.senderName || '').trim()) return 'กรุณากรอกชื่อผู้ส่ง'
-      if (!String(this.emailWidgetForm.subject || '').trim()) return 'กรุณากรอกหัวข้ออีเมล'
-      if (!String(this.emailWidgetForm.message || '').trim()) return 'กรุณากรอกข้อความอีเมล'
+      if (!String(this.emailWidgetForm.senderName || '').trim()) return this.$t('adminSettings.email.widget.validation.senderRequired')
+      if (!String(this.emailWidgetForm.subject || '').trim()) return this.$t('adminSettings.email.widget.validation.subjectRequired')
+      if (!String(this.emailWidgetForm.message || '').trim()) return this.$t('adminSettings.email.widget.validation.messageRequired')
       const recipientEmail = String(this.emailWidgetForm.recipientEmail || '').trim()
-      if (!recipientEmail) return 'กรุณากรอกอีเมลผู้รับ'
-      if (!this.isValidEmail(recipientEmail)) return 'รูปแบบอีเมลผู้รับไม่ถูกต้อง'
-      if (this.isPlaceholderEmail(recipientEmail)) return 'อีเมลผู้รับดูเหมือนเป็นข้อมูลทดสอบ กรุณาใช้อีเมลผู้ใช้จริงในระบบ'
+      if (!recipientEmail) return this.$t('adminSettings.email.widget.validation.recipientRequired')
+      if (!this.isValidEmail(recipientEmail)) return this.$t('adminSettings.email.widget.validation.recipientInvalid')
+      if (this.isPlaceholderEmail(recipientEmail)) return this.$t('adminSettings.email.widget.validation.recipientPlaceholderDetected')
       return this.validateSMTPConfig({ requirePassword: true })
     },
     async sendEmailFromWidget () {
@@ -1821,9 +1833,9 @@ export default {
       this.emailWidgetSending = true
       try {
         await axios.post('/api/v1/setting/test-email', { recipientEmail: this.normalizeEmail(this.emailWidgetForm.recipientEmail), smtp: this.buildSmtpPayloadForApi({ includePasswordIfProvided: true }), templateKey: this.emailWidgetForm.templateKey || '', senderName: String(this.emailWidgetForm.senderName || '').trim(), subject: String(this.emailWidgetForm.subject || '').trim(), message: String(this.emailWidgetForm.message || '').trim() })
-        this.emailWidgetFeedback = { type: 'success', message: `ส่งอีเมลเรียบร้อยไปยัง ${this.normalizeEmail(this.emailWidgetForm.recipientEmail)}` }
+        this.emailWidgetFeedback = { type: 'success', message: this.$t('adminSettings.email.widget.sendSuccess', { email: this.normalizeEmail(this.emailWidgetForm.recipientEmail) }) }
       } catch (error) {
-        this.emailWidgetFeedback = { type: 'error', message: (error && error.response && error.response.data && error.response.data.message) || 'ส่งอีเมลไม่สำเร็จ กรุณาตรวจสอบ SMTP แล้วลองใหม่' }
+        this.emailWidgetFeedback = { type: 'error', message: (error && error.response && error.response.data && error.response.data.message) || this.$t('adminSettings.email.widget.sendFailed') }
       } finally { this.emailWidgetSending = false }
     }
   }

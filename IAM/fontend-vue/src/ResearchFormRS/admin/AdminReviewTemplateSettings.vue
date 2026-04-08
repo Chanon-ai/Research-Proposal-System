@@ -17,10 +17,10 @@
             />
           </CCol>
           <CCol v-if="templateImport.targetType === 'chairman'" md="4">
-            <CInput label="Funding Type Key" v-model="templateImport.fundingTypeKey" />
+            <CInput :label="$t('reviewTemplate.fields.fundingTypeKey')" v-model="templateImport.fundingTypeKey" />
           </CCol>
           <CCol v-if="templateImport.targetType === 'chairman'" md="4">
-            <CInput label="Funding Type Label" v-model="templateImport.fundingTypeLabel" />
+            <CInput :label="$t('reviewTemplate.fields.fundingTypeLabel')" v-model="templateImport.fundingTypeLabel" />
           </CCol>
         </CRow>
 
@@ -49,15 +49,15 @@
 
           <div class="import-summary-grid">
             <div class="import-summary-grid__item">
-              <div class="import-summary-grid__label">Sections / Rows</div>
+              <div class="import-summary-grid__label">{{ templateImport.targetType === 'committee' ? $t('reviewTemplate.import.summaryPrimaryCommittee') : $t('reviewTemplate.import.summaryPrimaryChairman') }}</div>
               <div class="import-summary-grid__value">{{ importSummaryPrimaryValue }}</div>
             </div>
             <div class="import-summary-grid__item">
-              <div class="import-summary-grid__label">Items / Fund Types</div>
+              <div class="import-summary-grid__label">{{ templateImport.targetType === 'committee' ? $t('reviewTemplate.import.summarySecondaryCommittee') : $t('reviewTemplate.import.summarySecondaryChairman') }}</div>
               <div class="import-summary-grid__value">{{ importSummarySecondaryValue }}</div>
             </div>
             <div class="import-summary-grid__item">
-              <div class="import-summary-grid__label">Warnings</div>
+              <div class="import-summary-grid__label">{{ $t('reviewTemplate.import.summaryWarnings') }}</div>
               <div class="import-summary-grid__value">{{ importSummaryWarningCount }}</div>
             </div>
           </div>
@@ -128,9 +128,9 @@
 
               <div class="template-two-pane__editor-scroll">
                 <CRow>
-                  <CCol md="4"><CInput label="Version" type="number" v-model.number="chairmanForm.templateVersion" /></CCol>
-                  <CCol md="4"><CInput label="Reviewer Role" v-model="chairmanForm.reviewerRole" /></CCol>
-                  <CCol md="4"><CInput label="Reviewer Label" v-model="chairmanForm.reviewerLabel" /></CCol>
+                  <CCol md="4"><CInput :label="$t('reviewTemplate.fields.version')" type="number" v-model.number="chairmanForm.templateVersion" /></CCol>
+                  <CCol md="4"><CInput :label="$t('reviewTemplate.fields.reviewerRole')" v-model="chairmanForm.reviewerRole" /></CCol>
+                  <CCol md="4"><CInput :label="$t('reviewTemplate.fields.reviewerLabel')" v-model="chairmanForm.reviewerLabel" /></CCol>
                 </CRow>
                 <CRow>
                   <CCol md="12"><CTextarea :label="$t('reviewTemplate.noteLabel')" rows="3" v-model="chairmanForm.note" /></CCol>
@@ -138,7 +138,7 @@
 
                 <div class="template-section-header mt-3">
                   <div>
-                    <div class="template-section-title">Funding Templates</div>
+                    <div class="template-section-title">{{ $t('reviewTemplate.chairman.fundingSection') }}</div>
                     <div class="text-muted small">{{ $t('reviewTemplate.chairman.fundingDesc') }}</div>
                   </div>
                   <CButton size="sm" color="success" variant="outline" @click="addChairmanFundingTemplate">{{ $t('reviewTemplate.addFundingTypeBtn') }}</CButton>
@@ -149,10 +149,10 @@
                     <div class="editor-card__title">{{ $t('reviewTemplate.fundingTypeN', { n: chairmanSelectedFundingTemplateIndex + 1 }) }}</div>
                     <CButton size="sm" color="danger" variant="outline" @click="removeChairmanFundingTemplate(chairmanSelectedFundingTemplateIndex)">{{ $t('reviewTemplate.removeFundingTypeBtn') }}</CButton>
                   </div>
-                  <CInput label="Funding Type Label" v-model="chairmanSelectedFundingTemplate.fundingTypeLabel" />
+                  <CInput :label="$t('reviewTemplate.fields.fundingTypeLabel')" v-model="chairmanSelectedFundingTemplate.fundingTypeLabel" />
 
                   <div class="template-section-header template-section-header--inner">
-                    <div class="template-section-title">Sections</div>
+                    <div class="template-section-title">{{ $t('reviewTemplate.sectionsTitle') }}</div>
                     <CButton size="sm" color="info" variant="outline" @click="addChairmanSection(chairmanSelectedFundingTemplateIndex)">{{ $t('reviewTemplate.addSectionBtn') }}</CButton>
                   </div>
 
@@ -161,11 +161,11 @@
                       <div class="editor-card__title">{{ $t('reviewTemplate.sectionN', { n: sectionIndex + 1 }) }}</div>
                       <CButton size="sm" color="danger" variant="outline" @click="removeChairmanSection(chairmanSelectedFundingTemplateIndex, sectionIndex)">{{ $t('reviewTemplate.removeSectionBtn') }}</CButton>
                     </div>
-                    <CInput label="Section Label" v-model="section.sectionLabel" />
-                    <CTextarea label="Section Description" rows="2" v-model="section.description" />
+                    <CInput :label="$t('reviewTemplate.fields.sectionLabel')" v-model="section.sectionLabel" />
+                    <CTextarea :label="$t('reviewTemplate.fields.sectionDescription')" rows="2" v-model="section.description" />
 
                     <div class="template-section-header template-section-header--inner">
-                      <div class="template-section-title">Items</div>
+                      <div class="template-section-title">{{ $t('reviewTemplate.itemsTitle') }}</div>
                       <CButton size="sm" color="info" variant="outline" @click="addChairmanItem(chairmanSelectedFundingTemplateIndex, sectionIndex)">{{ $t('reviewTemplate.addItemBtn') }}</CButton>
                     </div>
 
@@ -174,7 +174,7 @@
                         <div class="editor-card__title">{{ $t('reviewTemplate.itemN', { n: itemIndex + 1 }) }}</div>
                         <CButton size="sm" color="danger" variant="outline" @click="removeChairmanItem(chairmanSelectedFundingTemplateIndex, sectionIndex, itemIndex)">{{ $t('reviewTemplate.removeItemBtn') }}</CButton>
                       </div>
-                      <CTextarea label="Label" rows="3" v-model="item.label" />
+                      <CTextarea :label="$t('reviewTemplate.fields.itemLabel')" rows="3" v-model="item.label" />
                     </div>
                   </div>
                 </div>
@@ -241,9 +241,9 @@
 
               <div class="template-two-pane__editor-scroll">
                 <CRow>
-                  <CCol md="4"><CInput label="Version" type="number" v-model.number="committeeForm.templateVersion" /></CCol>
-                  <CCol md="4"><CInput label="Reviewer Role" v-model="committeeForm.reviewerRole" /></CCol>
-                  <CCol md="4"><CInput label="Reviewer Label" v-model="committeeForm.reviewerLabel" /></CCol>
+                  <CCol md="4"><CInput :label="$t('reviewTemplate.fields.version')" type="number" v-model.number="committeeForm.templateVersion" /></CCol>
+                  <CCol md="4"><CInput :label="$t('reviewTemplate.fields.reviewerRole')" v-model="committeeForm.reviewerRole" /></CCol>
+                  <CCol md="4"><CInput :label="$t('reviewTemplate.fields.reviewerLabel')" v-model="committeeForm.reviewerLabel" /></CCol>
                 </CRow>
 
                 <div class="template-section-header mt-3">
@@ -260,14 +260,14 @@
                     <CButton size="sm" color="danger" variant="outline" @click="removeCommitteeFundTypeOption(committeeSelectedFundTypeIndex)">{{ $t('reviewTemplate.removeFundingTypeBtn') }}</CButton>
                   </div>
                   <CRow>
-                    <CCol md="4"><CInput label="Value" v-model="committeeSelectedFundTypeOption.value" /></CCol>
-                    <CCol md="8"><CInput label="Label" v-model="committeeSelectedFundTypeOption.label" /></CCol>
+                    <CCol md="4"><CInput :label="$t('reviewTemplate.fields.value')" v-model="committeeSelectedFundTypeOption.value" /></CCol>
+                    <CCol md="8"><CInput :label="$t('reviewTemplate.fields.label')" v-model="committeeSelectedFundTypeOption.label" /></CCol>
                   </CRow>
                 </div>
 
                 <div class="template-section-header mt-3">
                   <div>
-                    <div class="template-section-title">Rubric Rows</div>
+                    <div class="template-section-title">{{ $t('reviewTemplate.rubricRowsTitle') }}</div>
                     <div class="text-muted small">{{ $t('reviewTemplate.committee.rubricDesc') }}</div>
                   </div>
                   <CButton size="sm" color="success" variant="outline" @click="addCommitteeRubricRow">{{ $t('reviewTemplate.committee.addRowBtn') }}</CButton>
@@ -280,9 +280,9 @@
                   </div>
 
                   <CRow>
-                    <CCol md="2"><CInput label="No" type="number" v-model.number="row.no" /></CCol>
-                    <CCol md="6"><CInput label="Title" v-model="row.title" /></CCol>
-                    <CCol md="4"><CInput label="Description" v-model="row.desc" /></CCol>
+                    <CCol md="2"><CInput :label="$t('reviewTemplate.fields.no')" type="number" v-model.number="row.no" /></CCol>
+                    <CCol md="6"><CInput :label="$t('reviewTemplate.fields.title')" v-model="row.title" /></CCol>
+                    <CCol md="4"><CInput :label="$t('reviewTemplate.fields.description')" v-model="row.desc" /></CCol>
                   </CRow>
 
                   <div class="weights-grid">
@@ -339,7 +339,7 @@ export default {
       templateImport: {
         targetType: 'chairman',
         fundingTypeKey: 'new-researcher',
-        fundingTypeLabel: 'ทุนนักวิจัยรุ่นใหม่',
+        fundingTypeLabel: this.$t('reviewTemplate.chairman.defaultFundingTypeLabel'),
         file: null,
         fileName: '',
         preview: null,
@@ -499,7 +499,7 @@ export default {
     resetTemplateImportDefaults () {
       const firstFundingTemplate = this.chairmanParsedConfig && this.chairmanParsedConfig.fundingTemplates && this.chairmanParsedConfig.fundingTemplates[0]
       this.templateImport.fundingTypeKey = firstFundingTemplate ? firstFundingTemplate.fundingTypeKey : 'new-researcher'
-      this.templateImport.fundingTypeLabel = firstFundingTemplate ? firstFundingTemplate.fundingTypeLabel : 'ทุนนักวิจัยรุ่นใหม่'
+      this.templateImport.fundingTypeLabel = firstFundingTemplate ? firstFundingTemplate.fundingTypeLabel : this.$t('reviewTemplate.chairman.defaultFundingTypeLabel')
     },
     handleImportTargetChange (targetType) {
       this.templateImport.targetType = targetType === 'committee' ? 'committee' : 'chairman'
@@ -548,7 +548,7 @@ export default {
         this.templateImport.preview = response && response.data ? response.data.data : null
       } catch (error) {
         this.templateImport.preview = null
-        this.templateImport.error = (error && error.response && error.response.data && error.response.data.message) || error.message || 'Preview ไม่สำเร็จ'
+        this.templateImport.error = (error && error.response && error.response.data && error.response.data.message) || error.message || this.$t('reviewTemplate.import.previewError')
       }
     },
     applyImportedDraftToForm () {
@@ -587,7 +587,7 @@ export default {
         this.clearTemplateImportState()
         await Swal.fire({ icon: 'success', title: this.$t('reviewTemplate.import.successMsg'), timer: 1400, showConfirmButton: false })
       } catch (error) {
-        this.templateImport.error = (error && error.response && error.response.data && error.response.data.message) || error.message || 'บันทึก import ไม่สำเร็จ'
+        this.templateImport.error = (error && error.response && error.response.data && error.response.data.message) || error.message || this.$t('reviewTemplate.import.applyError')
       } finally {
         this.templateImport.applying = false
       }
@@ -634,14 +634,14 @@ export default {
     createChairmanFundingTemplate () {
       return {
         fundingTypeKey: 'funding_1',
-        fundingTypeLabel: 'ประเภททุนใหม่',
+        fundingTypeLabel: this.$t('reviewTemplate.chairman.newFundingTypeLabel'),
         sections: []
       }
     },
     createChairmanSection () {
       return {
         sectionKey: 'section_1',
-        sectionLabel: 'Section ใหม่',
+        sectionLabel: this.$t('reviewTemplate.chairman.newSectionLabel'),
         description: '',
         items: []
       }
@@ -705,13 +705,13 @@ export default {
         await this.loadTemplates()
         await Swal.fire({ icon: 'success', title: this.$t('reviewTemplate.chairman.saveSuccess'), timer: 1400, showConfirmButton: false })
       } catch (error) {
-        this.chairmanTemplateError = (error && error.response && error.response.data && error.response.data.message) || error.message || 'บันทึกไม่สำเร็จ'
+        this.chairmanTemplateError = (error && error.response && error.response.data && error.response.data.message) || error.message || this.$t('reviewTemplate.chairman.saveError')
       }
     },
     createCommitteeFundTypeOption () {
       return {
         value: `fund_${Date.now()}`,
-        label: 'ประเภททุนใหม่'
+        label: this.$t('reviewTemplate.committee.newFundTypeLabel')
       }
     },
     createCommitteeRubricRow () {
@@ -776,9 +776,9 @@ export default {
         setCommitteeRubricRuntimeConfig(parsed)
         this.committeeForm = this.cloneValue(parsed)
         await this.loadTemplates()
-        await Swal.fire({ icon: 'success', title: 'บันทึก template กรรมการสำเร็จ', timer: 1400, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('reviewTemplate.committee.saveSuccess'), timer: 1400, showConfirmButton: false })
       } catch (error) {
-        this.committeeTemplateError = (error && error.response && error.response.data && error.response.data.message) || error.message || 'บันทึกไม่สำเร็จ'
+        this.committeeTemplateError = (error && error.response && error.response.data && error.response.data.message) || error.message || this.$t('reviewTemplate.committee.saveError')
       }
     },
     formatCommitteeWeight (row) {
