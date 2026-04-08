@@ -29,6 +29,7 @@
     "committeeMenu": "เมนูคณะกรรมการ",
     "chairmanMenu": "เมนูประธานสำนัก",
     "financeMenu": "เมนูเจ้าหน้าที่การเงิน",
+    "notifications": "การแจ้งเตือน",
     "userPanel": "แผงผู้ใช้",
     "userDashboard": "โครงการของฉัน",
     "userMeetings": "กำหนดการประชุม",
@@ -767,6 +768,106 @@
         "duplicateSubmitText": "ระบบไม่อนุญาตให้ส่งซ้ำ เนื่องจากมีการส่งผลการประเมินไปแล้ว",
         "submitErrorTitle": "ส่งผลการประเมินไม่สำเร็จ",
         "retry": "กรุณาลองใหม่อีกครั้ง"
+      }
+    }
+  },
+  "committee": {
+    "projectProposal": {
+      "summary": {
+        "all": "ทั้งหมด",
+        "pending": "รอการประเมิน",
+        "reviewed": "ส่งผลการประเมินแล้ว",
+        "announced": "ประกาศผล"
+      },
+      "fallback": {
+        "noTitle": "(ไม่มีชื่อโครงการ)"
+      },
+      "table": {
+        "title": "ข้อเสนอโครงการที่ได้รับมอบหมาย",
+        "searchPlaceholder": "ค้นหา...",
+        "searchAria": "ค้นหาในตาราง",
+        "loading": "กำลังโหลดข้อมูลโครงการ...",
+        "loadError": "โหลดข้อมูลโครงการไม่สำเร็จ",
+        "viewDetail": "ดูรายละเอียด",
+        "empty": "ไม่พบข้อมูลที่ค้นหา",
+        "perPagePrefix": "แสดงต่อหน้า",
+        "perPageSuffix": "รายการ",
+        "columns": {
+          "projectId": "รหัสโครงการ",
+          "projectTitle": "ชื่อโครงการ",
+          "projectLeader": "หัวหน้าโครงการ",
+          "affiliation": "สังกัด",
+          "decision": "ผลประเมิน",
+          "status": "สถานะ"
+        }
+      },
+      "meetings": {
+        "title": "การประชุมที่ใกล้ถึงกำหนด",
+        "sub": "แสดงรายการการประชุมที่กำหนดไว้ในระยะใกล้",
+        "empty": "ไม่พบรายการการประชุมที่ใกล้ถึงกำหนด",
+        "type": {
+          "online": "ออนไลน์",
+          "onsite": "ออนไซต์"
+        },
+        "meta": {
+          "date": "วันที่",
+          "time": "เวลา",
+          "format": "รูปแบบ:",
+          "location": "สถานที่:",
+          "link": "ลิงก์:"
+        }
+      },
+      "notifs": {
+        "title": "การแจ้งเตือนที่สำคัญ",
+        "sub": "แสดงเหตุการณ์สำคัญล่าสุดเพื่อการติดตาม",
+        "empty": "ไม่พบรายการแจ้งเตือนล่าสุด",
+        "mock1": "มีโครงการส่งเข้าประเมิน",
+        "mock2": "มีคำขอแก้ไขเอกสาร",
+        "mock3": "กำหนดการประชุมถูกอัปเดต"
+      },
+      "decision": {
+        "notSubmitted": "ยังไม่ส่งผล",
+        "approve": "อนุมัติ",
+        "revise": "ขอแก้ไข",
+        "reject": "ไม่อนุมัติ",
+        "unspecified": "ไม่ระบุ"
+      },
+      "timeAgo": {
+        "soon": "อีกไม่นาน",
+        "justNow": "เมื่อสักครู่",
+        "inMinutes": "อีก {count} นาที",
+        "minutesAgo": "{count} นาทีที่แล้ว",
+        "inHours": "อีก {count} ชั่วโมง",
+        "hoursAgo": "{count} ชั่วโมงที่แล้ว",
+        "inDays": "อีก {count} วัน",
+        "daysAgo": "{count} วันที่แล้ว",
+        "inMonths": "อีก {count} เดือน",
+        "monthsAgo": "{count} เดือนที่แล้ว",
+        "inYears": "อีก {count} ปี",
+        "yearsAgo": "{count} ปีที่แล้ว"
+      },
+      "badge": {
+        "pending": "รอการประเมิน",
+        "underReview": "พิจารณารอบ {roundNo}",
+        "reviewed": "กรรมการได้ให้ความเห็นแล้ว",
+        "revisionRequested": "ขอแก้ไข",
+        "resubmitted": "ส่งแก้ไขแล้ว",
+        "announced": "ประกาศผล",
+        "approved": "อนุมัติ",
+        "rejected": "ไม่อนุมัติ"
+      },
+      "progress": {
+        "assigned": "คณะกรรมการ : รอการประเมิน",
+        "underReview": "คณะกรรมการ : พิจารณารอบ {roundNo}",
+        "reviewed": "คณะกรรมการ : ส่งผลการประเมินแล้ว",
+        "revisionRequested": "นักวิจัย : ขอแก้ไข",
+        "resubmitted": "นักวิจัย : ส่งแก้ไขแล้ว",
+        "announced": "สำนักงานบริหารโครงการ : ประกาศผล",
+        "inProgress": "ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ"
+      },
+      "lastAction": {
+        "prefix": "เวลาล่าสุด:",
+        "missing": "เวลาล่าสุด: ไม่พบข้อมูลเวลา"
       }
     }
   },

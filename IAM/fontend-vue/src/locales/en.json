@@ -29,6 +29,7 @@
     "committeeMenu": "Committee Menu",
     "chairmanMenu": "Chairman Menu",
     "financeMenu": "Finance Officer Menu",
+    "notifications": "Notifications",
     "userPanel": "User Panel",
     "userDashboard": "My Projects",
     "userMeetings": "My Meetings",
@@ -767,6 +768,106 @@
         "duplicateSubmitText": "The system does not allow resubmission because the evaluation has already been submitted.",
         "submitErrorTitle": "Unable to submit evaluation",
         "retry": "Please try again."
+      }
+    }
+  },
+  "committee": {
+    "projectProposal": {
+      "summary": {
+        "all": "Total",
+        "pending": "Pending review",
+        "reviewed": "Submitted",
+        "announced": "Announced"
+      },
+      "fallback": {
+        "noTitle": "(Untitled project)"
+      },
+      "table": {
+        "title": "Assigned project proposals",
+        "searchPlaceholder": "Search...",
+        "searchAria": "Search in table",
+        "loading": "Loading project data...",
+        "loadError": "Unable to load project data",
+        "viewDetail": "View details",
+        "empty": "No matching data found",
+        "perPagePrefix": "Show",
+        "perPageSuffix": "items",
+        "columns": {
+          "projectId": "Proposal code",
+          "projectTitle": "Project title",
+          "projectLeader": "Project leader",
+          "affiliation": "Affiliation",
+          "decision": "Decision",
+          "status": "Status"
+        }
+      },
+      "meetings": {
+        "title": "Upcoming meetings",
+        "sub": "Shows scheduled meetings in the near future",
+        "empty": "No upcoming meetings found",
+        "type": {
+          "online": "Online",
+          "onsite": "Onsite"
+        },
+        "meta": {
+          "date": "Date:",
+          "time": "Time:",
+          "format": "Format:",
+          "location": "Location:",
+          "link": "Link:"
+        }
+      },
+      "notifs": {
+        "title": "Important notifications",
+        "sub": "Shows latest important events for follow-up",
+        "empty": "No recent notifications found",
+        "mock1": "A project has been submitted for review",
+        "mock2": "A document revision has been requested",
+        "mock3": "Meeting schedule updated"
+      },
+      "decision": {
+        "notSubmitted": "Not submitted yet",
+        "approve": "Approved",
+        "revise": "Revision requested",
+        "reject": "Not approved",
+        "unspecified": "Unspecified"
+      },
+      "timeAgo": {
+        "soon": "Soon",
+        "justNow": "Just now",
+        "inMinutes": "In {count} minutes",
+        "minutesAgo": "{count} minutes ago",
+        "inHours": "In {count} hours",
+        "hoursAgo": "{count} hours ago",
+        "inDays": "In {count} days",
+        "daysAgo": "{count} days ago",
+        "inMonths": "In {count} months",
+        "monthsAgo": "{count} months ago",
+        "inYears": "In {count} years",
+        "yearsAgo": "{count} years ago"
+      },
+      "badge": {
+        "pending": "Pending review",
+        "underReview": "Under review (Round {roundNo})",
+        "reviewed": "Committee reviewed",
+        "revisionRequested": "Revision requested",
+        "resubmitted": "Resubmitted",
+        "announced": "Announced",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "progress": {
+        "assigned": "Committee: pending review",
+        "underReview": "Committee: reviewing round {roundNo}",
+        "reviewed": "Committee: submitted evaluation result",
+        "revisionRequested": "Researcher: revision requested",
+        "resubmitted": "Researcher: resubmitted",
+        "announced": "Research Office: announced",
+        "inProgress": "Research Office: in progress"
+      },
+      "lastAction": {
+        "prefix": "Last update:",
+        "missing": "Last update: time not available"
       }
     }
   },
