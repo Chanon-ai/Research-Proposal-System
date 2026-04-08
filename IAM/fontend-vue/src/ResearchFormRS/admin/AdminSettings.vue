@@ -246,14 +246,95 @@
             </CCallout>
             <details class="mb-3" v-for="(tpl, key) in emailTemplates" :key="key">
               <summary class="font-weight-bold mb-2">{{ getTemplateLabel(key) }}</summary>
-              <div class="mt-2">
-                <CInput :label="$t('adminSettings.email.subjectLabel')" v-model="emailTemplates[key].subject" />
-                <label>{{ $t('adminSettings.email.bodyLabel') }}</label>
-                <textarea class="form-control mb-2" rows="6" v-model="emailTemplates[key].body" />
-                <small v-pre class="text-muted d-block mb-2">ตัวแปรที่ใช้ได้: {{recipientName}} {{proposalCode}} {{projectTitle}} {{remarks}} {{meetingTitle}} {{meetingDate}} {{meetingTime}} {{participantRole}} {{consentViewUrl}} {{consentAcceptUrl}} {{consentRejectUrl}}</small>
-                <div class="d-flex" style="gap: 8px;">
-                  <CButton size="sm" color="primary" @click="saveTemplate(key)"><CIcon name="cil-save" class="mr-1" /> {{ $t('adminSettings.email.saveTplBtn') }}</CButton>
-                  <CButton size="sm" color="secondary" variant="outline" @click="resetTemplate(key)"><CIcon name="cil-reload" class="mr-1" /> {{ $t('adminSettings.email.resetTplBtn') }}</CButton>
+              <div class="mt-2 template-editor">
+                <div class="template-editor__main">
+                  <div class="template-variable-toolbar mb-3">
+                    <div class="template-variable-toolbar__label">แทรกตัวแปรในหัวข้อ</div>
+                    <div class="template-variable-toolbar__chips">
+                      <button
+                        v-for="variable in templateVariableOptions"
+                        :key="`${key}-subject-${variable.token}`"
+                        type="button"
+                        class="template-variable-toolbar__chip"
+                        @click="insertTemplateVariable(key, 'subject', variable.token)"
+                      >
+                        {{ variable.label }}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-group mb-3">
+                    <label :for="`email-template-subject-${key}`">{{ $t('adminSettings.email.subjectLabel') }}</label>
+                    <input
+                      :id="`email-template-subject-${key}`"
+                      :ref="`email-template-subject-${key}`"
+                      v-model="emailTemplates[key].subject"
+                      type="text"
+                      class="form-control"
+                      @focus="markTemplateFieldFocus(key, 'subject')"
+                      @click="markTemplateFieldFocus(key, 'subject')"
+                    />
+                  </div>
+                  <div class="template-variable-toolbar mb-2">
+                    <div class="template-variable-toolbar__label">แทรกตัวแปรในเนื้อหา</div>
+                    <div class="template-variable-toolbar__chips">
+                      <button
+                        v-for="variable in templateVariableOptions"
+                        :key="`${key}-body-${variable.token}`"
+                        type="button"
+                        class="template-variable-toolbar__chip template-variable-toolbar__chip--muted"
+                        @click="insertTemplateVariable(key, 'body', variable.token)"
+                      >
+                        {{ variable.label }}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="template-variable-toolbar mb-2">
+                    <div class="template-variable-toolbar__label">จัดรูปแบบข้อความพื้นฐาน</div>
+                    <div class="template-variable-toolbar__chips">
+                      <button
+                        v-for="formatting in templateFormattingOptions"
+                        :key="`${key}-format-${formatting.label}`"
+                        type="button"
+                        class="template-variable-toolbar__chip template-variable-toolbar__chip--format"
+                        @click="insertTemplateFormatting(key, formatting.text)"
+                      >
+                        {{ formatting.label }}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-group mb-2">
+                    <label :for="`email-template-body-${key}`">{{ $t('adminSettings.email.bodyLabel') }}</label>
+                    <textarea
+                      :id="`email-template-body-${key}`"
+                      :ref="`email-template-body-${key}`"
+                      class="form-control template-editor__textarea"
+                      rows="6"
+                      v-model="emailTemplates[key].body"
+                      @focus="markTemplateFieldFocus(key, 'body')"
+                      @click="markTemplateFieldFocus(key, 'body')"
+                    />
+                  </div>
+                  <small class="text-muted d-block mb-2">กดปุ่มตัวแปรเพื่อแทรกลงในตำแหน่งเคอร์เซอร์ เช่น <span class="template-variable-toolbar__token">{{proposalCode}}</span></small>
+                  <div class="d-flex" style="gap: 8px;">
+                    <CButton size="sm" color="primary" @click="saveTemplate(key)"><CIcon name="cil-save" class="mr-1" /> {{ $t('adminSettings.email.saveTplBtn') }}</CButton>
+                    <CButton size="sm" color="secondary" variant="outline" @click="resetTemplate(key)"><CIcon name="cil-reload" class="mr-1" /> {{ $t('adminSettings.email.resetTplBtn') }}</CButton>
+                  </div>
+                </div>
+                <div class="template-editor__preview">
+                  <div class="template-preview">
+                  <div class="template-preview__header">
+                    <span class="template-preview__title">Preview</span>
+                    <small class="text-muted">แสดงผลตัวอย่างหลังแทนค่าตัวแปรแบบคร่าว ๆ</small>
+                  </div>
+                  <div class="template-preview__field">
+                    <div class="template-preview__label">หัวข้อ</div>
+                    <div class="template-preview__value">{{ renderTemplatePreview(emailTemplates[key].subject) }}</div>
+                  </div>
+                  <div class="template-preview__field">
+                    <div class="template-preview__label">เนื้อหา</div>
+                    <div class="template-preview__value template-preview__value--body">{{ renderTemplatePreview(emailTemplates[key].body) }}</div>
+                  </div>
+                </div>
                 </div>
               </div>
             </details>
@@ -551,6 +632,40 @@ const DEFAULT_TEMPLATES = {
   }
 }
 
+const TEMPLATE_VARIABLE_OPTIONS = [
+  { label: 'ชื่อผู้รับ', token: '{{recipientName}}' },
+  { label: 'รหัสโครงการ', token: '{{proposalCode}}' },
+  { label: 'ชื่อโครงการ', token: '{{projectTitle}}' },
+  { label: 'หมายเหตุ', token: '{{remarks}}' },
+  { label: 'ชื่อประชุม', token: '{{meetingTitle}}' },
+  { label: 'วันที่ประชุม', token: '{{meetingDate}}' },
+  { label: 'เวลาประชุม', token: '{{meetingTime}}' },
+  { label: 'บทบาทผู้เข้าร่วม', token: '{{participantRole}}' },
+  { label: 'ลิงก์รายละเอียด', token: '{{consentViewUrl}}' },
+  { label: 'ลิงก์ยินยอม', token: '{{consentAcceptUrl}}' },
+  { label: 'ลิงก์ปฏิเสธ', token: '{{consentRejectUrl}}' }
+]
+
+const TEMPLATE_FORMATTING_OPTIONS = [
+  { label: 'ขึ้นบรรทัดใหม่', text: '\n' },
+  { label: 'คำขึ้นต้น', text: 'เรียน {{recipientName}}\n\n' },
+  { label: 'ลายเซ็น', text: '\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง' }
+]
+
+const TEMPLATE_PREVIEW_VALUES = {
+  recipientName: 'ดร.สมชาย ใจดี',
+  proposalCode: 'MFU-RES-2026-014',
+  projectTitle: 'การพัฒนาระบบติดตามข้อเสนอโครงการวิจัย',
+  remarks: 'กรุณาตรวจสอบงบประมาณหมวดค่าครุภัณฑ์และแนบเอกสารเพิ่มเติม',
+  meetingTitle: 'ประชุมคณะกรรมการวิจัย ครั้งที่ 3/2569',
+  meetingDate: '20 เมษายน 2569',
+  meetingTime: '13:30 น.',
+  participantRole: 'ผู้ร่วมวิจัย',
+  consentViewUrl: 'https://research.mfu.ac.th/consent/view/MFU-RES-2026-014',
+  consentAcceptUrl: 'https://research.mfu.ac.th/consent/accept/MFU-RES-2026-014',
+  consentRejectUrl: 'https://research.mfu.ac.th/consent/reject/MFU-RES-2026-014'
+}
+
 const STATUS_ICONS = {
   draft:                  '<path d="M11 3l2 2-7 7H4v-2L11 3z"/>',
   pending_confirm:        '<circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/>',
@@ -663,6 +778,7 @@ export default {
       emailWidgetSending: false,
       emailWidgetFeedback: { type: '', message: '' },
       emailWidgetForm: { senderName: '', subject: '', recipientEmail: '', message: '', templateKey: '' },
+      templateEditorFocus: { key: '', field: 'body' },
 
       showAddSettingModal: false,
       newSetting: { key: '', value: '', group: 'general', description: '' },
@@ -687,6 +803,12 @@ export default {
         { key: 'step4', title: this.$t('adminSettings.workflow.step4Title'), description: this.$t('adminSettings.workflow.step4Desc') },
         { key: 'step5', title: this.$t('adminSettings.workflow.step5Title'), description: this.$t('adminSettings.workflow.step5Desc') }
       ]
+    },
+    templateVariableOptions () {
+      return TEMPLATE_VARIABLE_OPTIONS
+    },
+    templateFormattingOptions () {
+      return TEMPLATE_FORMATTING_OPTIONS
     }
   },
   mounted () {
@@ -713,6 +835,68 @@ export default {
     },
     getStatusChipColor (status) {
       return STATUS_COLORS[status] || 'secondary'
+    },
+    markTemplateFieldFocus (templateKey, field) {
+      this.templateEditorFocus = { key: templateKey, field }
+    },
+    getTemplateEditorElement (templateKey, field) {
+      const refKey = `email-template-${field}-${templateKey}`
+      const ref = this.$refs[refKey]
+      if (Array.isArray(ref)) return ref[0] || null
+      if (ref && ref.$el) return ref.$el.querySelector('input, textarea')
+      return ref || null
+    },
+    insertTemplateText (templateKey, field, text) {
+      const targetField = field === 'subject' ? 'subject' : 'body'
+      const template = this.emailTemplates[templateKey]
+      if (!template) return
+
+      const currentValue = String(template[targetField] || '')
+      const element = this.getTemplateEditorElement(templateKey, targetField)
+      if (!element || typeof element.selectionStart !== 'number' || typeof element.selectionEnd !== 'number') {
+        this.$set(this.emailTemplates, templateKey, {
+          ...template,
+          [targetField]: `${currentValue}${text}`
+        })
+        this.markTemplateFieldFocus(templateKey, targetField)
+        return
+      }
+
+      const start = element.selectionStart
+      const end = element.selectionEnd
+      const nextValue = `${currentValue.slice(0, start)}${text}${currentValue.slice(end)}`
+      this.$set(this.emailTemplates, templateKey, {
+        ...template,
+        [targetField]: nextValue
+      })
+      this.markTemplateFieldFocus(templateKey, targetField)
+
+      this.$nextTick(() => {
+        const nextElement = this.getTemplateEditorElement(templateKey, targetField)
+        if (!nextElement || typeof nextElement.focus !== 'function') return
+        const nextCursor = start + text.length
+        nextElement.focus()
+        if (typeof nextElement.setSelectionRange === 'function') nextElement.setSelectionRange(nextCursor, nextCursor)
+      })
+    },
+    insertTemplateVariable (templateKey, field, token) {
+      this.insertTemplateText(templateKey, field, token)
+    },
+    insertTemplateFormatting (templateKey, text) {
+      this.insertTemplateText(templateKey, 'body', text)
+    },
+    getTemplatePreviewValues () {
+      return TEMPLATE_PREVIEW_VALUES
+    },
+    renderTemplatePreview (text) {
+      const source = String(text || '')
+      if (!source) return '-'
+      const previewValues = this.getTemplatePreviewValues()
+      return source.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, key) => {
+        return Object.prototype.hasOwnProperty.call(previewValues, key)
+          ? String(previewValues[key])
+          : match
+      })
     },
 
     // ─── Tab routing ──────────────────────────────────────────────────────
@@ -1858,6 +2042,161 @@ body.c-dark-theme .workflow-alert strong {
   min-height: 124px;
 }
 
+.template-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.95fr);
+  gap: 16px;
+  align-items: stretch;
+  border: 1px solid rgba(140, 21, 21, 0.12);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.template-editor__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.template-editor__preview {
+  min-width: 0;
+  display: flex;
+}
+
+.template-editor__textarea {
+  min-height: 160px;
+}
+
+.template-variable-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.template-variable-toolbar__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b0f0f;
+}
+
+.template-variable-toolbar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.template-variable-toolbar__chip {
+  border: 1px solid rgba(140, 21, 21, 0.18);
+  border-radius: 9999px;
+  padding: 6px 10px;
+  background: #fff7ee;
+  color: #7f1616;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.template-variable-toolbar__chip:hover {
+  background: #fff0d8;
+  border-color: rgba(181, 133, 34, 0.45);
+  transform: translateY(-1px);
+}
+
+.template-variable-toolbar__chip--muted {
+  background: #f8f4ff;
+  color: #4b4778;
+  border-color: rgba(75, 71, 120, 0.16);
+}
+
+.template-variable-toolbar__chip--muted:hover {
+  background: #efe7ff;
+  border-color: rgba(75, 71, 120, 0.28);
+}
+
+.template-variable-toolbar__chip--format {
+  background: #eef9f1;
+  color: #1f6b3c;
+  border-color: rgba(31, 107, 60, 0.18);
+}
+
+.template-variable-toolbar__chip--format:hover {
+  background: #def4e4;
+  border-color: rgba(31, 107, 60, 0.3);
+}
+
+.template-variable-toolbar__token {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.template-preview {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(140, 21, 21, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  overflow: hidden;
+}
+
+.template-preview__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(140, 21, 21, 0.06);
+  border-bottom: 1px solid rgba(140, 21, 21, 0.1);
+}
+
+.template-preview__title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7f1616;
+}
+
+.template-preview__field {
+  min-height: 0;
+  padding: 12px;
+}
+
+.template-preview__field + .template-preview__field {
+  border-top: 1px solid rgba(140, 21, 21, 0.08);
+}
+
+.template-preview__field:last-child {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.template-preview__label {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b0f0f;
+}
+
+.template-preview__value {
+  color: #24314e;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.55;
+}
+
+.template-preview__value--body {
+  flex: 1 1 auto;
+  min-height: 96px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
 [data-coreui-theme='dark'] .admin-email-widget__backdrop,
 body.c-dark-theme .admin-email-widget__backdrop {
   background: rgba(7, 13, 22, 0.58);
@@ -1911,6 +2250,88 @@ body.c-dark-theme .admin-email-widget__close-btn {
 body.c-dark-theme .admin-email-widget__close-btn:hover {
   color: #f5f9ff;
   background: rgba(143, 173, 206, 0.16);
+}
+
+[data-coreui-theme='dark'] .template-editor,
+body.c-dark-theme .template-editor {
+  background: rgba(24, 34, 48, 0.76);
+  border-color: rgba(103, 126, 154, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__label,
+body.c-dark-theme .template-variable-toolbar__label {
+  color: #c7d9ec;
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip,
+body.c-dark-theme .template-variable-toolbar__chip {
+  background: #253547;
+  color: #f2d7a3;
+  border-color: rgba(242, 215, 163, 0.2);
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip:hover,
+body.c-dark-theme .template-variable-toolbar__chip:hover {
+  background: #30465d;
+  border-color: rgba(242, 215, 163, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip--muted,
+body.c-dark-theme .template-variable-toolbar__chip--muted {
+  background: #213041;
+  color: #c3d7ff;
+  border-color: rgba(195, 215, 255, 0.2);
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip--muted:hover,
+body.c-dark-theme .template-variable-toolbar__chip--muted:hover {
+  background: #2b3e54;
+  border-color: rgba(195, 215, 255, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip--format,
+body.c-dark-theme .template-variable-toolbar__chip--format {
+  background: #1f3a2d;
+  color: #b8efc8;
+  border-color: rgba(184, 239, 200, 0.2);
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip--format:hover,
+body.c-dark-theme .template-variable-toolbar__chip--format:hover {
+  background: #284936;
+  border-color: rgba(184, 239, 200, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-preview,
+body.c-dark-theme .template-preview {
+  background: rgba(21, 31, 43, 0.92);
+  border-color: rgba(103, 126, 154, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-preview__header,
+body.c-dark-theme .template-preview__header {
+  background: rgba(41, 60, 82, 0.72);
+  border-bottom-color: rgba(103, 126, 154, 0.28);
+}
+
+[data-coreui-theme='dark'] .template-preview__title,
+body.c-dark-theme .template-preview__title {
+  color: #d8e7f8;
+}
+
+[data-coreui-theme='dark'] .template-preview__field + .template-preview__field,
+body.c-dark-theme .template-preview__field + .template-preview__field {
+  border-top-color: rgba(103, 126, 154, 0.22);
+}
+
+[data-coreui-theme='dark'] .template-preview__label,
+body.c-dark-theme .template-preview__label {
+  color: #c7d9ec;
+}
+
+[data-coreui-theme='dark'] .template-preview__value,
+body.c-dark-theme .template-preview__value {
+  color: #edf3fb;
 }
 
 [data-coreui-theme='dark'] .admin-settings-page /deep/ .send-modal .modal-content,
@@ -2062,6 +2483,14 @@ body.c-dark-theme .admin-settings-page::v-deep .admin-users-page .pagination .pa
 }
 
 @media (max-width: 768px) {
+  .template-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .template-editor__preview {
+    position: static;
+  }
+
   .admin-email-widget__fab { right: 16px; bottom: 16px; }
   .admin-email-widget__panel { right: 12px; left: 12px; bottom: 84px; width: auto; max-height: 76vh; }
 }
