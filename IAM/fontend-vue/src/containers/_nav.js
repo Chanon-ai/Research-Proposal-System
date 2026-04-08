@@ -58,27 +58,6 @@ export default [{
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'Projects',
-      to: '/admin/proposals',
-      icon: 'cil-folder-open',
-      roles: ['admin', 'legacy_admin']
-    },
-    {
-      _name: 'CSidebarNavItem',
-      name: 'Documents',
-      to: '/admin/documents',
-      icon: 'cil-description',
-      roles: ['admin', 'legacy_admin']
-    },
-    {
-      _name: 'CSidebarNavItem',
-      name: 'Users',
-      to: '/admin/users',
-      icon: 'cil-people',
-      roles: ['admin', 'legacy_admin']
-    },
-    {
-      _name: 'CSidebarNavItem',
       name: 'nav.meetings',
       to: '/admin/meetings',
       icon: 'cil-calendar',
@@ -176,7 +155,7 @@ export default [{
       name: 'nav.researchForm',
       to: '/research-form',
       icon: 'cil-notes',
-      roles: ['researcher', 'admin', 'chairman', 'committee']
+      roles: ['researcher', 'chairman', 'committee']
     }
   ]
 }]
