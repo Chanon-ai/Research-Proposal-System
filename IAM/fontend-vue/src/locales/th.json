@@ -874,6 +874,8 @@
       "checklistAnswer": "ระบุผล",
       "checklistYes": "มี",
       "checklistNo": "ไม่มี",
+      "checklistPass": "ผ่าน",
+      "checklistFail": "ไม่ผ่าน",
       "checklistCompleteRequired": "กรุณาระบุผลใน Checklist ให้ครบทุกข้อก่อนส่งผลการพิจารณา",
       "checklistCompleteRemaining": "เหลืออีก {count} ข้อ",
       "comments": "ข้อคิดเห็นและข้อเสนอแนะ",

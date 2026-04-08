@@ -119,22 +119,11 @@
         </div>
       </div>
 
-      <div v-if="showReadonlyChairmanChecklistCard" class="card mt-3 mb-3 review-summary-card" style="background: #fffaf0; border-color: #f3d19a;">
+      <div v-if="showReadonlyChairmanChecklistCard" class="card mt-3 mb-3 review-summary-card chairman-checklist-readonly">
         <div class="card-header">
           <strong>สรุป Checklist จากประธาน (Read Only)</strong>
         </div>
         <div class="card-body">
-          <div class="d-flex flex-wrap align-items-center mb-3 text-muted small" style="gap: 16px;">
-            <div class="d-inline-flex align-items-center">
-              <CIcon name="cil-check-circle" class="text-success mr-1" />
-              <span>เขียว = ผ่าน</span>
-            </div>
-            <div class="d-inline-flex align-items-center">
-              <CIcon name="cil-x-circle" class="text-danger mr-1" />
-              <span>แดง = ไม่ผ่าน</span>
-            </div>
-          </div>
-
           <div v-if="readonlyChairmanChecklistLoading" class="text-center py-3">
             <CSpinner size="sm" color="primary" />
             <span class="text-muted ml-2">กำลังโหลดผลการประเมินจากประธาน...</span>
@@ -199,19 +188,27 @@
                       <CBadge color="warning" class="chairman-review-card__badge">{{ section.checkedCount }}/{{ section.totalItems }} ข้อ</CBadge>
                     </div>
                     <div v-if="section.items.length" class="mt-2">
-                      <ul class="mb-0 pl-3 chairman-review-card__list">
-                        <li
-                          v-for="item in section.items"
+                      <div class="chairman-review-card__table">
+                        <div class="chairman-review-card__table-head">
+                          <div class="chairman-review-card__th-no">#</div>
+                          <div class="chairman-review-card__th-label">{{ $t('chairman.proposalDetail.checklistItemLabel') }}</div>
+                          <div class="chairman-review-card__th-result">{{ $t('chairman.proposalDetail.checklistAnswer') }}</div>
+                        </div>
+                        <div
+                          v-for="(item, itemIndex) in section.items"
                           :key="'readonly-chairman-' + card.reviewId + '-' + section.sectionKey + '-' + item.itemKey"
-                          class="chairman-review-card__list-item"
+                          class="chairman-review-card__row"
                         >
-                          <CIcon
-                            :name="item.checked ? 'cil-check-circle' : 'cil-x-circle'"
-                            :class="item.checked ? 'text-success mr-2' : 'text-danger mr-2'"
-                          />
-                          {{ item.label }}
-                        </li>
-                      </ul>
+                          <div class="chairman-review-card__cell-no">{{ itemIndex + 1 }}</div>
+                          <div class="chairman-review-card__cell-label">{{ item.label }}</div>
+                          <div class="chairman-review-card__cell-result">
+                            <span class="chairman-review-card__result" :class="item.checked ? 'is-pass' : 'is-fail'">
+                              <CIcon :name="item.checked ? 'cil-check-circle' : 'cil-x-circle'" class="chairman-review-card__result-icon" />
+                              <span class="chairman-review-card__result-text">{{ item.checked ? $t('chairman.proposalDetail.checklistPass') : $t('chairman.proposalDetail.checklistFail') }}</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <div v-else class="text-muted small mt-2">
                       ไม่มีรายการ checklist ในหัวข้อนี้
@@ -1515,6 +1512,7 @@ export default {
       return this.chairmanSubmittedReviews.map((review) => {
         const parsed = this.parseChairmanChecklistReview(review)
         const sections = Array.isArray(parsed.sections) ? parsed.sections : []
+
         const normalizedSections = sections.map((section) => {
           const items = Array.isArray(section && section.items) ? section.items : []
           const normalizedItems = items.map((item) => ({
@@ -7407,6 +7405,133 @@ export default {
   border-left-color: var(--rf-accent) !important;
 }
 
+.chairman-checklist-readonly {
+  border-color: rgba(197, 155, 58, 0.35) !important;
+}
+
+.chairman-review-card__badge {
+  border-radius: 999px !important;
+  padding: 4px 8px !important;
+  font-weight: 600 !important;
+  background: rgba(197, 155, 58, 0.14) !important;
+  color: #7a4f00 !important;
+  border: 1px solid rgba(197, 155, 58, 0.35) !important;
+  font-size: 0.74rem !important;
+}
+
+.chairman-review-card__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.chairman-review-card__section + .chairman-review-card__section {
+  padding-top: 12px;
+  border-top: 1px solid var(--rf-border);
+}
+
+.chairman-review-card__table {
+  border: 1px solid var(--rf-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.chairman-review-card__table-head {
+  display: grid;
+  grid-template-columns: 40px 1fr 96px;
+  gap: 12px;
+  align-items: center;
+  padding: 7px 9px;
+  background: rgba(197, 155, 58, 0.10);
+  border-bottom: 1px solid var(--rf-border);
+  color: var(--rf-muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.01em;
+}
+
+.chairman-review-card__th-no,
+.chairman-review-card__th-result {
+  text-align: center;
+  font-weight: 600;
+}
+
+.chairman-review-card__row {
+  display: grid;
+  grid-template-columns: 40px 1fr 96px;
+  gap: 12px;
+  align-items: start;
+  padding: 8px 9px;
+  border-bottom: 1px solid var(--rf-border);
+}
+
+.chairman-review-card__row:last-child {
+  border-bottom: 0;
+}
+
+.chairman-review-card__cell-no {
+  text-align: center;
+  font-weight: 700;
+  color: rgba(31, 41, 55, 0.64);
+}
+
+.chairman-review-card__cell-label {
+  line-height: 1.55;
+  color: var(--rf-text);
+  font-size: 0.88rem;
+}
+
+.chairman-review-card__cell-result {
+  display: flex;
+  justify-content: center;
+  padding-top: 2px;
+  align-items: center;
+}
+
+.chairman-review-card__result {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  min-width: 76px;
+  height: 28px;
+}
+
+.chairman-review-card__result-icon {
+  font-size: 0.95rem;
+}
+
+.chairman-review-card__result.is-pass {
+  background: rgba(25, 135, 84, 0.10);
+  border-color: rgba(25, 135, 84, 0.25);
+  color: #0f5132;
+}
+
+.chairman-review-card__result.is-fail {
+  background: rgba(220, 53, 69, 0.10);
+  border-color: rgba(220, 53, 69, 0.25);
+  color: #842029;
+}
+
+@media (max-width: 720px) {
+  .chairman-review-card__table-head,
+  .chairman-review-card__row {
+    grid-template-columns: 34px 1fr 84px;
+    gap: 10px;
+  }
+
+  .chairman-review-card__cell-label {
+    font-size: 0.86rem;
+  }
+}
+
 /* Ensure child scoped styles cannot re-introduce blue focus rings */
 .research-form ::v-deep .form-control:focus,
 .research-form ::v-deep textarea.form-control:focus,
@@ -7450,6 +7575,55 @@ export default {
 .research-form--dark ::v-deep .review-summary-card {
   background: #202c3a !important;
   border-color: #334458 !important;
+}
+
+.research-form--dark .chairman-checklist-readonly {
+  border-color: rgba(197, 155, 58, 0.22) !important;
+}
+
+.research-form--dark .chairman-review-card__badge {
+  background: rgba(197, 155, 58, 0.16) !important;
+  color: #f7d488 !important;
+  border-color: rgba(197, 155, 58, 0.28) !important;
+}
+
+.research-form--dark .chairman-review-card__table {
+  background: rgba(15, 23, 36, 0.35);
+  border-color: #2f3f52;
+}
+
+.research-form--dark .chairman-review-card__table-head {
+  background: rgba(197, 155, 58, 0.10);
+  border-bottom-color: #2f3f52;
+  color: #aab9ca;
+}
+
+.research-form--dark .chairman-review-card__row {
+  border-bottom-color: #2f3f52;
+}
+
+.research-form--dark .chairman-review-card__section + .chairman-review-card__section {
+  border-top-color: #2f3f52;
+}
+
+.research-form--dark .chairman-review-card__cell-no {
+  color: rgba(226, 232, 240, 0.62);
+}
+
+.research-form--dark .chairman-review-card__cell-label {
+  color: #e8eef7;
+}
+
+.research-form--dark .chairman-review-card__result.is-pass {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.28);
+  color: #a4f2c3;
+}
+
+.research-form--dark .chairman-review-card__result.is-fail {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.28);
+  color: #fecaca;
 }
 
 .research-form--dark .footer-fixed {

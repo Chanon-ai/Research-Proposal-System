@@ -874,6 +874,8 @@
       "checklistAnswer": "Result",
       "checklistYes": "Yes",
       "checklistNo": "No",
+      "checklistPass": "Pass",
+      "checklistFail": "Fail",
       "checklistCompleteRequired": "Please complete all checklist items before submitting.",
       "checklistCompleteRemaining": "{count} remaining",
       "comments": "Comments and suggestions",
