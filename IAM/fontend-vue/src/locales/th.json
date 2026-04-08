@@ -1,7 +1,11 @@
 {
   "common": {
     "show": "แสดง",
-    "viewAll": "ดูทั้งหมด"
+    "viewAll": "ดูทั้งหมด",
+    "cancel": "ยกเลิก",
+    "delete": "ลบ",
+    "remove": "ลบ",
+    "confirmDelete": "ยืนยันการลบ"
   },
   "header": {
     "language": "ภาษา",
@@ -25,6 +29,7 @@
     "committeeMenu": "เมนูคณะกรรมการ",
     "chairmanMenu": "เมนูประธานสำนัก",
     "financeMenu": "เมนูเจ้าหน้าที่การเงิน",
+    "notifications": "การแจ้งเตือน",
     "userPanel": "แผงผู้ใช้",
     "userDashboard": "โครงการของฉัน",
     "userMeetings": "กำหนดการประชุม",
@@ -766,6 +771,106 @@
       }
     }
   },
+  "committee": {
+    "projectProposal": {
+      "summary": {
+        "all": "ทั้งหมด",
+        "pending": "รอการประเมิน",
+        "reviewed": "ส่งผลการประเมินแล้ว",
+        "announced": "ประกาศผล"
+      },
+      "fallback": {
+        "noTitle": "(ไม่มีชื่อโครงการ)"
+      },
+      "table": {
+        "title": "ข้อเสนอโครงการที่ได้รับมอบหมาย",
+        "searchPlaceholder": "ค้นหา...",
+        "searchAria": "ค้นหาในตาราง",
+        "loading": "กำลังโหลดข้อมูลโครงการ...",
+        "loadError": "โหลดข้อมูลโครงการไม่สำเร็จ",
+        "viewDetail": "ดูรายละเอียด",
+        "empty": "ไม่พบข้อมูลที่ค้นหา",
+        "perPagePrefix": "แสดงต่อหน้า",
+        "perPageSuffix": "รายการ",
+        "columns": {
+          "projectId": "รหัสโครงการ",
+          "projectTitle": "ชื่อโครงการ",
+          "projectLeader": "หัวหน้าโครงการ",
+          "affiliation": "สังกัด",
+          "decision": "ผลประเมิน",
+          "status": "สถานะ"
+        }
+      },
+      "meetings": {
+        "title": "การประชุมที่ใกล้ถึงกำหนด",
+        "sub": "แสดงรายการการประชุมที่กำหนดไว้ในระยะใกล้",
+        "empty": "ไม่พบรายการการประชุมที่ใกล้ถึงกำหนด",
+        "type": {
+          "online": "ออนไลน์",
+          "onsite": "ออนไซต์"
+        },
+        "meta": {
+          "date": "วันที่",
+          "time": "เวลา",
+          "format": "รูปแบบ:",
+          "location": "สถานที่:",
+          "link": "ลิงก์:"
+        }
+      },
+      "notifs": {
+        "title": "การแจ้งเตือนที่สำคัญ",
+        "sub": "แสดงเหตุการณ์สำคัญล่าสุดเพื่อการติดตาม",
+        "empty": "ไม่พบรายการแจ้งเตือนล่าสุด",
+        "mock1": "มีโครงการส่งเข้าประเมิน",
+        "mock2": "มีคำขอแก้ไขเอกสาร",
+        "mock3": "กำหนดการประชุมถูกอัปเดต"
+      },
+      "decision": {
+        "notSubmitted": "ยังไม่ส่งผล",
+        "approve": "อนุมัติ",
+        "revise": "ขอแก้ไข",
+        "reject": "ไม่อนุมัติ",
+        "unspecified": "ไม่ระบุ"
+      },
+      "timeAgo": {
+        "soon": "อีกไม่นาน",
+        "justNow": "เมื่อสักครู่",
+        "inMinutes": "อีก {count} นาที",
+        "minutesAgo": "{count} นาทีที่แล้ว",
+        "inHours": "อีก {count} ชั่วโมง",
+        "hoursAgo": "{count} ชั่วโมงที่แล้ว",
+        "inDays": "อีก {count} วัน",
+        "daysAgo": "{count} วันที่แล้ว",
+        "inMonths": "อีก {count} เดือน",
+        "monthsAgo": "{count} เดือนที่แล้ว",
+        "inYears": "อีก {count} ปี",
+        "yearsAgo": "{count} ปีที่แล้ว"
+      },
+      "badge": {
+        "pending": "รอการประเมิน",
+        "underReview": "พิจารณารอบ {roundNo}",
+        "reviewed": "กรรมการได้ให้ความเห็นแล้ว",
+        "revisionRequested": "ขอแก้ไข",
+        "resubmitted": "ส่งแก้ไขแล้ว",
+        "announced": "ประกาศผล",
+        "approved": "อนุมัติ",
+        "rejected": "ไม่อนุมัติ"
+      },
+      "progress": {
+        "assigned": "คณะกรรมการ : รอการประเมิน",
+        "underReview": "คณะกรรมการ : พิจารณารอบ {roundNo}",
+        "reviewed": "คณะกรรมการ : ส่งผลการประเมินแล้ว",
+        "revisionRequested": "นักวิจัย : ขอแก้ไข",
+        "resubmitted": "นักวิจัย : ส่งแก้ไขแล้ว",
+        "announced": "สำนักงานบริหารโครงการ : ประกาศผล",
+        "inProgress": "ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ"
+      },
+      "lastAction": {
+        "prefix": "เวลาล่าสุด:",
+        "missing": "เวลาล่าสุด: ไม่พบข้อมูลเวลา"
+      }
+    }
+  },
   "chairman": {
     "dashboard": {
       "title": "สรุปภาพรวมประธานสำนัก",
@@ -844,6 +949,92 @@
         "updatedAt": "อัปเดตล่าสุด"
       }
     },
+    "projectProposal": {
+      "tiles": {
+        "all": "ทั้งหมด",
+        "pending": "รอการพิจารณา",
+        "approved": "ประธานอนุมัติ",
+        "rejected": "ประธานไม่อนุมัติ"
+      },
+      "assignedCardTitle": "ข้อเสนอโครงการที่ได้รับมอบหมาย",
+      "searchPlaceholder": "ค้นหา...",
+      "searchAria": "ค้นหาในตาราง",
+      "loading": "กำลังโหลดข้อมูลโครงการ...",
+      "loadFailedTitle": "โหลดข้อมูลโครงการไม่สำเร็จ",
+      "emptySearch": "ไม่พบข้อมูลที่ค้นหา",
+      "viewAll": "ดูทั้งหมด",
+      "viewDetail": "ดูรายละเอียด",
+      "noTitle": "(ไม่มีชื่อโครงการ)",
+      "fields": {
+        "code": "รหัสโครงการ",
+        "title": "ชื่อโครงการ",
+        "leader": "หัวหน้าโครงการ",
+        "affiliation": "สังกัด",
+        "decision": "ผลประเมิน",
+        "status": "สถานะ"
+      },
+      "table": {
+        "perPageLabel": "แสดงต่อหน้า",
+        "perPageAria": "แสดงต่อหน้า",
+        "itemsSuffix": "รายการ"
+      },
+      "decision": {
+        "notSubmitted": "ยังไม่ส่งผล",
+        "approve": "อนุมัติ",
+        "reject": "ไม่อนุมัติ",
+        "unspecified": "ไม่ระบุ"
+      },
+      "status": {
+        "pending": "รอการพิจารณา",
+        "approved": "อนุมัติแล้ว",
+        "rejected": "ไม่อนุมัติ",
+        "other": "อยู่ระหว่างดำเนินการ"
+      },
+      "progress": {
+        "pending": "ประธานสำนัก : รอพิจารณา/กำลังพิจารณา",
+        "approved": "ประธานสำนัก : อนุมัติแล้ว",
+        "rejected": "ประธานสำนัก : ไม่อนุมัติ",
+        "other": "ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ"
+      },
+      "latest": {
+        "label": "เวลาล่าสุด: {time}",
+        "noTime": "เวลาล่าสุด: ไม่พบข้อมูลเวลา"
+      },
+      "timeAgo": {
+        "justNow": "เมื่อสักครู่",
+        "soon": "อีกไม่นาน",
+        "minutesAgo": "{count} นาทีที่แล้ว",
+        "hoursAgo": "{count} ชั่วโมงที่แล้ว",
+        "daysAgo": "{count} วันที่แล้ว",
+        "monthsAgo": "{count} เดือนที่แล้ว",
+        "yearsAgo": "{count} ปีที่แล้ว",
+        "inMinutes": "อีก {count} นาที",
+        "inHours": "อีก {count} ชั่วโมง",
+        "inDays": "อีก {count} วัน",
+        "inMonths": "อีก {count} เดือน",
+        "inYears": "อีก {count} ปี"
+      },
+      "meetings": {
+        "title": "การประชุมที่ใกล้ถึงกำหนด",
+        "subtitle": "แสดงรายการการประชุมที่กำหนดไว้ในระยะใกล้",
+        "empty": "ไม่พบรายการการประชุมที่ใกล้ถึงกำหนด",
+        "metaDate": "วันที่ {date}",
+        "metaTime": "เวลา {time} น.",
+        "metaFormat": "รูปแบบ: {format}",
+        "metaLocation": "สถานที่: {location}",
+        "metaLink": "ลิงก์: {link}",
+        "typeOnline": "ออนไลน์",
+        "typeOnsite": "ออนไซต์"
+      },
+      "notifs": {
+        "title": "การแจ้งเตือนที่สำคัญ",
+        "subtitle": "แสดงเหตุการณ์สำคัญล่าสุดเพื่อการติดตาม",
+        "empty": "ไม่พบรายการแจ้งเตือนล่าสุด",
+        "mock1": "มีโครงการส่งเข้าประเมิน",
+        "mock2": "มีคำขอแก้ไขเอกสาร",
+        "mock3": "กำหนดการประชุมถูกอัปเดต"
+      }
+    },
     "meetings": {
       "hero": {
         "eyebrow": "Chairman Meetings",
@@ -864,13 +1055,34 @@
       "submitted": "ส่งผลการพิจารณาเรียบร้อยแล้ว (ส่งซ้ำไม่ได้)",
       "draftSaved": "บันทึกฉบับร่างแล้ว",
       "rubricTitle": "Template checklist ตามประเภททุน",
-      "fundingLabel": "ประเภททุนที่ใช้อ้างอิง template",
+      "fundingLabel": "ประเภททุนที่ใช้อ้างอิง",
       "fundingHelp": "Template นี้ดึงจาก backend setting ตามทุนที่ผู้ยื่นเลือกไว้",
       "emptyChecklist": "ยังไม่มี checklist item ใน template นี้ ตอนนี้เว้นส่วนนี้ไว้สำหรับ import ภายหลัง",
+      "checklistItemLabel": "หัวข้อการพิจารณา",
+      "checklistAnswer": "ระบุผล",
+      "checklistYes": "มี",
+      "checklistNo": "ไม่มี",
+      "checklistPass": "ผ่าน",
+      "checklistFail": "ไม่ผ่าน",
+      "checklistCompleteRequired": "กรุณาระบุผลใน Checklist ให้ครบทุกข้อก่อนส่งผลการพิจารณา",
+      "checklistCompleteRemaining": "เหลืออีก {count} ข้อ",
       "comments": "ข้อคิดเห็นและข้อเสนอแนะ",
       "commentsPlaceholder": "พิมพ์ความคิดเห็น...",
-      "uploadLabel": "อัปโหลดไฟล์ประกอบการพิจารณาเพิ่มเติม (ยังไม่เชื่อม import จริง)",
+      "uploadLabel": "อัปโหลดไฟล์",
+      "pickFile": "เลือกไฟล์",
+      "uploading": "กำลังอัปโหลด...",
+      "fileNotSupportedTitle": "ไฟล์ไม่รองรับ",
+      "fileNotSupportedText": "กรุณาแนบไฟล์ PDF / Word / Excel",
+      "uploadSuccessTitle": "อัปโหลดไฟล์สำเร็จ",
+      "uploadErrorTitle": "อัปโหลดไฟล์ไม่สำเร็จ",
+      "uploadErrorText": "กรุณาลองใหม่อีกครั้ง",
       "selectedFile": "ไฟล์ที่เลือก: {name}",
+      "viewFile": "ดูไฟล์",
+      "deleteFile": "ลบ",
+      "deleteFileConfirmTitle": "ต้องการลบไฟล์นี้ใช่ไหม?",
+      "deleteFileConfirmText": "{name}",
+      "deleteFileSuccessTitle": "ลบไฟล์สำเร็จ",
+      "deleteFileErrorTitle": "ลบไฟล์ไม่สำเร็จ",
       "signature": {
         "title": "ลายเซ็นต์ประธาน",
         "required": "จำเป็นก่อนส่ง",
@@ -911,8 +1123,12 @@
         "alreadySubmittedTitle": "ส่งผลการพิจารณาแล้ว",
         "alreadySubmittedText": "รายการนี้ส่งได้เพียงครั้งเดียว และไม่สามารถส่งซ้ำได้",
         "cannotSubmitTitle": "ไม่สามารถส่งผลการพิจารณาได้",
+        "confirmSubmitTitle": "ยืนยันการส่งผลการพิจารณา?",
+        "confirmSubmitText": "ตรวจสอบข้อมูลให้ครบถ้วนก่อนกดยืนยัน",
         "signatureRequiredTitle": "ยังไม่ได้ลงลายเซ็นต์",
         "signatureRequiredText": "กรุณาลงลายเซ็นต์ของประธานก่อนส่งผลการพิจารณา",
+        "draftSavedTitle": "บันทึกฉบับร่างแล้ว",
+        "draftSavedText": "สามารถกลับมาแก้ไขภายหลังได้",
         "submitSuccessTitle": "ส่งผลการพิจารณาสำเร็จ",
         "submitSuccessText": "ระบบได้บันทึกผลการพิจารณาเรียบร้อยแล้ว",
         "duplicateSubmitText": "ระบบไม่อนุญาตให้ส่งซ้ำ เนื่องจากมีการส่งผลการพิจารณาไปแล้ว",

@@ -24,7 +24,7 @@ export default [{
           roles: ['researcher']
         },
         {
-          name: 'Notifications',
+          name: 'nav.notifications',
           to: '/user/notification',
           roles: ['researcher']
         }
@@ -65,7 +65,7 @@ export default [{
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'Notifications',
+      name: 'nav.notifications',
       to: '/admin/notifications',
       icon: 'cil-bell',
       roles: ['admin', 'legacy_admin']
@@ -105,7 +105,7 @@ export default [{
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'Notifications',
+      name: 'nav.notifications',
       to: '/committee/notifications',
       icon: 'cil-bell',
       roles: ['committee']
@@ -138,7 +138,7 @@ export default [{
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'Notifications',
+      name: 'nav.notifications',
       to: '/chairman/notifications',
       icon: 'cil-bell',
       roles: ['chairman']
@@ -178,7 +178,7 @@ export default [{
     },
     {
       _name: 'CSidebarNavItem',
-      name: 'header.notifications',
+      name: 'nav.notifications',
       to: '/finance-officer/notifications',
       icon: 'cil-bell',
       roles: ['finance_officer']

@@ -29,12 +29,12 @@
         <CCard class="no-table-divider reviewer-dashboard-card">
           <CCardHeader class="dashboard-card-header">
             <div class="dashboard-card-header__row">
-              <div class="dashboard-card-title">ข้อเสนอโครงการที่ได้รับมอบหมาย</div>
+              <div class="dashboard-card-title">{{ $t('committee.projectProposal.table.title') }}</div>
               <div class="header-tools">
                 <CInput
                   class="search-input"
-                  placeholder="ค้นหา..."
-                  aria-label="ค้นหาในตาราง"
+                  :placeholder="$t('committee.projectProposal.table.searchPlaceholder')"
+                  :aria-label="$t('committee.projectProposal.table.searchAria')"
                   :value.sync="searchQuery"
                 />
               </div>
@@ -43,10 +43,10 @@
           <CCardBody class="card-body-tight">
               <div v-if="loading" class="text-center py-4">
                 <CSpinner color="primary" size="sm" />
-                <span class="text-muted ml-2">กำลังโหลดข้อมูลโครงการ...</span>
+                <span class="text-muted ml-2">{{ $t('committee.projectProposal.table.loading') }}</span>
               </div>
               <div v-else-if="fetchError" class="text-center py-4">
-                <div class="text-danger mb-2">โหลดข้อมูลโครงการไม่สำเร็จ</div>
+                <div class="text-danger mb-2">{{ $t('committee.projectProposal.table.loadError') }}</div>
                 <small class="text-muted">{{ fetchError }}</small>
               </div>
               <div class="table-surface">
@@ -54,7 +54,7 @@
                   hover
                   striped
                   :items="displayItems"
-                  :fields="fields"
+                  :fields="tableFields"
                   :items-per-page="perPage"
                   :active-page="activePage"
                   :sorter="{ resetable: false }"
@@ -81,21 +81,21 @@
                   <template #action="{item}">
                     <td>
                       <CButton v-if="canAccessCommitteeProposalDetail" size="sm" color="primary" variant="outline" @click="view(item)">
-                        <CIcon name="cil-folder-open" class="mr-1" /> ดูรายละเอียด
+                        <CIcon name="cil-folder-open" class="mr-1" /> {{ $t('committee.projectProposal.table.viewDetail') }}
                       </CButton>
                     </td>
                   </template>
                 </CDataTable>
                 <div v-if="displayItems.length === 0" class="text-muted text-center py-4">
-                  ไม่พบข้อมูลที่ค้นหา
+                  {{ $t('committee.projectProposal.table.empty') }}
                 </div>
                 <div class="table-footer">
                   <div class="table-footer__left">
-                    <span class="table-footer__label">แสดงต่อหน้า</span>
-                    <select v-model.number="perPage" class="form-control form-control-sm per-page-select" aria-label="แสดงต่อหน้า">
+                    <span class="table-footer__label">{{ $t('committee.projectProposal.table.perPagePrefix') }}</span>
+                    <select v-model.number="perPage" class="form-control form-control-sm per-page-select" :aria-label="$t('committee.projectProposal.table.perPagePrefix')">
                       <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
                     </select>
-                    <span class="table-footer__suffix">รายการ</span>
+                    <span class="table-footer__suffix">{{ $t('committee.projectProposal.table.perPageSuffix') }}</span>
                   </div>
                   <div class="table-footer__right">
                     <CPagination
@@ -117,29 +117,24 @@
     <div class="committee-dashboard-row mb-4">
       <div class="committee-block committee-block-meetings">
         <div class="block-head">
-          <div class="block-head-left">
-            <span class="block-icon block-icon--meetings" aria-hidden="true">
-              <CIcon name="cil-calendar" />
-            </span>
-            <div>
-              <div class="block-title">การประชุมที่ใกล้ถึงกำหนด</div>
-              <div class="block-sub">แสดงรายการการประชุมที่กำหนดไว้ในระยะใกล้</div>
+            <div class="block-head-left">
+              <span class="block-icon block-icon--meetings" aria-hidden="true">
+                <CIcon name="cil-calendar" />
+              </span>
+              <div>
+                <div class="block-title">{{ $t('committee.projectProposal.meetings.title') }}</div>
+                <div class="block-sub">{{ $t('committee.projectProposal.meetings.sub') }}</div>
+              </div>
             </div>
-          </div>
-          <CButton v-if="canAccessCommitteeMeetings" class="block-action" size="sm" color="primary" variant="outline" @click="goToMeetings"><CIcon name="cil-folder-open" class="mr-1" /> ดูทั้งหมด</CButton>
+          <CButton v-if="canAccessCommitteeMeetings" class="block-action" size="sm" color="primary" variant="outline" @click="goToMeetings"><CIcon name="cil-folder-open" class="mr-1" /> {{ $t('common.viewAll') }}</CButton>
         </div>
-        <div v-if="nextMeetings.length === 0" class="block-empty">ไม่พบรายการการประชุมที่ใกล้ถึงกำหนด</div>
+        <div v-if="nextMeetings.length === 0" class="block-empty">{{ $t('committee.projectProposal.meetings.empty') }}</div>
         <div v-else class="block-list">
           <div v-for="meeting in nextMeetings" :key="meeting.id" class="block-item">
             <span class="item-bullet" aria-hidden="true" />
             <div class="item-body">
               <div class="item-title">{{ meeting.title }}</div>
-              <div class="item-meta">
-                วันที่ {{ meeting.date }} เวลา {{ meeting.time }} น.
-                <span class="ml-1">| รูปแบบ: {{ meeting.typeLabel }}</span>
-                <span v-if="meeting.type === 'onsite' && meeting.location" class="ml-1">| สถานที่: {{ meeting.location }}</span>
-                <span v-else-if="meeting.type === 'online' && meeting.videoLink" class="ml-1">| ลิงก์: {{ meeting.videoLink }}</span>
-              </div>
+              <div class="item-meta">{{ meetingMeta(meeting) }}</div>
             </div>
           </div>
         </div>
@@ -147,17 +142,17 @@
       <div class="committee-block committee-block-notifs">
         <div class="block-head">
           <div class="block-head-left">
-            <span class="block-icon block-icon--notifs" aria-hidden="true">
-              <CIcon name="cil-bell" />
-            </span>
-            <div>
-              <div class="block-title">การแจ้งเตือนที่สำคัญ</div>
-              <div class="block-sub">แสดงเหตุการณ์สำคัญล่าสุดเพื่อการติดตาม</div>
+              <span class="block-icon block-icon--notifs" aria-hidden="true">
+                <CIcon name="cil-bell" />
+              </span>
+              <div>
+                <div class="block-title">{{ $t('committee.projectProposal.notifs.title') }}</div>
+                <div class="block-sub">{{ $t('committee.projectProposal.notifs.sub') }}</div>
+              </div>
             </div>
-          </div>
-          <CButton v-if="canAccessCommitteeNotifications" class="block-action" size="sm" color="primary" variant="outline" @click="goToNotifications"><CIcon name="cil-folder-open" class="mr-1" /> ดูทั้งหมด</CButton>
+          <CButton v-if="canAccessCommitteeNotifications" class="block-action" size="sm" color="primary" variant="outline" @click="goToNotifications"><CIcon name="cil-folder-open" class="mr-1" /> {{ $t('common.viewAll') }}</CButton>
         </div>
-        <div v-if="latestNotifs.length === 0" class="block-empty">ไม่พบรายการแจ้งเตือนล่าสุด</div>
+        <div v-if="latestNotifs.length === 0" class="block-empty">{{ $t('committee.projectProposal.notifs.empty') }}</div>
         <div v-else class="block-list">
           <div v-for="note in latestNotifs" :key="note.id" class="block-item">
             <span class="item-bullet" aria-hidden="true" />
@@ -220,15 +215,6 @@ export default {
       perPageOptions: [5, 10, 20, 50],
       nextMeetings: [],
       latestNotifs: [],
-      fields: [
-        { key: 'id', label: 'รหัสโครงการ', _classes: 'font-weight-bold' },
-        { key: 'title', label: 'ชื่อโครงการ' },
-        { key: 'researcherName', label: 'หัวหน้าโครงการ' },
-        { key: 'faculty', label: 'สังกัด' },
-        { key: 'decisionDisplay', label: 'ผลประเมิน', _style: 'text-align:center; min-width:140px;' },
-        { key: 'statusDisplay', label: 'สถานะ', _style: 'width:360px; text-align:center;' },
-        { key: 'action', label: '', sorter: false, filter: false }
-      ],
       rolePageAccessConfig: createDefaultRolePageAccessConfig()
     }
   },
@@ -241,6 +227,17 @@ export default {
     this.fetchSidePanels()
   },
   computed: {
+    tableFields () {
+      return [
+        { key: 'id', label: this.$t('committee.projectProposal.table.columns.projectId'), _classes: 'font-weight-bold' },
+        { key: 'title', label: this.$t('committee.projectProposal.table.columns.projectTitle') },
+        { key: 'researcherName', label: this.$t('committee.projectProposal.table.columns.projectLeader') },
+        { key: 'faculty', label: this.$t('committee.projectProposal.table.columns.affiliation') },
+        { key: 'decisionDisplay', label: this.$t('committee.projectProposal.table.columns.decision'), _style: 'text-align:center; min-width:140px;' },
+        { key: 'statusDisplay', label: this.$t('committee.projectProposal.table.columns.status'), _style: 'width:360px; text-align:center;' },
+        { key: 'action', label: '', sorter: false, filter: false }
+      ]
+    },
     currentUser () {
       try {
         const raw = localStorage.getItem('auth_user')
@@ -339,7 +336,7 @@ export default {
         return {
           id: p.proposalCode || p._id || '-',
           proposalId,
-          title: p.projectTitleTh || p.projectTitleEn || '(ไม่มีชื่อโครงการ)',
+          title: p.projectTitleTh || p.projectTitleEn || this.$t('committee.projectProposal.fallback.noTitle'),
           researcherName: p.projectLeaderName || leader.name || '-',
           faculty: resolveAffiliation(p, snapshot),
           status: currentStatus,
@@ -384,10 +381,10 @@ export default {
       }))
       const countBy = status => base.filter(p => p.bucketStatus === status).length
       return [
-        { key: 'ALL', label: 'ทั้งหมด', icon: 'cil-list', filter: 'all', count: base.length },
-        { key: 'PENDING', label: 'รอการประเมิน', icon: 'cil-clock', filter: 'pending', count: countBy('pending') },
-        { key: 'REVIEWED', label: 'ส่งผลการประเมินแล้ว', icon: 'cil-check-circle', filter: 'reviewed', count: countBy('reviewed') },
-        { key: 'ANNOUNCED', label: 'ประกาศผล', icon: 'cil-bullhorn', filter: 'announced', count: countBy('announced') }
+        { key: 'ALL', label: this.$t('committee.projectProposal.summary.all'), icon: 'cil-list', filter: 'all', count: base.length },
+        { key: 'PENDING', label: this.$t('committee.projectProposal.summary.pending'), icon: 'cil-clock', filter: 'pending', count: countBy('pending') },
+        { key: 'REVIEWED', label: this.$t('committee.projectProposal.summary.reviewed'), icon: 'cil-check-circle', filter: 'reviewed', count: countBy('reviewed') },
+        { key: 'ANNOUNCED', label: this.$t('committee.projectProposal.summary.announced'), icon: 'cil-bullhorn', filter: 'announced', count: countBy('announced') }
       ]
     },
     tableItems () {
@@ -434,6 +431,11 @@ export default {
     }
   },
   methods: {
+    isEnglishLocale () {
+      const raw = this.$i18n && this.$i18n.locale ? String(this.$i18n.locale) : ''
+      const normalized = raw.trim().toLowerCase()
+      return normalized === 'en' || normalized.startsWith('en-') || normalized.startsWith('en_')
+    },
     async fetchRolePageAccessConfig () {
       try {
         const config = await loadRolePageAccessRuntimeConfig()
@@ -445,12 +447,12 @@ export default {
       }
     },
     decisionLabel (decision, isReviewed) {
-      if (!isReviewed) return 'ยังไม่ส่งผล'
+      if (!isReviewed) return this.$t('committee.projectProposal.decision.notSubmitted')
       const key = String(decision || '').toLowerCase()
-      if (key === 'approve') return 'อนุมัติ'
-      if (key === 'revise') return 'ขอแก้ไข'
-      if (key === 'reject') return 'ไม่อนุมัติ'
-      return 'ไม่ระบุ'
+      if (key === 'approve') return this.$t('committee.projectProposal.decision.approve')
+      if (key === 'revise') return this.$t('committee.projectProposal.decision.revise')
+      if (key === 'reject') return this.$t('committee.projectProposal.decision.reject')
+      return this.$t('committee.projectProposal.decision.unspecified')
     },
     timeAgo (value) {
       if (!value) return '-'
@@ -462,22 +464,34 @@ export default {
       const absMs = Math.abs(diffMs)
 
       const sec = Math.floor(absMs / 1000)
-      if (sec < 45) return isFuture ? 'อีกไม่นาน' : 'เมื่อสักครู่'
+      if (sec < 45) return isFuture
+        ? this.$t('committee.projectProposal.timeAgo.soon')
+        : this.$t('committee.projectProposal.timeAgo.justNow')
 
       const min = Math.floor(sec / 60)
-      if (min < 60) return isFuture ? `อีก ${min} นาที` : `${min} นาทีที่แล้ว`
+      if (min < 60) return isFuture
+        ? this.$t('committee.projectProposal.timeAgo.inMinutes', { count: min })
+        : this.$t('committee.projectProposal.timeAgo.minutesAgo', { count: min })
 
       const hr = Math.floor(min / 60)
-      if (hr < 24) return isFuture ? `อีก ${hr} ชั่วโมง` : `${hr} ชั่วโมงที่แล้ว`
+      if (hr < 24) return isFuture
+        ? this.$t('committee.projectProposal.timeAgo.inHours', { count: hr })
+        : this.$t('committee.projectProposal.timeAgo.hoursAgo', { count: hr })
 
       const day = Math.floor(hr / 24)
-      if (day < 30) return isFuture ? `อีก ${day} วัน` : `${day} วันที่แล้ว`
+      if (day < 30) return isFuture
+        ? this.$t('committee.projectProposal.timeAgo.inDays', { count: day })
+        : this.$t('committee.projectProposal.timeAgo.daysAgo', { count: day })
 
       const month = Math.floor(day / 30)
-      if (month < 12) return isFuture ? `อีก ${month} เดือน` : `${month} เดือนที่แล้ว`
+      if (month < 12) return isFuture
+        ? this.$t('committee.projectProposal.timeAgo.inMonths', { count: month })
+        : this.$t('committee.projectProposal.timeAgo.monthsAgo', { count: month })
 
       const year = Math.floor(month / 12)
-      return isFuture ? `อีก ${year} ปี` : `${year} ปีที่แล้ว`
+      return isFuture
+        ? this.$t('committee.projectProposal.timeAgo.inYears', { count: year })
+        : this.$t('committee.projectProposal.timeAgo.yearsAgo', { count: year })
     },
     loadLatestNotifsCache () {
       try {
@@ -502,9 +516,9 @@ export default {
     getMockLatestNotifs () {
       const now = Date.now()
       return [
-        { id: 'mock-1', title: 'มีโครงการส่งเข้าประเมิน', time: this.timeAgo(new Date(now - 2 * 60 * 1000).toISOString()), timestamp: new Date(now - 2 * 60 * 1000).toISOString() },
-        { id: 'mock-2', title: 'มีคำขอแก้ไขเอกสาร', time: this.timeAgo(new Date(now - 25 * 60 * 1000).toISOString()), timestamp: new Date(now - 25 * 60 * 1000).toISOString() },
-        { id: 'mock-3', title: 'กำหนดการประชุมถูกอัปเดต', time: this.timeAgo(new Date(now - 2 * 60 * 60 * 1000).toISOString()), timestamp: new Date(now - 2 * 60 * 60 * 1000).toISOString() }
+        { id: 'mock-1', title: this.$t('committee.projectProposal.notifs.mock1'), time: this.timeAgo(new Date(now - 2 * 60 * 1000).toISOString()), timestamp: new Date(now - 2 * 60 * 1000).toISOString() },
+        { id: 'mock-2', title: this.$t('committee.projectProposal.notifs.mock2'), time: this.timeAgo(new Date(now - 25 * 60 * 1000).toISOString()), timestamp: new Date(now - 25 * 60 * 1000).toISOString() },
+        { id: 'mock-3', title: this.$t('committee.projectProposal.notifs.mock3'), time: this.timeAgo(new Date(now - 2 * 60 * 60 * 1000).toISOString()), timestamp: new Date(now - 2 * 60 * 60 * 1000).toISOString() }
       ]
     },
     async fetchSidePanels () {
@@ -513,19 +527,35 @@ export default {
         this.fetchLatestNotifications()
       ])
     },
-    formatThaiDate (dateStr) {
+    formatLocaleDate (dateStr) {
       if (!dateStr) return '-'
       const d = new Date(dateStr)
       if (Number.isNaN(d.getTime())) return '-'
-      return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      return d.toLocaleDateString(this.isEnglishLocale() ? 'en-GB' : 'th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })
     },
-    formatThaiDateTime (dateStr) {
+    formatLocaleDateTime (dateStr) {
       if (!dateStr) return '-'
       const d = new Date(dateStr)
       if (Number.isNaN(d.getTime())) return '-'
-      const date = new Intl.DateTimeFormat('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d)
-      const time = new Intl.DateTimeFormat('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
-      return `${date} ${time} น.`
+      const locale = this.isEnglishLocale() ? 'en-GB' : 'th-TH'
+      const date = new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d)
+      const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hour12: false }).format(d)
+      return this.isEnglishLocale()
+        ? `${date} ${time}`
+        : `${date} ${time} น.`
+    },
+    meetingMeta (meeting) {
+      if (!meeting || typeof meeting !== 'object') return ''
+      const datePart = `${this.$t('committee.projectProposal.meetings.meta.date')} ${meeting.date || '-'}`
+      const timePart = `${this.$t('committee.projectProposal.meetings.meta.time')} ${meeting.time || '-'}`
+      const formatPart = `${this.$t('committee.projectProposal.meetings.meta.format')} ${meeting.typeLabel || '-'}`
+      const segments = [datePart, timePart, formatPart]
+      if (meeting.type === 'onsite' && meeting.location) {
+        segments.push(`${this.$t('committee.projectProposal.meetings.meta.location')} ${meeting.location}`)
+      } else if (meeting.type === 'online' && meeting.videoLink) {
+        segments.push(`${this.$t('committee.projectProposal.meetings.meta.link')} ${meeting.videoLink}`)
+      }
+      return segments.join(' | ')
     },
     async fetchNextMeetings () {
       try {
@@ -540,10 +570,12 @@ export default {
           return {
             id: m && (m._id || m.id) ? String(m._id || m.id) : '',
             title: (m && m.title) || '-',
-            date: this.formatThaiDate(m && m.meetingDate),
+            date: this.formatLocaleDate(m && m.meetingDate),
             time: `${(m && m.startTime) || '-'}${(m && m.endTime) ? ` - ${m.endTime}` : ''}`,
             type,
-            typeLabel: type === 'online' ? 'ออนไลน์' : 'ออนไซต์',
+            typeLabel: type === 'online'
+              ? this.$t('committee.projectProposal.meetings.type.online')
+              : this.$t('committee.projectProposal.meetings.type.onsite'),
             location,
             videoLink
           }
@@ -751,7 +783,20 @@ export default {
         ? Number(roundNo)
         : (String(status || '').toLowerCase() === 'second_round_review' ? 2 : 1)
       const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)
-      return getProposalStatusLabel(displayStatus, STATUS_LABELS, resolvedRound)
+      if (!this.isEnglishLocale()) return getProposalStatusLabel(displayStatus, STATUS_LABELS, resolvedRound)
+
+      const safeRound = Number(resolvedRound) > 0 ? Number(resolvedRound) : 1
+      if (displayStatus === 'under_review' || displayStatus === 'second_round_review') {
+        return this.$t('committee.projectProposal.badge.underReview', { roundNo: safeRound })
+      }
+      if (displayStatus === 'assigned_to_committee') return this.$t('committee.projectProposal.badge.pending')
+      if (displayStatus === 'committee_valuated') return this.$t('committee.projectProposal.badge.reviewed')
+      if (displayStatus === 'revision_requested') return this.$t('committee.projectProposal.badge.revisionRequested')
+      if (displayStatus === 'resubmitted') return this.$t('committee.projectProposal.badge.resubmitted')
+      if (displayStatus === 'announced') return this.$t('committee.projectProposal.badge.announced')
+      if (displayStatus === 'approved') return this.$t('committee.projectProposal.badge.approved')
+      if (displayStatus === 'rejected') return this.$t('committee.projectProposal.badge.rejected')
+      return String(displayStatus || '-')
     },
     statusColor (status, reviewStatus = null) {
       const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)
@@ -765,51 +810,24 @@ export default {
       const safeRound = Number(roundNo) > 0 ? Number(roundNo) : 1
       const displayStatus = this.getCommitteeDisplayStatus(status, reviewStatus)
 
-      if (displayStatus === 'assigned_to_committee') return 'คณะกรรมการ : รอการประเมิน'
+      if (displayStatus === 'assigned_to_committee') return this.$t('committee.projectProposal.progress.assigned')
       if (displayStatus === 'under_review' || displayStatus === 'second_round_review') {
-        return `คณะกรรมการ : พิจารณารอบ ${safeRound}`
+        return this.$t('committee.projectProposal.progress.underReview', { roundNo: safeRound })
       }
-      if (displayStatus === 'committee_valuated') return 'คณะกรรมการ : ส่งผลการประเมินแล้ว'
-      if (displayStatus === 'revision_requested') return 'นักวิจัย : ขอแก้ไข'
-      if (displayStatus === 'resubmitted') return 'นักวิจัย : ส่งแก้ไขแล้ว'
-      if (displayStatus === 'announced') return 'สำนักงานบริหารโครงการ : ประกาศผล'
+      if (displayStatus === 'committee_valuated') return this.$t('committee.projectProposal.progress.reviewed')
+      if (displayStatus === 'revision_requested') return this.$t('committee.projectProposal.progress.revisionRequested')
+      if (displayStatus === 'resubmitted') return this.$t('committee.projectProposal.progress.resubmitted')
+      if (displayStatus === 'announced') return this.$t('committee.projectProposal.progress.announced')
 
-      return 'ส่วนบริหารโครงการ : อยู่ระหว่างดำเนินการ'
+      return this.$t('committee.projectProposal.progress.inProgress')
     },
     getLastActionElapsedLabel (value) {
       const elapsed = this.formatLatest(value)
-      if (!elapsed || elapsed === '-') return 'เวลาล่าสุด: ไม่พบข้อมูลเวลา'
-      return `เวลาล่าสุด: ${elapsed}`
+      if (!elapsed || elapsed === '-') return this.$t('committee.projectProposal.lastAction.missing')
+      return `${this.$t('committee.projectProposal.lastAction.prefix')} ${elapsed}`
     },
     formatLatest (value) {
-      if (!value) return '-'
-      const date = new Date(value)
-      if (Number.isNaN(date.getTime())) return String(value)
-      const diffMs = Date.now() - date.getTime()
-
-      if (diffMs < 0) {
-        const sec = Math.max(0, Math.floor((-diffMs) / 1000))
-        const min = Math.floor(sec / 60)
-        const hr = Math.floor(min / 60)
-        const day = Math.floor(hr / 24)
-        if (sec < 45) return 'อีกสักครู่'
-        if (min < 60) return `อีก ${min} นาที`
-        if (hr < 24) return `อีก ${hr} ชั่วโมง`
-        return `อีก ${day} วัน`
-      }
-
-      const sec = Math.floor(diffMs / 1000)
-      if (sec < 45) return 'เมื่อสักครู่'
-      const min = Math.floor(sec / 60)
-      if (min < 60) return `${min} นาทีที่แล้ว`
-      const hr = Math.floor(min / 60)
-      if (hr < 24) return `${hr} ชั่วโมงที่แล้ว`
-      const day = Math.floor(hr / 24)
-      if (day < 30) return `${day} วันที่แล้ว`
-      const month = Math.floor(day / 30)
-      if (month < 12) return `${month} เดือนที่แล้ว`
-      const year = Math.floor(month / 12)
-      return `${year} ปีที่แล้ว`
+      return this.timeAgo(value)
     },
     view (item) {
       if (!this.canAccessCommitteeProposalDetail) return
