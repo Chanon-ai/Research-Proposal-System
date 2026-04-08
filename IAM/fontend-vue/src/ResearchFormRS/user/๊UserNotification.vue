@@ -51,7 +51,7 @@
               :key="item.id"
               class="notif-item"
               :class="{ unread: !item.read }"
-              @click="markRead(item)"
+              @click="showNotificationDetail(item)"
             >
               <!-- Icon -->
               <div class="notif-icon" :class="item.iconClass">
@@ -121,6 +121,63 @@
             <p>{{ $t('userNotification.states.empty') }}</p>
           </div>
 
+          <CModal
+            :show.sync="showDetailModal"
+            centered
+            size="lg"
+            :title="$t('userNotification.details.title')"
+            @update:show="onDetailModalToggle"
+          >
+            <template #body-wrapper>
+              <div v-if="selectedNotification" class="notification-detail">
+                <div class="notification-detail__hero">
+                  <div class="notification-detail__icon" :class="selectedNotification.iconClass">
+                    <span>{{ selectedNotification.title ? selectedNotification.title.slice(0, 1) : '!' }}</span>
+                  </div>
+                  <div class="notification-detail__hero-copy">
+                    <div class="notification-detail__title">{{ selectedNotification.title }}</div>
+                    <div class="notification-detail__time">{{ selectedNotification.timeAbsolute }}</div>
+                  </div>
+                </div>
+
+                <div class="notification-detail__message">{{ selectedNotification.desc }}</div>
+
+                <div class="notification-detail__grid">
+                  <div class="notification-detail__field">
+                    <div class="notification-detail__label">{{ $t('userNotification.details.fields.type') }}</div>
+                    <div class="notification-detail__value">{{ getNotificationTypeLabel(selectedNotification.eventKey) }}</div>
+                  </div>
+                  <div class="notification-detail__field">
+                    <div class="notification-detail__label">{{ $t('userNotification.details.fields.sentAt') }}</div>
+                    <div class="notification-detail__value">{{ selectedNotification.timeAbsolute }}</div>
+                  </div>
+                  <div class="notification-detail__field" v-if="selectedNotification.proposalCode || selectedNotification.proposalTitle">
+                    <div class="notification-detail__label">{{ $t('userNotification.details.fields.proposal') }}</div>
+                    <div class="notification-detail__value">{{ selectedNotification.proposalCode || '-' }}<span v-if="selectedNotification.proposalTitle"> | {{ selectedNotification.proposalTitle }}</span></div>
+                  </div>
+                  <div class="notification-detail__field" v-if="selectedNotification.payload && selectedNotification.payload.fromStatus">
+                    <div class="notification-detail__label">{{ $t('userNotification.details.fields.fromStatus') }}</div>
+                    <div class="notification-detail__value">{{ humanizeStatus(selectedNotification.payload.fromStatus) }}</div>
+                  </div>
+                  <div class="notification-detail__field" v-if="selectedNotification.payload && selectedNotification.payload.toStatus">
+                    <div class="notification-detail__label">{{ $t('userNotification.details.fields.toStatus') }}</div>
+                    <div class="notification-detail__value">{{ humanizeStatus(selectedNotification.payload.toStatus) }}</div>
+                  </div>
+                  <div class="notification-detail__field" v-if="notificationRemark(selectedNotification)">
+                    <div class="notification-detail__label">{{ $t('userNotification.details.fields.remark') }}</div>
+                    <div class="notification-detail__value">{{ notificationRemark(selectedNotification) }}</div>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <template #footer-wrapper>
+              <div class="notification-detail__footer">
+                <CButton color="secondary" variant="outline" @click="closeDetailModal"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('userNotification.details.actions.close') }}</CButton>
+                <CButton v-if="selectedNotification && selectedNotification.proposalId" color="primary" @click="openProposalFromDetail"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('userNotification.details.actions.openProposal') }}</CButton>
+              </div>
+            </template>
+          </CModal>
+
         </div>
       </div>
     </div>
@@ -151,6 +208,8 @@ export default {
       activeFilter: 'all',
       loading: false,
       notifications: [],
+      showDetailModal: false,
+      selectedNotification: null,
       pagination: {
         page: 1,
         total: 0,
@@ -168,6 +227,22 @@ export default {
   computed: {
     isDarkTheme () {
       return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
+
+    currentRole () {
+      const storeRole = this.$store && this.$store.getters
+        ? this.$store.getters['Authentication/userRole']
+        : null
+      if (storeRole) return storeRole
+
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        return parsed && parsed.role ? parsed.role : null
+      } catch (e) {
+        return null
+      }
     },
 
     unreadCount() {
@@ -202,6 +277,12 @@ export default {
     },
   },
 
+  watch: {
+    '$route.query.notificationId' () {
+      this.openNotificationFromRoute()
+    }
+  },
+
   methods: {
     async fetchNotifications () {
       this.loading = true
@@ -213,6 +294,7 @@ export default {
         this.pagination.total = payload.total || 0
         this.pagination.page = payload.page || 1
         this.pagination.totalPages = payload.totalPages || 1
+        this.openNotificationFromRoute()
       } catch (err) {
         this.notifications = []
       } finally {
@@ -223,19 +305,42 @@ export default {
     toNotificationItem (n) {
       const eventKey = String(n && n.eventKey ? n.eventKey : '').toLowerCase()
       const group = this.isRecent(n && (n.createdAt || n.sentAt)) ? 'recent' : 'earlier'
+      const proposal = n && n.proposal && typeof n.proposal === 'object' ? n.proposal : null
+      const proposalId = proposal && proposal._id
+        ? String(proposal._id)
+        : (n && n.proposalId ? String(n.proposalId) : null)
+      const createdAt = n && (n.createdAt || n.sentAt)
       return {
         id: n && n._id,
-        proposalId: n && n.proposalId ? n.proposalId : null,
+        proposalId,
+        proposalCode: n && n.proposalCode ? n.proposalCode : (proposal && proposal.proposalCode ? proposal.proposalCode : ''),
+        proposalTitle: n && n.proposalTitle ? n.proposalTitle : (proposal && proposal.projectTitleTh ? proposal.projectTitleTh : ''),
         eventKey,
         group,
         icon: this.iconByEvent(eventKey),
         iconClass: this.iconClassByEvent(eventKey),
         title: n && n.title ? n.title : this.$t('userNotification.defaultTitle'),
         desc: n && n.message ? n.message : '-',
-        time: this.timeAgo(n && (n.createdAt || n.sentAt)),
+        time: this.timeAgo(createdAt),
+        timeAbsolute: this.formatDate(createdAt),
         read: Boolean(n && n.isRead),
-        actions: n && n.proposalId ? [{ label: this.$t('userNotification.actions.viewProposal'), handler: () => this.openProposal(n) }] : [],
+        payload: n && n.payload && typeof n.payload === 'object' ? n.payload : {},
+        raw: n,
+        actions: proposalId ? [{ label: this.$t('userNotification.actions.viewProposal'), handler: () => this.openProposal({ proposalId, eventKey }) }] : [],
       }
+    },
+
+    formatDate (dateStr) {
+      if (!dateStr) return '-'
+      const d = new Date(dateStr)
+      if (Number.isNaN(d.getTime())) return '-'
+      return d.toLocaleString(this.$i18n && this.$i18n.locale === 'en' ? 'en-GB' : 'th-TH', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     },
 
     isRecent (dateStr) {
@@ -283,6 +388,115 @@ export default {
       }
     },
 
+    async showNotificationDetail (item) {
+      if (!item) return
+      await this.markRead(item)
+      this.selectedNotification = item
+      this.showDetailModal = true
+      this.syncNotificationQuery(item.id)
+    },
+
+    openNotificationFromRoute () {
+      const targetId = this.$route && this.$route.query ? this.$route.query.notificationId : ''
+      if (!targetId || !Array.isArray(this.notifications) || this.notifications.length === 0) return
+      const target = this.notifications.find(item => String(item.id) === String(targetId))
+      if (!target) return
+      this.selectedNotification = target
+      this.showDetailModal = true
+    },
+
+    syncNotificationQuery (notificationId = '') {
+      if (!this.$route || !this.$router) return
+      const query = { ...(this.$route.query || {}) }
+      if (notificationId) query.notificationId = String(notificationId)
+      else delete query.notificationId
+      this.$router.replace({ query }).catch(() => {})
+    },
+
+    onDetailModalToggle (visible) {
+      if (!visible) this.closeDetailModal()
+    },
+
+    closeDetailModal () {
+      this.showDetailModal = false
+      this.selectedNotification = null
+      this.syncNotificationQuery('')
+    },
+
+    openProposalFromDetail () {
+      if (!this.selectedNotification) return
+      this.openProposal(this.selectedNotification)
+      this.closeDetailModal()
+    },
+
+    getProposalRoute (item) {
+      const proposalId = item && item.proposalId ? String(item.proposalId) : ''
+      if (!proposalId) return null
+
+      const role = String(this.currentRole || '').trim().toLowerCase()
+      if (role === 'committee') {
+        return { name: 'committeeProposalDetail', params: { id: proposalId } }
+      }
+      if (role === 'chairman') {
+        return { name: 'chairmanProposalDetail', params: { id: proposalId } }
+      }
+      if (['admin', 'legacy_admin'].includes(role)) {
+        return { name: 'AdminProposalDetail', params: { id: proposalId } }
+      }
+
+      const key = String(item && item.eventKey ? item.eventKey : '').toLowerCase()
+      const isRevisionRelated = key.includes('revision') || key.includes('reject')
+      return {
+        name: 'ResearchForm',
+        params: { id: proposalId },
+        query: {
+          readOnly: isRevisionRelated ? 'false' : 'true',
+          scrollFeedback: isRevisionRelated ? '1' : '0'
+        }
+      }
+    },
+
+    getNotificationTypeLabel (eventKey) {
+      const key = String(eventKey || '').toLowerCase()
+      if (key.includes('approved') || key.includes('submit')) return this.$t('userNotification.typeLabels.approved')
+      if (key.includes('revision')) return this.$t('userNotification.typeLabels.revision')
+      if (key.includes('reject')) return this.$t('userNotification.typeLabels.rejected')
+      if (key.includes('assign')) return this.$t('userNotification.typeLabels.assignment')
+      if (key.includes('meeting')) return this.$t('userNotification.typeLabels.meeting')
+      return this.$t('userNotification.typeLabels.general')
+    },
+
+    humanizeStatus (status) {
+      const labels = {
+        draft: 'ร่าง',
+        pending_confirm: 'รอการยืนยัน',
+        submitted: 'ยื่นแล้ว',
+        faculty_review_pending: 'ประธานกำลังพิจารณา',
+        faculty_approved: 'ประธานอนุมัติ',
+        faculty_rejected: 'ประธานไม่อนุมัติ',
+        office_received: 'สำนักงานรับเรื่องแล้ว',
+        document_checking: 'ตรวจเอกสาร',
+        assigned_to_committee: 'มอบหมายกรรมการแล้ว',
+        under_review: 'พิจารณา',
+        committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
+        meeting_completed: 'ส่วนบริหารกำลังจัดเตรียมผล',
+        meeting_in_progress: 'กำลังจัดการประชุม',
+        revision_requested: 'ขอแก้ไข',
+        resubmitted: 'ส่งแก้ไขแล้ว',
+        second_round_review: 'พิจารณารอบ 2',
+        approved: 'อนุมัติ',
+        rejected: 'ไม่อนุมัติ',
+        announced: 'ประกาศผลแล้ว'
+      }
+      const key = String(status || '').trim().toLowerCase()
+      return labels[key] || key || '-'
+    },
+
+    notificationRemark (item) {
+      const payload = item && item.payload && typeof item.payload === 'object' ? item.payload : {}
+      return payload.remark || payload.remarks || payload.meetingTitle || ''
+    },
+
     async markAllRead() {
       this.notifications.forEach(n => { n.read = true })
       try {
@@ -293,18 +507,9 @@ export default {
     },
 
     openProposal (item) {
-      const proposalId = item && item.proposalId ? item.proposalId : null
-      if (!proposalId) return
-      const key = String(item && item.eventKey ? item.eventKey : '').toLowerCase()
-      const isRevisionRelated = key.includes('revision') || key.includes('reject')
-      this.$router.push({
-        name: 'ResearchForm',
-        query: {
-          id: proposalId,
-          readOnly: isRevisionRelated ? 'false' : 'true',
-          scrollFeedback: isRevisionRelated ? '1' : '0'
-        }
-      })
+      const route = this.getProposalRoute(item)
+      if (!route) return
+      this.$router.push(route)
     },
   },
 }
@@ -845,6 +1050,105 @@ export default {
 .notif-action-btn:focus {
   outline: none;
   box-shadow: 0 10px 20px rgba(139,18,18,0.18), 0 0 0 6px rgba(178,31,31,0.12);
+}
+
+.notification-detail {
+  display: grid;
+  gap: 16px;
+}
+
+.notification-detail__hero {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.notification-detail__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #1f2937;
+  background: #e5e7eb;
+}
+
+.notification-detail__hero-copy {
+  min-width: 0;
+}
+
+.notification-detail__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.notification-detail__time {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.notification-detail__message {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #1f2937;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.notification-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.notification-detail__field {
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.notification-detail__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 6px;
+}
+
+.notification-detail__value {
+  font-size: 14px;
+  color: #111827;
+  word-break: break-word;
+}
+
+.notification-detail__footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 1rem 1rem;
+}
+
+.page-wrapper.is-dark .notification-detail__message,
+.page-wrapper.is-dark .notification-detail__field {
+  background: rgba(17, 24, 39, 0.72);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.page-wrapper.is-dark .notification-detail__title,
+.page-wrapper.is-dark .notification-detail__value {
+  color: #f9fafb;
+}
+
+.page-wrapper.is-dark .notification-detail__time,
+.page-wrapper.is-dark .notification-detail__label {
+  color: #cbd5e1;
 }
 
 /* Meta */

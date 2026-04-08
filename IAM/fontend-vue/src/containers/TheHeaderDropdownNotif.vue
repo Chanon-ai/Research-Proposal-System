@@ -298,28 +298,33 @@ export default {
         }
       }
       await this.fetchNotifications()
+      this.isNotificationOpen = false
+      this.$router.push(this.buildNotificationRoute(notif))
+    },
+
+    buildNotificationRoute (notif = null) {
+      const role = String(this.currentRole || '').trim().toLowerCase()
+      const notificationId = notif && notif.raw && notif.raw._id ? String(notif.raw._id) : ''
+      const query = notificationId ? { notificationId } : undefined
+
+      if (['admin', 'legacy_admin'].includes(role)) {
+        return { path: '/admin/notifications', query }
+      }
+
+      if (role === 'committee') {
+        return { path: '/committee/notifications', query }
+      }
+
+      if (role === 'chairman') {
+        return { path: '/chairman/notifications', query }
+      }
+
+      return { path: '/user/notification', query }
     },
 
     viewAll () {
       this.isNotificationOpen = false
-
-      const role = this.currentRole
-      if (['admin', 'legacy_admin', 'chairman'].includes(String(role || ''))) {
-        this.$router.push('/admin/notifications')
-        return
-      }
-
-      if (String(role || '') === 'committee') {
-        this.$router.push('/committee/notifications')
-        return
-      }
-
-      if (String(role || '') === 'chairman') {
-        this.$router.push('/chairman/notifications')
-        return
-      }
-
-      this.$router.push('/user/notification')
+      this.$router.push(this.buildNotificationRoute())
     }
   }
 }

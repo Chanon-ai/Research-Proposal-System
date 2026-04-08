@@ -14,14 +14,26 @@ function toNotificationDto(notification) {
   const row = notification && notification.toObject ? notification.toObject() : { ...(notification || {}) };
   const user = row && row.userId && typeof row.userId === 'object' ? row.userId : null;
   const proposal = row && row.proposalId && typeof row.proposalId === 'object' ? row.proposalId : null;
+  const proposalId = proposal && proposal._id
+    ? String(proposal._id)
+    : (row && row.proposalId ? String(row.proposalId) : null);
 
   return {
     ...row,
+    userId: user && user._id ? String(user._id) : (row && row.userId ? String(row.userId) : null),
+    proposalId,
     type: row.eventKey,
     recipientName: user ? (user.fullName || user.email || '-') : '',
     recipientEmail: user ? (user.email || '') : '',
     proposalCode: proposal ? (proposal.proposalCode || '') : '',
-    proposalTitle: proposal ? (proposal.projectTitleTh || '') : ''
+    proposalTitle: proposal ? (proposal.projectTitleTh || '') : '',
+    proposal: proposalId
+      ? {
+          _id: proposalId,
+          proposalCode: proposal ? (proposal.proposalCode || '') : '',
+          projectTitleTh: proposal ? (proposal.projectTitleTh || '') : ''
+        }
+      : null
   };
 }
 

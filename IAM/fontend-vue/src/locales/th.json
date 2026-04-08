@@ -316,6 +316,29 @@
       "markAllRead": "อ่านทั้งหมด",
       "viewProposal": "ดูข้อเสนอโครงการ"
     },
+    "details": {
+      "title": "รายละเอียดการแจ้งเตือน",
+      "fields": {
+        "type": "ประเภท",
+        "sentAt": "ส่งเมื่อ",
+        "proposal": "โครงการ",
+        "fromStatus": "สถานะเดิม",
+        "toStatus": "สถานะใหม่",
+        "remark": "หมายเหตุ"
+      },
+      "actions": {
+        "close": "ปิด",
+        "openProposal": "เปิดโครงการที่เกี่ยวข้อง"
+      }
+    },
+    "typeLabels": {
+      "general": "การแจ้งเตือนทั่วไป",
+      "approved": "การอนุมัติหรือการยื่นโครงการ",
+      "revision": "คำขอแก้ไข",
+      "rejected": "การตีกลับหรือปฏิเสธ",
+      "assignment": "การมอบหมาย",
+      "meeting": "การประชุม"
+    },
     "unreadCount": "{count} รายการยังไม่ได้อ่าน",
     "defaultTitle": "การแจ้งเตือน",
     "time": {

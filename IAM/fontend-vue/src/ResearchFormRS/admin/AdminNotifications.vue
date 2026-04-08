@@ -98,6 +98,9 @@
               <span v-if="notif.proposalCode"> | 📋 {{ notif.proposalCode }}</span>
             </small>
             <div>
+              <CButton size="sm" color="primary" variant="outline" class="mr-2" @click="openNotificationDetail(notif)">
+                <CIcon name="cil-chevron-right" class="mr-1" /> ดูรายละเอียด
+              </CButton>
               <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="notif.isRead" @click="markAsRead(notif)">
                 <CIcon name="cil-chevron-right" class="mr-1" /> ทำเครื่องหมายอ่าน
               </CButton>
@@ -217,6 +220,44 @@
     >
       <CIcon :name="showSendModal ? 'cil-x' : 'cil-envelope-open'" size="lg" />
     </button>
+
+    <CModal
+      :show.sync="showDetailModal"
+      centered
+      size="lg"
+      title="รายละเอียดการแจ้งเตือน"
+    >
+      <template #body-wrapper>
+        <div v-if="selectedNotification" class="admin-notification-detail">
+          <div class="admin-notification-detail__row">
+            <div class="admin-notification-detail__label">ประเภท</div>
+            <div class="admin-notification-detail__value">{{ getTypeLabel(selectedNotification.type) }}</div>
+          </div>
+          <div class="admin-notification-detail__row">
+            <div class="admin-notification-detail__label">ส่งเมื่อ</div>
+            <div class="admin-notification-detail__value">{{ formatDate(selectedNotification.sentAt || selectedNotification.createdAt) }}</div>
+          </div>
+          <div class="admin-notification-detail__row">
+            <div class="admin-notification-detail__label">ผู้รับ</div>
+            <div class="admin-notification-detail__value">{{ selectedNotification.recipientName || selectedNotification.recipientEmail || '-' }}</div>
+          </div>
+          <div class="admin-notification-detail__row" v-if="selectedNotification.proposalCode || selectedNotification.proposalTitle">
+            <div class="admin-notification-detail__label">โครงการ</div>
+            <div class="admin-notification-detail__value">{{ selectedNotification.proposalCode || '-' }}<span v-if="selectedNotification.proposalTitle"> | {{ selectedNotification.proposalTitle }}</span></div>
+          </div>
+          <div class="admin-notification-detail__message-title">หัวข้อ</div>
+          <div class="admin-notification-detail__message-box">{{ selectedNotification.title || '-' }}</div>
+          <div class="admin-notification-detail__message-title">ข้อความ</div>
+          <div class="admin-notification-detail__message-box">{{ selectedNotification.message || '-' }}</div>
+        </div>
+      </template>
+      <template #footer-wrapper>
+        <div class="admin-notification-detail__footer">
+          <CButton color="secondary" variant="outline" @click="showDetailModal = false"><CIcon name="cil-chevron-right" class="mr-1" /> ปิด</CButton>
+          <CButton v-if="proposalIdOf(selectedNotification)" color="primary" @click="goToProposal(selectedNotification)"><CIcon name="cil-chevron-right" class="mr-1" /> เปิดโครงการที่เกี่ยวข้อง</CButton>
+        </div>
+      </template>
+    </CModal>
   </div>
 </template>
 
@@ -296,6 +337,8 @@ export default {
       activeTab: 'all',
       filterType: '',
       showSendModal: false,
+      showDetailModal: false,
+      selectedNotification: null,
       sendLoading: false,
       sendForm: {
         recipientType: 'all_researchers',
@@ -378,6 +421,46 @@ export default {
       if (STATUS_LABELS[key]) return 'info'
       if (STATUS_LABELS[tailKey]) return 'info'
       return 'secondary'
+    },
+    proposalIdOf (notif) {
+      if (!notif) return ''
+      if (notif.proposal && typeof notif.proposal === 'object' && notif.proposal._id) return String(notif.proposal._id)
+      return notif.proposalId ? String(notif.proposalId) : ''
+    },
+    currentRole () {
+      const storeRole = this.$store && this.$store.getters
+        ? this.$store.getters['Authentication/userRole']
+        : null
+      if (storeRole) return storeRole
+      try {
+        const raw = localStorage.getItem('auth_user')
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        return parsed && parsed.role ? parsed.role : null
+      } catch (e) {
+        return null
+      }
+    },
+    getProposalRoute (notif) {
+      const proposalId = this.proposalIdOf(notif)
+      if (!proposalId) return null
+      const role = String(this.currentRole() || '').trim().toLowerCase()
+      if (role === 'chairman') {
+        return { name: 'chairmanProposalDetail', params: { id: proposalId } }
+      }
+      return { name: 'AdminProposalDetail', params: { id: proposalId } }
+    },
+    async openNotificationDetail (notif) {
+      if (!notif) return
+      await this.markAsRead(notif)
+      this.selectedNotification = notif
+      this.showDetailModal = true
+    },
+    goToProposal (notif) {
+      const route = this.getProposalRoute(notif)
+      if (!route) return
+      this.showDetailModal = false
+      this.$router.push(route)
     },
     hasTemplateForType (type) { return Boolean(EMAIL_TEMPLATES[type]) },
     async fetchNotifications () {
@@ -1028,6 +1111,60 @@ body.c-dark-theme .preview-box__text {
 
 .admin-email-widget__fab.is-open {
   background: linear-gradient(135deg, #4a5f84 0%, #2b3d5e 100%);
+}
+
+.admin-notification-detail {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-notification-detail__row {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-notification-detail__label,
+.admin-notification-detail__message-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8b1212;
+}
+
+.admin-notification-detail__value,
+.admin-notification-detail__message-box {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff9ef;
+  border: 1px solid rgba(181, 133, 34, 0.18);
+  color: #3f2d17;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.admin-notification-detail__footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 1rem 1rem;
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail__value,
+body.c-dark-theme .admin-notification-detail__value,
+[data-coreui-theme='dark'] .admin-notification-detail__message-box,
+body.c-dark-theme .admin-notification-detail__message-box {
+  background: rgba(23, 30, 45, 0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e5edf5;
+}
+
+[data-coreui-theme='dark'] .admin-notification-detail__label,
+body.c-dark-theme .admin-notification-detail__label,
+[data-coreui-theme='dark'] .admin-notification-detail__message-title,
+body.c-dark-theme .admin-notification-detail__message-title {
+  color: #f5d28c;
 }
 
 @media (max-width: 768px) {

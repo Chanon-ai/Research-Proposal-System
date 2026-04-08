@@ -316,6 +316,29 @@
       "markAllRead": "Mark all as read",
       "viewProposal": "View proposal"
     },
+    "details": {
+      "title": "Notification Details",
+      "fields": {
+        "type": "Type",
+        "sentAt": "Sent at",
+        "proposal": "Proposal",
+        "fromStatus": "Previous status",
+        "toStatus": "Current status",
+        "remark": "Remark"
+      },
+      "actions": {
+        "close": "Close",
+        "openProposal": "Open related proposal"
+      }
+    },
+    "typeLabels": {
+      "general": "General notification",
+      "approved": "Approval or submission",
+      "revision": "Revision request",
+      "rejected": "Rejection or rollback",
+      "assignment": "Assignment",
+      "meeting": "Meeting"
+    },
     "unreadCount": "{count} unread item(s)",
     "defaultTitle": "Notification",
     "time": {
