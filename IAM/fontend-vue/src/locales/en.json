@@ -330,6 +330,61 @@
       "eyebrow": "Researcher Meetings",
       "title": "My Meeting Schedule",
       "subtitle": "Track meetings related to your proposals"
+    },
+    "summary": {
+      "scheduled": {
+        "label": "Scheduled",
+        "caption": "Upcoming meetings"
+      },
+      "completed": {
+        "label": "Completed",
+        "caption": "Finished meetings"
+      },
+      "cancelled": {
+        "label": "Cancelled",
+        "caption": "Cancelled meetings"
+      }
+    },
+    "search": {
+      "title": "Search Meetings",
+      "subtitlePrefix": "Search by",
+      "subtitleFields": "title, proposal, location",
+      "label": "Keyword",
+      "placeholder": "Search meetings..."
+    },
+    "states": {
+      "loading": "Loading meetings...",
+      "emptyTitle": "No Meetings Found",
+      "emptyCanCreate": "No meetings yet. Click create to add one.",
+      "emptyReadOnly": "No meetings scheduled for your proposals."
+    },
+    "card": {
+      "participantsSuffix": "participants",
+      "openProposalAria": "Open proposal",
+      "dateLabel": "Date",
+      "timeLabel": "Time",
+      "modeLabel": "Mode",
+      "locationLabel": "Location",
+      "linkLabel": "Meeting Link",
+      "openMeetingLinkAria": "Open meeting link",
+      "agendaLabel": "Agenda",
+      "modeOnline": "Online",
+      "modeOnsite": "Onsite"
+    },
+    "actions": {
+      "viewDetail": "View Detail",
+      "viewResult": "View Result",
+      "saveResult": "Save Result"
+    },
+    "adminActions": {
+      "createMeeting": "Create Meeting",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "pagination": {
+      "summary": "Page {page} of {totalPages} ({total} items)",
+      "previous": "Previous",
+      "next": "Next"
     }
   },
   "adminProposalList": {

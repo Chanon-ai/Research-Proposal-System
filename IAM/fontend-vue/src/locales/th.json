@@ -330,6 +330,61 @@
       "eyebrow": "การประชุมของนักวิจัย",
       "title": "กำหนดการประชุมของฉัน",
       "subtitle": "ติดตามการประชุมที่เกี่ยวข้องกับข้อเสนอโครงการของคุณ"
+    },
+    "summary": {
+      "scheduled": {
+        "label": "นัดหมายแล้ว",
+        "caption": "การประชุมที่กำลังจะมาถึง"
+      },
+      "completed": {
+        "label": "เสร็จสิ้น",
+        "caption": "การประชุมที่เสร็จสิ้นแล้ว"
+      },
+      "cancelled": {
+        "label": "ยกเลิก",
+        "caption": "การประชุมที่ถูกยกเลิก"
+      }
+    },
+    "search": {
+      "title": "ค้นหาการประชุม",
+      "subtitlePrefix": "ค้นหาด้วย",
+      "subtitleFields": "ชื่อการประชุม, โครงการ, สถานที่",
+      "label": "คำค้นหา",
+      "placeholder": "ค้นหาการประชุม..."
+    },
+    "states": {
+      "loading": "กำลังโหลดการประชุม...",
+      "emptyTitle": "ไม่พบการประชุม",
+      "emptyCanCreate": "ยังไม่มีการประชุม คลิกสร้างเพื่อเพิ่ม",
+      "emptyReadOnly": "ยังไม่มีการประชุมที่กำหนดไว้สำหรับข้อเสนอของคุณ"
+    },
+    "card": {
+      "participantsSuffix": "ผู้เข้าร่วม",
+      "openProposalAria": "เปิดโครงการ",
+      "dateLabel": "วันที่",
+      "timeLabel": "เวลา",
+      "modeLabel": "รูปแบบ",
+      "locationLabel": "สถานที่",
+      "linkLabel": "ลิงก์การประชุม",
+      "openMeetingLinkAria": "เปิดลิงก์การประชุม",
+      "agendaLabel": "วาระการประชุม",
+      "modeOnline": "ออนไลน์",
+      "modeOnsite": "ณ สถานที่"
+    },
+    "actions": {
+      "viewDetail": "ดูรายละเอียด",
+      "viewResult": "ดูผลการประชุม",
+      "saveResult": "บันทึกผลการประชุม"
+    },
+    "adminActions": {
+      "createMeeting": "สร้างการประชุม",
+      "edit": "แก้ไข",
+      "delete": "ลบ"
+    },
+    "pagination": {
+      "summary": "หน้าที่ {page} จาก {totalPages} ({total} รายการ)",
+      "previous": "ก่อนหน้า",
+      "next": "ถัดไป"
     }
   },
   "adminProposalList": {
