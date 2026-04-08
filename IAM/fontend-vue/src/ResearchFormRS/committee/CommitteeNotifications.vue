@@ -1,15 +1,15 @@
 <template>
   <div>
-    <NotificationPage />
+    <SharedUserNotification />
   </div>
 </template>
 
 <script>
-import NotificationPage from '../user/UserNotification.vue'
+import SharedUserNotification from '../user/UserNotification.vue'
 
 export default {
   name: 'CommitteeNotifications',
-  components: { NotificationPage }
+  components: { SharedUserNotification }
 }
 </script>
 
