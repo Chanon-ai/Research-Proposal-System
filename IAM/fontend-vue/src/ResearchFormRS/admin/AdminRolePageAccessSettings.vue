@@ -114,9 +114,11 @@ import {
   readRolePageAccessConfigFromFallbackStorage,
   writeRolePageAccessConfigToFallbackStorage
 } from '@/ResearchFormRS/utils/rolePageAccessConfig'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 
 export default {
   name: 'AdminRolePageAccessSettings',
+  mixins: [centerLoadingMixin],
   data () {
     return {
       loading: false,
@@ -134,6 +136,9 @@ export default {
       return this.rolePageAccessConfig.reduce((sum, row) => (
         sum + (Array.isArray(row && row.roles) ? row.roles.length : 0)
       ), 0)
+    },
+    centerLoadingActive () {
+      return Boolean(this.loading || this.saving)
     },
     filteredRows () {
       const keyword = String(this.searchKeyword || '').trim().toLowerCase()

@@ -373,6 +373,7 @@ import AdminUsersManagement from '@/components/admin/AdminUsersManagement.vue'
 import AdminFundingBudgetSettings from '@/ResearchFormRS/admin/AdminFundingBudgetSettings.vue'
 import AdminReviewTemplateSettings from '@/ResearchFormRS/admin/AdminReviewTemplateSettings.vue'
 import AdminRolePageAccessSettings from '@/ResearchFormRS/admin/AdminRolePageAccessSettings.vue'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 import Swal from 'sweetalert2'
 import {
   PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
@@ -481,6 +482,7 @@ const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'funding_budget', 'role_access', '
 
 export default {
   name: 'AdminSettings',
+  mixins: [centerLoadingMixin],
   components: { AdminUsersManagement, AdminFundingBudgetSettings, AdminReviewTemplateSettings, AdminRolePageAccessSettings },
   data () {
     return {
@@ -581,6 +583,11 @@ export default {
   },
   beforeDestroy () {
     document.removeEventListener('keydown', this.onEmailWidgetKeydown)
+  },
+  computed: {
+    centerLoadingActive () {
+      return Boolean(this.loadingSettings || this.emailLogLoading || this.emailWidgetSending)
+    }
   },
   watch: {
     '$route.query.tab' () { this.applyTabFromRoute() },

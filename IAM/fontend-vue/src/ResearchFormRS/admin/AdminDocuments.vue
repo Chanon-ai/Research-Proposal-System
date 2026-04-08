@@ -377,6 +377,7 @@
 <script>
 import { instance as axios } from '@/service/api'
 import Swal from 'sweetalert2'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 
 const DOCUMENT_TYPES = {
   proposal_form: 'แบบเสนอโครงการ RS1',
@@ -411,6 +412,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024
 
 export default {
   name: 'AdminDocuments',
+  mixins: [centerLoadingMixin],
   data () {
     return {
       documents: [],
@@ -508,6 +510,9 @@ export default {
         })
       })
       return options
+    },
+    centerLoadingActive () {
+      return Boolean(this.loading || this.uploadLoading || this.editLoading || this.versionLoading)
     }
   },
   mounted () {

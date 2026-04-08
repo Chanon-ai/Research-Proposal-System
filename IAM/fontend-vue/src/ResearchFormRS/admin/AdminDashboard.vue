@@ -380,6 +380,7 @@ import {
   loadRolePageAccessRuntimeConfig,
   mapRoleForResearchAccess
 } from '@/ResearchFormRS/utils/rolePageAccessRuntime'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 
 const SUMMARY_ALL_EXCLUDED_STATUSES = ['draft', 'pending_confirm']
 const DEFAULT_SUMMARY_FILTER_KEY = 'all'
@@ -445,6 +446,7 @@ const buildSummaryFilterCards = () => [
 
 export default {
   name: 'AdminDashboard',
+  mixins: [centerLoadingMixin],
   data () {
     return {
       summary: {},
@@ -519,6 +521,17 @@ export default {
         '/research-form',
         this.currentResearchRole,
         { defaultAllow: true }
+      )
+    },
+    centerLoadingActive () {
+      return Boolean(
+        this.loadingSummary ||
+        this.loadingTable ||
+        this.submittingStatus ||
+        this.submittingCommittee ||
+        this.committeeUsersLoading ||
+        this.chairmanUsersLoading ||
+        this.sendingChairman
       )
     },
     tableFields () {

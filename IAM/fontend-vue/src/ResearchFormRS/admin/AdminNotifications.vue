@@ -307,6 +307,7 @@ import { instance as axios } from '@/service/api'
 import Swal from 'sweetalert2'
 import { PROPOSAL_STATUS_LABELS_TH_BADGE as STATUS_LABELS } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 
 const NOTIFICATION_TYPES = {
   status_changed: 'สถานะโครงการเปลี่ยนแปลง',
@@ -364,6 +365,7 @@ const EMAIL_TEMPLATES = {
 
 export default {
   name: 'AdminNotifications',
+  mixins: [centerLoadingMixin],
   data () {
     return {
       notifications: [],
@@ -425,6 +427,9 @@ export default {
       if (this.sendForm.recipientType === 'all_researchers') return this.users.filter(u => u.role === 'researcher').length
       if (this.sendForm.recipientType === 'all_committee') return this.users.filter(u => ['committee', 'chairman'].includes(u.role)).length
       return this.users.length
+    },
+    centerLoadingActive () {
+      return Boolean(this.loading || this.sendLoading)
     }
   },
   async mounted () {

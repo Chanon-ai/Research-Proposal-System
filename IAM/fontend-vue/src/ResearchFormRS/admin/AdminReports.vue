@@ -315,9 +315,11 @@ import {
   getCoreUiColorHex
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 
 export default {
   name: 'AdminReports',
+  mixins: [centerLoadingMixin],
   components: {
     CChartBar,
     CChartDoughnut,
@@ -365,6 +367,9 @@ export default {
     },
     statusOptions () {
       return [{ value: '', label: 'ทั้งหมด' }, ...STATUS_KEYS.map(key => ({ value: key, label: STATUS_LABELS[key] || key }))]
+    },
+    centerLoadingActive () {
+      return Boolean(this.loading || this.exportLoading)
     },
     reportSummary () {
       // If user applies filters, rebuild summary from filtered proposals so KPIs/charts match current view.

@@ -252,6 +252,7 @@ import Service from '@/service/api'
 import ResearchForm from '../ResearchForm.vue'
 import Swal from 'sweetalert2'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 import {
   getChairmanChecklistConfig,
   getChairmanChecklistTemplate
@@ -261,6 +262,7 @@ const INTERNAL_CHECKLIST_FIELD_KEY = 'checklist_payload'
 
 export default {
   name: 'ChairmanProposalDetail',
+  mixins: [centerLoadingMixin],
   components: {
     ResearchForm
   },
@@ -374,6 +376,9 @@ export default {
     },
     canSubmit () {
       return !!this.proposal && !this.isEvaluationLocked && this.isPendingChairmanReview && this.hasSignatureData
+    },
+    centerLoadingActive () {
+      return Boolean(this.loading || this.isSubmitting)
     },
     hasSignatureData () {
       return typeof this.signatureData === 'string' && this.signatureData.startsWith('data:image/')

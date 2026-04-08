@@ -189,6 +189,7 @@ import {
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 
 const CHAIRMAN_PENDING_STATUSES = Object.freeze([
   'faculty_review_pending'
@@ -202,6 +203,7 @@ const CHAIRMAN_REVIEWED_STATUSES = Object.freeze([
 
 export default {
   name: 'ChairmanProjectProposal',
+  mixins: [centerLoadingMixin],
   data () {
     return {
       loading: false,
@@ -248,6 +250,9 @@ export default {
     currentUserId () {
       const user = this.currentUser
       return user && user._id ? String(user._id) : ''
+    },
+    centerLoadingActive () {
+      return Boolean(this.loading)
     },
     currentResearchRole () {
       const storeRole = this.$store && this.$store.getters

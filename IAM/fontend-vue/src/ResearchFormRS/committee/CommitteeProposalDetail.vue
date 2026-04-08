@@ -209,9 +209,11 @@ import {
 } from '@/ResearchFormRS/constants/committeeFeedback'
 import { getCommitteeRubricConfig } from '@/ResearchFormRS/constants/committeeRubric'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 
 export default {
   name: 'CommitteeProposalDetail',
+  mixins: [centerLoadingMixin],
   components: {
     ResearchForm
   },
@@ -295,6 +297,9 @@ export default {
     },
     maxScore() {
       return this.rubricRows.reduce((sum, row) => sum + (Number(this.weightFor(row)) || 0), 0)
+    },
+    centerLoadingActive () {
+      return Boolean(this.loading || this.isSubmitting)
     },
     canSubmit() {
       return !!this.proposal && !this.isEvaluationLocked

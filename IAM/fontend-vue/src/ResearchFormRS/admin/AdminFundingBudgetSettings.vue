@@ -451,6 +451,7 @@ import {
   toMultiplierMaxNumber as toMultiplierMaxNumberUtil,
   resolveMultiplierMaxNumber as resolveMultiplierMaxNumberUtil
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 
 const createFundingTypeTemplate = () => ({ key: '', label: '', budgetLimit: 0, subOptions: [] })
 const createFundingSubOptionTemplate = () => ({ key: '', label: '' })
@@ -464,6 +465,7 @@ const createBudgetItemOverrideTemplate = () => ({
 
 export default {
   name: 'AdminFundingBudgetSettings',
+  mixins: [centerLoadingMixin],
   data () {
     return {
       loading: false,
@@ -484,6 +486,9 @@ export default {
       return this.budgetMultiplierConfig.reduce((sum, category) => (
         sum + ((category && Array.isArray(category.multipliers)) ? category.multipliers.length : 0)
       ), 0)
+    },
+    centerLoadingActive () {
+      return Boolean(this.loading || this.saving || this.savingMultiplier)
     },
     fundingTypeSelectionOptions () {
       return this.fundingBudgetConfig.reduce((result, type, index) => {

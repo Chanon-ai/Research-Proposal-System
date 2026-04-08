@@ -261,9 +261,11 @@ import {
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 
 export default {
   name: 'CommitteeDashboardSummary',
+  mixins: [centerLoadingMixin],
   components: { CChartBar, CChartDoughnut, vSelect },
   data() {
     return {
@@ -304,6 +306,9 @@ export default {
     currentUserId() {
       const user = this.currentUser
       return user && user._id ? String(user._id) : ''
+    },
+    centerLoadingActive () {
+      return Boolean(this.loading || this.meetingSummaryLoading)
     },
     assignedProposalsRaw() {
       if (!(this.currentUser && this.currentUser.role === 'committee' && this.currentUserId)) {

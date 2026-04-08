@@ -264,9 +264,11 @@ import {
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 
 export default {
   name: 'AdminProposalList',
+  mixins: [centerLoadingMixin],
   data () {
     return {
       proposals: [],
@@ -332,6 +334,15 @@ export default {
     displayTo () {
       if (this.total === 0) return 0
       return Math.min(this.page * this.limit, this.total)
+    },
+    centerLoadingActive () {
+      return Boolean(
+        this.loading ||
+        this.submittingStatus ||
+        this.submittingCommittee ||
+        this.chairmanLoading ||
+        this.sendingChairman
+      )
     },
     statusFilterOptions () {
       return [

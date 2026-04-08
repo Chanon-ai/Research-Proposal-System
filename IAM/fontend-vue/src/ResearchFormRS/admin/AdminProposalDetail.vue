@@ -328,6 +328,7 @@
 import Service from '@/service/api'
 import Swal from 'sweetalert2'
 import ResearchStandardSection from '@/ResearchFormRS/component/ResearchStandardSection.vue'
+import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 import {
   PROPOSAL_ALLOWED_TRANSITIONS as ALLOWED_TRANSITIONS,
   PROPOSAL_STATUS_COLORS_COREUI_ADMIN as STATUS_COLORS,
@@ -348,6 +349,7 @@ const RESEARCH_STANDARD_ATTACHMENT_KEYS = [
 
 export default {
   name: 'AdminProposalDetail',
+  mixins: [centerLoadingMixin],
   components: {
     ResearchStandardSection
   },
@@ -476,6 +478,9 @@ export default {
       }
 
       return rows
+    },
+    centerLoadingActive () {
+      return Boolean(this.loading || this.reviewsLoading || this.filesLoading || this.changingStatus)
     },
     groupedReviews () {
       const groups = {}

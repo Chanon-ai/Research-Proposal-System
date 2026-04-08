@@ -1788,8 +1788,14 @@ export default {
         this.isDraftSaving ||
         this.isExportingPdf ||
         this.adminSubmittingStatus ||
+        this.adminSubmittingChairman ||
         this.adminSubmittingCommittee ||
         this.adminMeetingSubmitting ||
+        this.adminCommitteeUsersLoading ||
+        this.adminChairmanUsersLoading ||
+        this.adminParticipantOptionsLoading ||
+        this.reviewsLoading ||
+        this.feedbackLoading ||
         this.savingAdminDecision ||
         this.reopeningRejected ||
         this.savingRevision ||
