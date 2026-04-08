@@ -667,6 +667,83 @@
     }
   },
   "chairman": {
+    "dashboard": {
+      "title": "Chairman Overview",
+      "subtitle": "Overview of assigned proposals, decision status, and related meetings",
+      "exportCsv": "Export CSV",
+      "unnamedProject": "Untitled project",
+      "kpi": {
+        "total": "Total",
+        "totalNote": "Proposals related to you",
+        "pending": "Pending",
+        "pendingNote": "Decision not submitted yet",
+        "approved": "Approved",
+        "approvedNote": "Items already approved",
+        "rejected": "Rejected",
+        "rejectedNote": "Items not approved"
+      },
+      "decision": {
+        "title": "Decision Overview",
+        "approve": "Approve",
+        "pending": "Pending",
+        "reject": "Reject",
+        "total": "Total {count} items",
+        "chartTitle": "Decision Distribution",
+        "empty": "No data available for the chart yet"
+      },
+      "proposalStatus": {
+        "title": "Related Proposal Status",
+        "loading": "Loading proposal data...",
+        "loadErrorTitle": "Unable to load proposal data",
+        "labels": {
+          "pending": "Chairman reviewing",
+          "approved": "Chairman approved",
+          "rejected": "Chairman rejected",
+          "announced": "Announced"
+        }
+      },
+      "progress": {
+        "title": "Review Progress",
+        "completion": "Completion rate",
+        "pending": "Pending backlog",
+        "over7": "Over 7 days",
+        "over14": "Over 14 days"
+      },
+      "meetings": {
+        "title": "Meeting Summary",
+        "loading": "Loading meeting data...",
+        "scheduled": "Scheduled",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "total": "Total",
+        "chartSeries": "Meetings"
+      },
+      "filters": {
+        "allRounds": "All rounds",
+        "round": "Round {round}",
+        "allFundingTypes": "All funding types",
+        "unknownFunding": "Unknown funding type",
+        "allDecisions": "All decisions",
+        "none": "Not submitted"
+      },
+      "fundingTypes": {
+        "newResearcher": "New researcher grant",
+        "researcherDevelopment": "Researcher development grant",
+        "strategicResearch": "Strategic research grant",
+        "industryExtension": "Industry/extension grant"
+      },
+      "csv": {
+        "proposalCode": "Proposal code",
+        "projectTitle": "Project title",
+        "projectLeader": "Project leader",
+        "department": "Affiliation",
+        "round": "Round",
+        "fundingType": "Funding type",
+        "status": "Status",
+        "decision": "Decision",
+        "updatedAt": "Last updated"
+      }
+    },
     "meetings": {
       "hero": {
         "eyebrow": "Chairman Meetings",

@@ -667,6 +667,83 @@
     }
   },
   "chairman": {
+    "dashboard": {
+      "title": "สรุปภาพรวมประธานสำนัก",
+      "subtitle": "ภาพรวมข้อเสนอที่ได้รับมอบหมาย สถานะการพิจารณา และการประชุมที่เกี่ยวข้อง",
+      "exportCsv": "ส่งออก CSV",
+      "unnamedProject": "โครงการไม่มีชื่อ",
+      "kpi": {
+        "total": "ทั้งหมด",
+        "totalNote": "ข้อเสนอที่เกี่ยวข้องกับท่าน",
+        "pending": "รอพิจารณา",
+        "pendingNote": "ยังไม่ส่งผลการพิจารณา",
+        "approved": "อนุมัติ",
+        "approvedNote": "รายการที่เห็นชอบแล้ว",
+        "rejected": "ไม่อนุมัติ",
+        "rejectedNote": "รายการที่ไม่เห็นชอบ"
+      },
+      "decision": {
+        "title": "ภาพรวมผลการพิจารณา",
+        "approve": "อนุมัติ",
+        "pending": "รอพิจารณา",
+        "reject": "ไม่อนุมัติ",
+        "total": "รวม {count} รายการ",
+        "chartTitle": "สัดส่วนผลการพิจารณา",
+        "empty": "ยังไม่มีข้อมูลสำหรับแสดงกราฟ"
+      },
+      "proposalStatus": {
+        "title": "สถานะข้อเสนอที่เกี่ยวข้อง",
+        "loading": "กำลังโหลดข้อมูลข้อเสนอ...",
+        "loadErrorTitle": "โหลดข้อมูลข้อเสนอไม่สำเร็จ",
+        "labels": {
+          "pending": "ประธานกำลังพิจารณา",
+          "approved": "ประธานอนุมัติ",
+          "rejected": "ประธานไม่อนุมัติ",
+          "announced": "ประกาศผลแล้ว"
+        }
+      },
+      "progress": {
+        "title": "ความคืบหน้าการพิจารณา",
+        "completion": "อัตราปิดงาน",
+        "pending": "คงค้าง",
+        "over7": "เกิน 7 วัน",
+        "over14": "เกิน 14 วัน"
+      },
+      "meetings": {
+        "title": "สรุปการประชุม",
+        "loading": "กำลังโหลดข้อมูลการประชุม...",
+        "scheduled": "นัดหมายแล้ว",
+        "completed": "เสร็จสิ้น",
+        "cancelled": "ยกเลิก",
+        "total": "ทั้งหมด",
+        "chartSeries": "จำนวนการประชุม"
+      },
+      "filters": {
+        "allRounds": "ทุกรอบ",
+        "round": "รอบที่ {round}",
+        "allFundingTypes": "ทุกประเภททุน",
+        "unknownFunding": "ไม่ระบุประเภททุน",
+        "allDecisions": "ทุกผลการพิจารณา",
+        "none": "ยังไม่ส่งผล"
+      },
+      "fundingTypes": {
+        "newResearcher": "ทุนสำหรับนักวิจัยใหม่",
+        "researcherDevelopment": "ทุนพัฒนานักวิจัย",
+        "strategicResearch": "ทุนวิจัยเชิงยุทธศาสตร์",
+        "industryExtension": "ทุนบริการวิชาการ/อุตสาหกรรม"
+      },
+      "csv": {
+        "proposalCode": "รหัสโครงการ",
+        "projectTitle": "ชื่อโครงการ",
+        "projectLeader": "หัวหน้าโครงการ",
+        "department": "สังกัด",
+        "round": "รอบ",
+        "fundingType": "ประเภททุน",
+        "status": "สถานะ",
+        "decision": "ผลการพิจารณา",
+        "updatedAt": "อัปเดตล่าสุด"
+      }
+    },
     "meetings": {
       "hero": {
         "eyebrow": "Chairman Meetings",
