@@ -10,74 +10,70 @@
     </CAlert>
 
     <CRow v-else-if="proposal">
-      <CCol col="12" lg="7">
-        <ResearchForm :prefill="researchPrefill" :proposal-id="proposalId" :read-only="true" />
-      </CCol>
-      <CCol col="12" lg="5">
+      <CCol col="12">
         <div class="finance-detail-sticky">
           <CCard class="mb-3 finance-detail-card">
             <CCardHeader>
               <strong>{{ $t('finance.detail.summaryTitle') }}</strong>
             </CCardHeader>
             <CCardBody>
-              <div class="finance-metric-grid">
-                <div class="finance-metric-box">
+              <div class="finance-meta-grid">
+                <div class="finance-meta-item">
                   <small class="text-muted d-block">{{ $t('finance.detail.fundingType') }}</small>
                   <strong>{{ fundingDisplay }}</strong>
                 </div>
-                <div class="finance-metric-box">
+                <div class="finance-meta-item">
                   <small class="text-muted d-block">{{ $t('finance.detail.assignmentStatus') }}</small>
                   <CBadge :color="assignmentBadgeColor">{{ assignmentLabel }}</CBadge>
                 </div>
-                <div class="finance-metric-box">
-                  <small class="text-muted d-block">{{ $t('finance.labels.proposedBudget') }}</small>
-                  <strong>{{ formatMoney(budgetTotal) }}</strong>
-                </div>
-                <div class="finance-metric-box">
-                  <small class="text-muted d-block">{{ $t('finance.labels.budgetLimit') }}</small>
-                  <strong>{{ budgetLimit > 0 ? formatMoney(budgetLimit) : '-' }}</strong>
-                </div>
-                <div class="finance-metric-box">
-                  <small class="text-muted d-block">{{ $t('finance.labels.remainingBudget') }}</small>
-                  <strong :class="remainingClass">{{ budgetLimit > 0 ? formatMoney(remainingBudget) : '-' }}</strong>
-                </div>
-                <div class="finance-metric-box">
+                <div class="finance-meta-item">
                   <small class="text-muted d-block">{{ $t('finance.detail.applicant') }}</small>
                   <strong>{{ applicantName }}</strong>
                 </div>
               </div>
+
+              <CCard class="mt-3 mb-0 shadow-sm border-0 finance-budget-report-card" :class="{ 'is-dark': isDarkTheme }">
+                <CCardBody class="p-3">
+                  <BudgetReport
+                    :model-value="budgetSnapshot"
+                    :is-read-only="true"
+                    :current-status="proposal && proposal.currentStatus"
+                  />
+                </CCardBody>
+              </CCard>
+
               <div class="mt-3 text-muted small">
                 {{ $t('finance.detail.currentStatus', { status: currentStatusLabel }) }}
               </div>
-            </CCardBody>
-          </CCard>
 
-          <CCard class="finance-detail-card">
-            <CCardHeader class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
-              <strong>{{ $t('finance.detail.reviewTitle') }}</strong>
-              <small class="text-muted">{{ $t('finance.detail.reviewHint') }}</small>
-            </CCardHeader>
-            <CCardBody>
-              <CTextarea
-                v-model="form.summaryComment"
-                :label="$t('finance.detail.reviewLabel')"
-                rows="8"
-                :placeholder="$t('finance.detail.reviewPlaceholder')"
-                :disabled="isLocked"
-              />
+              <div class="finance-review-section mt-4 pt-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
+                  <strong>{{ $t('finance.detail.reviewTitle') }}</strong>
+                  <small class="text-muted">{{ $t('finance.detail.reviewHint') }}</small>
+                </div>
 
-              <CAlert v-if="budgetLimit > 0 && budgetTotal > budgetLimit" color="warning" show class="mt-3 mb-0">
-                {{ $t('finance.detail.overLimit') }}
-              </CAlert>
+                <CTextarea
+                  v-model="form.summaryComment"
+                  :label="$t('finance.detail.reviewLabel')"
+                  rows="8"
+                  :placeholder="$t('finance.detail.reviewPlaceholder')"
+                  :disabled="isLocked"
+                  class="mt-3"
+                />
 
-              <CAlert v-if="submittedAtText" color="success" show class="mt-3 mb-0">
-                {{ $t('finance.detail.submittedAt', { date: submittedAtText }) }}
-              </CAlert>
+                <CAlert v-if="budgetLimit > 0 && budgetTotal > budgetLimit" color="warning" show class="mt-3 mb-0">
+                  {{ $t('finance.detail.overLimit') }}
+                </CAlert>
 
-              <div class="d-flex justify-content-end mt-4">
-                <CButton color="secondary" variant="outline" class="mr-2" @click="goBack">{{ $t('finance.actions.back') }}</CButton>
-                <CButton color="info" class="mr-2" :disabled="isLocked || isSubmitting" @click="saveDraft">{{ $t('finance.actions.saveDraft') }}</CButton>
-                <CButton color="primary" :disabled="isLocked || isSubmitting" @click="submitReview">{{ $t('finance.actions.submitToAdmin') }}</CButton>
+                <CAlert v-if="submittedAtText" color="success" show class="mt-3 mb-0">
+                  {{ $t('finance.detail.submittedAt', { date: submittedAtText }) }}
+                </CAlert>
+
+                <div class="d-flex justify-content-end mt-4">
+                  <CButton color="secondary" variant="outline" class="mr-2" @click="goBack">{{ $t('finance.actions.back') }}</CButton>
+                  <CButton color="info" class="mr-2" :disabled="isLocked || isSubmitting" @click="saveDraft">{{ $t('finance.actions.saveDraft') }}</CButton>
+                  <CButton color="primary" :disabled="isLocked || isSubmitting" @click="submitReview">{{ $t('finance.actions.submitToAdmin') }}</CButton>
+                </div>
               </div>
             </CCardBody>
           </CCard>
@@ -90,7 +86,7 @@
 <script>
 import Swal from 'sweetalert2'
 import Service from '@/service/api'
-import ResearchForm from '../ResearchForm.vue'
+import BudgetReport from '@/ResearchFormRS/component/BudgetReport.vue'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 import {
@@ -100,7 +96,6 @@ import {
 import {
   getApplicantName,
   getBudgetLimit,
-  getBudgetRemaining,
   getFinanceAssignment,
   getFinanceAssignmentStatusKey,
   getFinanceAssignmentStatusLabel,
@@ -112,7 +107,7 @@ import { normalizeProposalStatus } from '@/ResearchFormRS/constants/proposalWork
 export default {
   name: 'FinanceOfficerProposalDetail',
   components: {
-    ResearchForm
+    BudgetReport
   },
   mixins: [centerLoadingMixin],
   data () {
@@ -131,16 +126,16 @@ export default {
     proposalId () {
       return this.$route.params.id || ''
     },
+    isDarkTheme () {
+      return Boolean(this.$store && this.$store.state && this.$store.state.darkMode)
+    },
     centerLoadingActive () {
       return Boolean(this.loading || this.isSubmitting)
     },
-    researchPrefill () {
-      if (!this.proposal) return null
-      const snapshot = this.proposal.formSnapshotJson || {}
-      return {
-        projectNameThai: this.proposal.projectTitleTh || snapshot.projectNameThai || '',
-        projectNameEnglish: this.proposal.projectTitleEn || snapshot.projectNameEnglish || ''
-      }
+    budgetSnapshot () {
+      return this.proposal && this.proposal.formSnapshotJson && typeof this.proposal.formSnapshotJson === 'object'
+        ? this.proposal.formSnapshotJson.budget || {}
+        : {}
     },
     applicantName () {
       return getApplicantName(this.proposal)
@@ -150,9 +145,6 @@ export default {
     },
     budgetLimit () {
       return getBudgetLimit(this.proposal, this.fundingBudgetConfig)
-    },
-    remainingBudget () {
-      return getBudgetRemaining(this.proposal, this.fundingBudgetConfig)
     },
     fundingDisplay () {
       return getFundingDisplay(this.proposal, this.fundingBudgetConfig)
@@ -176,9 +168,6 @@ export default {
       const statusKey = normalizeProposalStatus(this.proposal && this.proposal.currentStatus)
       if (!statusKey) return '-'
       return this.$te(`proposalStatus.${statusKey}`) ? this.$t(`proposalStatus.${statusKey}`) : statusKey
-    },
-    remainingClass () {
-      return this.budgetLimit > 0 && this.budgetTotal > this.budgetLimit ? 'text-danger' : 'text-success'
     },
     submittedAtText () {
       const submittedAt = this.financeAssignment && this.financeAssignment.submittedAt
@@ -280,9 +269,6 @@ export default {
     },
     goBack () {
       this.$router.push('/finance-officer/assigned')
-    },
-    formatMoney (value) {
-      return `${Number(value || 0).toLocaleString(this.$i18n.locale === 'en' ? 'en-US' : 'th-TH', { maximumFractionDigits: 2 })} ${this.$t('finance.common.currency')}`
     }
   }
 }
@@ -299,23 +285,80 @@ export default {
   overflow: hidden;
 }
 
-.finance-metric-grid {
+.finance-meta-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
-.finance-metric-box {
+.finance-meta-item {
   border: 1px solid #dbe4f0;
   border-radius: 14px;
   padding: 14px;
   background: #f8fbff;
 }
 
+.finance-budget-report-card {
+  border: 2px solid #8b1212 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.2), 0 4px 12px rgba(139, 18, 18, 0.18);
+}
+
+.finance-review-section {
+  border-top: 1px solid #dbe4f0;
+}
+
+.finance-budget-report-card.is-dark {
+  background-color: #1f2b39 !important;
+  border-color: #33475c !important;
+}
+
+.finance-budget-report-card.is-dark ::v-deep .budget-report-table {
+  background: #1a2432;
+  border-color: #324458;
+}
+
+.finance-budget-report-card.is-dark ::v-deep .budget-report-table th,
+.finance-budget-report-card.is-dark ::v-deep .budget-report-table td {
+  border-color: #324458 !important;
+}
+
+.finance-budget-report-card.is-dark ::v-deep .budget-report-table thead th {
+  background: #243548;
+  color: #e6edf7;
+}
+
+.finance-budget-report-card.is-dark ::v-deep .budget-report-category-row td {
+  background: #1f2d3d;
+  color: #e6edf7;
+  border-top-color: #3b5168 !important;
+}
+
+.finance-budget-report-card.is-dark ::v-deep .budget-report-item-row td {
+  background: #1a2432;
+  color: #dce7f5;
+}
+
+.finance-budget-report-card.is-dark ::v-deep .budget-report-total-row td {
+  background: #223142;
+  color: #f3f7fd;
+}
+
+.finance-budget-report-card.is-dark ::v-deep .budget-report-chip {
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.34);
+  border-color: rgba(248, 113, 113, 0.42);
+}
+
 @media (max-width: 991px) {
   .finance-detail-sticky {
     position: static;
     margin-top: 16px;
+  }
+
+  .finance-meta-grid,
+  .finance-meta-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

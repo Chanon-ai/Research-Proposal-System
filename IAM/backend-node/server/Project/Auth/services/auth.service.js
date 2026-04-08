@@ -30,8 +30,17 @@ function buildRandomPassword() {
 }
 
 function normalizeAuthRole(role) {
-  const token = String(role || '').trim().toLowerCase();
-  if (token === 'admin' || token === 'chairman' || token === 'committee' || token === 'researcher') {
+  const token = String(role || '').trim().toLowerCase().replace(/-/g, '_');
+  if (token === 'finance_office') {
+    return 'finance_officer';
+  }
+  if (
+    token === 'admin' ||
+    token === 'chairman' ||
+    token === 'committee' ||
+    token === 'finance_officer' ||
+    token === 'researcher'
+  ) {
     return token;
   }
   return 'researcher';

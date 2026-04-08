@@ -332,6 +332,130 @@
       </CTab>
     </CTabs>
 
+    <transition name="fade">
+      <div
+        v-if="isEmailWidgetOpen"
+        class="admin-email-widget__backdrop"
+        @click="closeEmailWidget"
+      />
+    </transition>
+
+    <div
+      v-if="isEmailWidgetOpen"
+      id="admin-email-widget-panel"
+      class="admin-email-widget__panel"
+      role="dialog"
+      aria-modal="true"
+      aria-label="ทดสอบส่งอีเมล"
+    >
+      <div class="admin-email-widget__header d-flex align-items-start justify-content-between px-3 py-3">
+        <div>
+          <div class="admin-email-widget__eyebrow">QUICK EMAIL TEST</div>
+          <h5 class="mb-1">ทดสอบส่งอีเมล</h5>
+          <small class="text-muted d-block">ใช้ค่า SMTP ปัจจุบันจากหน้าตั้งค่านี้ในการส่งอีเมลทดสอบ</small>
+        </div>
+        <button
+          type="button"
+          class="admin-email-widget__close-btn"
+          aria-label="ปิดหน้าต่างทดสอบอีเมล"
+          @click="closeEmailWidget"
+        >
+          <CIcon name="cil-x" />
+        </button>
+      </div>
+
+      <div class="admin-email-widget__body px-3 py-3">
+        <CAlert
+          v-if="emailWidgetFeedback.message"
+          show
+          class="mb-3"
+          :color="emailWidgetFeedback.type === 'success' ? 'success' : 'danger'"
+        >
+          {{ emailWidgetFeedback.message }}
+        </CAlert>
+
+        <div class="form-group mb-3">
+          <label for="admin-email-widget-template">แม่แบบอีเมล</label>
+          <select
+            id="admin-email-widget-template"
+            class="form-control"
+            :value="emailWidgetForm.templateKey"
+            @change="onWidgetTemplateChange"
+          >
+            <option value="">ไม่ใช้แม่แบบ</option>
+            <option
+              v-for="(template, key) in emailTemplates"
+              :key="`widget-template-${key}`"
+              :value="key"
+            >
+              {{ getTemplateLabel(key) }}
+            </option>
+          </select>
+        </div>
+
+        <CInput
+          id="admin-email-widget-recipient"
+          class="mb-3"
+          label="อีเมลผู้รับ"
+          type="email"
+          v-model="emailWidgetForm.recipientEmail"
+          placeholder="name@mfu.ac.th"
+        />
+
+        <CInput
+          id="admin-email-widget-sender"
+          class="mb-3"
+          label="ชื่อผู้ส่ง"
+          v-model="emailWidgetForm.senderName"
+          placeholder="ผู้ดูแลระบบ"
+        />
+
+        <CInput
+          id="admin-email-widget-subject"
+          class="mb-3"
+          label="หัวข้ออีเมล"
+          v-model="emailWidgetForm.subject"
+          placeholder="กรอกหัวข้ออีเมล"
+        />
+
+        <div class="form-group mb-0">
+          <label for="admin-email-widget-message">ข้อความอีเมล</label>
+          <textarea
+            id="admin-email-widget-message"
+            v-model="emailWidgetForm.message"
+            class="form-control admin-email-widget__textarea"
+            rows="7"
+            placeholder="กรอกข้อความอีเมลที่ต้องการส่ง"
+          />
+        </div>
+      </div>
+
+      <div class="admin-email-widget__footer d-flex align-items-center justify-content-between px-3 py-3">
+        <small class="text-muted pr-3">กด Esc หรือคลิกพื้นหลังเพื่อปิดหน้าต่างนี้</small>
+        <CButton
+          color="primary"
+          :disabled="emailWidgetSending"
+          @click="sendEmailFromWidget"
+        >
+          <CSpinner v-if="emailWidgetSending" size="sm" class="mr-2" />
+          <CIcon v-else name="cil-paper-plane" class="mr-1" />
+          {{ emailWidgetSending ? 'กำลังส่ง...' : 'ส่งอีเมลทดสอบ' }}
+        </CButton>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="admin-email-widget__fab"
+      :class="{ 'is-open': isEmailWidgetOpen }"
+      :aria-expanded="String(isEmailWidgetOpen)"
+      aria-controls="admin-email-widget-panel"
+      :aria-label="isEmailWidgetOpen ? 'ปิดหน้าต่างทดสอบอีเมล' : 'เปิดหน้าต่างทดสอบอีเมล'"
+      @click="toggleEmailWidget"
+    >
+      <CIcon :name="isEmailWidgetOpen ? 'cil-x' : 'cil-envelope-closed'" size="lg" />
+    </button>
+
     <CModal class="send-modal" :show.sync="showAddSettingModal" centered :title="$t('adminSettings.modal.addTitle')" :close-on-backdrop="false">
       <template #body-wrapper>
         <div class="send-modal-inner" style="padding-left:36px;padding-right:36px;box-sizing:border-box;">
@@ -1680,11 +1804,31 @@ body.c-dark-theme .workflow-alert strong {
   overflow: hidden;
   box-shadow: 0 20px 46px rgba(0, 0, 0, 0.24);
   border: 1px solid rgba(44, 62, 100, 0.12);
+  z-index: 1105;
 }
 
 .admin-email-widget__header {
   background: #f4f7ff;
   border-bottom: 1px solid #d9e2f6;
+}
+
+.admin-email-widget__close-btn {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #35507f;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.admin-email-widget__close-btn:hover {
+  color: #173a78;
+  background: rgba(58, 95, 167, 0.1);
 }
 
 .admin-email-widget__eyebrow {
