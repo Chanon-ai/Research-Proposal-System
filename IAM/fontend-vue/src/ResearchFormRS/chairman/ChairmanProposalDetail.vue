@@ -265,7 +265,7 @@
                       <input
                         ref="evaluationFileInput"
                         type="file"
-                        accept=".pdf,.doc,.docx,.xlsx"
+                        accept=".pdf,application/pdf"
                         style="display: none"
                         :disabled="isEvaluationLocked || evaluationFileUploading"
                         @change="onEvaluationFileChange($event.target.files, $event)"
@@ -1586,20 +1586,15 @@ export default {
         return
       }
 
-      const allowed = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      ]
-      if (file.type && !allowed.includes(file.type)) {
+      const ext = String(file.name || '').split('.').pop().toLowerCase()
+      const isPdf = file.type === 'application/pdf' || ext === 'pdf'
+      if (!isPdf) {
         this.evaluationFileName = ''
         if (input) input.value = ''
         await this.showAlert({
           icon: 'warning',
-          title: this.$t('chairman.proposalDetail.fileNotSupportedTitle'),
-          text: this.$t('chairman.proposalDetail.fileNotSupportedText')
+          title: 'รองรับเฉพาะไฟล์ PDF',
+          text: 'กรุณาเลือกไฟล์ PDF เท่านั้น'
         })
         return
       }

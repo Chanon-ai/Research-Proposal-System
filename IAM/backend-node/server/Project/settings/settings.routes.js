@@ -10,6 +10,7 @@ const group = require("./service/group");
 const verification = require("./service/verification");
 const authMessage = require("./service/auth_message");
 const systemSetting = require('./controller/system-setting');
+const settingFile = require('./controller/setting-file');
 
 const uploadMemory = multer({
 	storage: multer.memoryStorage(),
@@ -46,6 +47,9 @@ router.post("/test-email", authenticate, requireRole('admin', 'chairman'), syste
 router.post("/clear-cache", authenticate, requireRole('admin', 'chairman'), systemSetting.clearCache);
 router.post('/template-import/preview', authenticate, requireRole('admin', 'chairman'), uploadMemory.single('file'), systemSetting.previewTemplateImport);
 router.post('/template-import/apply', authenticate, requireRole('admin', 'chairman'), systemSetting.applyTemplateImport);
+router.post('/files/budget-attachment-example', authenticate, requireRole('admin', 'chairman'), uploadMemory.single('file'), settingFile.uploadBudgetAttachmentExampleFile);
+router.get('/files/:fileId', authenticate, settingFile.downloadFile);
+router.delete('/files/:fileId', authenticate, requireRole('admin', 'chairman'), settingFile.deleteFile);
 router.put("/:id", authenticate, requireRole('admin', 'chairman'), systemSetting.update);
 router.delete("/:id", authenticate, requireRole('admin', 'chairman'), systemSetting.remove);
 

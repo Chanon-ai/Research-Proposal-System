@@ -26,7 +26,7 @@
             type="file"
             ref="fileInput"
             multiple
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+            accept=".pdf,application/pdf"
             style="display: none"
             @change="$emit('upload', $event)"
           />
@@ -138,6 +138,50 @@ const DOCUMENT_TYPE_OPTIONS = [
   {
     th: 'อื่น ๆ',
     en: 'Other'
+  },
+  {
+    th: 'TOR',
+    en: 'TOR'
+  },
+  {
+    th: 'ใบเสนอราคา',
+    en: 'Quotation'
+  },
+  {
+    th: 'Specification',
+    en: 'Specification'
+  },
+  {
+    th: 'CV',
+    en: 'CV'
+  },
+  {
+    th: 'อัตราค่าบริการ',
+    en: 'Service Rates'
+  },
+  {
+    th: 'หนังสือรับรองจริยธรรมการวิจัยในมนุษย์',
+    en: 'Human Research Ethics Approval Certificate'
+  },
+  {
+    th: 'เอกสารการยื่นขอจริยธรรมการวิจัยในมนุษย์',
+    en: 'Human Research Ethics Submission Document'
+  },
+  {
+    th: 'หนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์',
+    en: 'Animal Ethics Approval Certificate for Scientific Use'
+  },
+  {
+    th: 'เอกสารการยื่นขอจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์',
+    en: 'Animal Ethics Submission Document for Scientific Use'
+  },
+  {
+    th: 'หนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ ตามมาตรา 53',
+    en: 'Section 53 Plant Variety Notification Document'
+  },
+  {
+    th: 'เอกสารการยื่นขอหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ',
+    en: 'Section 53 Plant Variety Submission Document'
   }
 ]
 
@@ -172,7 +216,7 @@ export default {
       if (this.isEnglishLocale) {
         return {
           title: 'Supporting Documents Upload',
-          subtitle: 'Select the document type first, then upload a file or click Browse.',
+          subtitle: 'Upload PDF files only.',
           uploadButton: 'Upload File',
           documentType: 'Document Type',
           fileName: 'File Name',
@@ -188,7 +232,7 @@ export default {
 
       return {
         title: 'อัปโหลดเอกสารประกอบ',
-        subtitle: 'เลือกประเภทเอกสารก่อน แล้วอัปโหลดไฟล์ หรือกด Browse',
+        subtitle: 'อัปโหลดได้เฉพาะไฟล์ PDF',
         uploadButton: 'อัปโหลดไฟล์',
         documentType: 'ประเภทเอกสาร',
         fileName: 'ชื่อไฟล์',
@@ -202,7 +246,21 @@ export default {
       }
     },
     documentTypeOptions () {
-      return DOCUMENT_TYPE_OPTIONS
+      const optionMap = new Map()
+      DOCUMENT_TYPE_OPTIONS.forEach((option) => {
+        if (!option || (!option.th && !option.en)) return
+        optionMap.set(`${option.th}|${option.en}`, option)
+      })
+
+      ;(Array.isArray(this.files) ? this.files : []).forEach((item) => {
+        const rawType = String((item && item.type) || '').trim()
+        if (!rawType) return
+        const exists = Array.from(optionMap.values()).some(option => option.th === rawType || option.en === rawType)
+        if (exists) return
+        optionMap.set(`${rawType}|${rawType}`, { th: rawType, en: rawType })
+      })
+
+      return Array.from(optionMap.values())
     }
   },
   methods: {

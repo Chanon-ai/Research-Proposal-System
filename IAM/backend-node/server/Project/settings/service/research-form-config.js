@@ -7,6 +7,7 @@ const MANAGED_SETTING_KEYS = Object.freeze({
   ROLE_PAGE_ACCESS: 'research_role_page_access_config_json',
   FUNDING_BUDGET: 'funding_budget_config_json',
   BUDGET_MULTIPLIER: 'budget_multiplier_config_json',
+  BUDGET_ATTACHMENT_EXAMPLE: 'budget_attachment_example_config_json',
   COMMITTEE_FEEDBACK: 'committee_feedback_config_json',
   COMMITTEE_RUBRIC: 'committee_rubric_config_json',
   CHAIRMAN_CHECKLIST: 'chairman_checklist_config_json',
@@ -387,6 +388,41 @@ const BUDGET_MULTIPLIER_DEFAULT = Object.freeze([
   { categoryKey: 'other', categoryLabel: 'หมวดอื่นๆ', multipliers: [{ label: 'จำนวน', value: 1, maxValue: null, isAdmin: false }, { label: 'หน่วย', value: 1, maxValue: null, isAdmin: false }, { label: 'ราคา/หน่วย', value: 0, maxValue: null, isAdmin: false }] }
 ]);
 
+const BUDGET_ATTACHMENT_EXAMPLE_DEFAULT = Object.freeze([
+  {
+    key: 'TOR',
+    label: 'TOR',
+    files: [
+      { label: 'แบบคุณลักษณะเฉพาะและร่างขอบเขตงาน (TOR)', fileName: 'แบบ-คุณลักษณะเฉพาะ-และร่างขอบเขตงาน-TOR.docx', fileId: '' },
+      { label: 'TOR กรณีการจ้างทั่วไป', fileName: 'TOR- กรณีการจ้างทั่วไป.docx', fileId: '' }
+    ]
+  },
+  {
+    key: 'Quotation',
+    label: 'Quotation',
+    files: []
+  },
+  {
+    key: 'Specification',
+    label: 'Specification',
+    files: [
+      { label: 'Specification กรณีการจัดซื้อครุภัณฑ์', fileName: 'Spec-กรณีการจัดซื้อครุภัณฑ์.docx', fileId: '' },
+      { label: 'Specification กรณีการจัดซื้อวัสดุ (เกิน 1 แสนบาท)', fileName: 'Spec-กรณีการจัดซื้อวัสดุ (กรณีเกิน 1 แสนบาท).docx', fileId: '' },
+      { label: 'Specification กรณีการซื้อขายและอนุญาตให้ใช้สิทธิในโปรแกรมคอมพิวเตอร์', fileName: 'Spec-กรณีการซื้อขายและอนุญาตให้ใช้สิทธิในโปรแกรมคอมพิวเตอร์.docx', fileId: '' }
+    ]
+  },
+  {
+    key: 'CV',
+    label: 'CV',
+    files: []
+  },
+  {
+    key: 'ServiceRates',
+    label: 'Service Rates',
+    files: []
+  }
+]);
+
 const COMMITTEE_FEEDBACK_DEFAULT = Object.freeze({
   lowScoreThreshold: 1,
   criteriaMap: {
@@ -602,6 +638,11 @@ const MANAGED_DEFAULTS = Object.freeze({
     group: RESEARCH_FORM_SETTING_GROUP,
     value: BUDGET_MULTIPLIER_DEFAULT
   },
+  [MANAGED_SETTING_KEYS.BUDGET_ATTACHMENT_EXAMPLE]: {
+    description: 'Budget attachment example document config for ResearchFormRS budget sections',
+    group: RESEARCH_FORM_SETTING_GROUP,
+    value: BUDGET_ATTACHMENT_EXAMPLE_DEFAULT
+  },
   [MANAGED_SETTING_KEYS.COMMITTEE_FEEDBACK]: {
     description: 'Committee feedback section mapping for ResearchFormRS',
     group: RESEARCH_FORM_SETTING_GROUP,
@@ -627,6 +668,7 @@ const MANAGED_DEFAULTS = Object.freeze({
 const MANAGED_KEY_SET = new Set(Object.keys(MANAGED_DEFAULTS));
 const PUBLIC_KEY_SET = new Set(Object.keys(MANAGED_DEFAULTS));
 const KNOWN_BUDGET_CATEGORY_KEYS = new Set(['compensation', 'operating', 'travel', 'material', 'utility', 'equipment', 'other']);
+const KNOWN_BUDGET_ATTACHMENT_EXAMPLE_KEYS = new Set(['TOR', 'Quotation', 'Specification', 'CV', 'ServiceRates']);
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -753,6 +795,48 @@ function normalizeBudgetMultiplierConfig(rawValue) {
   return normalized.length > 0 ? normalized : clone(BUDGET_MULTIPLIER_DEFAULT);
 }
 
+function normalizeBudgetAttachmentExampleConfig(rawValue) {
+  const parsed = parseJsonish(rawValue);
+  const source = Array.isArray(parsed) ? parsed : [];
+  const sourceMap = new Map();
+
+  source.forEach((item) => {
+    const key = String(item && item.key !== undefined ? item.key : '').trim();
+    if (!KNOWN_BUDGET_ATTACHMENT_EXAMPLE_KEYS.has(key)) return;
+    sourceMap.set(key, item);
+  });
+
+  return BUDGET_ATTACHMENT_EXAMPLE_DEFAULT.map((defaultItem) => {
+    const sourceItem = sourceMap.get(defaultItem.key) || {};
+    const files = (Array.isArray(sourceItem.files) ? sourceItem.files : [])
+      .map((file) => ({
+        label: String(file && file.label !== undefined ? file.label : '').trim(),
+        fileId: String(file && (file.fileId !== undefined ? file.fileId : (file.id !== undefined ? file.id : (file._id !== undefined ? file._id : ''))) || '').trim(),
+        fileName: String(file && (file.fileName !== undefined ? file.fileName : (file.originalName !== undefined ? file.originalName : (file.name !== undefined ? file.name : ''))) || '').trim(),
+        originalName: String(file && (file.originalName !== undefined ? file.originalName : (file.fileName !== undefined ? file.fileName : (file.name !== undefined ? file.name : ''))) || '').trim(),
+        mimeType: String(file && file.mimeType !== undefined ? file.mimeType : '').trim(),
+        size: Math.max(0, toNumber(file && file.size, 0)),
+        uploadedAt: file && file.uploadedAt ? file.uploadedAt : null
+      }))
+      .filter((file) => file.label || file.fileId || file.fileName)
+      .map((file) => ({
+        label: file.label || file.originalName || file.fileName,
+        fileId: file.fileId,
+        fileName: file.originalName || file.fileName,
+        originalName: file.originalName || file.fileName,
+        mimeType: file.mimeType,
+        size: file.size,
+        uploadedAt: file.uploadedAt
+      }));
+
+    return {
+      key: defaultItem.key,
+      label: String(sourceItem.label !== undefined ? sourceItem.label : defaultItem.label).trim() || defaultItem.label,
+      files
+    };
+  });
+}
+
 function normalizeRolePageAccessConfig(rawValue) {
   const parsed = parseJsonish(rawValue);
   if (!Array.isArray(parsed)) return clone(ROLE_PAGE_ACCESS_DEFAULT);
@@ -789,6 +873,8 @@ function normalizeManagedSettingValue(key, rawValue) {
       return normalizeFundingBudgetConfig(rawValue);
     case MANAGED_SETTING_KEYS.BUDGET_MULTIPLIER:
       return normalizeBudgetMultiplierConfig(rawValue);
+    case MANAGED_SETTING_KEYS.BUDGET_ATTACHMENT_EXAMPLE:
+      return normalizeBudgetAttachmentExampleConfig(rawValue);
     case MANAGED_SETTING_KEYS.ROLE_PAGE_ACCESS:
       return normalizeRolePageAccessConfig(rawValue);
     case MANAGED_SETTING_KEYS.PROPOSAL_WORKFLOW:

@@ -1,6 +1,6 @@
 <template>
   <div class="budget-form-container w-100">
-    <input type="file" ref="fileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" style="display: none"
+    <input type="file" ref="fileInput" accept=".pdf,application/pdf" style="display: none"
       @change="onFilePicked" />
     <div v-for="(cat, ci) in categories" :key="cat.title" class="mb-5">
       <div class="card shadow-sm border-0 mb-3 w-100">

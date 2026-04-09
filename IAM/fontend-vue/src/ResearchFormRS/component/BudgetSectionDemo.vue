@@ -50,7 +50,7 @@
           </CButton>
           <label class="btn btn-light btn-sm mb-0 text-primary font-weight-bold cursor-pointer">
             <CIcon name="cil-library-add" class="mr-1" /> {{ budgetText.attachDocument }}
-            <input type="file" style="display: none;" @change="attachDocToCategory($event, catIndex)" multiple>
+            <input type="file" accept=".pdf,application/pdf" style="display: none;" @change="attachDocToCategory($event, catIndex)" multiple>
           </label>
         </div>
       </CCardHeader>
@@ -332,6 +332,15 @@
           </tbody>
         </table>
       </CCardBody>
+
+      <div v-if="category.isExpanded && category.items.length > 0" class="budget-category-installment-helper">
+        <span class="budget-category-installment-helper__text">
+          {{ budgetText.categoryInstallmentGuide }}
+          {{ budgetText.period(1) }}: {{ formatNumber(getCategoryExpectedPeriod(category, 0)) }} {{ budgetText.currencyUnit }}
+          | {{ budgetText.period(2) }}: {{ formatNumber(getCategoryExpectedPeriod(category, 1)) }} {{ budgetText.currencyUnit }}
+          | {{ budgetText.period(3) }}: {{ formatNumber(getCategoryExpectedPeriod(category, 2)) }} {{ budgetText.currencyUnit }}
+        </span>
+      </div>
     </CCard>
 
       <div v-if="isTravelExceeded || isEquipmentExceeded" class="alert alert-danger shadow-sm mb-4 border-0" style="border-left: 5px solid #e55353 !important; border-radius: 8px;">
@@ -460,6 +469,7 @@
 </template>
 
 <script>
+import { instance as axios } from '@/service/api'
 import {
   normalizeFundingBudgetConfig,
   normalizeFundingBudgetKey,
@@ -473,12 +483,27 @@ import {
   toMultiplierMaxNumber,
   resolveMultiplierMaxNumber
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
+import {
+  buildBudgetAttachmentExampleConfigMap,
+  normalizeBudgetAttachmentExampleConfig,
+  resolveBudgetAttachmentExampleFileUrl
+} from '@/ResearchFormRS/utils/budgetAttachmentExampleConfig'
 
 const BUDGET_ATTACHMENT_EXAMPLE_WINDOW_NAME = 'budget-attachment-example-doc'
 
 const BUDGET_ATTACHMENT_EXAMPLES = Object.freeze({
   TOR: {
     title: 'ตัวอย่างเอกสาร TOR (Term of References)',
+    files: [
+      {
+        name: 'แบบ-คุณลักษณะเฉพาะ-และร่างขอบเขตงาน-TOR.docx',
+        label: 'แบบคุณลักษณะเฉพาะและร่างขอบเขตงาน (TOR)'
+      },
+      {
+        name: 'TOR- กรณีการจ้างทั่วไป.docx',
+        label: 'TOR กรณีการจ้างทั่วไป'
+      }
+    ],
     items: [
       'วัตถุประสงค์/ความเป็นมาของงาน',
       'ขอบเขตงาน (Scope of Work)',
@@ -499,6 +524,20 @@ const BUDGET_ATTACHMENT_EXAMPLES = Object.freeze({
   },
   Specification: {
     title: 'ตัวอย่างเอกสาร Specification',
+    files: [
+      {
+        name: 'Spec-กรณีการจัดซื้อครุภัณฑ์.docx',
+        label: 'Specification กรณีการจัดซื้อครุภัณฑ์'
+      },
+      {
+        name: 'Spec-กรณีการจัดซื้อวัสดุ (กรณีเกิน 1 แสนบาท).docx',
+        label: 'Specification กรณีการจัดซื้อวัสดุ (เกิน 1 แสนบาท)'
+      },
+      {
+        name: 'Spec-กรณีการซื้อขายและอนุญาตให้ใช้สิทธิในโปรแกรมคอมพิวเตอร์.docx',
+        label: 'Specification กรณีการซื้อขายและอนุญาตให้ใช้สิทธิในโปรแกรมคอมพิวเตอร์'
+      }
+    ],
     items: [
       'คุณลักษณะทางเทคนิคขั้นต่ำที่ต้องการ',
       'มาตรฐานอ้างอิงหรือรุ่นที่เทียบเท่า',
@@ -1035,6 +1074,10 @@ export default {
       type: Array,
       default: () => []
     },
+    budgetAttachmentExampleConfig: {
+      type: Array,
+      default: () => []
+    },
     resetToken: {
       type: [Number, String],
       default: 0
@@ -1130,8 +1173,10 @@ export default {
           item: 'Item',
           multiplierDetails: 'Multiplier Details',
           totalBudget: 'Total Budget (THB)',
-          period: (index) => `Period ${index}`,
+          period: (index) => `Installment ${index}`,
           noItemsInCategory: 'No items in this category yet',
+          categoryInstallmentGuide: 'Installment details',
+          currencyUnit: 'THB',
           itemPlaceholder: 'Specify the item name...',
           searchItemPlaceholder: 'Search or enter the item name...',
           selectDocumentCategory: 'Select document category:',
@@ -1164,8 +1209,10 @@ export default {
         item: 'รายการ',
         multiplierDetails: 'รายละเอียดตัวคูณ',
         totalBudget: 'งบประมาณ (บาท)',
-        period: (index) => `ปีที่ ${index}`,
+        period: (index) => `งวดที่ ${index}`,
         noItemsInCategory: 'ยังไม่มีรายการในหมวดนี้',
+        categoryInstallmentGuide: 'รายละเอียดในแต่ละงวด',
+        currencyUnit: 'บาท',
         itemPlaceholder: 'ระบุชื่อรายการ...',
         searchItemPlaceholder: 'ค้นหา/ระบุชื่อรายการ...',
         selectDocumentCategory: 'เลือกประเภทเอกสาร:',
@@ -1270,6 +1317,10 @@ export default {
     },
     normalizedFundingBudgetConfig() {
       return normalizeFundingBudgetConfig(this.fundingBudgetConfig, { fallbackToDefault: true })
+    },
+    budgetAttachmentExampleMap() {
+      const normalized = normalizeBudgetAttachmentExampleConfig(this.budgetAttachmentExampleConfig, { fallbackToDefault: true })
+      return buildBudgetAttachmentExampleConfigMap(normalized)
     },
     budgetLimit() {
       return getFundingTypeBudgetLimit(this.normalizedFundingBudgetConfig, this.fundingType)
@@ -1579,6 +1630,21 @@ export default {
         return `${displayName} (${this.isEnglishLocale ? 'not more than 25% of the total budget / not more than' : 'ไม่เกิน 25% ของงบรวม/ไม่เกิน'} ${limitAmount} ${this.isEnglishLocale ? 'THB' : 'บาท'})`
       }
       return displayName
+    },
+    getCategoryTotal(category) {
+      const items = category && Array.isArray(category.items) ? category.items : []
+      return items.reduce((sum, item) => sum + this.toNumber(item && item.total), 0)
+    },
+    getCategoryExpectedPeriods(category) {
+      const total = this.getCategoryTotal(category)
+      const period1 = Math.round(total * 0.5)
+      const period2 = Math.round(total * 0.4)
+      const period3 = total - period1 - period2
+      return [period1, period2, period3]
+    },
+    getCategoryExpectedPeriod(category, index) {
+      const periods = this.getCategoryExpectedPeriods(category)
+      return Number.isFinite(periods[index]) ? periods[index] : 0
     },
     toggleCategory(catIndex) {
       const category = this.categories[catIndex]
@@ -2615,9 +2681,63 @@ export default {
         }
       })
     },
-    openAttachmentExample(docType = '') {
+    async openBudgetAttachmentExampleFile(file, windowTarget = '_blank') {
+      const normalizedFileId = String(file && (file.fileId || file.id || file._id) ? (file.fileId || file.id || file._id) : '').trim()
+      const url = resolveBudgetAttachmentExampleFileUrl(file)
+      if (!url || typeof window === 'undefined') return false
+
+      if (!normalizedFileId) {
+        const popup = window.open(url, windowTarget)
+        if (popup && typeof popup.focus === 'function') popup.focus()
+        return true
+      }
+
+      try {
+        const response = await axios.get(`/api/v1/setting/files/${encodeURIComponent(normalizedFileId)}`, {
+          responseType: 'blob'
+        })
+        const responseBlob = response && response.data ? response.data : null
+        const blob = responseBlob instanceof Blob
+          ? responseBlob
+          : new Blob([responseBlob], { type: (response && response.headers && response.headers['content-type']) || 'application/octet-stream' })
+        const objectUrl = window.URL.createObjectURL(blob)
+        const popup = window.open(objectUrl, windowTarget)
+        if (!popup) {
+          const link = document.createElement('a')
+          link.href = objectUrl
+          link.download = String(file && (file.originalName || file.fileName || file.label) ? (file.originalName || file.fileName || file.label) : 'attachment')
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+        } else if (typeof popup.focus === 'function') {
+          popup.focus()
+        }
+        window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000)
+        return true
+      } catch (error) {
+        console.error('[BudgetSectionDemo] open example file error:', error)
+        return false
+      }
+    },
+    async openAttachmentExample(docType = '') {
       const sample = BUDGET_ATTACHMENT_EXAMPLES[docType]
       if (!sample || typeof window === 'undefined') return
+
+      const runtimeConfig = this.budgetAttachmentExampleMap.get(docType)
+      const resolvedFiles = runtimeConfig && Array.isArray(runtimeConfig.files) && runtimeConfig.files.length > 0
+        ? runtimeConfig.files
+        : []
+      const fileUrls = resolvedFiles
+        .map(file => resolveBudgetAttachmentExampleFileUrl(file))
+        .filter(Boolean)
+
+      if (fileUrls.length) {
+        for (let index = 0; index < resolvedFiles.length; index += 1) {
+          const file = resolvedFiles[index]
+          await this.openBudgetAttachmentExampleFile(file, index === 0 ? BUDGET_ATTACHMENT_EXAMPLE_WINDOW_NAME : '_blank')
+        }
+        return
+      }
 
       const title = sample.title || 'ตัวอย่างเอกสาร'
       const listItems = (sample.items || []).map(text => `<li>${text}</li>`).join('')
@@ -3094,6 +3214,20 @@ export default {
   transform: translateY(-1px);
 }
 
+.budget-category-installment-helper {
+  border-top: 1px solid rgba(234, 223, 206, 0.95);
+  background: #fcfaf7;
+  padding: 10px 16px 12px;
+}
+
+.budget-category-installment-helper__text {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #5b0b0b;
+  line-height: 1.5;
+}
+
 .budget-section-container.is-dark {
   color: #e6edf7;
 }
@@ -3176,6 +3310,15 @@ export default {
 
 .budget-section-container.is-dark .budget-summary-separator {
   border-top-color: #33475c;
+}
+
+.budget-section-container.is-dark .budget-category-installment-helper {
+  background: #1f2b39;
+  border-top-color: #33475c;
+}
+
+.budget-section-container.is-dark .budget-category-installment-helper__text {
+  color: #f2d9a6;
 }
 
 .budget-section-container.is-dark ::v-deep .card,

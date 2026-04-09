@@ -6,7 +6,7 @@
       <input
         ref="fileInput"
         type="file"
-        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+        accept=".pdf,application/pdf"
         class="d-none"
         @change="handleFileSelected"
       >

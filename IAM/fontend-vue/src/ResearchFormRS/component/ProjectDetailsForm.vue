@@ -268,6 +268,7 @@
             :funding-type="form.fundingType"
             :funding-budget-config="fundingBudgetConfig"
             :budget-multiplier-config="budgetMultiplierConfig"
+            :budget-attachment-example-config="budgetAttachmentExampleConfig"
             :reset-token="budgetFundingResetToken"
             @update:modelValue="handleBudgetUpdate"
             @sticky-overlay-update="$emit('budget-sticky-summary-update', $event)"
@@ -744,6 +745,10 @@ export default {
       default: () => []
     },
     budgetMultiplierConfig: {
+      type: Array,
+      default: () => []
+    },
+    budgetAttachmentExampleConfig: {
       type: Array,
       default: () => []
     }

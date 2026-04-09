@@ -212,23 +212,55 @@
 
         <div class="section">
           <h6 class="section-title">{{ teamText.advisorsTitle }}</h6>
+          <div v-if="!isReadOnly" class="advisor-toolbar mb-3">
+            <button type="button" @click="openAdvisorPicker" class="btn btn-outline-primary advisor-toolbar__button">
+              <CIcon name="cil-user-follow" class="mr-2" /> {{ teamText.addSystemAdvisorButton }}
+            </button>
+            <button type="button" @click="addExternalAdvisor" class="btn btn-outline-secondary advisor-toolbar__button advisor-toolbar__button--secondary">
+              <CIcon name="cil-plus" class="mr-2" /> {{ teamText.addExternalAdvisorButton }}
+            </button>
+          </div>
+          <div v-if="!isReadOnly" class="advisor-toolbar__hint text-muted mb-3">
+            {{ teamText.advisorHint }}
+          </div>
           <div v-if="advisors.length === 0" class="text-muted text-center py-3">
             {{ teamText.noAdvisors }}
           </div>
           <div v-for="(advisor, index) in advisors" :key="index" class="advisor-item mb-3">
             <div class="card">
               <div class="card-body">
+                <div class="advisor-meta-row mb-3">
+                  <span class="advisor-source-badge" :class="isAdvisorProfileLocked(advisor) ? 'advisor-source-badge--internal' : 'advisor-source-badge--external'">
+                    {{ isAdvisorProfileLocked(advisor) ? teamText.internalAdvisorBadge : teamText.externalAdvisorBadge }}
+                  </span>
+                </div>
                 <div class="row">
                   <div class="col-md-6">
                     <div class="form-group">
                       <label>{{ teamText.fullNameLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
-                      <input v-model="advisor.name" type="text" class="form-control" required :disabled="isReadOnly">
+                      <input
+                        v-model="advisor.name"
+                        type="text"
+                        class="form-control"
+                        :class="{ 'co-researcher-readonly': isAdvisorProfileLocked(advisor) }"
+                        required
+                        :readonly="isAdvisorProfileLocked(advisor)"
+                        :disabled="isReadOnly"
+                      >
                     </div>
                   </div>
                   <div class="col-md-6">
                     <div class="form-group">
                       <label>{{ teamText.affiliationLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
-                      <input v-model="advisor.affiliation" type="text" class="form-control" required :disabled="isReadOnly">
+                      <input
+                        v-model="advisor.affiliation"
+                        type="text"
+                        class="form-control"
+                        :class="{ 'co-researcher-readonly': isAdvisorProfileLocked(advisor) }"
+                        required
+                        :readonly="isAdvisorProfileLocked(advisor)"
+                        :disabled="isReadOnly"
+                      >
                     </div>
                   </div>
                 </div>
@@ -236,13 +268,29 @@
                   <div :class="isReadOnly ? 'col-md-6' : 'col-md-4'">
                     <div class="form-group">
                       <label>{{ teamText.phoneLabel }} <span v-if="!isReadOnly" class="text-danger">*</span></label>
-                      <input v-model="advisor.phone" type="text" class="form-control" required :disabled="isReadOnly">
+                      <input
+                        v-model="advisor.phone"
+                        type="text"
+                        class="form-control"
+                        :class="{ 'co-researcher-readonly': isAdvisorProfileLocked(advisor) }"
+                        required
+                        :readonly="isAdvisorProfileLocked(advisor)"
+                        :disabled="isReadOnly"
+                      >
                     </div>
                   </div>
                   <div class="col-md-6">
                     <div class="form-group">
                       <label>E-mail <span v-if="!isReadOnly" class="text-danger">*</span></label>
-                      <input v-model="advisor.email" type="email" class="form-control" required :disabled="isReadOnly">
+                      <input
+                        v-model="advisor.email"
+                        type="email"
+                        class="form-control"
+                        :class="{ 'co-researcher-readonly': isAdvisorProfileLocked(advisor) }"
+                        required
+                        :readonly="isAdvisorProfileLocked(advisor)"
+                        :disabled="isReadOnly"
+                      >
                     </div>
                   </div>
                   <div class="col-md-2" v-if="!isReadOnly">
@@ -258,9 +306,57 @@
               </div>
             </div>
           </div>
-          <button v-if="!isReadOnly" @click="addAdvisor" class="btn btn-outline-primary w-100">
-            <CIcon name="cil-plus" class="mr-2" /> {{ teamText.addAdvisorButton }}
-          </button>
+          <CModal
+            :show.sync="showAdvisorModal"
+            centered
+            :close-on-backdrop="false"
+            class="co-researcher-modal"
+            :title="teamText.addAdvisorModalTitle"
+          >
+            <template #body-wrapper>
+              <div class="co-researcher-picker">
+                <label class="co-researcher-picker-label">{{ teamText.advisorPickerLabel }}</label>
+                <multiselect
+                  v-model="selectedAdvisorOptions"
+                  :options="advisorOptions"
+                  :searchable="true"
+                  :multiple="true"
+                  :close-on-select="false"
+                  :clear-on-select="false"
+                  :preserve-search="true"
+                  :allow-empty="true"
+                  :loading="advisorOptionsLoading"
+                  label="searchText"
+                  track-by="_optionKey"
+                  :placeholder="teamText.advisorSearchPlaceholder"
+                  :custom-label="formatCoResearcherOptionLabel"
+                >
+                  <template slot="option" slot-scope="{ option }">
+                    <div class="co-researcher-option">
+                      <div class="co-researcher-option__name">{{ option.fullName || option.email || '-' }}</div>
+                      <small class="text-muted">{{ option.email || option.affiliation || '-' }}</small>
+                    </div>
+                  </template>
+                </multiselect>
+                <small v-if="advisorOptionsError" class="text-danger co-researcher-picker-error">
+                  {{ advisorOptionsError }}
+                </small>
+              </div>
+            </template>
+            <template #footer-wrapper>
+              <div class="d-flex justify-content-end w-100 co-researcher-modal-actions">
+                <button type="button" class="btn btn-outline-danger co-researcher-action-btn" @click="closeAdvisorPicker"><CIcon name="cil-x" class="mr-1" /> {{ teamText.cancelButton }}</button>
+                <button
+                  type="button"
+                  class="btn btn-primary co-researcher-action-btn"
+                  :disabled="advisorOptionsLoading || selectedAdvisorOptions.length === 0"
+                  @click="confirmAddAdvisors"
+                >
+                  <CIcon name="cil-plus" class="mr-1" /> {{ teamText.addSystemAdvisorButton }}
+                </button>
+              </div>
+            </template>
+          </CModal>
         </div>
 
       </div>
@@ -313,7 +409,12 @@ export default {
       coResearcherOptions: [],
       coResearcherOptionsLoading: false,
       coResearcherOptionsError: '',
-      selectedCoResearcherOptions: []
+      selectedCoResearcherOptions: [],
+      showAdvisorModal: false,
+      advisorOptions: [],
+      advisorOptionsLoading: false,
+      advisorOptionsError: '',
+      selectedAdvisorOptions: []
     }
   },
   computed: {
@@ -384,9 +485,16 @@ export default {
           proportionHint: 'The total research proportion must equal exactly 100%',
           proportionValid: 'Valid proportion',
           advisorsTitle: 'Project Advisors (if any)',
+          advisorHint: 'You can add advisors from the researcher directory or enter an external advisor manually.',
           noAdvisors: '-- No advisor records --',
           removeAdvisorTitle: 'Remove advisor',
-          addAdvisorButton: 'Add Advisor'
+          addSystemAdvisorButton: 'Add Advisor From System',
+          addExternalAdvisorButton: 'Add External Advisor',
+          addAdvisorModalTitle: 'Add project advisors from system',
+          advisorPickerLabel: 'Search / select advisors from researcher users (multiple selection allowed)',
+          advisorSearchPlaceholder: 'Search by name, email, or affiliation',
+          internalAdvisorBadge: 'Internal User',
+          externalAdvisorBadge: 'External Advisor'
         }
       }
       return {
@@ -410,9 +518,16 @@ export default {
         proportionHint: 'สัดส่วนงานวิจัยรวมต้องเท่ากับ 100% พอดี',
         proportionValid: 'สัดส่วนถูกต้อง',
         advisorsTitle: 'อาจารย์ที่ปรึกษาโครงการ (ถ้ามี)',
+        advisorHint: 'เพิ่มที่ปรึกษาได้ทั้งจากรายชื่อผู้ใช้ในระบบ และกรอกข้อมูลคนนอกระบบด้วยตนเอง',
         noAdvisors: '-- ไม่มีข้อมูลที่ปรึกษา --',
         removeAdvisorTitle: 'ลบอาจารย์ที่ปรึกษา',
-        addAdvisorButton: 'เพิ่มอาจารย์ที่ปรึกษา'
+        addSystemAdvisorButton: 'เพิ่มที่ปรึกษาจากในระบบ',
+        addExternalAdvisorButton: 'เพิ่มที่ปรึกษานอกระบบ',
+        addAdvisorModalTitle: 'เพิ่มที่ปรึกษาโครงการจากในระบบ',
+        advisorPickerLabel: 'ค้นหา / เลือกที่ปรึกษาจากรายชื่อผู้ใช้ในระบบ (เลือกได้หลายคน)',
+        advisorSearchPlaceholder: 'ค้นหาด้วยชื่อ อีเมล หรือสังกัด',
+        internalAdvisorBadge: 'ในระบบ',
+        externalAdvisorBadge: 'นอกระบบ'
       }
     }
   },
@@ -605,6 +720,10 @@ export default {
       if (!researcher || typeof researcher !== 'object') return false
       return Boolean(researcher.lockedProfile || researcher.sourceUserId)
     },
+    isAdvisorProfileLocked(advisor) {
+      if (!advisor || typeof advisor !== 'object') return false
+      return Boolean(advisor.lockedProfile || advisor.sourceUserId)
+    },
     createCoResearcherFromUser(user) {
       const name = this.getUserDisplayName(user)
       const affiliation = this.getAffiliationText(user)
@@ -617,6 +736,21 @@ export default {
         phone,
         email,
         proportion: '',
+        sourceUserId,
+        lockedProfile: true
+      }
+    },
+    createAdvisorFromUser(user) {
+      const name = this.getUserDisplayName(user)
+      const affiliation = this.getAffiliationText(user)
+      const phone = String((user && (user.phone || user.mobile)) || '').trim()
+      const email = String((user && user.email) || '').trim()
+      const sourceUserId = (user && (user._id || user.id)) ? String(user._id || user.id) : ''
+      return {
+        name,
+        affiliation,
+        phone,
+        email,
         sourceUserId,
         lockedProfile: true
       }
@@ -675,6 +809,60 @@ export default {
       this.showCoResearcherModal = false
       this.selectedCoResearcherOptions = []
     },
+    async fetchAdvisorOptions() {
+      this.advisorOptionsLoading = true
+      this.advisorOptionsError = ''
+      try {
+        const response = await Service.proposal.getResearcherUsers({ limit: 500 })
+        const payload = (response && response.data && response.data.data) || {}
+        const list = Array.isArray(payload.items)
+          ? payload.items
+          : (Array.isArray(payload.users) ? payload.users : [])
+
+        const currentUserId = String(this.currentUserId || '').trim()
+        this.advisorOptions = list
+          .map(user => {
+            const fullName = this.getUserDisplayName(user)
+            const email = String((user && user.email) || '').trim()
+            const affiliation = this.getAffiliationText(user)
+            const searchText = [fullName, email, affiliation].filter(Boolean).join(' ')
+            const optionKey = this.getUserIdentity(user) || `${fullName}-${email}-${affiliation}`
+            return {
+              ...user,
+              fullName,
+              affiliation,
+              searchText,
+              _optionKey: optionKey
+            }
+          })
+          .filter(user => {
+            const role = String((user && user.role) || '').trim().toLowerCase()
+            if (role && role !== 'researcher') return false
+            if (!currentUserId) return true
+            const uid = String((user && (user._id || user.id)) || '').trim()
+            return !uid || uid !== currentUserId
+          })
+      } catch (err) {
+        console.error('[ResearchTeamForm] fetch advisor options failed:', err)
+        this.advisorOptions = []
+        this.advisorOptionsError = this.isEnglishLocale ? 'Unable to load advisor list' : 'ไม่สามารถโหลดรายชื่อที่ปรึกษาในระบบได้'
+      } finally {
+        this.advisorOptionsLoading = false
+      }
+    },
+    async openAdvisorPicker() {
+      if (this.isReadOnly) return
+      this.selectedAdvisorOptions = []
+      this.showAdvisorModal = true
+
+      if (!this.advisorOptions.length && !this.advisorOptionsLoading) {
+        await this.fetchAdvisorOptions()
+      }
+    },
+    closeAdvisorPicker() {
+      this.showAdvisorModal = false
+      this.selectedAdvisorOptions = []
+    },
     addCoResearcher() {
       this.openCoResearcherPicker()
     },
@@ -712,18 +900,57 @@ export default {
 
       this.closeCoResearcherPicker()
     },
+    confirmAddAdvisors() {
+      if (this.isReadOnly) return
+      const selectedUsers = Array.isArray(this.selectedAdvisorOptions)
+        ? this.selectedAdvisorOptions
+        : []
+      if (!selectedUsers.length) return
+
+      const existingIdentity = new Set(
+        this.advisors
+          .map(advisor => this.getUserIdentity({
+            _id: advisor.sourceUserId || '',
+            email: advisor.email,
+            fullName: advisor.name,
+            phone: advisor.phone
+          }))
+          .filter(Boolean)
+      )
+
+      const newRows = []
+      selectedUsers.forEach(user => {
+        const identity = this.getUserIdentity(user)
+        if (!identity || existingIdentity.has(identity)) return
+        const row = this.createAdvisorFromUser(user)
+        newRows.push(row)
+        existingIdentity.add(identity)
+      })
+
+      if (newRows.length > 0) {
+        this.advisors.push(...newRows)
+        this.emitTeamChanged()
+      }
+
+      this.closeAdvisorPicker()
+    },
     removeCoResearcher(index) {
       if (this.isReadOnly) return;
       this.coResearchers.splice(index, 1);
       this.emitTeamChanged();
     },
     addAdvisor() {
+      this.addExternalAdvisor();
+    },
+    addExternalAdvisor() {
       if (this.isReadOnly) return;
       this.advisors.push({
         name: '',
         affiliation: '',
         phone: '',
-        email: ''
+        email: '',
+        sourceUserId: '',
+        lockedProfile: false
       });
       this.emitTeamChanged();
     },
@@ -759,7 +986,14 @@ export default {
         })
         : []
       this.advisors = Array.isArray(source.advisors)
-        ? source.advisors.map(item => ({ ...item }))
+        ? source.advisors.map(item => {
+          const advisor = item && typeof item === 'object' ? item : {}
+          return {
+            ...advisor,
+            sourceUserId: advisor.sourceUserId ? String(advisor.sourceUserId) : '',
+            lockedProfile: Boolean(advisor.lockedProfile || advisor.sourceUserId)
+          }
+        })
         : []
 
       return new Promise((resolve) => {
@@ -872,6 +1106,57 @@ export default {
   margin-bottom: 15px;
   border-radius: 8px;
   overflow: hidden;
+}
+
+.advisor-toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.advisor-toolbar__button {
+  flex: 1 1 280px;
+}
+
+.advisor-toolbar__button--secondary {
+  border-width: 1px;
+  border-color: #6b7280;
+  color: #374151;
+}
+
+.advisor-toolbar__button--secondary:hover,
+.advisor-toolbar__button--secondary:focus {
+  background: #374151;
+  border-color: #374151;
+  color: #ffffff;
+}
+
+.advisor-toolbar__hint {
+  font-style: normal;
+}
+
+.advisor-meta-row {
+  display: flex;
+  align-items: center;
+}
+
+.advisor-source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.advisor-source-badge--internal {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.advisor-source-badge--external {
+  background: #f3f4f6;
+  color: #374151;
 }
 
 .research-team-form--dark .project-leader-section {
@@ -1066,6 +1351,29 @@ export default {
 .co-researcher-picker ::v-deep .multiselect__option--highlight {
   background: #f4f6fb;
   color: #1f2937;
+}
+
+.research-team-form--dark .advisor-source-badge--internal {
+  background: rgba(59, 130, 246, 0.22);
+  color: #bfdbfe;
+}
+
+.research-team-form--dark .advisor-source-badge--external {
+  background: rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+}
+
+.research-team-form--dark .advisor-toolbar__button--secondary {
+  background: #1f2937;
+  border-color: #475569;
+  color: #e5e7eb;
+}
+
+.research-team-form--dark .advisor-toolbar__button--secondary:hover,
+.research-team-form--dark .advisor-toolbar__button--secondary:focus {
+  background: #334155;
+  border-color: #64748b;
+  color: #ffffff;
 }
 
 .text-danger {

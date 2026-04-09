@@ -865,6 +865,12 @@ export default {
   width: 100%;
 }
 
+.admin-proposal-list__filter-body,
+.admin-proposal-list__table-body,
+.admin-proposal-list__table-surface {
+  background: #ffffff;
+}
+
 [data-coreui-theme='dark'] .admin-proposal-list,
 body.c-dark-theme .admin-proposal-list {
   color: #e5e7eb;
