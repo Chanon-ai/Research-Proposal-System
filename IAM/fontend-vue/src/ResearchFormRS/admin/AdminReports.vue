@@ -59,26 +59,38 @@
       <CRow class="mb-2">
         <CCol sm="6" lg="3" class="mb-3">
           <div class="report-kpi report-kpi--neutral">
-            <small class="report-kpi__label">โครงการทั้งหมด</small>
-            <div class="report-kpi__value">{{ totalProjects }}</div>
+            <div class="report-kpi__left">
+              <span class="report-kpi__icon-wrap"><CIcon name="cil-layers" class="report-kpi__icon" /></span>
+              <small class="report-kpi__label">โครงการทั้งหมด</small>
+            </div>
+            <div class="report-kpi__right"><span class="report-kpi__value">{{ totalProjects }}</span></div>
           </div>
         </CCol>
         <CCol sm="6" lg="3" class="mb-3">
           <div class="report-kpi report-kpi--success">
-            <small class="report-kpi__label">อนุมัติแล้ว</small>
-            <div class="report-kpi__value">{{ approvedCount }}</div>
+            <div class="report-kpi__left">
+              <span class="report-kpi__icon-wrap"><CIcon name="cil-check-circle" class="report-kpi__icon" /></span>
+              <small class="report-kpi__label">อนุมัติแล้ว</small>
+            </div>
+            <div class="report-kpi__right"><span class="report-kpi__value">{{ approvedCount }}</span></div>
           </div>
         </CCol>
         <CCol sm="6" lg="3" class="mb-3">
           <div class="report-kpi report-kpi--warning">
-            <small class="report-kpi__label">รอพิจารณา</small>
-            <div class="report-kpi__value">{{ pendingCount }}</div>
+            <div class="report-kpi__left">
+              <span class="report-kpi__icon-wrap"><CIcon name="cil-clock" class="report-kpi__icon" /></span>
+              <small class="report-kpi__label">รอพิจารณา</small>
+            </div>
+            <div class="report-kpi__right"><span class="report-kpi__value">{{ pendingCount }}</span></div>
           </div>
         </CCol>
         <CCol sm="6" lg="3" class="mb-3">
           <div class="report-kpi report-kpi--danger">
-            <small class="report-kpi__label">ปฏิเสธ</small>
-            <div class="report-kpi__value">{{ rejectedCount }}</div>
+            <div class="report-kpi__left">
+              <span class="report-kpi__icon-wrap"><CIcon name="cil-x-circle" class="report-kpi__icon" /></span>
+              <small class="report-kpi__label">ปฏิเสธ</small>
+            </div>
+            <div class="report-kpi__right"><span class="report-kpi__value">{{ rejectedCount }}</span></div>
           </div>
         </CCol>
       </CRow>
@@ -86,20 +98,29 @@
       <CRow class="mb-4">
         <CCol sm="6" lg="4" class="mb-3">
           <div class="report-kpi report-kpi--info">
-            <small class="report-kpi__label">อัตราอนุมัติ</small>
-            <div class="report-kpi__value">{{ approvalRate }}%</div>
+            <div class="report-kpi__left">
+              <span class="report-kpi__icon-wrap"><CIcon name="cil-chart-pie" class="report-kpi__icon" /></span>
+              <small class="report-kpi__label">อัตราอนุมัติ</small>
+            </div>
+            <div class="report-kpi__right"><span class="report-kpi__value">{{ approvalRate }}%</span></div>
           </div>
         </CCol>
         <CCol sm="6" lg="4" class="mb-3">
-          <div class="report-kpi report-kpi--warning">
-            <small class="report-kpi__label">รอแก้ไข</small>
-            <div class="report-kpi__value">{{ reportSummary.revision_requested || 0 }}</div>
+          <div class="report-kpi report-kpi--revision">
+            <div class="report-kpi__left">
+              <span class="report-kpi__icon-wrap"><CIcon name="cil-pencil" class="report-kpi__icon" /></span>
+              <small class="report-kpi__label">รอแก้ไข</small>
+            </div>
+            <div class="report-kpi__right"><span class="report-kpi__value">{{ reportSummary.revision_requested || 0 }}</span></div>
           </div>
         </CCol>
         <CCol sm="6" lg="4" class="mb-3">
           <div class="report-kpi report-kpi--primary">
-            <small class="report-kpi__label">ประกาศแล้ว</small>
-            <div class="report-kpi__value">{{ reportSummary.announced || 0 }}</div>
+            <div class="report-kpi__left">
+              <span class="report-kpi__icon-wrap"><CIcon name="cil-bullhorn" class="report-kpi__icon" /></span>
+              <small class="report-kpi__label">ประกาศแล้ว</small>
+            </div>
+            <div class="report-kpi__right"><span class="report-kpi__value">{{ reportSummary.announced || 0 }}</span></div>
           </div>
         </CCol>
       </CRow>
@@ -1216,44 +1237,130 @@ export default {
 
 /* ── KPI ─────────────────────────────────────────────────────────────── */
 .report-kpi {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid rgba(140, 21, 21, 0.14);
+  border: 0;
+  border-radius: 0.5rem;
   padding: 14px 16px;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+  isolation: isolate;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: none;
+  background: linear-gradient(135deg, var(--kpi-start), var(--kpi-end));
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.report-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
 }
 
+/* SVG graphic top-right */
 .report-kpi::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--kpi-accent, #8c1515), rgba(197, 155, 58, 0.65));
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--kpi-graphic);
+  background-repeat: no-repeat;
+  background-size: 122px 122px;
+  background-position: calc(100% + 10px) -12px;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 1;
+}
+/* Gloss overlay */
+.report-kpi::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 60%);
+  pointer-events: none;
+  z-index: 1;
+}
+.report-kpi > * { position: relative; z-index: 2; }
+
+/* Color + graphic variants */
+.report-kpi--neutral {
+  --kpi-start: #6b7280; --kpi-end: #4b5563;
+  --kpi-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='22' width='72' height='76' rx='12' fill='white' fill-opacity='0.9'/%3E%3Crect x='38' y='40' width='44' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='54' width='40' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='68' width='33' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3C/svg%3E");
+}
+.report-kpi--success {
+  --kpi-start: #16a34a; --kpi-end: #15803d;
+  --kpi-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
+}
+.report-kpi--warning {
+  --kpi-start: #f59e0b; --kpi-end: #d97706;
+  --kpi-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M60 42v18l14 10' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
+}
+.report-kpi--danger {
+  --kpi-start: #dc2626; --kpi-end: #b91c1c;
+  --kpi-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M48 48l24 24M72 48L48 72' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-opacity='0.24' fill='none'/%3E%3C/svg%3E");
+}
+.report-kpi--info {
+  --kpi-start: #0ea5e9; --kpi-end: #0284c7;
+  --kpi-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Ccircle cx='60' cy='48' r='4' fill='%23000000' fill-opacity='0.2'/%3E%3Cline x1='60' y1='58' x2='60' y2='76' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-opacity='0.2'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.35' stroke-width='5' fill='none'/%3E%3C/svg%3E");
+}
+.report-kpi--revision {
+  --kpi-start: #7c3aed; --kpi-end: #5b21b6;
+  --kpi-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='30' y='28' width='60' height='64' rx='8' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M70 38 L78 46 L56 68 L46 70 L48 60 Z' fill='%23000000' fill-opacity='0.18'/%3E%3C/svg%3E");
+}
+.report-kpi--primary {
+  --kpi-start: #8c1515; --kpi-end: #6b0f0f;
+  --kpi-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath d='M82 34 L44 50 L30 50 L30 70 L44 70 L82 86 Z' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M44 70 L48 88 L56 88 L52 70 Z' fill='white' fill-opacity='0.7'/%3E%3Cellipse cx='90' cy='60' rx='10' ry='18' fill='white' fill-opacity='0.5'/%3E%3C/svg%3E");
 }
 
+/* Left: circle icon + label */
+.report-kpi__left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.report-kpi__icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.32);
+  box-shadow: 0 4px 12px rgba(16,24,40,0.12);
+  transition: transform 0.12s ease;
+  color: rgba(255,255,255,0.98);
+}
+.report-kpi:hover .report-kpi__icon-wrap {
+  transform: translateY(-3px);
+}
+.report-kpi__icon {
+  font-size: 1.6rem;
+  display: inline-block;
+  line-height: 1;
+}
 .report-kpi__label {
-  color: #6b7280;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.9);
   font-weight: 600;
 }
 
-.report-kpi__value {
-  font-size: 1.7rem;
-  font-weight: 900;
-  line-height: 1.1;
-  margin-top: 6px;
-  color: #111827;
+/* Right: value */
+.report-kpi__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
-
-.report-kpi--neutral { --kpi-accent: #8c1515; }
-.report-kpi--primary { --kpi-accent: #8c1515; }
-.report-kpi--success { --kpi-accent: #16a34a; }
-.report-kpi--warning { --kpi-accent: #f59e0b; }
-.report-kpi--danger { --kpi-accent: #dc2626; }
-.report-kpi--info { --kpi-accent: #0ea5e9; }
+.report-kpi__value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255,255,255,0.98);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  text-align: right;
+}
 
 .export-modal-body {
   /* Ensure comfortable spacing even when CoreUI form-group margins are customized. */

@@ -21,9 +21,14 @@
           :aria-pressed="isSummaryFilterActive('scheduled') ? 'true' : 'false'"
           @click="toggleSummaryFilter('scheduled')" @keydown.enter.prevent="toggleSummaryFilter('scheduled')"
           @keydown.space.prevent="toggleSummaryFilter('scheduled')">
-          <div class="summary-label">{{ $t('userMeetings.summary.scheduled.label') }}</div>
-          <div class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('scheduled') }}</div>
-          <div class="summary-caption">{{ $t('userMeetings.summary.scheduled.caption') }}</div>
+          <div class="summary-left">
+            <span class="summary-icon-wrap"><CIcon name="cil-calendar" class="summary-icon" /></span>
+            <span class="summary-label">{{ $t('userMeetings.summary.scheduled.label') }}</span>
+          </div>
+          <div class="summary-right">
+            <span class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('scheduled') }}</span>
+            <span class="summary-caption">{{ $t('userMeetings.summary.scheduled.caption') }}</span>
+          </div>
         </div>
       </CCol>
       <CCol sm="6" lg="4">
@@ -32,9 +37,14 @@
           :aria-pressed="isSummaryFilterActive('completed') ? 'true' : 'false'"
           @click="toggleSummaryFilter('completed')" @keydown.enter.prevent="toggleSummaryFilter('completed')"
           @keydown.space.prevent="toggleSummaryFilter('completed')">
-          <div class="summary-label">{{ $t('userMeetings.summary.completed.label') }}</div>
-          <div class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('completed') }}</div>
-          <div class="summary-caption">{{ $t('userMeetings.summary.completed.caption') }}</div>
+          <div class="summary-left">
+            <span class="summary-icon-wrap"><CIcon name="cil-check-circle" class="summary-icon" /></span>
+            <span class="summary-label">{{ $t('userMeetings.summary.completed.label') }}</span>
+          </div>
+          <div class="summary-right">
+            <span class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('completed') }}</span>
+            <span class="summary-caption">{{ $t('userMeetings.summary.completed.caption') }}</span>
+          </div>
         </div>
       </CCol>
       <CCol sm="6" lg="4">
@@ -43,9 +53,14 @@
           :aria-pressed="isSummaryFilterActive('cancelled') ? 'true' : 'false'"
           @click="toggleSummaryFilter('cancelled')" @keydown.enter.prevent="toggleSummaryFilter('cancelled')"
           @keydown.space.prevent="toggleSummaryFilter('cancelled')">
-          <div class="summary-label">{{ $t('userMeetings.summary.cancelled.label') }}</div>
-          <div class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('cancelled') }}</div>
-          <div class="summary-caption">{{ $t('userMeetings.summary.cancelled.caption') }}</div>
+          <div class="summary-left">
+            <span class="summary-icon-wrap"><CIcon name="cil-x-circle" class="summary-icon" /></span>
+            <span class="summary-label">{{ $t('userMeetings.summary.cancelled.label') }}</span>
+          </div>
+          <div class="summary-right">
+            <span class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('cancelled') }}</span>
+            <span class="summary-caption">{{ $t('userMeetings.summary.cancelled.caption') }}</span>
+          </div>
         </div>
       </CCol>
     </CRow>
@@ -60,13 +75,52 @@
               <span>{{ $t('userMeetings.search.subtitleFields') }}</span>
             </div>
           </div>
+          <CButton v-if="hasActiveFilters" size="sm" color="secondary" variant="outline" class="filter-card__reset-btn" @click="resetAllFilters">
+            <CIcon name="cil-x" class="mr-1" /> ล้างตัวกรอง
+          </CButton>
         </div>
-        <CRow class="align-items-end">
-          <CCol md="12" class="mb-2 mb-md-0">
-            <CInput v-model="searchKeyword" :label="$t('userMeetings.search.label')" :placeholder="$t('userMeetings.search.placeholder')"
-              @input="onSearchKeywordInput" />
-          </CCol>
-        </CRow>
+        <div class="filter-row mt-2">
+          <div class="filter-row__item filter-row__item--search">
+            <label class="filter-label">ค้นหา</label>
+            <CInput v-model="searchKeyword" placeholder="ชื่อการประชุม, โครงการ, สถานที่..." @input="onSearchKeywordInput" />
+          </div>
+          <div class="filter-row__item">
+            <label class="filter-label">สถานะ</label>
+            <select class="form-control filter-select-native" v-model="filterStatus" @change="onFilterChange">
+              <option value="">ทั้งหมด</option>
+              <option value="scheduled">นัดหมายแล้ว</option>
+              <option value="completed">เสร็จสิ้น</option>
+              <option value="cancelled">ยกเลิก</option>
+            </select>
+          </div>
+          <div class="filter-row__item">
+            <label class="filter-label">รูปแบบ</label>
+            <select class="form-control filter-select-native" v-model="filterMeetingType" @change="onFilterChange">
+              <option value="">ทั้งหมด</option>
+              <option value="online">ออนไลน์</option>
+              <option value="onsite">ณ สถานที่</option>
+            </select>
+          </div>
+          <div class="filter-row__item">
+            <label class="filter-label">วันที่เริ่ม</label>
+            <input type="date" class="form-control filter-select-native" v-model="filterDateFrom" @change="onFilterChange" />
+          </div>
+          <div class="filter-row__item">
+            <label class="filter-label">วันที่สิ้นสุด</label>
+            <input type="date" class="form-control filter-select-native" v-model="filterDateTo" @change="onFilterChange" />
+          </div>
+          <div class="filter-row__item">
+            <label class="filter-label">เรียงลำดับ</label>
+            <select class="form-control filter-select-native" v-model="filterSortOrder" @change="onFilterChange">
+              <option value="newest">วันที่ใหม่ → เก่า</option>
+              <option value="oldest">วันที่เก่า → ใหม่</option>
+              <option value="status">ตามสถานะ</option>
+            </select>
+          </div>
+          <div class="filter-row__count">
+            <small class="text-muted">พบ {{ total }} รายการ</small>
+          </div>
+        </div>
       </CCardBody>
     </CCard>
 
@@ -580,7 +634,7 @@ export default {
   data() {
     return {
       meetings: [], total: 0, page: 1, totalPages: 1, limit: 9,
-      loading: false, filterStatus: '', searchKeyword: '', searchDebounceTimer: null,
+      loading: false, filterStatus: '', filterMeetingType: '', filterDateFrom: '', filterDateTo: '', filterSortOrder: 'status', searchKeyword: '', searchDebounceTimer: null,
       summaryCounts: { scheduled: 0, completed: 0, cancelled: 0, total: 0 },
       summaryCountsLoading: false,
       showMeetingModal: false, isEditMode: false, selectedMeeting: null,
@@ -620,6 +674,9 @@ export default {
     currentUserEmail() { const user = this.currentUser || {}; return String(user.email || '').trim() },
     applyMyOnlyFilter() {
       return Boolean(this.myOnly && this.currentUserRole === 'committee' && (this.currentUserId || this.currentUserName || this.currentUserEmail))
+    },
+    hasActiveFilters() {
+      return !!(this.searchKeyword || this.filterStatus || this.filterMeetingType || this.filterDateFrom || this.filterDateTo || this.filterSortOrder !== 'status')
     },
     canCreate() { return !this.readOnly },
     canEditDelete() { return !this.readOnly },
@@ -1249,19 +1306,39 @@ export default {
         const params = this.applyMyOnlyFilter ? { page: 1, limit: 500 } : { page: this.page, limit: this.limit }
         if (this.filterStatus) params.status = this.filterStatus
         if (this.searchKeyword && String(this.searchKeyword).trim()) params.keyword = String(this.searchKeyword).trim()
+        if (this.filterMeetingType) params.meetingType = this.filterMeetingType
+        if (this.filterDateFrom) params.dateFrom = this.filterDateFrom
+        if (this.filterDateTo) params.dateTo = this.filterDateTo
         const response = await axios.get('/api/v1/meetings', { params })
         const payload = (response && response.data && response.data.data) || {}
-        const list = Array.isArray(payload.meetings) ? payload.meetings : (Array.isArray(payload.data) ? payload.data : [])
-        const sorted = this.sortMeetingsForDisplay(list)
-        if (this.applyMyOnlyFilter) {
-          const mine = sorted.filter(m => this.meetingHasCurrentUser(m))
-          this.total = mine.length; this.totalPages = Math.max(1, Math.ceil(this.total / Math.max(1, this.limit)))
-          if (this.page > this.totalPages) this.page = 1
-          const start = (Math.max(1, this.page) - 1) * this.limit; this.meetings = mine.slice(start, start + this.limit)
-        } else {
-          this.meetings = sorted; this.total = Number(payload.total) || list.length
-          this.page = Number(payload.page) || this.page; this.totalPages = Number(payload.totalPages) || Math.max(1, Math.ceil(this.total / this.limit))
+        let list = Array.isArray(payload.meetings) ? payload.meetings : (Array.isArray(payload.data) ? payload.data : [])
+        // client-side meetingType filter (fallback if API doesn't support it)
+        if (this.filterMeetingType) {
+          list = list.filter(m => {
+            const t = String(m.meetingType || '').toLowerCase()
+            return t === this.filterMeetingType || (!t && this.filterMeetingType === 'online' && m.videoLink)
+          })
         }
+        // client-side date range filter
+        if (this.filterDateFrom || this.filterDateTo) {
+          list = list.filter(m => {
+            if (!m.meetingDate) return false
+            const d = m.meetingDate.slice(0, 10)
+            if (this.filterDateFrom && d < this.filterDateFrom) return false
+            if (this.filterDateTo && d > this.filterDateTo) return false
+            return true
+          })
+        }
+        // sort
+        const sorted = this.filterSortOrder === 'newest'
+          ? list.slice().sort((a, b) => (b.meetingDate || '').localeCompare(a.meetingDate || ''))
+          : this.filterSortOrder === 'oldest'
+            ? list.slice().sort((a, b) => (a.meetingDate || '').localeCompare(b.meetingDate || ''))
+            : this.sortMeetingsForDisplay(list)
+        this.meetings = sorted
+        this.total = sorted.length || Number(payload.total) || list.length
+        this.totalPages = Math.max(1, Math.ceil(this.total / Math.max(1, this.limit)))
+        if (this.page > this.totalPages) this.page = 1
         if (this.selectedMeetingForActions) {
           const stillExists = this.meetings.find(m => String(m._id) === String(this.selectedMeetingForActions._id))
           this.selectedMeetingForActions = (stillExists && this.isMeetingActionable(stillExists)) ? stillExists : null
@@ -1296,6 +1373,20 @@ export default {
     onSearchKeywordInput() {
       if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer)
       this.searchDebounceTimer = setTimeout(() => { this.page = 1; this.fetchMeetings() }, 350)
+    },
+    onFilterChange() {
+      this.page = 1
+      this.fetchMeetings()
+    },
+    resetAllFilters() {
+      this.searchKeyword = ''
+      this.filterStatus = ''
+      this.filterMeetingType = ''
+      this.filterDateFrom = ''
+      this.filterDateTo = ''
+      this.filterSortOrder = 'status'
+      this.page = 1
+      this.fetchMeetings()
     },
     async handleSearchEditAction() {
       if (!this.canEditDelete) return
@@ -1500,20 +1591,35 @@ export default {
 ::v-deep .multiselect__option--selected { background: rgba(139,18,18,0.08); color: var(--am-text); font-weight: 600; }
 ::v-deep .multiselect__option--selected::after { content: ''; display: none; }
 
-.summary-card { height: 100%; padding: 20px; border: 0; border-radius: 0.5rem; background: linear-gradient(135deg, var(--summary-start, #8c1515), var(--summary-end, #6b0f0f)); box-shadow: 0 16px 40px rgba(15,23,42,0.12); position: relative; overflow: hidden; isolation: isolate; }
-.summary-card--info { --summary-start: #f59e0b; --summary-end: #d97706; }
-.summary-card--success { --summary-start: #16a34a; --summary-end: #15803d; }
-.summary-card--danger { --summary-start: #ef4444; --summary-end: #dc2626; }
+.summary-card { height: 100%; padding: 14px 16px; border: 0; border-radius: 0.5rem; background: linear-gradient(135deg, var(--summary-start, #8c1515), var(--summary-end, #6b0f0f)); box-shadow: 0 16px 40px rgba(15,23,42,0.12); position: relative; overflow: hidden; isolation: isolate; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
+.summary-card--info    { --summary-start: #f59e0b; --summary-end: #d97706; --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M60 42v18l14 10' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E"); }
+.summary-card--success { --summary-start: #16a34a; --summary-end: #15803d; --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E"); }
+.summary-card--danger  { --summary-start: #ef4444; --summary-end: #dc2626; --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M48 48l24 24M72 48L48 72' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-opacity='0.24' fill='none'/%3E%3C/svg%3E"); }
+.summary-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background-image: var(--summary-graphic); background-repeat: no-repeat; background-size: 122px 122px; background-position: calc(100% + 10px) -12px; opacity: 0.22; pointer-events: none; z-index: 1; }
 .summary-card::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 60%); pointer-events: none; z-index: 1; }
 .summary-card > * { position: relative; z-index: 2; }
-.summary-label { color: rgba(255,255,255,0.9); font-size: 0.9rem; font-weight: 600; }
-.summary-number { margin: 10px 0 8px; color: rgba(255,255,255,0.98); font-size: 2rem; font-weight: 700; line-height: 1; }
-.summary-caption { color: rgba(255,255,255,0.9); font-size: 0.88rem; line-height: 1.5; }
+.summary-left { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.summary-icon-wrap { width: 48px; height: 48px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.32); box-shadow: 0 4px 12px rgba(16,24,40,0.12); transition: transform 0.12s ease; color: rgba(255,255,255,0.98); }
+.summary-row--filters .summary-card:hover .summary-icon-wrap { transform: translateY(-3px); }
+.summary-icon { font-size: 1.6rem; display: inline-block; line-height: 1; }
+.summary-label { color: rgba(255,255,255,0.9); font-size: 0.82rem; font-weight: 600; }
+.summary-right { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 4px; }
+.summary-number { color: rgba(255,255,255,0.98); font-size: 2.2rem; font-weight: 800; line-height: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.18); text-align: right; }
+.summary-caption { color: rgba(255,255,255,0.85); font-size: 0.78rem; line-height: 1.4; text-align: right; }
 
 .filter-card { border-radius: 20px; box-shadow: 0 16px 40px rgba(15,23,42,0.06); border: 1px solid var(--am-border); background: var(--am-surface); margin-bottom: var(--am-section-gap); }
 .filter-card::v-deep .form-control { border-color: var(--am-line); }
 .filter-card::v-deep .form-control:focus { border-color: rgba(var(--am-gold-rgb), 0.75); box-shadow: 0 0 0 3px rgba(var(--am-gold-rgb), 0.18); }
-.filter-card__header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.filter-card__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.filter-card__reset-btn { flex-shrink: 0; align-self: center; }
+.filter-label { font-size: 0.8rem; font-weight: 700; color: var(--am-muted); margin-bottom: 4px; display: block; }
+.filter-select-native { height: 38px; border-radius: 8px; border: 1px solid var(--am-line); background: var(--am-surface); color: var(--am-text); padding: 0 10px; font-size: 0.9rem; width: 100%; transition: border-color 0.15s; }
+.filter-select-native:focus { outline: none; border-color: rgba(var(--am-gold-rgb), 0.75); box-shadow: 0 0 0 3px rgba(var(--am-gold-rgb), 0.18); }
+.filter-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.filter-row__item { display: flex; flex-direction: column; min-width: 120px; flex: 1 1 120px; }
+.filter-row__item--search { flex: 2 1 200px; }
+.filter-row__item--search ::v-deep .form-group { margin-bottom: 0; }
+.filter-row__count { display: flex; align-items: flex-end; padding-bottom: 6px; margin-left: auto; flex-shrink: 0; white-space: nowrap; }
 .filter-card__title { font-weight: 900; color: var(--am-text); font-size: 1.05rem; letter-spacing: 0.2px; }
 .filter-card__subtitle { margin-top: 2px; color: var(--am-muted); font-size: 0.9rem; line-height: 1.55; }
 .filter-card__icon-action { display: flex; justify-content: flex-end; align-items: flex-end; height: 100%; }
