@@ -2,10 +2,10 @@
   <div class="admin-meetings-page">
     <section class="meetings-hero">
       <div class="meetings-hero__content">
-        <div class="meetings-hero__eyebrow">{{ heroEyebrow }}</div>
-        <h2 class="meetings-hero__title">{{ heroTitle }}</h2>
+        <div class="meetings-hero__eyebrow">{{ resolvedHeroEyebrow }}</div>
+        <h2 class="meetings-hero__title">{{ resolvedHeroTitle }}</h2>
         <p class="meetings-hero__subtitle mb-0">
-          {{ heroSubtitle }}
+          {{ resolvedHeroSubtitle }}
         </p>
       </div>
       <div v-if="canCreate" class="meetings-hero__action">
@@ -15,7 +15,18 @@
     </section>
 
     <CRow class="summary-row summary-row--filters">
-      <CCol sm="6" lg="4">
+      <CCol sm="6" lg="3">
+        <div class="summary-card summary-card--neutral"
+          :class="{ 'summary-card--active': isSummaryFilterActive('') }" role="button" tabindex="0"
+          :aria-pressed="isSummaryFilterActive('') ? 'true' : 'false'"
+          @click="setAllFilter" @keydown.enter.prevent="setAllFilter"
+          @keydown.space.prevent="setAllFilter">
+          <div class="summary-label">{{ $t('userMeetings.summary.all.label') }}</div>
+          <div class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('total') }}</div>
+          <div class="summary-caption">{{ $t('userMeetings.summary.all.caption') }}</div>
+        </div>
+      </CCol>
+      <CCol sm="6" lg="3">
         <div class="summary-card summary-card--info"
           :class="{ 'summary-card--active': isSummaryFilterActive('scheduled') }" role="button" tabindex="0"
           :aria-pressed="isSummaryFilterActive('scheduled') ? 'true' : 'false'"
@@ -31,7 +42,7 @@
           </div>
         </div>
       </CCol>
-      <CCol sm="6" lg="4">
+      <CCol sm="6" lg="3">
         <div class="summary-card summary-card--success"
           :class="{ 'summary-card--active': isSummaryFilterActive('completed') }" role="button" tabindex="0"
           :aria-pressed="isSummaryFilterActive('completed') ? 'true' : 'false'"
@@ -47,7 +58,7 @@
           </div>
         </div>
       </CCol>
-      <CCol sm="6" lg="4">
+      <CCol sm="6" lg="3">
         <div class="summary-card summary-card--danger"
           :class="{ 'summary-card--active': isSummaryFilterActive('cancelled') }" role="button" tabindex="0"
           :aria-pressed="isSummaryFilterActive('cancelled') ? 'true' : 'false'"
@@ -312,7 +323,7 @@
     <CModal v-if="canCreate" :show.sync="showMeetingModal" :close-on-backdrop="false" centered size="lg" class="meeting-modal">
       <template #header-wrapper>
         <div class="modal-header">
-          <h5 class="modal-title">{{ isEditMode ? 'Edit Meeting' : 'Create New Meeting' }}</h5>
+          <h5 class="modal-title">{{ isEditMode ? $t('adminMeetings.modal.editTitle') : $t('adminMeetings.modal.createTitle') }}</h5>
           <div class="meeting-modal__header-actions">
             <CButton
               v-if="isEditMode && selectedMeeting && meetingForm && meetingForm.status === 'scheduled'"
@@ -323,9 +334,9 @@
               @click="cancelMeeting"
             >
               <CIcon name="cil-ban" width="16" class="mr-1 icon-bold" aria-hidden="true" />
-              Cancel Meeting
+              {{ $t('adminMeetings.modal.cancelMeeting') }}
             </CButton>
-            <button type="button" class="close" aria-label="Close" @click="closeMeetingModal">
+            <button type="button" class="close" :aria-label="$t('adminMeetings.modal.close')" @click="closeMeetingModal">
               <CIcon name="cil-x" />
             </button>
           </div>
@@ -334,33 +345,32 @@
       <template #body-wrapper>
         <div class="meeting-form">
           <div class="field full-field">
-            <label class="form-label mt-3">Related Proposal <span class="required">*</span></label>
+            <label class="form-label mt-3">{{ $t('adminMeetings.modal.relatedProposal') }} <span class="required">*</span></label>
             <multiselect v-model="selectedProposalOption" :options="proposalOptions" :searchable="true"
               :clear-on-select="false" :close-on-select="true" :preserve-search="true" :allow-empty="true"
               :loading="proposalOptionsLoading" label="searchText" track-by="_id"
-              placeholder="Type to search proposals..." :custom-label="formatProposalTitle" @input="onProposalSelected">
+              :placeholder="$t('adminMeetings.modal.proposalPlaceholder')" :custom-label="formatProposalTitle" @input="onProposalSelected">
               <template slot="singleLabel" slot-scope="{ option }">
                 <span>{{ formatProposalTitle(option) }}</span>
               </template>
               <template slot="option" slot-scope="{ option }">
                 <div>
-                  <div class="font-weight-bold">{{ option.projectTitleTh || option.projectTitleEn || '-' }}</div>
+                  <div class="font-weight-bold">{{ getProposalDisplayTitle(option) || '-' }}</div>
                   <div v-if="getProposalLeaderName(option)" class="text-muted small">
-                    Project Leader: {{ getProposalLeaderName(option) }}
+                    {{ $t('adminMeetings.modal.projectLeader') }}: {{ getProposalLeaderName(option) }}
                   </div>
                 </div>
               </template>
             </multiselect>
-            <small class="text-muted d-block mt-1">Only proposals with status: Office Received or Office Preparing Result</small>
-            <small v-if="proposalOptionsError" class="text-warning d-block mt-1">Failed to load proposal list: {{
-              proposalOptionsError }}</small>
+            <small class="text-muted d-block mt-1">{{ $t('adminMeetings.modal.proposalStatusHint') }}</small>
+            <small v-if="proposalOptionsError" class="text-warning d-block mt-1">{{ $t('adminMeetings.modal.proposalLoadError', { error: proposalOptionsError }) }}</small>
           </div>
           <div class="field full-field">
-            <label class="form-label">Additional Participants (Optional)</label>
+            <label class="form-label">{{ $t('adminMeetings.modal.participants') }}</label>
             <multiselect v-model="selectedParticipantOptions" :options="participantOptions" :searchable="true"
               :multiple="true" :close-on-select="false" :clear-on-select="false" :preserve-search="true"
               :allow-empty="true" :loading="participantOptionsLoading" label="searchText" track-by="_id"
-              placeholder="Type to search users..." :custom-label="formatParticipantLabel">
+              :placeholder="$t('adminMeetings.modal.participantsPlaceholder')" :custom-label="formatParticipantLabel">
               <template slot="option" slot-scope="{ option }">
                 <div>
                   <div class="font-weight-bold">{{ option.fullName || '-' }}</div>
@@ -368,24 +378,23 @@
                 </div>
               </template>
             </multiselect>
-            <small v-if="participantOptionsError" class="text-warning d-block mt-1">Failed to load user list: {{
-              participantOptionsError }}</small>
+            <small v-if="participantOptionsError" class="text-warning d-block mt-1">{{ $t('adminMeetings.modal.participantsLoadError', { error: participantOptionsError }) }}</small>
           </div>
           <div class="field full-field">
-            <label class="form-label">Meeting Title <span class="required">*</span></label>
-            <CInput class="full" placeholder="Enter meeting title" v-model="meetingForm.title" />
+            <label class="form-label">{{ $t('adminMeetings.modal.meetingTitle') }} <span class="required">*</span></label>
+            <CInput class="full" :placeholder="$t('adminMeetings.modal.meetingTitlePlaceholder')" v-model="meetingForm.title" />
           </div>
 
           <div class="small-row">
             <div class="field small-field">
-              <label class="form-label">Meeting Date <span class="required">*</span></label>
+              <label class="form-label">{{ $t('adminMeetings.modal.meetingDate') }} <span class="required">*</span></label>
               <v-date-picker v-model="meetingDatePickerValue" :min-date="enforceMinDateTime ? minMeetingDateObj : null"
                 :popover="{ visibility: 'focus', placement: 'bottom-start' }">
                 <template #default="{ inputValue, inputEvents }">
                   <div class="input-icon__wrap" data-tone="primary">
                     <input ref="meetingDateInput" class="form-control input-icon__control"
-                      :value="meetingDatePickerValue ? formatThaiDateExampleShort(meetingDatePickerValue) : ''"
-                      v-on="inputEvents" readonly placeholder="Select date">
+                      :value="meetingDatePickerValue ? formatDateExampleShort(meetingDatePickerValue) : ''"
+                      v-on="inputEvents" readonly :placeholder="$t('adminMeetings.modal.meetingDatePlaceholder')">
                     <button type="button" class="input-icon__suffix" @mousedown.prevent
                       @click="focusPicker('meetingDateInput')">
                       <CIcon name="cil-calendar" width="16" class="input-icon__ic" aria-hidden="true" />
@@ -394,15 +403,15 @@
                 </template>
               </v-date-picker>
               <small v-if="meetingDatePickerValue" class="text-muted d-block mt-1">{{
-                formatThaiDateBelow(meetingDatePickerValue)
+                formatLocaleDateBelow(meetingDatePickerValue)
               }}</small>
             </div>
             <div class="field small-field">
-              <label class="form-label">Start Time <span class="required">*</span></label>
-              <div class="input-icon__wrap" data-tone="info">
+              <label class="form-label">{{ $t('adminMeetings.modal.startTime') }} <span class="required">*</span></label>
+              <div class="input-icon__wrap" data-tone="primary">
                 <input ref="startTimeTrigger" class="form-control input-icon__control time-trigger" type="text"
-                  :value="meetingForm.startTime ? formatTimeMeridiemDisplay(meetingForm.startTime) : ''"
-                  placeholder="Select start time" readonly @click="toggleTimeDropdown('start')" />
+                  :value="meetingForm.startTime ? formatTimeDisplay(meetingForm.startTime) : ''"
+                  :placeholder="$t('adminMeetings.modal.startTimePlaceholder')" readonly @click="toggleTimeDropdown('start')" />
                 <button type="button" class="input-icon__suffix" @mousedown.prevent
                   @click="toggleTimeDropdown('start')">
                   <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
@@ -410,11 +419,11 @@
               </div>
             </div>
             <div class="field small-field">
-              <label class="form-label">End Time</label>
-              <div class="input-icon__wrap" data-tone="info">
+              <label class="form-label">{{ $t('adminMeetings.modal.endTime') }}</label>
+              <div class="input-icon__wrap" data-tone="primary">
                 <input ref="endTimeTrigger" class="form-control input-icon__control time-trigger" type="text"
-                  :value="meetingForm.endTime ? formatTimeMeridiemDisplay(meetingForm.endTime) : ''"
-                  :placeholder="meetingForm.startTime ? '-' : 'Select end time'" readonly
+                  :value="meetingForm.endTime ? formatTimeDisplay(meetingForm.endTime) : ''"
+                  :placeholder="meetingForm.startTime ? '-' : $t('adminMeetings.modal.endTimePlaceholder')" readonly
                   :disabled="!meetingForm.startTime" @click="toggleTimeDropdown('end')" />
                 <button type="button" class="input-icon__suffix" @mousedown.prevent :disabled="!meetingForm.startTime"
                   @click="toggleTimeDropdown('end')">
@@ -425,35 +434,35 @@
           </div>
 
           <div class="field full-field">
-            <label class="form-label">Meeting Type</label>
-            <div class="meeting-type-toggle" role="radiogroup" aria-label="Meeting Type">
+            <label class="form-label">{{ $t('adminMeetings.modal.meetingType') }}</label>
+            <div class="meeting-type-toggle" role="radiogroup" :aria-label="$t('adminMeetings.modal.meetingType')">
               <input id="meeting-type-online" class="meeting-type-toggle__input" type="radio" value="online"
                 v-model="meetingForm.meetingType">
-              <label class="meeting-type-toggle__label" for="meeting-type-online">Online</label>
+              <label class="meeting-type-toggle__label" for="meeting-type-online">{{ $t('userMeetings.card.modeOnline') }}</label>
               <input id="meeting-type-onsite" class="meeting-type-toggle__input" type="radio" value="onsite"
                 v-model="meetingForm.meetingType">
-              <label class="meeting-type-toggle__label" for="meeting-type-onsite">Onsite</label>
+              <label class="meeting-type-toggle__label" for="meeting-type-onsite">{{ $t('userMeetings.card.modeOnsite') }}</label>
             </div>
           </div>
 
           <div class="field full-field">
-            <label class="form-label">Location <span v-if="meetingForm.meetingType === 'onsite'"
+            <label class="form-label">{{ $t('adminMeetings.modal.location') }} <span v-if="meetingForm.meetingType === 'onsite'"
                 class="required">*</span></label>
             <input type="text" class="form-control full" v-model="meetingForm.location"
               :disabled="meetingForm.meetingType === 'online'"
-              :placeholder="meetingForm.meetingType === 'online' ? 'Online: no location needed' : 'e.g. C1 101'" />
+              :placeholder="meetingForm.meetingType === 'online' ? $t('adminMeetings.modal.locationOnlinePlaceholder') : $t('adminMeetings.modal.locationOnsitePlaceholder')" />
           </div>
 
           <div class="field full-field">
-            <label class="form-label">Video Meeting Link <span v-if="meetingForm.meetingType === 'online'"
+            <label class="form-label">{{ $t('adminMeetings.modal.videoLink') }} <span v-if="meetingForm.meetingType === 'online'"
                 class="required">*</span></label>
-            <CInput class="full" type="url" placeholder="e.g. https://meet.google.com/..."
+            <CInput class="full" type="url" :placeholder="$t('adminMeetings.modal.videoLinkPlaceholder')"
               v-model="meetingForm.videoLink" />
           </div>
 
           <div class="field full-field">
-            <label class="form-label">Agenda</label>
-            <CTextarea class="full" rows="4" placeholder="Enter agenda topics or key discussion points (if any)"
+            <label class="form-label">{{ $t('adminMeetings.modal.agenda') }}</label>
+            <CTextarea class="full" rows="4" :placeholder="$t('adminMeetings.modal.agendaPlaceholder')"
               v-model="meetingForm.agenda" />
           </div>
         </div>
@@ -461,9 +470,9 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton color="secondary" class="mr-3 floating-action btn-cancel" @click="closeMeetingModal"><CIcon name="cil-x" class="mr-1" /> Cancel</CButton>
+          <CButton color="secondary" class="mr-3 floating-action btn-cancel" @click="closeMeetingModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('adminMeetings.modal.cancel') }}</CButton>
           <CButton color="primary" class="floating-action btn-save" :disabled="savingMeeting" @click="saveMeeting">
-            <CIcon name="cil-save" class="mr-1" /> {{ savingMeeting ? 'Saving...' : 'Save' }}
+            <CIcon name="cil-save" class="mr-1" /> {{ savingMeeting ? $t('adminMeetings.modal.saving') : $t('adminMeetings.modal.save') }}
           </CButton>
         </div>
       </template>
@@ -471,14 +480,14 @@
 
     <div v-if="canCreate && timeDropdown.openFor" class="time-picker__backdrop" @mousedown="closeTimeDropdown"></div>
     <div v-if="canCreate && timeDropdown.openFor" class="time-picker" ref="timeDropdownPanel" role="dialog" aria-modal="true"
-      :aria-label="timeDropdown.openFor === 'start' ? 'Select meeting start time' : 'Select meeting end time'" :style="{
+      :aria-label="timeDropdown.openFor === 'start' ? $t('adminMeetings.timePicker.selectStart') : $t('adminMeetings.timePicker.selectEnd')" :style="{
         top: timeDropdown.top + 'px',
         left: timeDropdown.left + 'px',
         width: timeDropdown.width + 'px'
       }" @mousedown.stop>
       <div class="time-picker__wheels">
         <div class="time-picker__wheel">
-          <button type="button" class="time-picker__arrow" aria-label="Increase hour" @click="stepTimePicker('hour', 1)">
+          <button type="button" class="time-picker__arrow" :aria-label="$t('adminMeetings.timePicker.incHour')" @click="stepTimePicker('hour', 1)">
             <CIcon name="cil-chevron-top" width="18" />
           </button>
           <div class="time-picker__digit-window">
@@ -486,13 +495,13 @@
               <span :key="`hour-${timeDropdown.hour}`" class="time-picker__digit">{{ displayTimePickerHour }}</span>
             </transition>
           </div>
-          <button type="button" class="time-picker__arrow" aria-label="Decrease hour" @click="stepTimePicker('hour', -1)">
+          <button type="button" class="time-picker__arrow" :aria-label="$t('adminMeetings.timePicker.decHour')" @click="stepTimePicker('hour', -1)">
             <CIcon name="cil-chevron-bottom" width="18" />
           </button>
         </div>
         <div class="time-picker__separator" aria-hidden="true">:</div>
         <div class="time-picker__wheel">
-          <button type="button" class="time-picker__arrow" aria-label="Increase minute" @click="stepTimePicker('minute', 1)">
+          <button type="button" class="time-picker__arrow" :aria-label="$t('adminMeetings.timePicker.incMinute')" @click="stepTimePicker('minute', 1)">
             <CIcon name="cil-chevron-top" width="18" />
           </button>
           <div class="time-picker__digit-window">
@@ -500,7 +509,7 @@
               <span :key="`minute-${timeDropdown.minute}`" class="time-picker__digit">{{ displayTimePickerMinute }}</span>
             </transition>
           </div>
-          <button type="button" class="time-picker__arrow" aria-label="Decrease minute" @click="stepTimePicker('minute', -1)">
+          <button type="button" class="time-picker__arrow" :aria-label="$t('adminMeetings.timePicker.decMinute')" @click="stepTimePicker('minute', -1)">
             <CIcon name="cil-chevron-bottom" width="18" />
           </button>
         </div>
@@ -514,7 +523,7 @@
     </div>
 
     <CModal :show.sync="showMinutesModal" :close-on-backdrop="false" centered size="xl" class="minutes-modal"
-      :title="`${readOnly ? 'Meeting Details' : 'Save Meeting Minutes'} — ${minutesMeeting ? (minutesMeeting.title || '-') : '-'}`">
+      :title="`${readOnly ? $t('adminMeetings.minutes.detailTitle') : $t('adminMeetings.minutes.saveTitle')} — ${minutesMeeting ? (minutesMeeting.title || '-') : '-'}`">
       <template #body-wrapper>
         <div class="minutes-form">
           <div v-if="minutesMeeting" class="minutes-meta full">
@@ -530,28 +539,28 @@
           </div>
 
           <div class="minutes-panel">
-            <div class="minutes-panel__title">Meeting Minutes</div>
-            <CTextarea rows="6" placeholder="Record what happened in the meeting..." v-model="minutesForm.minutes"
+            <div class="minutes-panel__title">{{ $t('adminMeetings.minutes.minutes') }}</div>
+            <CTextarea rows="6" :placeholder="$t('adminMeetings.minutes.minutesPlaceholder')" v-model="minutesForm.minutes"
               :disabled="isReadOnly(minutesMeeting)" />
           </div>
 
           <div class="minutes-panel">
-            <div class="minutes-panel__title">Meeting Resolutions</div>
-            <CTextarea rows="6" placeholder="Key resolutions or conclusions from the meeting..." v-model="minutesForm.decisions"
+            <div class="minutes-panel__title">{{ $t('adminMeetings.minutes.resolutions') }}</div>
+            <CTextarea rows="6" :placeholder="$t('adminMeetings.minutes.resolutionsPlaceholder')" v-model="minutesForm.decisions"
               :disabled="isReadOnly(minutesMeeting)" />
           </div>
 
           <div class="minutes-action full">
             <div class="minutes-action__header">
-              <div class="minutes-action__title">Action Items</div>
+              <div class="minutes-action__title">{{ $t('adminMeetings.minutes.actionItems') }}</div>
             </div>
             <div class="table-responsive minutes-action__table">
               <table class="table table-bordered table-sm mb-0">
                 <thead>
                   <tr>
-                    <th>Task</th>
-                    <th>Assignee</th>
-                    <th>Due Date</th>
+                    <th>{{ $t('adminMeetings.minutes.task') }}</th>
+                    <th>{{ $t('adminMeetings.minutes.assignee') }}</th>
+                    <th>{{ $t('adminMeetings.minutes.dueDate') }}</th>
                     <th style="width: 60px;">#</th>
                   </tr>
                 </thead>
@@ -562,19 +571,19 @@
                     <td><CInput type="date" v-model="item.deadline" :disabled="isReadOnly(minutesMeeting)" /></td>
                     <td>
                       <CButton size="sm" color="danger" :disabled="isReadOnly(minutesMeeting)" class="minutes-action__remove"
-                        @click="removeActionItem(index)" aria-label="Remove Action Item">
+                        @click="removeActionItem(index)" :aria-label="$t('adminMeetings.minutes.remove')">
                         <CIcon name="cil-trash" width="14" aria-hidden="true" />
                       </CButton>
                     </td>
                   </tr>
                   <tr v-if="minutesForm.actionItems.length === 0">
-                    <td colspan="4" class="text-center text-muted">No Action Items yet</td>
+                    <td colspan="4" class="text-center text-muted">{{ $t('adminMeetings.minutes.empty') }}</td>
                   </tr>
                   <tr v-if="!isReadOnly(minutesMeeting)" class="minutes-action__add-row">
                     <td colspan="4">
                       <button type="button" class="minutes-action__add-btn" @click="addActionItem">
                         <CIcon name="cil-plus" width="16" class="minutes-action__add-ic" aria-hidden="true" />
-                        Add Action Item
+                        {{ $t('adminMeetings.minutes.add') }}
                       </button>
                     </td>
                   </tr>
@@ -587,10 +596,10 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton color="secondary" class="mr-2 floating-action btn-cancel" @click="closeMinutesModal"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-2 floating-action btn-cancel" @click="closeMinutesModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('adminMeetings.modal.cancel') }}</CButton>
           <CButton v-if="!isReadOnly(minutesMeeting)" color="primary" class="floating-action btn-save"
             :disabled="savingMinutes" @click="saveMinutes">
-            <CIcon name="cil-save" class="mr-1" /> {{ savingMinutes ? 'กำลังบันทึก...' : 'บันทึกผลประชุม' }}
+            <CIcon name="cil-save" class="mr-1" /> {{ savingMinutes ? $t('adminMeetings.modal.saving') : $t('userMeetings.actions.saveResult') }}
           </CButton>
         </div>
       </template>
@@ -626,9 +635,9 @@ export default {
     readOnly: { type: Boolean, default: false },
     readOnlyCtaTone: { type: String, default: 'dark', validator: (value) => ['soft', 'dark'].includes(value) },
     myOnly: { type: Boolean, default: false },
-    heroEyebrow: { type: String, default: 'Meeting Management' },
-    heroTitle: { type: String, default: 'จัดการการประชุม พร้อมติดตามผลได้ทันที' },
-    heroSubtitle: { type: String, default: 'รวมกำหนดการ ผู้เข้าร่วม สถานะ และบันทึกผลไว้ในหน้าเดียว' }
+    heroEyebrow: { type: String, default: '' },
+    heroTitle: { type: String, default: '' },
+    heroSubtitle: { type: String, default: '' }
   },
   components: { Multiselect, 'v-date-picker': DatePicker, CenterLoading },
   data() {
@@ -675,9 +684,16 @@ export default {
     applyMyOnlyFilter() {
       return Boolean(this.myOnly && this.currentUserRole === 'committee' && (this.currentUserId || this.currentUserName || this.currentUserEmail))
     },
+<<<<<<< HEAD
     hasActiveFilters() {
       return !!(this.searchKeyword || this.filterStatus || this.filterMeetingType || this.filterDateFrom || this.filterDateTo || this.filterSortOrder !== 'status')
     },
+=======
+    isEnglish() { return String((this.$i18n && this.$i18n.locale) || '').trim().toLowerCase() === 'en' },
+    resolvedHeroEyebrow() { return (this.heroEyebrow && String(this.heroEyebrow).trim()) ? this.heroEyebrow : this.$t('adminMeetings.hero.eyebrow') },
+    resolvedHeroTitle() { return (this.heroTitle && String(this.heroTitle).trim()) ? this.heroTitle : this.$t('adminMeetings.hero.title') },
+    resolvedHeroSubtitle() { return (this.heroSubtitle && String(this.heroSubtitle).trim()) ? this.heroSubtitle : this.$t('adminMeetings.hero.subtitle') },
+>>>>>>> 9d3bce9b5aefc222a7c9315a0bd9bd97155d9e78
     canCreate() { return !this.readOnly },
     canEditDelete() { return !this.readOnly },
     meetingDatePickerValue: {
@@ -820,22 +836,25 @@ export default {
       if (userName && joined.includes(userName)) return true
       return false
     },
-    formatThaiDateBelow(date) {
+    formatLocaleDateBelow(date) {
       const d = date instanceof Date ? date : new Date(date)
       if (Number.isNaN(d.getTime())) return ''
-      try { return d.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) } catch (err) { return this.formatThaiDateExampleShort(d) }
+      const locale = this.isEnglish ? 'en-GB' : 'th-TH'
+      try { return d.toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) } catch (err) { return this.formatDateExampleShort(d) }
     },
-    formatThaiDateExampleShort(date) {
+    formatDateExampleShort(date) {
       const d = date instanceof Date ? date : new Date(date)
       if (Number.isNaN(d.getTime())) return ''
       try {
-        const parts = new Intl.DateTimeFormat('th-TH', { weekday: 'short', month: 'short', day: 'numeric' }).formatToParts(d)
+        const locale = this.isEnglish ? 'en-GB' : 'th-TH'
+        const parts = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' }).formatToParts(d)
         const weekday = (parts.find(p => p.type === 'weekday') || {}).value || ''
         const day = (parts.find(p => p.type === 'day') || {}).value || ''
         const month = (parts.find(p => p.type === 'month') || {}).value || ''
         const w = weekday ? `${weekday.replace(/\s+/g, '')},` : ''
         return `${w} ${day} ${month}`.trim()
       } catch (err) {
+        if (this.isEnglish) return d.toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' })
         const thaiWeekdays = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.']
         const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
         return `${thaiWeekdays[d.getDay()] || ''}, ${String(d.getDate())} ${thaiMonths[d.getMonth()] || ''}`.trim()
@@ -871,12 +890,8 @@ export default {
       const hour24 = (hour % 12) + (period === 'PM' ? 12 : 0)
       return `${String(hour24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
     },
-    formatTimeMeridiemDisplay(hhmm) {
-      const parts = this.timeToPickerParts(hhmm)
-      const hour = parseInt(parts.hour, 10)
-      const hourText = Number.isFinite(hour) ? String(hour) : '--'
-      return `${hourText} : ${parts.minute} ${parts.period}`
-    },
+    formatTimeDisplay(hhmm) { return this.formatTime12h(hhmm) },
+    formatTimeMeridiemDisplay(hhmm) { return this.formatTimeDisplay(hhmm) },
     setTimePickerPeriod(period) {
       const nextPeriod = String(period || '').toUpperCase() === 'PM' ? 'PM' : 'AM'
       if (this.timeDropdown.period === nextPeriod) return
@@ -1111,15 +1126,16 @@ export default {
     formatTime12h(hhmm) {
       const minutes = this.timeToMinutes(hhmm)
       if (!Number.isFinite(minutes)) return String(hhmm || '')
-      return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}น.`
+      const base = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+      return this.isEnglish ? base : `${base}น.`
     },
     formatDuration(minutes) {
       const mins = parseInt(minutes, 10)
       if (!Number.isFinite(mins) || mins <= 0) return ''
-      if (mins < 60) return `${mins} นาที`
+      if (mins < 60) return this.isEnglish ? `${mins} min` : `${mins} นาที`
       const hrs = Math.floor(mins / 60); const rem = mins % 60
-      if (rem === 0) return `${hrs} ชม.`
-      return `${hrs} ชม. ${rem} นาที`
+      if (rem === 0) return this.isEnglish ? `${hrs} h` : `${hrs} ชม.`
+      return this.isEnglish ? `${hrs} h ${rem} min` : `${hrs} ชม. ${rem} นาที`
     },
     parseLocalYmd(ymd) {
       if (!ymd) return null
@@ -1156,9 +1172,19 @@ export default {
         return aId.localeCompare(bId)
       })
     },
+    getProposalDisplayTitle(p) {
+      if (!p) return ''
+      return this.isEnglish
+        ? (p.projectTitleEn || p.projectTitleTh || p.projectTitle || '')
+        : (p.projectTitleTh || p.projectTitleEn || p.projectTitle || '')
+    },
     formatProposalTitle(p) {
-      if (!p) return '-'; const title = p.projectTitleTh || p.projectTitleEn || p.projectTitle || '-'
-      const leaderName = this.getProposalLeaderName(p); return leaderName ? `${title} (หัวหน้า: ${leaderName})` : title
+      if (!p) return '-'
+      const title = this.isEnglish
+        ? (p.projectTitleEn || p.projectTitleTh || p.projectTitle || '-')
+        : (p.projectTitleTh || p.projectTitleEn || p.projectTitle || '-')
+      const leaderName = this.getProposalLeaderName(p)
+      return leaderName ? `${title} (${this.$t('adminMeetings.modal.projectLeader')}: ${leaderName})` : title
     },
     getProposalLeaderName(p) {
       if (!p) return ''
@@ -1192,11 +1218,13 @@ export default {
     async fetchProposalOptions() {
       this.proposalOptionsLoading = true; this.proposalOptionsError = null
       try {
+        const statuses = [...ALLOWED_MEETING_PROPOSAL_STATUSES]
+        if (this.isEditMode && this.getEditingMeetingProposalId()) statuses.push(MEETING_MANAGED_PROPOSAL_STATUS)
         const response = await axios.get('/api/v1/proposals', {
           params: {
             page: 1,
             limit: 300,
-            status: [...ALLOWED_MEETING_PROPOSAL_STATUSES, MEETING_MANAGED_PROPOSAL_STATUS].join(',')
+            status: statuses.join(',')
           }
         })
         const payload = (response && response.data && response.data.data) || {}
@@ -1243,8 +1271,9 @@ export default {
     },
     applyProjectToForm(projectTitle) {
       const title = String(projectTitle || '').trim(); if (!title) return
-      const nextAutoTitle = `ประชุมพิจารณาโครงการ: ${title}`
-      if (!this.meetingForm.title || (this.autoProjectTitle && this.meetingForm.title === `ประชุมพิจารณาโครงการ: ${this.autoProjectTitle}`)) this.meetingForm.title = nextAutoTitle
+      const prefix = this.$t('adminMeetings.defaults.titlePrefix')
+      const nextAutoTitle = `${prefix}: ${title}`
+      if (!this.meetingForm.title || (this.autoProjectTitle && this.meetingForm.title === `${prefix}: ${this.autoProjectTitle}`)) this.meetingForm.title = nextAutoTitle
       this.autoProjectTitle = title
     },
     onProposalSelected(opt) {
@@ -1253,14 +1282,58 @@ export default {
       const title = opt.projectTitleTh || opt.projectTitleEn || opt.projectTitle || ''; this.pendingProjectTitle = title
       if (title) this.applyProjectToForm(title)
     },
-    consumeProposalContext() {
+    makeProposalOption(proposal) {
+      if (!proposal) return null
+      const p = proposal || {}
+      const th = (p && p.projectTitleTh) ? String(p.projectTitleTh) : ''
+      const en = (p && p.projectTitleEn) ? String(p.projectTitleEn) : ''
+      const code = (p && p.proposalCode) ? String(p.proposalCode) : ''
+      const leaderName = this.getProposalLeaderName(p)
+      const searchText = [th, en, code, leaderName].filter(Boolean).join(' ')
+      return { ...p, searchText, leaderName }
+    },
+    async fetchProposalOptionById(proposalId) {
+      const id = String(proposalId || '').trim()
+      if (!id) return null
+      try {
+        const response = await axios.get(`/api/v1/proposals/${encodeURIComponent(id)}`)
+        const proposal = (response && response.data && response.data.data) || null
+        return this.makeProposalOption(proposal)
+      } catch (err) {
+        console.error('[AdminMeetings] Error fetching proposal by id:', err)
+        return null
+      }
+    },
+    async consumeProposalContext() {
       const q = (this.$route && this.$route.query) ? this.$route.query : {}
       const proposalId = q.fromProposalId || q.proposalId || ''; const projectTitle = q.fromProjectTitle || q.projectTitle || ''
       if (!proposalId && !projectTitle) return
       this.openCreateModal()
       this.pendingProposalIds = proposalId ? [String(proposalId)] : []; this.pendingProjectTitle = projectTitle ? String(projectTitle) : ''
       this.selectedProposalOption = null; this.autoProjectTitle = ''
-      if (this.pendingProjectTitle) this.applyProjectToForm(this.pendingProjectTitle)
+
+      const id = proposalId ? String(proposalId).trim() : ''
+      let option = null
+      if (id) {
+        option = (Array.isArray(this.proposalOptions) && this.proposalOptions.length)
+          ? (this.proposalOptions.find(p => String(p && p._id) === id) || null)
+          : null
+
+        if (!option) {
+          option = await this.fetchProposalOptionById(id)
+          if (!option && this.pendingProjectTitle) {
+            option = this.makeProposalOption({ _id: id, projectTitleTh: this.pendingProjectTitle })
+          }
+          if (option) {
+            const exists = Array.isArray(this.proposalOptions) && this.proposalOptions.some(p => String(p && p._id) === id)
+            if (!exists) this.proposalOptions = [option, ...(Array.isArray(this.proposalOptions) ? this.proposalOptions : [])]
+          }
+        }
+      }
+
+      if (option) this.onProposalSelected(option)
+      else if (this.pendingProjectTitle) this.applyProjectToForm(this.pendingProjectTitle)
+
       if (!this.proposalOptionsLoading && (!this.proposalOptions || !this.proposalOptions.length)) this.fetchProposalOptions()
       else this.resolveSelectedProposalOption()
       const nextQuery = { ...q }; delete nextQuery.fromProposalId; delete nextQuery.proposalId; delete nextQuery.fromProjectTitle; delete nextQuery.projectTitle
@@ -1399,12 +1472,13 @@ export default {
       }
       await Swal.fire({
         icon: 'info',
-        title: 'เลือกการประชุมก่อนแก้ไข',
-        text: 'คลิกการ์ดการประชุมที่ต้องการ แล้วกดปุ่มนี้อีกครั้งเพื่อเปิดหน้าต่างแก้ไข',
-        confirmButtonText: 'ตกลง'
+        title: this.$t('adminMeetings.alerts.selectToEditTitle'),
+        text: this.$t('adminMeetings.alerts.selectToEditText'),
+        confirmButtonText: this.$t('adminMeetings.alerts.ok')
       })
     },
     toggleSummaryFilter(status) { const next = this.filterStatus === status ? '' : status; this.filterStatus = next; this.page = 1; this.fetchMeetings() },
+    setAllFilter() { this.filterStatus = ''; this.page = 1; this.fetchMeetings() },
     isSummaryFilterActive(status) { return this.filterStatus === status },
     onPageChange(nextPage) { if (nextPage < 1 || nextPage > this.totalPages) return; this.page = nextPage; this.fetchMeetings() },
     openCreateModal() {
@@ -1422,7 +1496,7 @@ export default {
       this.selectedProposalOption = null; this.autoProjectTitle = ''
       this.pendingParticipantIds = Array.isArray(meeting && meeting.participantIds) ? meeting.participantIds.map(String) : []
       this.selectedParticipantOptions = []
-      const inferredType = meeting && meeting.meetingType ? String(meeting.meetingType) : (this.getMeetingModeLabel(meeting) === 'ออนไลน์' ? 'online' : 'onsite')
+      const inferredType = meeting && meeting.meetingType ? String(meeting.meetingType) : (this.getMeetingModeLabel(meeting) === this.$t('userMeetings.card.modeOnline') ? 'online' : 'onsite')
       this.meetingForm = { title: meeting.title || '', meetingDate: meeting.meetingDate || '', startTime: meeting.startTime || '', endTime: meeting.endTime || '', meetingType: inferredType, location: meeting.location || '', videoLink: meeting.videoLink || '', agenda: meeting.agenda || '', status: meeting.status || 'scheduled' }
       this.showMeetingModal = true
       this.fetchProposalOptions()
@@ -1434,31 +1508,31 @@ export default {
       if (this.readOnly) return
       if (!this.selectedMeeting || !this.selectedMeeting._id) return
       if (!this.meetingForm || this.meetingForm.status !== 'scheduled') return
-      const result = await Swal.fire({ icon: 'warning', title: 'ยืนยันการยกเลิกการประชุม', text: `ยกเลิกการประชุม '${this.selectedMeeting.title || ''}'?`, showCancelButton: true, confirmButtonText: 'ยกเลิกการประชุม', cancelButtonText: 'กลับ', confirmButtonColor: '#e55353' })
+      const result = await Swal.fire({ icon: 'warning', title: this.$t('adminMeetings.alerts.confirmCancelTitle'), text: this.$t('adminMeetings.alerts.confirmCancelText', { title: this.selectedMeeting.title || '' }), showCancelButton: true, confirmButtonText: this.$t('adminMeetings.alerts.confirmCancelConfirm'), cancelButtonText: this.$t('adminMeetings.alerts.confirmCancelBack'), confirmButtonColor: '#e55353' })
       if (!result.isConfirmed) return
       this.savingMeeting = true
       try {
         await axios.patch(`/api/v1/meetings/${this.selectedMeeting._id}/status`, { status: 'cancelled' })
         this.closeMeetingModal(); await this.fetchMeetings(); await this.fetchMeetingSummary()
-        await Swal.fire({ icon: 'success', title: 'ยกเลิกการประชุมสำเร็จ', timer: 1300, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminMeetings.alerts.cancelSuccess'), timer: 1300, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminMeetings] Error cancelling meeting:', error)
-        await Swal.fire({ icon: 'error', title: 'ยกเลิกไม่สำเร็จ', text: 'API การประชุมยังไม่พร้อมใช้งาน' })
+        await Swal.fire({ icon: 'error', title: this.$t('adminMeetings.alerts.cancelErrorTitle'), text: this.$t('adminMeetings.alerts.apiNotReady') })
       } finally { this.savingMeeting = false }
     },
     async saveMeeting() {
       if (this.readOnly) return
       if (!this.meetingForm.title || !this.meetingForm.meetingDate || !this.meetingForm.startTime) {
-        await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'ชื่อการประชุม วันที่ประชุม และเวลาเริ่ม เป็นข้อมูลบังคับ' }); return
+        await Swal.fire({ icon: 'warning', title: this.$t('adminMeetings.alerts.requiredTitle'), text: this.$t('adminMeetings.alerts.requiredText') }); return
       }
       const meetingType = this.meetingForm && this.meetingForm.meetingType ? String(this.meetingForm.meetingType) : 'online'
       const location = this.meetingForm && this.meetingForm.location ? String(this.meetingForm.location).trim() : ''
       const videoLink = this.meetingForm && this.meetingForm.videoLink ? String(this.meetingForm.videoLink).trim() : ''
-      if (meetingType === 'onsite' && !location) { await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'การประชุมแบบออนไซต์ต้องระบุสถานที่' }); return }
-      if (meetingType === 'online' && !videoLink) { await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'การประชุมแบบออนไลน์ต้องระบุลิงก์วิดีโอประชุม' }); return }
+      if (meetingType === 'onsite' && !location) { await Swal.fire({ icon: 'warning', title: this.$t('adminMeetings.alerts.requiredTitle'), text: this.$t('adminMeetings.alerts.onsiteNeedLocation') }); return }
+      if (meetingType === 'online' && !videoLink) { await Swal.fire({ icon: 'warning', title: this.$t('adminMeetings.alerts.requiredTitle'), text: this.$t('adminMeetings.alerts.onlineNeedLink') }); return }
       if (this.enforceMinDateTime) {
         const startTs = this.getMeetingStartTimestamp({ meetingDate: this.meetingForm.meetingDate, startTime: this.meetingForm.startTime })
-        if (Number.isFinite(startTs) && startTs < Date.now()) { await Swal.fire({ icon: 'warning', title: 'วัน/เวลาไม่ถูกต้อง', text: 'ไม่สามารถเลือกวันหรือเวลาที่ต่ำกว่าปัจจุบันได้' }); return }
+        if (Number.isFinite(startTs) && startTs < Date.now()) { await Swal.fire({ icon: 'warning', title: this.$t('adminMeetings.alerts.invalidDateTimeTitle'), text: this.$t('adminMeetings.alerts.invalidDateTimeText') }); return }
       }
       this.savingMeeting = true
       try {
@@ -1469,24 +1543,24 @@ export default {
         if (this.isEditMode && this.selectedMeeting && this.selectedMeeting._id) await axios.put(`/api/v1/meetings/${this.selectedMeeting._id}`, body)
         else await axios.post('/api/v1/meetings', body)
         this.closeMeetingModal(); await this.fetchMeetings(); await this.fetchMeetingSummary()
-        await Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลการประชุมสำเร็จ', timer: 1400, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminMeetings.alerts.saveSuccess'), timer: 1400, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminMeetings] Error saving meeting:', error)
-        await Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: 'API การประชุมยังไม่พร้อมใช้งาน' })
+        await Swal.fire({ icon: 'error', title: this.$t('adminMeetings.alerts.saveErrorTitle'), text: this.$t('adminMeetings.alerts.apiNotReady') })
       } finally { this.savingMeeting = false }
     },
     async deleteMeeting(meeting) {
       if (this.readOnly) return; if (!meeting || !meeting._id) return
       if (this.deletingMeeting) return
-      const result = await Swal.fire({ icon: 'warning', title: 'ยืนยันการลบ', text: `ลบการประชุม '${meeting.title || ''}'? ไม่สามารถกู้คืนได้`, showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#e55353' })
+      const result = await Swal.fire({ icon: 'warning', title: this.$t('adminMeetings.alerts.deleteConfirmTitle'), text: this.$t('adminMeetings.alerts.deleteConfirmText', { title: meeting.title || '' }), showCancelButton: true, confirmButtonText: this.$t('adminMeetings.alerts.deleteConfirm'), cancelButtonText: this.$t('adminMeetings.alerts.deleteCancel'), confirmButtonColor: '#e55353' })
       if (!result.isConfirmed) return
       this.deletingMeeting = true
       try {
         await axios.delete(`/api/v1/meetings/${meeting._id}`); await this.fetchMeetings(); await this.fetchMeetingSummary()
-        await Swal.fire({ icon: 'success', title: 'ลบการประชุมสำเร็จ', timer: 1300, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminMeetings.alerts.deleteSuccess'), timer: 1300, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminMeetings] Error deleting meeting:', error)
-        await Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: 'API การประชุมยังไม่พร้อมใช้งาน' })
+        await Swal.fire({ icon: 'error', title: this.$t('adminMeetings.alerts.deleteErrorTitle'), text: this.$t('adminMeetings.alerts.apiNotReady') })
       } finally {
         this.deletingMeeting = false
       }
@@ -1507,16 +1581,17 @@ export default {
         await axios.put(`/api/v1/meetings/${this.minutesMeeting._id}/minutes`, { minutes: this.minutesForm.minutes, decisions: this.minutesForm.decisions, actionItems: this.minutesForm.actionItems })
         await axios.patch(`/api/v1/meetings/${this.minutesMeeting._id}/status`, { status: 'completed' })
         this.closeMinutesModal(); await this.fetchMeetings(); await this.fetchMeetingSummary()
-        await Swal.fire({ icon: 'success', title: 'บันทึกผลการประชุมสำเร็จ', timer: 1400, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminMeetings.alerts.minutesSuccess'), timer: 1400, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminMeetings] Error saving minutes:', error)
-        await Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: 'API การประชุมยังไม่พร้อมใช้งาน' })
+        await Swal.fire({ icon: 'error', title: this.$t('adminMeetings.alerts.minutesErrorTitle'), text: this.$t('adminMeetings.alerts.apiNotReady') })
       } finally { this.savingMinutes = false }
     },
     getSummaryCount(status) { const counts = this.summaryCounts || {}; return Number(counts[status]) || 0 },
     formatDate(dateStr) {
       if (!dateStr) return '-'; const d = new Date(dateStr); if (Number.isNaN(d.getTime())) return '-'
-      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear() + 543}`
+      const locale = this.isEnglish ? 'en-GB' : 'th-TH'
+      try { return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }) } catch (err) { return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear())}` }
     },
     formatTime(time) { return time ? this.formatTime12h(time) : '-' },
     getMeetingProposalId(meeting) {
@@ -1591,11 +1666,19 @@ export default {
 ::v-deep .multiselect__option--selected { background: rgba(139,18,18,0.08); color: var(--am-text); font-weight: 600; }
 ::v-deep .multiselect__option--selected::after { content: ''; display: none; }
 
+<<<<<<< HEAD
 .summary-card { height: 100%; padding: 14px 16px; border: 0; border-radius: 0.5rem; background: linear-gradient(135deg, var(--summary-start, #8c1515), var(--summary-end, #6b0f0f)); box-shadow: 0 16px 40px rgba(15,23,42,0.12); position: relative; overflow: hidden; isolation: isolate; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
 .summary-card--info    { --summary-start: #f59e0b; --summary-end: #d97706; --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M60 42v18l14 10' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E"); }
 .summary-card--success { --summary-start: #16a34a; --summary-end: #15803d; --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E"); }
 .summary-card--danger  { --summary-start: #ef4444; --summary-end: #dc2626; --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M48 48l24 24M72 48L48 72' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-opacity='0.24' fill='none'/%3E%3C/svg%3E"); }
 .summary-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background-image: var(--summary-graphic); background-repeat: no-repeat; background-size: 122px 122px; background-position: calc(100% + 10px) -12px; opacity: 0.22; pointer-events: none; z-index: 1; }
+=======
+.summary-card { height: 100%; padding: 20px; border: 0; border-radius: 0.5rem; background: linear-gradient(135deg, var(--summary-start, #8c1515), var(--summary-end, #6b0f0f)); box-shadow: 0 16px 40px rgba(15,23,42,0.12); position: relative; overflow: hidden; isolation: isolate; }
+.summary-card--info { --summary-start: #f59e0b; --summary-end: #d97706; }
+.summary-card--neutral { --summary-start: #64748b; --summary-end: #475569; }
+.summary-card--success { --summary-start: #16a34a; --summary-end: #15803d; }
+.summary-card--danger { --summary-start: #ef4444; --summary-end: #dc2626; }
+>>>>>>> 9d3bce9b5aefc222a7c9315a0bd9bd97155d9e78
 .summary-card::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 60%); pointer-events: none; z-index: 1; }
 .summary-card > * { position: relative; z-index: 2; }
 .summary-left { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
@@ -1682,8 +1765,8 @@ export default {
 .meeting-card__meta-item:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--am-accent-ring); border-radius: 10px; }
 .meeting-card__meta-tooltip { position: absolute; top: calc(100% + 6px); left: 0; max-width: 440px; padding: 8px 10px; background: rgba(255,255,255,0.98); border: 1px solid rgba(148,163,184,0.34); border-radius: 12px; box-shadow: 0 14px 34px rgba(2,6,23,0.14); color: #0f172a; font-size: 0.88rem; line-height: 1.35; z-index: 12; pointer-events: none; white-space: normal; overflow-wrap: anywhere; }
 .meeting-card__meta-item--datetime { border-radius: 5px; }
-.meeting-card__datetime-card { margin-bottom: 0; width: 100%; min-height: 64px; display: flex; align-items: stretch; border-radius: 5px; overflow: hidden; border: 1px solid rgba(var(--am-gold-rgb),0.84); background: rgba(255,255,255,0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 8px 14px rgba(15,23,42,0.05); }
-.meeting-card__datetime-cell { flex: 1 1 0; min-width: 0; display: flex; align-items: stretch; }
+.meeting-card__datetime-card { margin-bottom: 0; width: 100%; min-height: 64px; display: flex; align-items: stretch; gap: 12px; padding: 0; border-radius: 0; overflow: visible; border: 0; background: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.meeting-card__datetime-cell { flex: 1 1 0; min-width: 0; display: flex; align-items: stretch; overflow: hidden; border-radius: 4px; border: 1px solid rgba(var(--am-gold-rgb),0.84); background: rgba(255,255,255,0.72); box-shadow: 0 8px 14px rgba(15,23,42,0.05); }
 .meeting-card__datetime-icon-wrap { margin: 0; padding: 0; width: 46px; flex: 0 0 46px; display: flex; align-items: center; justify-content: center; color: #ffffff; }
 .meeting-card__datetime-cell--date .meeting-card__datetime-icon-wrap { background: linear-gradient(135deg, #312e81, #4338ca); }
 .meeting-card__datetime-cell--time .meeting-card__datetime-icon-wrap { background: linear-gradient(135deg, #0ea5e9, #3b82f6); }
@@ -1694,7 +1777,7 @@ export default {
 .meeting-card__datetime-cell--date .meeting-card__datetime-label { color: rgba(30,27,75,0.82); }
 .meeting-card__datetime-cell--time .meeting-card__datetime-value { color: #0f172a; }
 .meeting-card__datetime-cell--time .meeting-card__datetime-label { color: rgba(15,23,42,0.88); }
-.meeting-card__datetime-divider { width: 1px; flex: 0 0 1px; background: rgba(var(--am-gold-rgb),0.55); }
+.meeting-card__datetime-divider { display: none; }
 
 .meeting-card__detail-list { padding: 14px 0; border-top: 1px solid var(--am-line); border-bottom: 1px solid var(--am-line); }
 .meeting-card__detail { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed var(--am-line); }

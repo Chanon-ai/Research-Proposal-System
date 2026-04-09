@@ -36,7 +36,13 @@
               {{ $t('admin.dashboard.listTitle') }}
               <CBadge class="ml-2 mfu-count-badge">{{ total }}</CBadge>
             </div>
-            <div class="mfu-header-tools" aria-label="ตัวกรองตาราง">
+            <div class="mfu-header-tools" :aria-label="$t('admin.dashboard.filtersAria')">
+              <CInput
+                v-model="keyword"
+                class="mfu-header-search"
+                :placeholder="$t('admin.dashboard.searchPlaceholder')"
+                @input="onKeywordInput"
+              />
               <CSelect
                 class="mfu-header-select"
                 :value="selectedStatus"
@@ -72,8 +78,8 @@
               >
                 <template #projectTitleTh="{ item }">
                   <td class="project-title-cell">
-                    <div class="font-weight-bold">{{ item.projectTitleTh || '-' }}</div>
-                    <small class="text-muted" v-if="item.projectTitleEn">{{ item.projectTitleEn }}</small>
+                    <div class="font-weight-bold">{{ getProjectTitlePrimary(item) || '-' }}</div>
+                    <small class="text-muted" v-if="getProjectTitleSecondary(item)">{{ getProjectTitleSecondary(item) }}</small>
                   </td>
                 </template>
 
@@ -459,6 +465,8 @@ export default {
       selectedStatus: '',
       selectedSummaryFilter: DEFAULT_SUMMARY_FILTER_KEY,
       selectedYear: '',
+      keyword: '',
+      keywordDebounceTimer: null,
       sorterValue: { column: 'latestStatusUpdatedAt', asc: false },
       limit: 10,
       perPageOptions: [5, 10, 20, 50],
@@ -500,6 +508,9 @@ export default {
     }
   },
   computed: {
+    isEnglish () {
+      return String((this.$i18n && this.$i18n.locale) || '').trim().toLowerCase() === 'en'
+    },
     currentResearchRole () {
       const storeRole = this.$store && this.$store.getters
         ? this.$store.getters['Authentication/userRole']
@@ -537,7 +548,7 @@ export default {
     tableFields () {
       return [
         { key: 'proposalCode', label: this.$t('admin.table.proposalCode') },
-        { key: 'projectTitleTh', label: this.$t('admin.table.projectTitleTh'), _classes: 'project-title-cell', _style: 'text-align:left;' },
+        { key: 'projectTitleTh', label: this.isEnglish ? this.$t('admin.table.projectTitleEn') : this.$t('admin.table.projectTitleTh'), _classes: 'project-title-cell', _style: 'text-align:left;' },
         { key: 'currentStatus', label: this.$t('admin.table.currentStatus'), _style: 'width:360px; text-align:center;' },
         { key: 'currentRound', label: this.$t('admin.table.currentRound') },
         { key: 'latestStatusUpdatedAt', label: this.$t('admin.table.updatedAt') },
@@ -555,14 +566,14 @@ export default {
     },
     statusFilterOptions () {
       return [
-        { value: '', label: 'ทั้งหมด' },
+        { value: '', label: this.$t('admin.dashboard.filtersAll') },
         ...getSummaryAllStatuses()
           .map(status => ({ value: status, label: this.getStatusLabel(status) }))
       ]
     },
     yearFilterOptions () {
       return [
-        { value: '', label: 'ทุกปีงบประมาณ' },
+        { value: '', label: this.$t('admin.dashboard.yearAll') },
         { value: 2023, label: '2023' },
         { value: 2024, label: '2024' },
         { value: 2025, label: '2025' },
@@ -672,11 +683,37 @@ export default {
   },
   beforeDestroy () {
     this.stopElapsedTicker()
+    if (this.keywordDebounceTimer) clearTimeout(this.keywordDebounceTimer)
   },
   beforeUnmount () {
     this.stopElapsedTicker()
+    if (this.keywordDebounceTimer) clearTimeout(this.keywordDebounceTimer)
   },
   methods: {
+    onKeywordInput () {
+      if (this.keywordDebounceTimer) clearTimeout(this.keywordDebounceTimer)
+      this.keywordDebounceTimer = setTimeout(() => {
+        this.page = 1
+        this.fetchProposals()
+      }, 350)
+    },
+    getProjectTitlePrimary (proposal) {
+      const p = proposal || {}
+      return this.isEnglish
+        ? (p.projectTitleEn || p.projectTitleTh || p.projectTitle || '')
+        : (p.projectTitleTh || p.projectTitleEn || p.projectTitle || '')
+    },
+    getProjectTitleSecondary (proposal) {
+      const p = proposal || {}
+      const primary = this.getProjectTitlePrimary(p)
+      const secondary = this.isEnglish
+        ? (p.projectTitleTh || '')
+        : (p.projectTitleEn || '')
+      const cleanedSecondary = String(secondary || '').trim()
+      if (!cleanedSecondary) return ''
+      if (String(primary || '').trim() === cleanedSecondary) return ''
+      return cleanedSecondary
+    },
     async fetchRolePageAccessConfig () {
       try {
         const config = await loadRolePageAccessRuntimeConfig()
@@ -966,7 +1003,7 @@ export default {
       if (!value) return ''
       const d = value instanceof Date ? value : new Date(value)
       if (Number.isNaN(d.getTime())) return ''
-      return d.toLocaleString('th-TH')
+      return d.toLocaleString(this.isEnglish ? 'en-US' : 'th-TH')
     },
     formatElapsedFromLastAction (proposal) {
       const lastActionDate = this.getLastActionAt(proposal)
@@ -975,25 +1012,25 @@ export default {
       const diffMs = Math.max(0, this.nowTs - lastActionDate.getTime())
       const diffMinutes = Math.floor(diffMs / 60000)
 
-      if (diffMinutes < 1) return 'เมื่อสักครู่'
-      if (diffMinutes < 60) return `${diffMinutes} นาทีที่แล้ว`
+      if (diffMinutes < 1) return this.$t('admin.time.justNow')
+      if (diffMinutes < 60) return this.$t('admin.time.minutesAgo', { count: diffMinutes })
 
       const diffHours = Math.floor(diffMinutes / 60)
-      if (diffHours < 24) return `${diffHours} ชั่วโมงที่แล้ว`
+      if (diffHours < 24) return this.$t('admin.time.hoursAgo', { count: diffHours })
 
       const diffDays = Math.floor(diffHours / 24)
-      if (diffDays < 30) return `${diffDays} วันที่แล้ว`
+      if (diffDays < 30) return this.$t('admin.time.daysAgo', { count: diffDays })
 
       const diffMonths = Math.floor(diffDays / 30)
-      if (diffMonths < 12) return `${diffMonths} เดือนที่แล้ว`
+      if (diffMonths < 12) return this.$t('admin.time.monthsAgo', { count: diffMonths })
 
       const diffYears = Math.floor(diffDays / 365)
-      return `${diffYears} ปีที่แล้ว`
+      return this.$t('admin.time.yearsAgo', { count: diffYears })
     },
     getLastActionElapsedLabel (proposal) {
       const elapsed = this.formatElapsedFromLastAction(proposal)
-      if (!elapsed || elapsed === '-') return 'เวลาล่าสุด: ไม่พบข้อมูลเวลา'
-      return `เวลาล่าสุด: ${elapsed}`
+      if (!elapsed || elapsed === '-') return this.$t('admin.time.lastNoData')
+      return this.$t('admin.time.lastPrefix', { elapsed })
     },
     async fetchSummary () {
       this.loadingSummary = true
@@ -1017,6 +1054,7 @@ export default {
           sortBy: 'latestStatusUpdatedAt',
           sortOrder: this.sorterValue && this.sorterValue.asc === false ? 'desc' : 'asc'
         }
+        if (this.keyword && String(this.keyword).trim()) params.keyword = String(this.keyword).trim()
         const activeStatuses = expandStatusesForQuery(this.resolveActiveStatuses())
         if (activeStatuses.length === 1) {
           params.status = activeStatuses[0]
@@ -1485,6 +1523,10 @@ export default {
 
 .mfu-header-select {
   min-width: 170px;
+}
+
+.mfu-header-search {
+  min-width: 240px;
 }
 
 .mfu-header-tools /deep/ .custom-select,

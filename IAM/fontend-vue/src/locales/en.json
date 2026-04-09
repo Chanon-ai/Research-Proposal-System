@@ -76,11 +76,16 @@
       "subtitle": "Overview of all proposals",
       "loadingSummary": "Loading summary...",
       "loadingTable": "Loading proposals...",
-      "listTitle": "Proposal list"
+      "listTitle": "Proposal list",
+      "filtersAria": "Table filters",
+      "searchPlaceholder": "Search proposal code / title...",
+      "filtersAll": "All",
+      "yearAll": "All fiscal years"
     },
     "table": {
       "proposalCode": "Proposal Code",
       "projectTitleTh": "Project Title (TH)",
+      "projectTitleEn": "Project Title (EN)",
       "fundingType": "Funding Type",
       "currentStatus": "Status",
       "currentRound": "Round",
@@ -91,6 +96,16 @@
       "perPage": "Per page",
       "itemsSuffix": "items",
       "roundLabel": "Round {n}"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{count} minute(s) ago",
+      "hoursAgo": "{count} hour(s) ago",
+      "daysAgo": "{count} day(s) ago",
+      "monthsAgo": "{count} month(s) ago",
+      "yearsAgo": "{count} year(s) ago",
+      "lastPrefix": "Last update: {elapsed}",
+      "lastNoData": "Last update: no data"
     },
     "actions": {
       "reset": "Reset",
@@ -366,6 +381,10 @@
       "subtitle": "Track meetings related to your proposals"
     },
     "summary": {
+      "all": {
+        "label": "All",
+        "caption": "All meetings"
+      },
       "scheduled": {
         "label": "Scheduled",
         "caption": "Upcoming meetings"
@@ -419,6 +438,100 @@
       "summary": "Page {page} of {totalPages} ({total} items)",
       "previous": "Previous",
       "next": "Next"
+    }
+  },
+  "adminMeetings": {
+    "hero": {
+      "eyebrow": "MEETING MANAGEMENT",
+      "title": "Manage Meetings, Track Results",
+      "subtitle": "Schedule meetings, participants, status, and minutes in one place"
+    },
+    "defaults": {
+      "titlePrefix": "Project Review Meeting"
+    },
+    "modal": {
+      "createTitle": "Create New Meeting",
+      "editTitle": "Edit Meeting",
+      "cancelMeeting": "Cancel Meeting",
+      "close": "Close",
+      "relatedProposal": "Related Proposal",
+      "proposalPlaceholder": "Type to search proposals...",
+      "projectLeader": "Project Leader",
+      "proposalStatusHint": "Only proposals with status: Office Received or Office Preparing Result",
+      "proposalLoadError": "Failed to load proposal list: {error}",
+      "participants": "Additional Participants (Optional)",
+      "participantsPlaceholder": "Type to search users...",
+      "participantsLoadError": "Failed to load user list: {error}",
+      "meetingTitle": "Meeting Title",
+      "meetingTitlePlaceholder": "Enter meeting title",
+      "meetingDate": "Meeting Date",
+      "meetingDatePlaceholder": "Select date",
+      "startTime": "Start Time",
+      "startTimePlaceholder": "Select start time",
+      "endTime": "End Time",
+      "endTimePlaceholder": "Select end time",
+      "meetingType": "Meeting Type",
+      "location": "Location",
+      "locationOnlinePlaceholder": "Online: no location needed",
+      "locationOnsitePlaceholder": "e.g. C1 101",
+      "videoLink": "Video Meeting Link",
+      "videoLinkPlaceholder": "e.g. https://meet.google.com/...",
+      "agenda": "Agenda",
+      "agendaPlaceholder": "Enter agenda topics or key discussion points (if any)",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "timePicker": {
+      "selectStart": "Select meeting start time",
+      "selectEnd": "Select meeting end time",
+      "incHour": "Increase hour",
+      "decHour": "Decrease hour",
+      "incMinute": "Increase minute",
+      "decMinute": "Decrease minute"
+    },
+    "minutes": {
+      "detailTitle": "Meeting Details",
+      "saveTitle": "Save Meeting Minutes",
+      "minutes": "Meeting Minutes",
+      "minutesPlaceholder": "Record what happened in the meeting...",
+      "resolutions": "Meeting Resolutions",
+      "resolutionsPlaceholder": "Key resolutions or conclusions from the meeting...",
+      "actionItems": "Action Items",
+      "task": "Task",
+      "assignee": "Assignee",
+      "dueDate": "Due Date",
+      "remove": "Remove Action Item",
+      "empty": "No Action Items yet",
+      "add": "Add Action Item"
+    },
+    "alerts": {
+      "ok": "OK",
+      "selectToEditTitle": "Select a meeting first",
+      "selectToEditText": "Click the meeting card you want, then press this button again to edit.",
+      "confirmCancelTitle": "Confirm cancellation",
+      "confirmCancelText": "Cancel meeting '{title}'?",
+      "confirmCancelConfirm": "Cancel meeting",
+      "confirmCancelBack": "Back",
+      "cancelSuccess": "Meeting cancelled",
+      "cancelErrorTitle": "Cancellation failed",
+      "apiNotReady": "Meeting API is not ready yet.",
+      "requiredTitle": "Missing required fields",
+      "requiredText": "Meeting title, date, and start time are required.",
+      "onsiteNeedLocation": "Onsite meeting requires a location.",
+      "onlineNeedLink": "Online meeting requires a video link.",
+      "invalidDateTimeTitle": "Invalid date/time",
+      "invalidDateTimeText": "You cannot select a date/time earlier than now.",
+      "saveSuccess": "Meeting saved",
+      "saveErrorTitle": "Save failed",
+      "deleteConfirmTitle": "Confirm delete",
+      "deleteConfirmText": "Delete meeting '{title}'? This cannot be undone.",
+      "deleteConfirm": "Delete",
+      "deleteCancel": "Cancel",
+      "deleteSuccess": "Meeting deleted",
+      "deleteErrorTitle": "Delete failed",
+      "minutesSuccess": "Minutes saved",
+      "minutesErrorTitle": "Save failed"
     }
   },
   "adminProposalList": {
