@@ -332,6 +332,15 @@
           </tbody>
         </table>
       </CCardBody>
+
+      <div v-if="category.isExpanded && category.items.length > 0" class="budget-category-installment-helper">
+        <span class="budget-category-installment-helper__text">
+          {{ budgetText.categoryInstallmentGuide }}
+          {{ budgetText.period(1) }}: {{ formatNumber(getCategoryExpectedPeriod(category, 0)) }} {{ budgetText.currencyUnit }}
+          | {{ budgetText.period(2) }}: {{ formatNumber(getCategoryExpectedPeriod(category, 1)) }} {{ budgetText.currencyUnit }}
+          | {{ budgetText.period(3) }}: {{ formatNumber(getCategoryExpectedPeriod(category, 2)) }} {{ budgetText.currencyUnit }}
+        </span>
+      </div>
     </CCard>
 
       <div v-if="isTravelExceeded || isEquipmentExceeded" class="alert alert-danger shadow-sm mb-4 border-0" style="border-left: 5px solid #e55353 !important; border-radius: 8px;">
@@ -1130,8 +1139,10 @@ export default {
           item: 'Item',
           multiplierDetails: 'Multiplier Details',
           totalBudget: 'Total Budget (THB)',
-          period: (index) => `Period ${index}`,
+          period: (index) => `Installment ${index}`,
           noItemsInCategory: 'No items in this category yet',
+          categoryInstallmentGuide: 'Installment details',
+          currencyUnit: 'THB',
           itemPlaceholder: 'Specify the item name...',
           searchItemPlaceholder: 'Search or enter the item name...',
           selectDocumentCategory: 'Select document category:',
@@ -1164,8 +1175,10 @@ export default {
         item: 'รายการ',
         multiplierDetails: 'รายละเอียดตัวคูณ',
         totalBudget: 'งบประมาณ (บาท)',
-        period: (index) => `ปีที่ ${index}`,
+        period: (index) => `งวดที่ ${index}`,
         noItemsInCategory: 'ยังไม่มีรายการในหมวดนี้',
+        categoryInstallmentGuide: 'รายละเอียดในแต่ละงวด',
+        currencyUnit: 'บาท',
         itemPlaceholder: 'ระบุชื่อรายการ...',
         searchItemPlaceholder: 'ค้นหา/ระบุชื่อรายการ...',
         selectDocumentCategory: 'เลือกประเภทเอกสาร:',
@@ -1579,6 +1592,21 @@ export default {
         return `${displayName} (${this.isEnglishLocale ? 'not more than 25% of the total budget / not more than' : 'ไม่เกิน 25% ของงบรวม/ไม่เกิน'} ${limitAmount} ${this.isEnglishLocale ? 'THB' : 'บาท'})`
       }
       return displayName
+    },
+    getCategoryTotal(category) {
+      const items = category && Array.isArray(category.items) ? category.items : []
+      return items.reduce((sum, item) => sum + this.toNumber(item && item.total), 0)
+    },
+    getCategoryExpectedPeriods(category) {
+      const total = this.getCategoryTotal(category)
+      const period1 = Math.round(total * 0.5)
+      const period2 = Math.round(total * 0.4)
+      const period3 = total - period1 - period2
+      return [period1, period2, period3]
+    },
+    getCategoryExpectedPeriod(category, index) {
+      const periods = this.getCategoryExpectedPeriods(category)
+      return Number.isFinite(periods[index]) ? periods[index] : 0
     },
     toggleCategory(catIndex) {
       const category = this.categories[catIndex]
@@ -3094,6 +3122,20 @@ export default {
   transform: translateY(-1px);
 }
 
+.budget-category-installment-helper {
+  border-top: 1px solid rgba(234, 223, 206, 0.95);
+  background: #fcfaf7;
+  padding: 10px 16px 12px;
+}
+
+.budget-category-installment-helper__text {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #5b0b0b;
+  line-height: 1.5;
+}
+
 .budget-section-container.is-dark {
   color: #e6edf7;
 }
@@ -3176,6 +3218,15 @@ export default {
 
 .budget-section-container.is-dark .budget-summary-separator {
   border-top-color: #33475c;
+}
+
+.budget-section-container.is-dark .budget-category-installment-helper {
+  background: #1f2b39;
+  border-top-color: #33475c;
+}
+
+.budget-section-container.is-dark .budget-category-installment-helper__text {
+  color: #f2d9a6;
 }
 
 .budget-section-container.is-dark ::v-deep .card,
