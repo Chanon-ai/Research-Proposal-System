@@ -41,6 +41,7 @@
     "settings": "Settings",
     "assignedTasks": "Assigned Tasks",
     "committeeSummary": "Overview",
+    "committeeManual": "Manual",
     "researchForm": "Research Form",
     "financeDashboard": "Budget Overview",
     "financeAssigned": "Assigned Projects"
@@ -776,9 +777,7 @@
         "submitErrorTitle": "Unable to submit evaluation",
         "retry": "Please try again."
       }
-    }
-  },
-  "committee": {
+    },
     "projectProposal": {
       "summary": {
         "all": "Total",
@@ -1114,6 +1113,10 @@
         "saveErrorTitle": "Unable to save signature"
       },
       "decision": "Decision",
+      "exportPdf": "Export PDF",
+      "exportingPdf": "Exporting PDF...",
+      "exportErrorTitle": "Unable to export PDF",
+      "exportErrorText": "Please try again.",
       "saveDraft": "Save draft",
       "submit": "Submit decision",
       "requestEdit": "Request decision edit",
