@@ -201,6 +201,12 @@ export default {
 </script>
 
 <style scoped>
+.finance-assigned-page ::v-deep .card-body,
+.finance-assigned-page ::v-deep .table,
+.finance-assigned-page ::v-deep .table-responsive {
+  background: #ffffff;
+}
+
 .summary-strip {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
