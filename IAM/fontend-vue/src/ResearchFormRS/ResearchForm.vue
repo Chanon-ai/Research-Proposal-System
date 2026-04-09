@@ -6488,7 +6488,7 @@ export default {
   font-weight: 800;
   text-align: center;
   padding: 18px 0;
-  background: linear-gradient(135deg, #8b1212 0%, #c59b3a 115%);
+  background: #8b1212;
   margin: 0 0 20px 0;
   width: 100%;
   box-sizing: border-box;

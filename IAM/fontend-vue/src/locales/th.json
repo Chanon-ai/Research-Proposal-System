@@ -532,7 +532,208 @@
       "deleteErrorTitle": "ลบไม่สำเร็จ",
       "minutesSuccess": "บันทึกผลการประชุมสำเร็จ",
       "minutesErrorTitle": "บันทึกไม่สำเร็จ"
+    },
+    "filter": {
+      "resetBtn": "ล้างตัวกรอง",
+      "searchLabel": "ค้นหา",
+      "searchPlaceholder": "ชื่อการประชุม, โครงการ, สถานที่...",
+      "statusLabel": "สถานะ",
+      "statusAll": "ทั้งหมด",
+      "statusScheduled": "นัดหมายแล้ว",
+      "statusCompleted": "เสร็จสิ้น",
+      "statusCancelled": "ยกเลิก",
+      "typeLabel": "รูปแบบ",
+      "typeAll": "ทั้งหมด",
+      "typeOnline": "ออนไลน์",
+      "typeOnsite": "ณ สถานที่",
+      "dateFromLabel": "วันที่เริ่ม",
+      "dateToLabel": "วันที่สิ้นสุด",
+      "sortLabel": "เรียงลำดับ",
+      "sortNewest": "วันที่ใหม่ → เก่า",
+      "sortOldest": "วันที่เก่า → ใหม่",
+      "sortStatus": "ตามสถานะ",
+      "resultCount": "พบ {count} รายการ"
     }
+  },
+  "adminNotifications": {
+    "hero": {
+      "eyebrow": "ADMIN NOTIFICATIONS",
+      "title": "ระบบแจ้งเตือน",
+      "subtitle": "จัดการและติดตามการแจ้งเตือนทั้งระบบ"
+    },
+    "markAllRead": "ทำเครื่องหมายอ่านทั้งหมด",
+    "summary": {
+      "total": "แจ้งเตือนทั้งหมด",
+      "unread": "ยังไม่อ่าน",
+      "read": "อ่านแล้ว",
+      "today": "ส่งวันนี้"
+    },
+    "apiNotReady": "ยังไม่มีข้อมูล (API ยังไม่พร้อม)",
+    "loading": "กำลังโหลดการแจ้งเตือน...",
+    "listTitle": "รายการแจ้งเตือน",
+    "tabs": {
+      "all": "ทั้งหมด",
+      "unread": "ยังไม่อ่าน",
+      "read": "อ่านแล้ว"
+    },
+    "typeFilter": {
+      "all": "ทั้งหมด"
+    },
+    "empty": "ไม่พบข้อมูลการแจ้งเตือน",
+    "recipient": "ผู้รับ",
+    "unreadBadge": "ยังไม่อ่าน",
+    "readBadge": "อ่านแล้ว",
+    "actions": {
+      "viewDetail": "ดูรายละเอียด",
+      "markRead": "ทำเครื่องหมายอ่าน",
+      "delete": "ลบ"
+    },
+    "pagination": {
+      "page": "หน้าที่ {page} / {totalPages}",
+      "previous": "ก่อนหน้า",
+      "next": "ถัดไป"
+    },
+    "types": {
+      "status_changed": "สถานะโครงการเปลี่ยนแปลง",
+      "revision_requested": "ขอแก้ไขเอกสาร",
+      "evaluation_edit_request": "คำขอแก้ไขผลประเมิน",
+      "approved": "โครงการได้รับการอนุมัติ",
+      "rejected": "โครงการถูกปฏิเสธ",
+      "committee_valuated": "กรรมการได้ให้ความเห็นแล้ว",
+      "meeting_completed": "ส่วนบริหารกำลังจัดเตรียมผล",
+      "collaboration_confirmation": "ยืนยันความร่วมมือ",
+      "meeting_scheduled": "กำหนดการประชุม",
+      "document_required": "ขอเอกสารเพิ่มเติม",
+      "committee_assigned": "ได้รับมอบหมายพิจารณาโครงการ",
+      "announcement": "ประกาศทั่วไป"
+    },
+    "typeTitles": {
+      "status_changed": "สถานะโครงการเปลี่ยนแปลง",
+      "revision_requested": "แจ้งขอแก้ไขเอกสารโครงการวิจัย",
+      "evaluation_edit_request": "คำขอแก้ไขผลประเมิน",
+      "approved": "แจ้งผลการอนุมัติโครงการวิจัย",
+      "rejected": "แจ้งผลการพิจารณาโครงการวิจัย",
+      "committee_valuated": "การประชุมเสร็จสิ้น",
+      "meeting_completed": "ส่วนบริหารกำลังจัดเตรียมผล",
+      "collaboration_confirmation": "ยืนยันความร่วมมือ",
+      "meeting_scheduled": "แจ้งกำหนดการประชุมพิจารณาโครงการวิจัย",
+      "document_required": "ขอเอกสารเพิ่มเติม",
+      "committee_assigned": "ได้รับมอบหมายพิจารณาโครงการ",
+      "announcement": "ประกาศทั่วไป"
+    },
+    "recipients": {
+      "specific": "เลือกผู้รับเฉพาะเจาะจง",
+      "all_researchers": "นักวิจัยทั้งหมด",
+      "all_committee": "คณะกรรมการทั้งหมด",
+      "all_users": "ผู้ใช้ทั้งระบบ"
+    },
+    "sendModal": {
+      "title": "ส่งการแจ้งเตือน",
+      "recipientLabel": "ผู้รับ",
+      "searchPlaceholder": "ค้นหาผู้รับ...",
+      "noUsers": "ไม่พบผู้ใช้งาน",
+      "proposalLabel": "โครงการที่เกี่ยวข้อง (ไม่บังคับ)",
+      "proposalNone": "ไม่ระบุ",
+      "typeLabel": "ประเภทการแจ้งเตือน",
+      "typePlaceholder": "เลือกประเภทการแจ้งเตือน",
+      "subjectLabel": "ชื่อเรื่อง",
+      "subjectPlaceholder": "ระบุชื่อเรื่อง",
+      "messageLabel": "ข้อความ",
+      "messagePlaceholder": "ระบุข้อความที่ต้องการแจ้ง",
+      "useTemplate": "ใช้ Template",
+      "previewTitle": "Preview",
+      "previewSendTo": "จะส่งให้: {count} คน",
+      "previewType": "ประเภท",
+      "cancel": "ยกเลิก",
+      "send": "ส่งการแจ้งเตือน",
+      "sending": "กำลังส่ง..."
+    },
+    "detailModal": {
+      "title": "รายละเอียดการแจ้งเตือน",
+      "messageLabel": "ข้อความ",
+      "recipientLabel": "ผู้รับ",
+      "sentAtLabel": "ส่งเมื่อ",
+      "proposalLabel": "โครงการ",
+      "extraLabel": "ข้อมูลเพิ่มเติม",
+      "close": "ปิด",
+      "openProposal": "เปิดโครงการที่เกี่ยวข้อง"
+    }
+  },
+  "proposalStatus": {
+    "draft": "แบบร่าง",
+    "pending_confirm": "รอการยืนยัน",
+    "submitted": "ยื่นแล้ว",
+    "faculty_review_pending": "ประธานกำลังพิจารณา",
+    "faculty_approved": "ประธานอนุมัติ",
+    "faculty_rejected": "ประธานไม่อนุมัติ",
+    "office_received": "ส่วนบริหารรับแล้ว",
+    "finance_budget_checking": "เจ้าหน้าที่กำลังตรวจสอบงบประมาณ",
+    "meeting_in_progress": "กำลังจัดการประชุม",
+    "document_checking": "ตรวจสอบเอกสาร",
+    "assigned_to_committee": "มอบหมายกรรมการแล้ว",
+    "under_review": "พิจารณารอบ 1",
+    "committee_valuated": "กรรมการได้ให้ความเห็นแล้ว",
+    "meeting_completed": "ส่วนบริหารกำลังจัดเตรียมผล",
+    "revision_requested": "ขอแก้ไข",
+    "resubmitted": "ส่งแก้ไขแล้ว",
+    "second_round_review": "พิจารณารอบ 2",
+    "approved": "อนุมัติ",
+    "rejected": "ปฏิเสธ",
+    "announced": "ประกาศผล"
+  },
+  "adminReports": {
+    "hero": {
+      "pill": "ADMIN REPORTS",
+      "title": "ระบบรายงาน",
+      "subtitle": "สรุปข้อมูลและสถิติโครงการวิจัยทั้งระบบ"
+    },
+    "filterTitle": "ตัวกรองรายงาน",
+    "loadData": "โหลดข้อมูล",
+    "loading": "กำลังโหลดข้อมูลรายงาน...",
+    "kpi": {
+      "total": "โครงการทั้งหมด",
+      "approved": "อนุมัติแล้ว",
+      "pending": "รอพิจารณา",
+      "rejected": "ปฏิเสธ",
+      "approvalRate": "อัตราอนุมัติ",
+      "revision": "รอแก้ไข",
+      "announced": "ประกาศแล้ว"
+    },
+    "charts": {
+      "statusTitle": "สัดส่วนสถานะโครงการ",
+      "fundingTitle": "จำนวนโครงการตามประเภททุน",
+      "trendTitle": "แนวโน้มการยื่นโครงการ (12 เดือนล่าสุด)",
+      "projectCount": "จำนวนโครงการ"
+    },
+    "detailTable": {
+      "title": "รายงานสรุปโดยละเอียด",
+      "colStatus": "สถานะ",
+      "colCount": "จำนวน",
+      "colPercent": "% จากทั้งหมด",
+      "total": "รวม"
+    },
+    "approvedTable": {
+      "title": "โครงการที่ผ่านการอนุมัติล่าสุด",
+      "empty": "ยังไม่มีโครงการที่อนุมัติ",
+      "colTitle": "ชื่อโครงการ",
+      "colFiscalYear": "ปีงบ",
+      "colFundingType": "ประเภททุน",
+      "colApprovedAt": "วันที่อนุมัติ",
+      "unknown": "ไม่ระบุ"
+    },
+    "exportModal": {
+      "title": "Export รายงาน",
+      "formatLabel": "รูปแบบ",
+      "yearLabel": "ปีงบประมาณ",
+      "statusLabel": "สถานะ",
+      "includeCharts": "รวมกราฟ",
+      "sendEmail": "ส่งทางอีเมล",
+      "emailLabel": "อีเมลผู้รับ",
+      "cancel": "ยกเลิก",
+      "export": "Export",
+      "exporting": "กำลัง Export..."
+    },
+    "filterAll": "ทั้งหมด"
   },
   "adminProposalList": {
     "title": "จัดการโครงการ (Admin)",

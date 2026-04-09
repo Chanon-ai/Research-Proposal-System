@@ -532,7 +532,222 @@
       "deleteErrorTitle": "Delete failed",
       "minutesSuccess": "Minutes saved",
       "minutesErrorTitle": "Save failed"
+    },
+    "filter": {
+      "resetBtn": "Clear filters",
+      "searchLabel": "Search",
+      "searchPlaceholder": "Meeting title, proposal, location...",
+      "statusLabel": "Status",
+      "statusAll": "All",
+      "statusScheduled": "Scheduled",
+      "statusCompleted": "Completed",
+      "statusCancelled": "Cancelled",
+      "typeLabel": "Type",
+      "typeAll": "All",
+      "typeOnline": "Online",
+      "typeOnsite": "Onsite",
+      "dateFromLabel": "From Date",
+      "dateToLabel": "To Date",
+      "sortLabel": "Sort",
+      "sortNewest": "Newest → Oldest",
+      "sortOldest": "Oldest → Newest",
+      "sortStatus": "By Status",
+      "resultCount": "Found {count} items"
     }
+  },
+  "adminNotifications": {
+    "hero": {
+      "eyebrow": "ADMIN NOTIFICATIONS",
+      "title": "Notification System",
+      "subtitle": "Manage and monitor all system notifications"
+    },
+    "markAllRead": "Mark all as read",
+    "summary": {
+      "total": "Total Notifications",
+      "unread": "Unread",
+      "read": "Read",
+      "today": "Sent Today"
+    },
+    "apiNotReady": "No data available (API not ready yet)",
+    "loading": "Loading notifications...",
+    "listTitle": "Notification List",
+    "tabs": {
+      "all": "All",
+      "unread": "Unread",
+      "read": "Read"
+    },
+    "typeFilter": {
+      "all": "All"
+    },
+    "empty": "No notifications found",
+    "recipient": "Recipient",
+    "unreadBadge": "Unread",
+    "readBadge": "Read",
+    "actions": {
+      "viewDetail": "View Detail",
+      "markRead": "Mark as Read",
+      "delete": "Delete"
+    },
+    "pagination": {
+      "page": "Page {page} / {totalPages}",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "types": {
+      "status_changed": "Status Changed",
+      "revision_requested": "Revision Requested",
+      "evaluation_edit_request": "Evaluation Edit Request",
+      "approved": "Project Approved",
+      "rejected": "Project Rejected",
+      "committee_valuated": "Committee Evaluated",
+      "meeting_completed": "Office Preparing Result",
+      "collaboration_confirmation": "Collaboration Confirmation",
+      "meeting_scheduled": "Meeting Scheduled",
+      "document_required": "Document Required",
+      "committee_assigned": "Committee Assigned",
+      "announcement": "General Announcement"
+    },
+    "typeMessages": {
+      "status_changed": "The status of proposal {proposalCode} has been updated. Please log in to the system to view the details.",
+      "revision_requested": "Dear {recipientName},\n\nYour research proposal has been reviewed and revision is required. Please log in to the system to view the comments and make the necessary corrections within the deadline.\n\nSincerely,\nResearch Administration Division",
+      "evaluation_edit_request": "Dear {recipientName},\n\nAn edit request has been submitted for the evaluation of proposal {proposalCode}. Please log in to review the details.\n\nSincerely,\nResearch Administration Division",
+      "approved": "Dear {recipientName},\n\nCongratulations! Your research proposal {proposalCode} has been approved. Please log in to the system for more details.\n\nSincerely,\nResearch Administration Division",
+      "rejected": "Dear {recipientName},\n\nYour research proposal {proposalCode} was not approved in this round. Please log in to the system to view the reason.\n\nSincerely,\nResearch Administration Division",
+      "committee_valuated": "The review meeting for proposal {proposalCode} has been completed and the results have been recorded.",
+      "meeting_completed": "The meeting for proposal {proposalCode} has been completed. The office is now preparing the results.",
+      "collaboration_confirmation": "Dear {recipientName},\n\nThis is a request to confirm your collaboration on proposal {proposalCode}. Please log in to the system to confirm.\n\nSincerely,\nResearch Administration Division",
+      "meeting_scheduled": "Dear {recipientName},\n\nPlease be informed of the upcoming research project review meeting related to proposal {proposalCode}. Please prepare your documents and attend the meeting as scheduled.\n\nSincerely,\nResearch Administration Division,\nMae Fah Luang University",
+      "document_required": "Dear {recipientName},\n\nAdditional documents are required for proposal {proposalCode}. Please log in to the system to view the details and submit the required documents.\n\nSincerely,\nResearch Administration Division",
+      "committee_assigned": "Dear {recipientName},\n\nYou have been assigned to review proposal {proposalCode}. Please log in to the system to view the proposal details.\n\nSincerely,\nResearch Administration Division",
+      "announcement": "Dear {recipientName},\n\nThis is a general announcement from the Research Administration Division. Please log in to the system for more details.\n\nSincerely,\nResearch Administration Division"
+    },
+    "typeTitles": {
+      "status_changed": "Project Status Changed",
+      "revision_requested": "Revision Requested for Research Project",
+      "evaluation_edit_request": "Evaluation Edit Request",
+      "approved": "Research Project Approval Notification",
+      "rejected": "Research Project Review Result",
+      "committee_valuated": "Meeting Completed",
+      "meeting_completed": "Office Preparing Result",
+      "collaboration_confirmation": "Collaboration Confirmation",
+      "meeting_scheduled": "Research Project Meeting Schedule",
+      "document_required": "Additional Document Required",
+      "committee_assigned": "Assigned to Review Project",
+      "announcement": "General Announcement"
+    },
+    "recipients": {
+      "specific": "Specific Recipients",
+      "all_researchers": "All Researchers",
+      "all_committee": "All Committee Members",
+      "all_users": "All Users"
+    },
+    "sendModal": {
+      "title": "Send Notification",
+      "recipientLabel": "Recipient",
+      "searchPlaceholder": "Search recipients...",
+      "noUsers": "No users found",
+      "proposalLabel": "Related Proposal (Optional)",
+      "proposalNone": "None",
+      "typeLabel": "Notification Type",
+      "typePlaceholder": "Select notification type",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "Enter subject",
+      "messageLabel": "Message",
+      "messagePlaceholder": "Enter the message to send",
+      "useTemplate": "Use Template",
+      "previewTitle": "Preview",
+      "previewSendTo": "Send to: {count} person(s)",
+      "previewType": "Type",
+      "cancel": "Cancel",
+      "send": "Send Notification",
+      "sending": "Sending..."
+    },
+    "detailModal": {
+      "title": "Notification Detail",
+      "messageLabel": "Message",
+      "recipientLabel": "Recipient",
+      "sentAtLabel": "Sent At",
+      "proposalLabel": "Proposal",
+      "extraLabel": "Additional Info",
+      "close": "Close",
+      "openProposal": "Open Related Proposal"
+    }
+  },
+  "proposalStatus": {
+    "draft": "Draft",
+    "pending_confirm": "Pending Confirmation",
+    "submitted": "Submitted",
+    "faculty_review_pending": "Chairman Under Review",
+    "faculty_approved": "Chairman Approved",
+    "faculty_rejected": "Chairman Rejected",
+    "office_received": "Office Received",
+    "finance_budget_checking": "Finance Checking Budget",
+    "meeting_in_progress": "Meeting in Progress",
+    "document_checking": "Document Checking",
+    "assigned_to_committee": "Assigned to Committee",
+    "under_review": "Under Review (Round 1)",
+    "committee_valuated": "Committee Evaluated",
+    "meeting_completed": "Office Preparing Result",
+    "revision_requested": "Revision Requested",
+    "resubmitted": "Resubmitted",
+    "second_round_review": "Under Review (Round 2)",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "announced": "Announced"
+  },
+  "adminReports": {
+    "hero": {
+      "pill": "ADMIN REPORTS",
+      "title": "Report System",
+      "subtitle": "Summary data and statistics of all research projects"
+    },
+    "filterTitle": "Report Filters",
+    "loadData": "Load Data",
+    "loading": "Loading report data...",
+    "kpi": {
+      "total": "Total Projects",
+      "approved": "Approved",
+      "pending": "Pending Review",
+      "rejected": "Rejected",
+      "approvalRate": "Approval Rate",
+      "revision": "Pending Revision",
+      "announced": "Announced"
+    },
+    "charts": {
+      "statusTitle": "Project Status Distribution",
+      "fundingTitle": "Projects by Funding Type",
+      "trendTitle": "Project Submission Trend (Last 12 Months)",
+      "projectCount": "Number of Projects"
+    },
+    "detailTable": {
+      "title": "Detailed Summary Report",
+      "colStatus": "Status",
+      "colCount": "Count",
+      "colPercent": "% of Total",
+      "total": "Total"
+    },
+    "approvedTable": {
+      "title": "Recently Approved Projects",
+      "empty": "No approved projects yet",
+      "colTitle": "Project Title",
+      "colFiscalYear": "Fiscal Year",
+      "colFundingType": "Funding Type",
+      "colApprovedAt": "Approved Date",
+      "unknown": "N/A"
+    },
+    "exportModal": {
+      "title": "Export Report",
+      "formatLabel": "Format",
+      "yearLabel": "Fiscal Year",
+      "statusLabel": "Status",
+      "includeCharts": "Include Charts",
+      "sendEmail": "Send by Email",
+      "emailLabel": "Recipient Email",
+      "cancel": "Cancel",
+      "export": "Export",
+      "exporting": "Exporting..."
+    },
+    "filterAll": "All"
   },
   "adminProposalList": {
     "title": "Project Management (Admin)",

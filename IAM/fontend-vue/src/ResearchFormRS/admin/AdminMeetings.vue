@@ -92,49 +92,49 @@
             </div>
           </div>
           <CButton v-if="hasActiveFilters" size="sm" color="secondary" variant="outline" class="filter-card__reset-btn" @click="resetAllFilters">
-            <CIcon name="cil-x" class="mr-1" /> ล้างตัวกรอง
+            <CIcon name="cil-x" class="mr-1" /> {{ $t('adminMeetings.filter.resetBtn') }}
           </CButton>
         </div>
         <div class="filter-row mt-2">
           <div class="filter-row__item filter-row__item--search">
-            <label class="filter-label">ค้นหา</label>
-            <CInput v-model="searchKeyword" placeholder="ชื่อการประชุม, โครงการ, สถานที่..." @input="onSearchKeywordInput" />
+            <label class="filter-label">{{ $t('adminMeetings.filter.searchLabel') }}</label>
+            <CInput v-model="searchKeyword" :placeholder="$t('adminMeetings.filter.searchPlaceholder')" @input="onSearchKeywordInput" />
           </div>
           <div class="filter-row__item">
-            <label class="filter-label">สถานะ</label>
+            <label class="filter-label">{{ $t('adminMeetings.filter.statusLabel') }}</label>
             <select class="form-control filter-select-native" v-model="filterStatus" @change="onFilterChange">
-              <option value="">ทั้งหมด</option>
-              <option value="scheduled">นัดหมายแล้ว</option>
-              <option value="completed">เสร็จสิ้น</option>
-              <option value="cancelled">ยกเลิก</option>
+              <option value="">{{ $t('adminMeetings.filter.statusAll') }}</option>
+              <option value="scheduled">{{ $t('adminMeetings.filter.statusScheduled') }}</option>
+              <option value="completed">{{ $t('adminMeetings.filter.statusCompleted') }}</option>
+              <option value="cancelled">{{ $t('adminMeetings.filter.statusCancelled') }}</option>
             </select>
           </div>
           <div class="filter-row__item">
-            <label class="filter-label">รูปแบบ</label>
+            <label class="filter-label">{{ $t('adminMeetings.filter.typeLabel') }}</label>
             <select class="form-control filter-select-native" v-model="filterMeetingType" @change="onFilterChange">
-              <option value="">ทั้งหมด</option>
-              <option value="online">ออนไลน์</option>
-              <option value="onsite">ณ สถานที่</option>
+              <option value="">{{ $t('adminMeetings.filter.typeAll') }}</option>
+              <option value="online">{{ $t('adminMeetings.filter.typeOnline') }}</option>
+              <option value="onsite">{{ $t('adminMeetings.filter.typeOnsite') }}</option>
             </select>
           </div>
           <div class="filter-row__item">
-            <label class="filter-label">วันที่เริ่ม</label>
+            <label class="filter-label">{{ $t('adminMeetings.filter.dateFromLabel') }}</label>
             <input type="date" class="form-control filter-select-native" v-model="filterDateFrom" @change="onFilterChange" />
           </div>
           <div class="filter-row__item">
-            <label class="filter-label">วันที่สิ้นสุด</label>
+            <label class="filter-label">{{ $t('adminMeetings.filter.dateToLabel') }}</label>
             <input type="date" class="form-control filter-select-native" v-model="filterDateTo" @change="onFilterChange" />
           </div>
           <div class="filter-row__item">
-            <label class="filter-label">เรียงลำดับ</label>
+            <label class="filter-label">{{ $t('adminMeetings.filter.sortLabel') }}</label>
             <select class="form-control filter-select-native" v-model="filterSortOrder" @change="onFilterChange">
-              <option value="newest">วันที่ใหม่ → เก่า</option>
-              <option value="oldest">วันที่เก่า → ใหม่</option>
-              <option value="status">ตามสถานะ</option>
+              <option value="newest">{{ $t('adminMeetings.filter.sortNewest') }}</option>
+              <option value="oldest">{{ $t('adminMeetings.filter.sortOldest') }}</option>
+              <option value="status">{{ $t('adminMeetings.filter.sortStatus') }}</option>
             </select>
           </div>
           <div class="filter-row__count">
-            <small class="text-muted">พบ {{ total }} รายการ</small>
+            <small class="text-muted">{{ $t('adminMeetings.filter.resultCount', { count: total }) }}</small>
           </div>
         </div>
       </CCardBody>

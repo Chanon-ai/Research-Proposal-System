@@ -2,12 +2,12 @@
   <div class="admin-notifications-page">
     <section class="notif-hero mb-4">
       <div class="notif-hero__content">
-        <div class="notif-hero__eyebrow">ADMIN NOTIFICATIONS</div>
-        <h2 class="notif-hero__title">ระบบแจ้งเตือน</h2>
-        <p class="notif-hero__subtitle mb-0">จัดการและติดตามการแจ้งเตือนทั้งระบบ</p>
+        <div class="notif-hero__eyebrow">{{ $t('adminNotifications.hero.eyebrow') }}</div>
+        <h2 class="notif-hero__title">{{ $t('adminNotifications.hero.title') }}</h2>
+        <p class="notif-hero__subtitle mb-0">{{ $t('adminNotifications.hero.subtitle') }}</p>
       </div>
       <div class="notif-hero__action">
-        <CButton color="primary" size="lg" class="notif-hero__btn" @click="markAllRead"><CIcon name="cil-chevron-right" class="mr-1" /> ทำเครื่องหมายอ่านทั้งหมด</CButton>
+        <CButton color="primary" size="lg" class="notif-hero__btn" @click="markAllRead"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.markAllRead') }}</CButton>
       </div>
     </section>
 
@@ -16,7 +16,7 @@
         <div class="notif-summary-card notif-tone-total">
           <div class="notif-summary-bg" aria-hidden="true"></div>
           <div class="notif-summary-content">
-            <small class="notif-summary-label">แจ้งเตือนทั้งหมด</small>
+            <small class="notif-summary-label">{{ $t('adminNotifications.summary.total') }}</small>
             <div class="notif-summary-number">{{ total }}</div>
           </div>
         </div>
@@ -25,7 +25,7 @@
         <div class="notif-summary-card notif-tone-unread">
           <div class="notif-summary-bg" aria-hidden="true"></div>
           <div class="notif-summary-content">
-            <small class="notif-summary-label">ยังไม่อ่าน</small>
+            <small class="notif-summary-label">{{ $t('adminNotifications.summary.unread') }}</small>
             <div class="notif-summary-number">{{ summaryUnread }}</div>
           </div>
         </div>
@@ -34,7 +34,7 @@
         <div class="notif-summary-card notif-tone-read">
           <div class="notif-summary-bg" aria-hidden="true"></div>
           <div class="notif-summary-content">
-            <small class="notif-summary-label">อ่านแล้ว</small>
+            <small class="notif-summary-label">{{ $t('adminNotifications.summary.read') }}</small>
             <div class="notif-summary-number">{{ summaryRead }}</div>
           </div>
         </div>
@@ -43,7 +43,7 @@
         <div class="notif-summary-card notif-tone-today">
           <div class="notif-summary-bg" aria-hidden="true"></div>
           <div class="notif-summary-content">
-            <small class="notif-summary-label">ส่งวันนี้</small>
+            <small class="notif-summary-label">{{ $t('adminNotifications.summary.today') }}</small>
             <div class="notif-summary-number">{{ summaryToday }}</div>
           </div>
         </div>
@@ -51,69 +51,69 @@
     </CRow>
 
     <div v-if="apiNotReady" class="alert alert-warning">
-      ยังไม่มีข้อมูล (API ยังไม่พร้อม)
+      {{ $t('adminNotifications.apiNotReady') }}
     </div>
 
     <div v-if="loading" class="text-center py-5">
       <CSpinner color="primary" />
-      <div class="mt-2 text-muted">กำลังโหลดการแจ้งเตือน...</div>
+      <div class="mt-2 text-muted">{{ $t('adminNotifications.loading') }}</div>
     </div>
 
     <CCard v-else class="reviewer-dashboard-card no-table-divider notif-list-card">
       <CCardHeader class="dashboard-card-header">
         <div class="dashboard-card-header__row">
           <div class="dashboard-card-title">
-            รายการแจ้งเตือน
+            {{ $t('adminNotifications.listTitle') }}
             <CBadge class="ml-2 notif-count-badge">{{ total }}</CBadge>
           </div>
           <div class="header-tools">
             <div class="notif-tabs">
-              <CButton :color="activeTab === 'all' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('all')"><CIcon name="cil-chevron-right" class="mr-1" /> ทั้งหมด</CButton>
-              <CButton :color="activeTab === 'unread' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('unread')"><CIcon name="cil-chevron-right" class="mr-1" /> ยังไม่อ่าน</CButton>
-              <CButton :color="activeTab === 'read' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('read')"><CIcon name="cil-chevron-right" class="mr-1" /> อ่านแล้ว</CButton>
+              <CButton :color="activeTab === 'all' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('all')"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.tabs.all') }}</CButton>
+              <CButton :color="activeTab === 'unread' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('unread')"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.tabs.unread') }}</CButton>
+              <CButton :color="activeTab === 'read' ? 'primary' : 'secondary'" variant="outline" size="sm" @click="onTabChange('read')"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.tabs.read') }}</CButton>
             </div>
             <CSelect class="notif-type-select" :value="filterType" :options="typeFilterOptions" @change="onTypeFilterChange" />
           </div>
         </div>
       </CCardHeader>
       <CCardBody class="card-body-tight">
-        <div v-if="notifications.length === 0" class="empty-state">ไม่พบข้อมูลการแจ้งเตือน</div>
+        <div v-if="notifications.length === 0" class="empty-state">{{ $t('adminNotifications.empty') }}</div>
 
         <div v-for="notif in notifications" :key="notif._id" class="notification-card" :class="notif.isRead ? 'read' : 'unread'">
           <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
             <div>
               <span class="mr-2">🔔</span>
               <CBadge :color="getTypeBadgeColor(notif.type)" class="mr-2">{{ getTypeLabel(notif.type) }}</CBadge>
-              <CBadge v-if="!notif.isRead" color="info">ยังไม่อ่าน</CBadge>
+              <CBadge v-if="!notif.isRead" color="info">{{ $t('adminNotifications.unreadBadge') }}</CBadge>
             </div>
             <small class="text-muted">{{ formatDate(notif.sentAt || notif.createdAt) }}</small>
           </div>
 
-          <div class="mt-2" :class="{ 'font-weight-bold': !notif.isRead }">{{ notif.title || '-' }}</div>
-          <div class="text-muted message-clamp mt-1">{{ notif.message || '-' }}</div>
+          <div class="mt-2" :class="{ 'font-weight-bold': !notif.isRead }">{{ getNotifTitle(notif) }}</div>
+          <div class="text-muted message-clamp mt-1">{{ getNotifMessage(notif) }}</div>
 
           <div class="d-flex justify-content-between align-items-end flex-wrap mt-2" style="gap: 8px;">
             <small class="text-muted">
-              👤 ผู้รับ: {{ notif.recipientName || notif.recipientEmail || '-' }}
+              👤 {{ $t('adminNotifications.recipient') }}: {{ notif.recipientName || notif.recipientEmail || '-' }}
               <span v-if="notif.proposalCode"> | 📋 {{ notif.proposalCode }}</span>
             </small>
             <div>
               <CButton size="sm" color="primary" variant="outline" class="mr-2" @click="openNotificationDetail(notif)">
-                <CIcon name="cil-chevron-right" class="mr-1" /> ดูรายละเอียด
+                <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.actions.viewDetail') }}
               </CButton>
               <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="notif.isRead" @click="markAsRead(notif)">
-                <CIcon name="cil-chevron-right" class="mr-1" /> ทำเครื่องหมายอ่าน
+                <CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.actions.markRead') }}
               </CButton>
-              <CButton size="sm" color="danger" @click="deleteNotification(notif)"><CIcon name="cil-chevron-right" class="mr-1" /> ลบ</CButton>
+              <CButton size="sm" color="danger" @click="deleteNotification(notif)"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.actions.delete') }}</CButton>
             </div>
           </div>
         </div>
 
         <div class="notif-footer">
-          <small class="text-muted">หน้าที่ {{ page }} / {{ totalPages }}</small>
+          <small class="text-muted">{{ $t('adminNotifications.pagination.page', { page, totalPages }) }}</small>
           <div>
-            <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="page <= 1 || loading" @click="onPageChange(page - 1)"><CIcon name="cil-chevron-right" class="mr-1" /> ก่อนหน้า</CButton>
-            <CButton size="sm" color="secondary" variant="outline" :disabled="page >= totalPages || loading" @click="onPageChange(page + 1)"><CIcon name="cil-chevron-right" class="mr-1" /> ถัดไป</CButton>
+            <CButton size="sm" color="secondary" variant="outline" class="mr-2" :disabled="page <= 1 || loading" @click="onPageChange(page - 1)"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.pagination.previous') }}</CButton>
+            <CButton size="sm" color="secondary" variant="outline" :disabled="page >= totalPages || loading" @click="onPageChange(page + 1)"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.pagination.next') }}</CButton>
           </div>
         </div>
       </CCardBody>
@@ -125,21 +125,21 @@
       centered
       size="lg"
       scrollable
-      title="ส่งการแจ้งเตือน"
+      :title="$t('adminNotifications.sendModal.title')"
       class="send-modal"
     >
       <template #body-wrapper>
         <div class="send-modal-inner">
 
           <CSelect
-            label="ผู้รับ"
+            :label="$t('adminNotifications.sendModal.recipientLabel')"
             :value="sendForm.recipientType"
             :options="recipientTypeOptions"
             @change="onRecipientTypeChange"
           />
 
           <div v-if="sendForm.recipientType === 'specific'" class="recipient-box mb-3">
-            <CInput v-model="userSearchKeyword" placeholder="ค้นหาผู้รับ..." class="mb-2" />
+            <CInput v-model="userSearchKeyword" :placeholder="$t('adminNotifications.sendModal.searchPlaceholder')" class="mb-2" />
             <div class="recipient-list">
               <div class="custom-control custom-checkbox" v-for="user in filteredUsers" :key="user._id">
                 <input
@@ -154,46 +154,45 @@
                   <small class="text-muted">({{ user.role || '-' }})</small>
                 </label>
               </div>
-              <div v-if="filteredUsers.length === 0" class="text-muted small">ไม่พบผู้ใช้งาน</div>
+              <div v-if="filteredUsers.length === 0" class="text-muted small">{{ $t('adminNotifications.sendModal.noUsers') }}</div>
             </div>
           </div>
 
           <CSelect
-            label="โครงการที่เกี่ยวข้อง (ไม่บังคับ)"
+            :label="$t('adminNotifications.sendModal.proposalLabel')"
             :value="sendForm.proposalId"
             :options="proposalOptions"
             @change="onProposalChange"
           />
 
-          <!-- ประเภท + ชื่อเรื่อง + ข้อความ — label แยกเพื่อใส่ * สีแดงได้ -->
           <div class="form-group">
-            <label class="modal-field-label">ประเภทการแจ้งเตือน <span class="text-required">*</span></label>
+            <label class="modal-field-label">{{ $t('adminNotifications.sendModal.typeLabel') }} <span class="text-required">*</span></label>
             <select class="form-control" :value="sendForm.type" @change="onTypeChange">
-              <option value="">เลือกประเภทการแจ้งเตือน</option>
+              <option value="">{{ $t('adminNotifications.sendModal.typePlaceholder') }}</option>
               <option v-for="opt in typeSelectOptions.slice(1)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label class="modal-field-label">ชื่อเรื่อง <span class="text-required">*</span></label>
-            <input class="form-control" v-model="sendForm.title" placeholder="ระบุชื่อเรื่อง" />
+            <label class="modal-field-label">{{ $t('adminNotifications.sendModal.subjectLabel') }} <span class="text-required">*</span></label>
+            <input class="form-control" v-model="sendForm.title" :placeholder="$t('adminNotifications.sendModal.subjectPlaceholder')" />
           </div>
 
           <div class="form-group">
-            <label class="modal-field-label">ข้อความ <span class="text-required">*</span></label>
-            <textarea class="form-control" v-model="sendForm.message" rows="6" placeholder="ระบุข้อความที่ต้องการแจ้ง" style="resize:vertical;"></textarea>
+            <label class="modal-field-label">{{ $t('adminNotifications.sendModal.messageLabel') }} <span class="text-required">*</span></label>
+            <textarea class="form-control" v-model="sendForm.message" rows="6" :placeholder="$t('adminNotifications.sendModal.messagePlaceholder')" style="resize:vertical;"></textarea>
           </div>
 
           <div class="mb-3" v-if="hasTemplateForType(sendForm.type)">
-            <CButton size="sm" color="secondary" variant="outline" @click="applyTemplate"><CIcon name="cil-chevron-right" class="mr-1" /> ใช้ Template</CButton>
+            <CButton size="sm" color="secondary" variant="outline" @click="applyTemplate"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.sendModal.useTemplate') }}</CButton>
           </div>
 
           <div class="preview-box">
-            <div class="preview-box__label">Preview</div>
+            <div class="preview-box__label">{{ $t('adminNotifications.sendModal.previewTitle') }}</div>
             <div class="preview-box__text">
-              จะส่งให้: <strong>{{ previewRecipientCount }} คน</strong>
+              {{ $t('adminNotifications.sendModal.previewSendTo', { count: previewRecipientCount }) }}
               &nbsp;·&nbsp;
-              ประเภท: <strong>{{ getTypeLabel(sendForm.type) || '-' }}</strong>
+              {{ $t('adminNotifications.sendModal.previewType') }}: <strong>{{ getTypeLabel(sendForm.type) || '-' }}</strong>
             </div>
           </div>
 
@@ -203,9 +202,9 @@
       <!-- ✅ footer: padding รอบด้าน, ปุ่มสีน้ำเงิน -->
       <template #footer-wrapper>
         <div class="send-modal-footer d-flex justify-content-end w-100">
-          <CButton color="secondary" variant="outline" class="modal-btn" @click="closeSendModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
+          <CButton color="secondary" variant="outline" class="modal-btn" @click="closeSendModal"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.sendModal.cancel') }}</CButton>
           <CButton color="primary" class="modal-btn btn-save" :disabled="sendLoading" @click="sendNotification">
-            <CIcon name="cil-chevron-right" class="mr-1" /> {{ sendLoading ? 'กำลังส่ง...' : 'ส่งการแจ้งเตือน' }}
+            <CIcon name="cil-chevron-right" class="mr-1" /> {{ sendLoading ? $t('adminNotifications.sendModal.sending') : $t('adminNotifications.sendModal.send') }}
           </CButton>
         </div>
       </template>
@@ -225,7 +224,7 @@
       :show.sync="showDetailModal"
       centered
       size="lg"
-      title="รายละเอียดการแจ้งเตือน"
+      :title="$t('adminNotifications.detailModal.title')"
     >
       <template #body-wrapper>
         <div v-if="selectedNotification" class="admin-notification-detail">
@@ -237,11 +236,11 @@
             </div>
             <div class="admin-notification-detail__hero-main">
               <div class="admin-notification-detail__eyebrow">Notification Overview</div>
-              <div class="admin-notification-detail__headline">{{ selectedNotification.title || '-' }}</div>
+              <div class="admin-notification-detail__headline">{{ getNotifTitle(selectedNotification) }}</div>
               <div class="admin-notification-detail__chips">
                 <span class="admin-notification-detail__chip admin-notification-detail__chip--type">{{ getTypeLabel(selectedNotification.type) }}</span>
                 <span class="admin-notification-detail__chip" :class="selectedNotification.isRead ? 'admin-notification-detail__chip--read' : 'admin-notification-detail__chip--unread'">
-                  {{ selectedNotification.isRead ? 'อ่านแล้ว' : 'ยังไม่อ่าน' }}
+                  {{ selectedNotification.isRead ? $t('adminNotifications.readBadge') : $t('adminNotifications.unreadBadge') }}
                 </span>
               </div>
             </div>
@@ -251,21 +250,21 @@
           </div>
 
           <div class="admin-notification-detail__message-panel">
-            <div class="admin-notification-detail__message-title">ข้อความ</div>
-            <div class="admin-notification-detail__message-box">{{ selectedNotification.message || '-' }}</div>
+            <div class="admin-notification-detail__message-title">{{ $t('adminNotifications.detailModal.messageLabel') }}</div>
+            <div class="admin-notification-detail__message-box">{{ getNotifMessage(selectedNotification) }}</div>
           </div>
 
           <div class="admin-notification-detail__grid">
             <div class="admin-notification-detail__row">
-              <div class="admin-notification-detail__label">ผู้รับ</div>
+              <div class="admin-notification-detail__label">{{ $t('adminNotifications.detailModal.recipientLabel') }}</div>
               <div class="admin-notification-detail__value">{{ selectedNotification.recipientName || selectedNotification.recipientEmail || '-' }}</div>
             </div>
             <div class="admin-notification-detail__row">
-              <div class="admin-notification-detail__label">ส่งเมื่อ</div>
+              <div class="admin-notification-detail__label">{{ $t('adminNotifications.detailModal.sentAtLabel') }}</div>
               <div class="admin-notification-detail__value admin-notification-detail__value--strong">{{ formatDate(selectedNotification.sentAt || selectedNotification.createdAt) }}</div>
             </div>
             <div class="admin-notification-detail__row" v-if="selectedNotification.proposalCode || selectedNotification.proposalTitle">
-              <div class="admin-notification-detail__label">โครงการ</div>
+              <div class="admin-notification-detail__label">{{ $t('adminNotifications.detailModal.proposalLabel') }}</div>
               <div class="admin-notification-detail__value">
                 <span class="admin-notification-detail__proposal-code">{{ selectedNotification.proposalCode || '-' }}</span>
                 <span v-if="selectedNotification.proposalTitle" class="admin-notification-detail__proposal-title">{{ selectedNotification.proposalTitle }}</span>
@@ -274,7 +273,7 @@
           </div>
 
           <div v-if="selectedNotification.payload && Object.keys(selectedNotification.payload || {}).length > 0" class="admin-notification-detail__payload-card">
-            <div class="admin-notification-detail__message-title">ข้อมูลเพิ่มเติม</div>
+            <div class="admin-notification-detail__message-title">{{ $t('adminNotifications.detailModal.extraLabel') }}</div>
             <div class="admin-notification-detail__payload-list">
               <div v-if="selectedNotification.payload.fromStatus" class="admin-notification-detail__payload-item">
                 <span class="admin-notification-detail__payload-key">from</span>
@@ -294,8 +293,8 @@
       </template>
       <template #footer-wrapper>
         <div class="admin-notification-detail__footer">
-          <CButton color="secondary" variant="outline" @click="showDetailModal = false"><CIcon name="cil-chevron-right" class="mr-1" /> ปิด</CButton>
-          <CButton v-if="proposalIdOf(selectedNotification)" color="primary" @click="goToProposal(selectedNotification)"><CIcon name="cil-chevron-right" class="mr-1" /> เปิดโครงการที่เกี่ยวข้อง</CButton>
+          <CButton color="secondary" variant="outline" @click="showDetailModal = false"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.detailModal.close') }}</CButton>
+          <CButton v-if="proposalIdOf(selectedNotification)" color="primary" @click="goToProposal(selectedNotification)"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminNotifications.detailModal.openProposal') }}</CButton>
         </div>
       </template>
     </CModal>
@@ -381,6 +380,7 @@ export default {
       apiNotReady: false,
       activeTab: 'all',
       filterType: '',
+      summaryStats: { total: 0, unread: 0, read: 0, today: 0 },
       showSendModal: false,
       showDetailModal: false,
       selectedNotification: null,
@@ -397,32 +397,25 @@ export default {
     }
   },
   computed: {
-    summaryToday () {
-      const today = new Date()
-      return this.notifications.filter(notif => {
-        const d = new Date(notif.sentAt || notif.createdAt)
-        if (Number.isNaN(d.getTime())) return false
-        return d.toDateString() === today.toDateString()
-      }).length
-    },
-    summaryUnread () { return this.notifications.filter(n => !n.isRead).length },
-    summaryRead () { return this.notifications.filter(n => n.isRead).length },
+    summaryToday () { return this.summaryStats.today },
+    summaryUnread () { return this.summaryStats.unread },
+    summaryRead () { return this.summaryStats.read },
     filteredUsers () {
       const kw = this.userSearchKeyword.trim().toLowerCase()
       if (!kw) return this.users
       return this.users.filter(u => `${u.fullName || ''} ${u.email || ''}`.toLowerCase().includes(kw))
     },
     typeFilterOptions () {
-      return [{ value: '', label: 'ทั้งหมด' }, ...Object.keys(NOTIFICATION_TYPES).map(t => ({ value: t, label: NOTIFICATION_TYPES[t] }))]
+      return [{ value: '', label: this.$t('adminNotifications.typeFilter.all') }, ...Object.keys(NOTIFICATION_TYPES).map(t => ({ value: t, label: this.$t(`adminNotifications.types.${t}`) }))]
     },
     typeSelectOptions () {
-      return [{ value: '', label: 'เลือกประเภทการแจ้งเตือน' }, ...Object.keys(NOTIFICATION_TYPES).map(t => ({ value: t, label: NOTIFICATION_TYPES[t] }))]
+      return [{ value: '', label: this.$t('adminNotifications.sendModal.typePlaceholder') }, ...Object.keys(NOTIFICATION_TYPES).map(t => ({ value: t, label: this.$t(`adminNotifications.types.${t}`) }))]
     },
     recipientTypeOptions () {
-      return Object.keys(RECIPIENT_TYPES).map(t => ({ value: t, label: RECIPIENT_TYPES[t] }))
+      return Object.keys(RECIPIENT_TYPES).map(t => ({ value: t, label: this.$t(`adminNotifications.recipients.${t}`) }))
     },
     proposalOptions () {
-      return [{ value: '', label: 'ไม่ระบุ' }, ...this.proposals.map(p => ({ value: p._id, label: `${p.proposalCode || '-'} - ${p.projectTitleTh || '-'}` }))]
+      return [{ value: '', label: this.$t('adminNotifications.sendModal.proposalNone') }, ...this.proposals.map(p => ({ value: p._id, label: `${p.proposalCode || '-'} - ${p.projectTitleTh || '-'}` }))]
     },
     previewRecipientCount () {
       if (this.sendForm.recipientType === 'specific') return this.sendForm.recipientIds.length
@@ -438,6 +431,7 @@ export default {
     await loadResearchFormRuntimeConfigs()
     this.$forceUpdate()
     this.fetchNotifications()
+    this.fetchSummaryStats()
   },
   methods: {
     getSelectValue (val) { return val && val.target ? val.target.value : val },
@@ -452,13 +446,42 @@ export default {
       if (!dateStr) return '-'
       const d = new Date(dateStr)
       if (Number.isNaN(d.getTime())) return '-'
-      return d.toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      const locale = String((this.$i18n && this.$i18n.locale) || 'th').trim().toLowerCase() === 'en' ? 'en-GB' : 'th-TH'
+      return d.toLocaleString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     },
     getTypeLabel (type) {
       const raw = String(type || '').trim()
       const key = raw.toLowerCase()
+      const i18nKey = `adminNotifications.types.${key}`
+      const translated = this.$t(i18nKey)
+      if (translated && translated !== i18nKey) return translated
       const tailKey = key.includes('.') ? key.split('.').pop() : key
-      return NOTIFICATION_TYPES[raw] || NOTIFICATION_TYPES[key] || STATUS_LABELS[key] || STATUS_LABELS[tailKey] || this.humanizeKey(raw)
+      return STATUS_LABELS[key] || STATUS_LABELS[tailKey] || this.humanizeKey(raw)
+    },
+    getNotifTitle (notif) {
+      if (!notif) return '-'
+      const isEn = String((this.$i18n && this.$i18n.locale) || '').trim().toLowerCase() === 'en'
+      if (isEn) {
+        const key = `adminNotifications.typeTitles.${String(notif.type || '').trim().toLowerCase()}`
+        const translated = this.$t(key)
+        if (translated && translated !== key) return translated
+      }
+      return notif.title || '-'
+    },
+    getNotifMessage (notif) {
+      if (!notif) return '-'
+      const isEn = String((this.$i18n && this.$i18n.locale) || '').trim().toLowerCase() === 'en'
+      if (!isEn) return notif.message || '-'
+      if (notif.messageEn) return notif.messageEn
+      const typeKey = String(notif.type || '').trim().toLowerCase()
+      const i18nKey = `adminNotifications.typeMessages.${typeKey}`
+      const template = this.$t(i18nKey)
+      if (!template || template === i18nKey) return notif.message || '-'
+      const recipientName = notif.recipientName || notif.recipientEmail || '-'
+      const proposalCode = notif.proposalCode || '-'
+      return template
+        .replace(/\{recipientName\}/g, recipientName)
+        .replace(/\{proposalCode\}/g, proposalCode)
     },
     getTypeBadgeColor (type) {
       const raw = String(type || '').trim()
@@ -560,25 +583,73 @@ export default {
         this.proposals = Array.isArray(payload.proposals) ? payload.proposals : (Array.isArray(payload.data) ? payload.data : [])
       } catch (error) { console.error('[AdminNotifications] Error fetching proposals:', error); this.proposals = [] }
     },
-    onTabChange (tab) { this.activeTab = tab; this.page = 1; this.fetchNotifications() },
+    onTabChange (tab) { this.activeTab = tab; this.page = 1; this.fetchNotifications(); this.fetchSummaryStats() },
     onTypeFilterChange (val) { this.filterType = this.getSelectValue(val); this.page = 1; this.fetchNotifications() },
     onPageChange (nextPage) { if (nextPage < 1 || nextPage > this.totalPages) return; this.page = nextPage; this.fetchNotifications() },
+    async fetchSummaryStats () {
+      try {
+        const [allRes, unreadRes] = await Promise.all([
+          axios.get('/api/v1/notifications', { params: { page: 1, limit: 1 } }),
+          axios.get('/api/v1/notifications', { params: { page: 1, limit: 1, isRead: false } })
+        ])
+        const allPayload = (allRes && allRes.data && allRes.data.data) || {}
+        const unreadPayload = (unreadRes && unreadRes.data && unreadRes.data.data) || {}
+        const totalAll = Number(allPayload.total) || 0
+        const totalUnread = Number(unreadPayload.total) || 0
+        const today = new Date().toDateString()
+        const todayCount = this.notifications.filter(n => {
+          const d = new Date(n.sentAt || n.createdAt)
+          return !Number.isNaN(d.getTime()) && d.toDateString() === today
+        }).length
+        this.summaryStats = {
+          total: totalAll,
+          unread: totalUnread,
+          read: Math.max(0, totalAll - totalUnread),
+          today: Number(allPayload.todayCount) || todayCount
+        }
+      } catch (e) {
+        // fallback to current page stats
+        const today = new Date().toDateString()
+        this.summaryStats = {
+          total: this.total,
+          unread: this.notifications.filter(n => !n.isRead).length,
+          read: this.notifications.filter(n => n.isRead).length,
+          today: this.notifications.filter(n => {
+            const d = new Date(n.sentAt || n.createdAt)
+            return !Number.isNaN(d.getTime()) && d.toDateString() === today
+          }).length
+        }
+      }
+    },
     async markAsRead (notif) {
       if (notif.isRead) return
       try {
         await axios.patch(`/api/v1/notifications/${notif._id}/read`, {})
-        notif.isRead = true; notif.readAt = new Date().toISOString()
+        this.$set(notif, 'isRead', true)
+        this.$set(notif, 'readAt', new Date().toISOString())
+        this.summaryStats.unread = Math.max(0, this.summaryStats.unread - 1)
+        this.summaryStats.read = this.summaryStats.read + 1
       } catch (error) { await Swal.fire({ icon: 'error', title: 'ทำรายการไม่สำเร็จ', text: 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' }) }
     },
     async markAllRead () {
       const result = await Swal.fire({ icon: 'question', title: 'ยืนยันทำเครื่องหมายอ่านทั้งหมด?', showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก' })
       if (!result.isConfirmed) return
-      try { await axios.patch('/api/v1/notifications/mark-all-read', {}); await this.fetchNotifications(); await Swal.fire({ icon: 'success', title: 'อัปเดตสถานะสำเร็จ', timer: 1400, showConfirmButton: false }) } catch (error) { await Swal.fire({ icon: 'error', title: 'ทำรายการไม่สำเร็จ', text: 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' }) }
+      try {
+        await axios.patch('/api/v1/notifications/mark-all-read', {})
+        await this.fetchNotifications()
+        await this.fetchSummaryStats()
+        await Swal.fire({ icon: 'success', title: 'อัปเดตสถานะสำเร็จ', timer: 1400, showConfirmButton: false })
+      } catch (error) { await Swal.fire({ icon: 'error', title: 'ทำรายการไม่สำเร็จ', text: 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' }) }
     },
     async deleteNotification (notif) {
       const result = await Swal.fire({ icon: 'warning', title: `ยืนยันลบการแจ้งเตือน: ${notif.title || ''}?`, showCancelButton: true, confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#e55353' })
       if (!result.isConfirmed) return
-      try { await axios.delete(`/api/v1/notifications/${notif._id}`); await this.fetchNotifications(); await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1200, showConfirmButton: false }) } catch (error) { await Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' }) }
+      try {
+        await axios.delete(`/api/v1/notifications/${notif._id}`)
+        await this.fetchNotifications()
+        await this.fetchSummaryStats()
+        await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1200, showConfirmButton: false })
+      } catch (error) { await Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: 'ยังไม่มีข้อมูล (API ยังไม่พร้อม)' }) }
     },
     async openSendModal () {
       this.sendForm = { recipientType: 'all_researchers', recipientIds: [], type: '', title: '', message: '', proposalId: '' }
@@ -921,8 +992,7 @@ export default {
 .notification-card.unread { border-left: 5px solid #8c1515; }
 .notification-card.read { background: #ffffff; opacity: 0.92; }
 
-.message-clamp { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-.message-clamp { -webkit-line-clamp: 2; }
+.message-clamp { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; -webkit-line-clamp: 2; line-clamp: 2; }
 
 .empty-state {
   border: 1px dashed rgba(140, 21, 21, 0.22);

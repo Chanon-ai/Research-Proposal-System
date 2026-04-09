@@ -4,9 +4,9 @@
       <CCardBody class="reports-hero__body">
         <div class="reports-hero__row">
           <div class="reports-hero__left">
-            <div class="reports-hero__pill">ADMIN REPORTS</div>
-            <h2 class="reports-hero__title">ระบบรายงาน</h2>
-            <p class="reports-hero__subtitle">สรุปข้อมูลและสถิติโครงการวิจัยทั้งระบบ</p>
+            <div class="reports-hero__pill">{{ $t('adminReports.hero.pill') }}</div>
+            <h2 class="reports-hero__title">{{ $t('adminReports.hero.title') }}</h2>
+            <p class="reports-hero__subtitle">{{ $t('adminReports.hero.subtitle') }}</p>
           </div>
           <div class="reports-hero__right">
             <CButton class="reports-hero__btn" variant="outline" color="light" @click="openExportModal('pdf')"><CIcon name="cil-cloud-download" class="mr-1" /> Export PDF</CButton>
@@ -19,10 +19,10 @@
     <CCard class="reviewer-dashboard-card no-table-divider mb-3">
       <CCardHeader class="dashboard-card-header">
         <div class="dashboard-card-header__row">
-          <div class="dashboard-card-title">ตัวกรองรายงาน</div>
+          <div class="dashboard-card-title">{{ $t('adminReports.filterTitle') }}</div>
           <div class="header-tools">
             <CButton class="collapse-toggle reports-refresh-btn" color="secondary" variant="outline" size="sm" @click="fetchData">
-              <CIcon name="cil-cloud-download" class="mr-1" /> โหลดข้อมูล
+              <CIcon name="cil-cloud-download" class="mr-1" /> {{ $t('adminReports.loadData') }}
             </CButton>
           </div>
         </div>
@@ -44,7 +44,7 @@
             />
           </CCol>
           <CCol md="4" lg="3">
-            <CButton class="reports-refresh-btn w-100" color="primary" variant="outline" @click="fetchData"><CIcon name="cil-cloud-download" class="mr-1" /> โหลดข้อมูล</CButton>
+            <CButton class="reports-refresh-btn w-100" color="primary" variant="outline" @click="fetchData"><CIcon name="cil-cloud-download" class="mr-1" /> {{ $t('adminReports.loadData') }}</CButton>
           </CCol>
         </CRow>
       </CCardBody>
@@ -52,7 +52,7 @@
 
     <div v-if="loading" class="text-center py-5">
       <CSpinner color="primary" />
-      <div class="mt-2 text-muted">กำลังโหลดข้อมูลรายงาน...</div>
+      <div class="mt-2 text-muted">{{ $t('adminReports.loading') }}</div>
     </div>
 
     <div v-else>
@@ -61,7 +61,7 @@
           <div class="report-kpi report-kpi--neutral">
             <div class="report-kpi__left">
               <span class="report-kpi__icon-wrap"><CIcon name="cil-layers" class="report-kpi__icon" /></span>
-              <small class="report-kpi__label">โครงการทั้งหมด</small>
+              <small class="report-kpi__label">{{ $t('adminReports.kpi.total') }}</small>
             </div>
             <div class="report-kpi__right"><span class="report-kpi__value">{{ totalProjects }}</span></div>
           </div>
@@ -70,7 +70,7 @@
           <div class="report-kpi report-kpi--success">
             <div class="report-kpi__left">
               <span class="report-kpi__icon-wrap"><CIcon name="cil-check-circle" class="report-kpi__icon" /></span>
-              <small class="report-kpi__label">อนุมัติแล้ว</small>
+              <small class="report-kpi__label">{{ $t('adminReports.kpi.approved') }}</small>
             </div>
             <div class="report-kpi__right"><span class="report-kpi__value">{{ approvedCount }}</span></div>
           </div>
@@ -79,7 +79,7 @@
           <div class="report-kpi report-kpi--warning">
             <div class="report-kpi__left">
               <span class="report-kpi__icon-wrap"><CIcon name="cil-clock" class="report-kpi__icon" /></span>
-              <small class="report-kpi__label">รอพิจารณา</small>
+              <small class="report-kpi__label">{{ $t('adminReports.kpi.pending') }}</small>
             </div>
             <div class="report-kpi__right"><span class="report-kpi__value">{{ pendingCount }}</span></div>
           </div>
@@ -88,7 +88,7 @@
           <div class="report-kpi report-kpi--danger">
             <div class="report-kpi__left">
               <span class="report-kpi__icon-wrap"><CIcon name="cil-x-circle" class="report-kpi__icon" /></span>
-              <small class="report-kpi__label">ปฏิเสธ</small>
+              <small class="report-kpi__label">{{ $t('adminReports.kpi.rejected') }}</small>
             </div>
             <div class="report-kpi__right"><span class="report-kpi__value">{{ rejectedCount }}</span></div>
           </div>
@@ -100,7 +100,7 @@
           <div class="report-kpi report-kpi--info">
             <div class="report-kpi__left">
               <span class="report-kpi__icon-wrap"><CIcon name="cil-chart-pie" class="report-kpi__icon" /></span>
-              <small class="report-kpi__label">อัตราอนุมัติ</small>
+              <small class="report-kpi__label">{{ $t('adminReports.kpi.approvalRate') }}</small>
             </div>
             <div class="report-kpi__right"><span class="report-kpi__value">{{ approvalRate }}%</span></div>
           </div>
@@ -109,7 +109,7 @@
           <div class="report-kpi report-kpi--revision">
             <div class="report-kpi__left">
               <span class="report-kpi__icon-wrap"><CIcon name="cil-pencil" class="report-kpi__icon" /></span>
-              <small class="report-kpi__label">รอแก้ไข</small>
+              <small class="report-kpi__label">{{ $t('adminReports.kpi.revision') }}</small>
             </div>
             <div class="report-kpi__right"><span class="report-kpi__value">{{ reportSummary.revision_requested || 0 }}</span></div>
           </div>
@@ -118,7 +118,7 @@
           <div class="report-kpi report-kpi--primary">
             <div class="report-kpi__left">
               <span class="report-kpi__icon-wrap"><CIcon name="cil-bullhorn" class="report-kpi__icon" /></span>
-              <small class="report-kpi__label">ประกาศแล้ว</small>
+              <small class="report-kpi__label">{{ $t('adminReports.kpi.announced') }}</small>
             </div>
             <div class="report-kpi__right"><span class="report-kpi__value">{{ reportSummary.announced || 0 }}</span></div>
           </div>
@@ -130,7 +130,7 @@
           <CCard class="reviewer-dashboard-card no-table-divider">
             <CCardHeader class="dashboard-card-header">
               <div class="dashboard-card-header__row">
-                <div class="dashboard-card-title">สัดส่วนสถานะโครงการ</div>
+                <div class="dashboard-card-title">{{ $t('adminReports.charts.statusTitle') }}</div>
               </div>
             </CCardHeader>
             <CCardBody class="card-body-tight">
@@ -142,7 +142,7 @@
           <CCard class="reviewer-dashboard-card no-table-divider">
             <CCardHeader class="dashboard-card-header">
               <div class="dashboard-card-header__row">
-                <div class="dashboard-card-title">จำนวนโครงการตามประเภททุน</div>
+                <div class="dashboard-card-title">{{ $t('adminReports.charts.fundingTitle') }}</div>
               </div>
             </CCardHeader>
             <CCardBody class="card-body-tight">
@@ -155,7 +155,7 @@
       <CCard class="reviewer-dashboard-card no-table-divider mb-4">
         <CCardHeader class="dashboard-card-header">
           <div class="dashboard-card-header__row">
-            <div class="dashboard-card-title">แนวโน้มการยื่นโครงการ (12 เดือนล่าสุด)</div>
+            <div class="dashboard-card-title">{{ $t('adminReports.charts.trendTitle') }}</div>
           </div>
         </CCardHeader>
         <CCardBody class="card-body-tight">
@@ -166,7 +166,7 @@
       <CCard class="reviewer-dashboard-card no-table-divider mb-4">
         <CCardHeader class="dashboard-card-header">
           <div class="dashboard-card-header__row">
-            <div class="dashboard-card-title">รายงานสรุปโดยละเอียด</div>
+            <div class="dashboard-card-title">{{ $t('adminReports.detailTable.title') }}</div>
           </div>
         </CCardHeader>
         <CCardBody class="card-body-tight">
@@ -175,9 +175,9 @@
               <table class="table table-striped mb-0">
               <thead>
                 <tr>
-                  <th>สถานะ</th>
-                  <th class="text-right">จำนวน</th>
-                  <th class="text-right">% จากทั้งหมด</th>
+                  <th>{{ $t('adminReports.detailTable.colStatus') }}</th>
+                  <th class="text-right">{{ $t('adminReports.detailTable.colCount') }}</th>
+                  <th class="text-right">{{ $t('adminReports.detailTable.colPercent') }}</th>
                   <th style="width: 35%;">Progress Bar</th>
                 </tr>
               </thead>
@@ -199,7 +199,7 @@
               </tbody>
               <tfoot>
                 <tr>
-                  <th>รวม</th>
+                  <th>{{ $t('adminReports.detailTable.total') }}</th>
                   <th class="text-right">{{ totalProjects }}</th>
                   <th class="text-right">100%</th>
                   <th><div class="text-muted">-</div></th>
@@ -214,11 +214,11 @@
       <CCard class="reviewer-dashboard-card no-table-divider">
         <CCardHeader class="dashboard-card-header">
           <div class="dashboard-card-header__row">
-            <div class="dashboard-card-title">โครงการที่ผ่านการอนุมัติล่าสุด</div>
+            <div class="dashboard-card-title">{{ $t('adminReports.approvedTable.title') }}</div>
           </div>
         </CCardHeader>
         <CCardBody class="card-body-tight">
-          <div v-if="approvedProposals.length === 0" class="text-muted">ยังไม่มีโครงการที่อนุมัติ</div>
+          <div v-if="approvedProposals.length === 0" class="text-muted">{{ $t('adminReports.approvedTable.empty') }}</div>
           <div v-else class="table-surface">
             <CDataTable
               :items="approvedTableItems"
@@ -231,7 +231,7 @@
                 <td style="text-align:center; vertical-align:middle">{{ item.index }}</td>
               </template>
               <template #fundingType="{ item }">
-                <td style="text-align:center; vertical-align:middle">{{ item.fundingType || 'ไม่ระบุ' }}</td>
+                <td style="text-align:center; vertical-align:middle">{{ item.fundingType || $t('adminReports.approvedTable.unknown') }}</td>
               </template>
               <template #approvedAt="{ item }">
                 <td style="text-align:center; vertical-align:middle">{{ formatDate(item.approvedAt || item.updatedAt) }}</td>
@@ -246,13 +246,13 @@
       :show.sync="showExportModal"
       :close-on-backdrop="false"
       centered
-      title="Export รายงาน"
+      :title="$t('adminReports.exportModal.title')"
     >
       <template #body-wrapper>
         <div class="modal-body export-modal-body">
           <div class="mb-3">
             <CSelect
-              label="รูปแบบ"
+              :label="$t('adminReports.exportModal.formatLabel')"
               :value="exportForm.format"
               :options="[
                 { value: 'pdf', label: 'PDF' },
@@ -264,7 +264,7 @@
 
           <div class="mb-3">
             <CSelect
-              label="ปีงบประมาณ"
+              :label="$t('adminReports.exportModal.yearLabel')"
               :value="exportForm.fiscalYear"
               :options="yearOptions"
               @change="onExportYearChange"
@@ -273,7 +273,7 @@
 
           <div class="mb-3">
             <CSelect
-              label="สถานะ"
+              :label="$t('adminReports.exportModal.statusLabel')"
               :value="exportForm.status"
               :options="statusOptions"
               @change="onExportStatusChange"
@@ -281,28 +281,18 @@
           </div>
 
           <div class="custom-control custom-checkbox mb-3" v-if="exportForm.format === 'pdf'">
-            <input
-              id="includeCharts"
-              v-model="exportForm.includeCharts"
-              type="checkbox"
-              class="custom-control-input"
-            >
-            <label class="custom-control-label" for="includeCharts">รวมกราฟ</label>
+            <input id="includeCharts" v-model="exportForm.includeCharts" type="checkbox" class="custom-control-input">
+            <label class="custom-control-label" for="includeCharts">{{ $t('adminReports.exportModal.includeCharts') }}</label>
           </div>
 
           <div class="custom-control custom-checkbox mb-3">
-            <input
-              id="sendEmail"
-              v-model="exportForm.sendEmail"
-              type="checkbox"
-              class="custom-control-input"
-            >
-            <label class="custom-control-label" for="sendEmail">ส่งทางอีเมล</label>
+            <input id="sendEmail" v-model="exportForm.sendEmail" type="checkbox" class="custom-control-input">
+            <label class="custom-control-label" for="sendEmail">{{ $t('adminReports.exportModal.sendEmail') }}</label>
           </div>
 
           <div v-if="exportForm.sendEmail">
             <CInput
-              label="อีเมลผู้รับ"
+              :label="$t('adminReports.exportModal.emailLabel')"
               type="email"
               v-model="exportForm.emailAddress"
               placeholder="example@mfu.ac.th"
@@ -314,9 +304,9 @@
       <template #footer-wrapper>
         <footer class="modal-footer export-modal-footer">
           <div class="d-flex justify-content-end w-100" style="gap: 10px;">
-            <CButton color="secondary" @click="closeExportModal"><CIcon name="cil-chevron-right" class="mr-1" /> ยกเลิก</CButton>
+            <CButton color="secondary" @click="closeExportModal"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('adminReports.exportModal.cancel') }}</CButton>
             <CButton color="primary" :disabled="exportLoading" @click="doExport">
-              <CIcon name="cil-cloud-download" class="mr-1" /> {{ exportLoading ? 'กำลัง Export...' : 'Export' }}
+              <CIcon name="cil-cloud-download" class="mr-1" /> {{ exportLoading ? $t('adminReports.exportModal.exporting') : $t('adminReports.exportModal.export') }}
             </CButton>
           </div>
         </footer>
@@ -371,14 +361,7 @@ export default {
         sendEmail: false,
         emailAddress: ''
       },
-      approvedFields: [
-        { key: 'index', label: '#' },
-        { key: 'proposalCode', label: 'Proposal Code' },
-        { key: 'projectTitleTh', label: 'ชื่อโครงการ' },
-        { key: 'fiscalYear', label: 'ปีงบ' },
-        { key: 'fundingType', label: 'ประเภททุน' },
-        { key: 'approvedAt', label: 'วันที่อนุมัติ' }
-      ]
+      approvedFields: []
     }
   },
   computed: {
@@ -395,12 +378,20 @@ export default {
       })
 
       return [
-        { value: '', label: 'ทั้งหมด' },
+        { value: '', label: this.$t('adminReports.filterAll') },
         ...Array.from(years).sort((left, right) => right - left).map((year) => ({ value: year, label: String(year) }))
       ]
     },
+    statusLabelsForLocale () {
+      return STATUS_KEYS.reduce((acc, key) => {
+        const i18nKey = `proposalStatus.${key}`
+        const translated = this.$t(i18nKey)
+        acc[key] = (translated && translated !== i18nKey) ? translated : (STATUS_LABELS[key] || key)
+        return acc
+      }, {})
+    },
     statusOptions () {
-      return [{ value: '', label: 'ทั้งหมด' }, ...STATUS_KEYS.map(key => ({ value: key, label: STATUS_LABELS[key] || key }))]
+      return [{ value: '', label: this.$t('adminReports.filterAll') }, ...STATUS_KEYS.map(key => ({ value: key, label: this.statusLabelsForLocale[key] || key }))]
     },
     centerLoadingActive () {
       return Boolean(this.loading || this.exportLoading)
@@ -438,7 +429,7 @@ export default {
         const count = Number(this.reportSummary[status]) || 0
         return {
           status,
-          label: STATUS_LABELS[status] || status,
+          label: this.statusLabelsForLocale[status] || status,
           count,
           percent: this.totalProjects ? (count / total) * 100 : 0,
           color: this.getStatusColorValue(status)
@@ -446,7 +437,7 @@ export default {
       })
     },
     doughnutChartData () {
-      const labels = STATUS_KEYS.map(status => STATUS_LABELS[status] || status)
+      const labels = STATUS_KEYS.map(status => this.statusLabelsForLocale[status] || status)
       const data = STATUS_KEYS.map(status => Number(this.reportSummary[status]) || 0)
       const colors = STATUS_KEYS.map(status => this.getStatusColorValue(status, 0.9))
       return {
@@ -465,7 +456,7 @@ export default {
         labels: Object.keys(grouped),
         datasets: [
           {
-            label: 'จำนวนโครงการ',
+            label: this.$t('adminReports.charts.projectCount'),
             data: Object.values(grouped),
             backgroundColor: 'rgba(140, 21, 21, 0.82)'
           }
@@ -478,7 +469,7 @@ export default {
         labels: grouped.labels,
         datasets: [
           {
-            label: 'จำนวนโครงการ',
+            label: this.$t('adminReports.charts.projectCount'),
             data: grouped.values,
             borderColor: '#8c1515',
             backgroundColor: 'rgba(140, 21, 21, 0.16)',
@@ -493,6 +484,16 @@ export default {
         ...item,
         index: index + 1
       }))
+    },
+    approvedFields () {
+      return [
+        { key: 'index', label: '#' },
+        { key: 'proposalCode', label: 'Proposal Code' },
+        { key: 'projectTitleTh', label: this.$t('adminReports.approvedTable.colTitle') },
+        { key: 'fiscalYear', label: this.$t('adminReports.approvedTable.colFiscalYear') },
+        { key: 'fundingType', label: this.$t('adminReports.approvedTable.colFundingType') },
+        { key: 'approvedAt', label: this.$t('adminReports.approvedTable.colApprovedAt') }
+      ]
     }
   },
   async mounted () {
