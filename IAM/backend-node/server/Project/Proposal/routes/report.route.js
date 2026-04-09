@@ -6,5 +6,6 @@ const router = express.Router();
 
 router.use(authenticate);
 router.post('/export', requireRole('admin', 'chairman'), controller.export);
+router.get('/download/:fileName', requireRole('admin', 'chairman'), controller.download);
 
 module.exports = router;
