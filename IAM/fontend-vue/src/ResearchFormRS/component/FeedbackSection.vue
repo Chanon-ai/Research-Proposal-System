@@ -137,12 +137,10 @@
                       />
                     </template>
                     <template v-else-if="section.sectionKey === 'budget'">
-                      <BudgetSectionDemo
+                      <BudgetReport
                         :model-value="feedbackSectionSnapshot(section.sectionKey)"
                         :is-read-only="true"
-                        :funding-type="feedbackStrategicFundingType('strategic_alignment')"
-                        :funding-budget-config="fundingBudgetConfig"
-                        :budget-multiplier-config="budgetMultiplierConfig"
+                        :current-status="(userFeedback && userFeedback.currentStatus) || latestDecisionStatus"
                       />
                     </template>
                     <template v-else-if="section.sectionKey === 'integration' && !isFeedbackSectionSubmitted(section.sectionKey)">
@@ -687,13 +685,15 @@
 import TextEditor from '@/ResearchFormRS/component/TextEditor.vue'
 import Section12 from '@/ResearchFormRS/component/TestComponent/Section12.vue'
 import BudgetSectionDemo from '@/ResearchFormRS/component/BudgetSectionDemo.vue'
+import BudgetReport from '@/ResearchFormRS/component/BudgetReport.vue'
 
 export default {
   name: 'FeedbackSection',
   components: {
     TextEditor,
     Section12,
-    BudgetSectionDemo
+    BudgetSectionDemo,
+    BudgetReport
   },
   props: {
     feedbackLoading: {
