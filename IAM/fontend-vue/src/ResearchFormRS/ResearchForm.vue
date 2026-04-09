@@ -534,7 +534,7 @@
               <CButton v-if="adminCanShowFinanceAction" color="info" variant="outline" size="sm" @click="openAdminFinanceModal">
                 <CIcon name="cil-dollar" class="mr-1" /> {{ adminFinanceActionLabel }}
               </CButton>
-              <CButton size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage"><CIcon name="cil-group" :content="$options.icons.cilPeople" class="mr-1" /> {{ $t('researchFormAdminFooter.buttons.manageMeeting') }}</CButton>
+              <CButton v-if="adminCanManageMeetingAction" size="sm" class="mfu-hero-action-btn" @click="openAdminMeetingManage"><CIcon name="cil-group" :content="$options.icons.cilPeople" class="mr-1" /> {{ $t('researchFormAdminFooter.buttons.manageMeeting') }}</CButton>
             </template>
             <button
               v-else
@@ -1453,6 +1453,11 @@ export default {
       if (!this.isAdminView || !this.viewProposalId) return false
       const currentStatus = String(normalizeProposalStatus(this.currentStatus)).trim().toLowerCase()
       return currentStatus === 'office_received' || currentStatus === 'finance_budget_checking'
+    },
+    adminCanManageMeetingAction () {
+      if (!this.isAdminView || !this.viewProposalId) return false
+      const currentStatus = String(normalizeProposalStatus(this.currentStatus)).trim().toLowerCase()
+      return currentStatus === 'office_received' || currentStatus === 'meeting_completed'
     },
     adminIsSendToFinanceAction () {
       return String(normalizeProposalStatus(this.currentStatus)).trim().toLowerCase() === 'office_received'
@@ -3054,26 +3059,15 @@ export default {
       document.removeEventListener('scroll', this.onTimeDropdownScroll, true)
     },
     openAdminMeetingManage () {
-      if (!this.isAdminView || !this.viewProposalId) return
+      if (!this.isAdminView || !this.viewProposalId || !this.adminCanManageMeetingAction) return
       const p = this.loadedProposal || {}
       const projectTitle = p.projectTitleTh || p.projectTitleEn || p.projectTitle || ''
-      const title = projectTitle ? `ประชุมพิจารณาโครงการ: ${projectTitle}` : 'ประชุมพิจารณาโครงการ'
-      this.adminMeetingForm = {
-        title,
-        meetingDate: '',
-        startTime: '',
-        endTime: '',
-        meetingType: 'online',
-        location: '',
-        videoLink: '',
-        agenda: projectTitle ? `โครงการ: ${projectTitle}` : '',
-        status: 'scheduled'
-      }
-      this.adminSelectedParticipantOptions = []
-      if (!this.adminParticipantOptionsLoading && (!this.adminParticipantOptions || !this.adminParticipantOptions.length)) {
-        this.fetchAdminParticipantOptions()
-      }
-      this.adminShowMeetingPopup = true
+      const query = { fromProposalId: String(this.viewProposalId) }
+      if (projectTitle) query.fromProjectTitle = String(projectTitle)
+      this.$router.push({
+        name: 'AdminMeetings',
+        query
+      })
     },
     closeAdminMeetingPopup () {
       this.adminShowMeetingPopup = false

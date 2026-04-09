@@ -76,11 +76,16 @@
       "subtitle": "ภาพรวมข้อเสนอโครงการทั้งระบบ",
       "loadingSummary": "กำลังโหลดสรุปสถานะ...",
       "loadingTable": "กำลังโหลดรายการโครงการ...",
-      "listTitle": "รายการข้อเสนอโครงการ"
+      "listTitle": "รายการข้อเสนอโครงการ",
+      "filtersAria": "ตัวกรองตาราง",
+      "searchPlaceholder": "ค้นหารหัส/ชื่อโครงการ...",
+      "filtersAll": "ทั้งหมด",
+      "yearAll": "ทุกปีงบประมาณ"
     },
     "table": {
       "proposalCode": "Proposal Code",
       "projectTitleTh": "ชื่อโครงการ (TH)",
+      "projectTitleEn": "ชื่อโครงการ (EN)",
       "fundingType": "ประเภททุน",
       "currentStatus": "สถานะ",
       "currentRound": "รอบ",
@@ -91,6 +96,16 @@
       "perPage": "แสดงต่อหน้า",
       "itemsSuffix": "รายการ",
       "roundLabel": "รอบ {n}"
+    },
+    "time": {
+      "justNow": "เมื่อสักครู่",
+      "minutesAgo": "{count} นาทีที่แล้ว",
+      "hoursAgo": "{count} ชั่วโมงที่แล้ว",
+      "daysAgo": "{count} วันที่แล้ว",
+      "monthsAgo": "{count} เดือนที่แล้ว",
+      "yearsAgo": "{count} ปีที่แล้ว",
+      "lastPrefix": "เวลาล่าสุด: {elapsed}",
+      "lastNoData": "เวลาล่าสุด: ไม่พบข้อมูลเวลา"
     },
     "actions": {
       "reset": "รีเซ็ต",
@@ -366,6 +381,10 @@
       "subtitle": "ติดตามการประชุมที่เกี่ยวข้องกับข้อเสนอโครงการของคุณ"
     },
     "summary": {
+      "all": {
+        "label": "ทั้งหมด",
+        "caption": "การประชุมทั้งหมด"
+      },
       "scheduled": {
         "label": "นัดหมายแล้ว",
         "caption": "การประชุมที่กำลังจะมาถึง"
@@ -419,6 +438,100 @@
       "summary": "หน้าที่ {page} จาก {totalPages} ({total} รายการ)",
       "previous": "ก่อนหน้า",
       "next": "ถัดไป"
+    }
+  },
+  "adminMeetings": {
+    "hero": {
+      "eyebrow": "การจัดการประชุม",
+      "title": "จัดการการประชุม พร้อมติดตามผลได้ทันที",
+      "subtitle": "รวมกำหนดการ ผู้เข้าร่วม สถานะ และบันทึกผลไว้ในหน้าเดียว"
+    },
+    "defaults": {
+      "titlePrefix": "ประชุมพิจารณาโครงการ"
+    },
+    "modal": {
+      "createTitle": "สร้างการประชุมใหม่",
+      "editTitle": "แก้ไขการประชุม",
+      "cancelMeeting": "ยกเลิกการประชุม",
+      "close": "ปิด",
+      "relatedProposal": "โครงการที่เกี่ยวข้อง",
+      "proposalPlaceholder": "พิมพ์เพื่อค้นหาโครงการ...",
+      "projectLeader": "หัวหน้าโครงการ",
+      "proposalStatusHint": "เฉพาะโครงการสถานะ: ส่วนบริหารรับแล้ว หรือ กำลังเตรียมผล",
+      "proposalLoadError": "โหลดรายการโครงการไม่สำเร็จ: {error}",
+      "participants": "ผู้เข้าร่วมเพิ่มเติม (ไม่บังคับ)",
+      "participantsPlaceholder": "พิมพ์เพื่อค้นหาผู้ใช้...",
+      "participantsLoadError": "โหลดรายชื่อผู้ใช้ไม่สำเร็จ: {error}",
+      "meetingTitle": "ชื่อการประชุม",
+      "meetingTitlePlaceholder": "กรอกชื่อการประชุม",
+      "meetingDate": "วันที่ประชุม",
+      "meetingDatePlaceholder": "เลือกวันที่",
+      "startTime": "เวลาเริ่ม",
+      "startTimePlaceholder": "เลือกเวลาเริ่ม",
+      "endTime": "เวลาสิ้นสุด",
+      "endTimePlaceholder": "เลือกเวลาสิ้นสุด",
+      "meetingType": "รูปแบบการประชุม",
+      "location": "สถานที่",
+      "locationOnlinePlaceholder": "ออนไลน์: ไม่ต้องระบุสถานที่",
+      "locationOnsitePlaceholder": "เช่น C1 101",
+      "videoLink": "ลิงก์วิดีโอประชุม",
+      "videoLinkPlaceholder": "เช่น https://meet.google.com/...",
+      "agenda": "วาระการประชุม",
+      "agendaPlaceholder": "กรอกหัวข้อหรือประเด็นสำคัญ (ถ้ามี)",
+      "cancel": "ยกเลิก",
+      "save": "บันทึก",
+      "saving": "กำลังบันทึก..."
+    },
+    "timePicker": {
+      "selectStart": "เลือกเวลาเริ่มการประชุม",
+      "selectEnd": "เลือกเวลาสิ้นสุดการประชุม",
+      "incHour": "เพิ่มชั่วโมง",
+      "decHour": "ลดชั่วโมง",
+      "incMinute": "เพิ่มนาที",
+      "decMinute": "ลดนาที"
+    },
+    "minutes": {
+      "detailTitle": "รายละเอียดการประชุม",
+      "saveTitle": "บันทึกผลการประชุม",
+      "minutes": "บันทึกการประชุม",
+      "minutesPlaceholder": "บันทึกสิ่งที่เกิดขึ้นในการประชุม...",
+      "resolutions": "มติที่ประชุม",
+      "resolutionsPlaceholder": "สรุปมติหรือข้อสรุปสำคัญ...",
+      "actionItems": "รายการติดตามงาน",
+      "task": "งาน",
+      "assignee": "ผู้รับผิดชอบ",
+      "dueDate": "กำหนดส่ง",
+      "remove": "ลบรายการติดตามงาน",
+      "empty": "ยังไม่มีรายการติดตามงาน",
+      "add": "เพิ่มรายการติดตามงาน"
+    },
+    "alerts": {
+      "ok": "ตกลง",
+      "selectToEditTitle": "เลือกการประชุมก่อนแก้ไข",
+      "selectToEditText": "คลิกการ์ดการประชุมที่ต้องการ แล้วกดปุ่มนี้อีกครั้งเพื่อเปิดหน้าต่างแก้ไข",
+      "confirmCancelTitle": "ยืนยันการยกเลิกการประชุม",
+      "confirmCancelText": "ยกเลิกการประชุม '{title}'?",
+      "confirmCancelConfirm": "ยกเลิกการประชุม",
+      "confirmCancelBack": "กลับ",
+      "cancelSuccess": "ยกเลิกการประชุมสำเร็จ",
+      "cancelErrorTitle": "ยกเลิกไม่สำเร็จ",
+      "apiNotReady": "API การประชุมยังไม่พร้อมใช้งาน",
+      "requiredTitle": "กรอกข้อมูลไม่ครบ",
+      "requiredText": "ชื่อการประชุม วันที่ประชุม และเวลาเริ่ม เป็นข้อมูลบังคับ",
+      "onsiteNeedLocation": "การประชุมแบบออนไซต์ต้องระบุสถานที่",
+      "onlineNeedLink": "การประชุมแบบออนไลน์ต้องระบุลิงก์วิดีโอประชุม",
+      "invalidDateTimeTitle": "วัน/เวลาไม่ถูกต้อง",
+      "invalidDateTimeText": "ไม่สามารถเลือกวันหรือเวลาที่ต่ำกว่าปัจจุบันได้",
+      "saveSuccess": "บันทึกข้อมูลการประชุมสำเร็จ",
+      "saveErrorTitle": "บันทึกไม่สำเร็จ",
+      "deleteConfirmTitle": "ยืนยันการลบ",
+      "deleteConfirmText": "ลบการประชุม '{title}'? ไม่สามารถกู้คืนได้",
+      "deleteConfirm": "ลบ",
+      "deleteCancel": "ยกเลิก",
+      "deleteSuccess": "ลบการประชุมสำเร็จ",
+      "deleteErrorTitle": "ลบไม่สำเร็จ",
+      "minutesSuccess": "บันทึกผลการประชุมสำเร็จ",
+      "minutesErrorTitle": "บันทึกไม่สำเร็จ"
     }
   },
   "adminProposalList": {
