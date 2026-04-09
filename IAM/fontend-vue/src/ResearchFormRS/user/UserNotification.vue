@@ -195,7 +195,7 @@
             </template>
             <template #footer-wrapper>
               <div class="notification-detail__footer">
-                <CButton color="secondary" variant="outline" @click="closeDetailModal"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('userNotification.details.actions.close') }}</CButton>
+                <CButton color="secondary" variant="outline" @click="closeDetailModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('userNotification.details.actions.close') }}</CButton>
                 <CButton v-if="selectedNotification && selectedNotification.proposalId" color="primary" @click="openProposalFromDetail"><CIcon name="cil-chevron-right" class="mr-1" /> {{ $t('userNotification.details.actions.openProposal') }}</CButton>
               </div>
             </template>
@@ -1093,7 +1093,7 @@ export default {
 .notification-detail {
   display: grid;
   gap: 18px;
-  padding: 1.1rem;
+  padding: 1.5rem 1.8rem;
   background:
     radial-gradient(circle at top right, rgba(197, 155, 58, 0.10), transparent 32%),
     linear-gradient(180deg, #fcfcfb 0%, #ffffff 100%);
@@ -1107,8 +1107,6 @@ export default {
   border-radius: 24px;
   background: linear-gradient(135deg, rgba(139, 18, 18, 0.06) 0%, rgba(197, 155, 58, 0.12) 100%);
   color: #0f172a;
-  border: 1px solid rgba(197, 155, 58, 0.28);
-  box-shadow: 0 10px 24px rgba(139, 18, 18, 0.06);
 }
 
 .notification-detail__icon-shell {
@@ -1210,15 +1208,13 @@ export default {
 }
 
 .notification-detail__message-card {
-  padding: 16px;
-  border-radius: 20px;
-  background: #ffffff;
-  border: 1px solid rgba(197, 155, 58, 0.16);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  padding: 4px 0;
+  background: transparent;
 }
 
 .notification-detail__section-title {
   margin-bottom: 10px;
+  padding-left: 8px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1227,21 +1223,18 @@ export default {
 }
 
 .notification-detail__message {
-  padding: 16px 18px;
+  padding: 14px 16px;
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(255, 250, 240, 0.96) 0%, rgba(255, 255, 255, 1) 100%);
   color: #1e293b;
   line-height: 1.8;
   white-space: pre-wrap;
-  border: 1px solid rgba(197, 155, 58, 0.18);
 }
 
 .notification-detail__transition {
   padding: 14px 16px;
   border-radius: 20px;
   background: #ffffff;
-  border: 1px solid rgba(197, 155, 58, 0.16);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
 }
 
 .notification-detail__transition-status {
@@ -1282,15 +1275,12 @@ export default {
 .notification-detail__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
+  gap: 4px;
 }
 
 .notification-detail__field {
-  padding: 14px 16px;
-  border: 1px solid rgba(197, 155, 58, 0.14);
-  border-radius: 18px;
-  background: #ffffff;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.03);
+  padding: 10px 8px;
+  background: transparent;
 }
 
 .notification-detail__field--wide {
@@ -1303,7 +1293,8 @@ export default {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: rgba(139, 18, 18, 0.74);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
 }
 
 .notification-detail__value {
@@ -1337,7 +1328,7 @@ export default {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 0 1.1rem 1.1rem;
+  padding: 1rem 1.8rem 1.5rem;
 }
 
 .page-wrapper.is-dark .notification-detail {
