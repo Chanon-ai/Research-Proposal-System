@@ -1210,7 +1210,7 @@ export default {
 }
 
 .dashboard-card-header {
-  background: linear-gradient(90deg, rgba(140, 21, 21, 0.1), rgba(254, 194, 96, 0.22));
+  background: #ffffff;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   padding: 0 1.25rem;
   border-top-left-radius: 12px;
