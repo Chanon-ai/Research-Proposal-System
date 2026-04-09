@@ -120,6 +120,15 @@ export default {
     mergedHeaderLines () {
       const lines = Array.isArray(this.pdfTemplate && this.pdfTemplate.headerLines) ? this.pdfTemplate.headerLines : []
       const out = []
+      const isHeaderBreakLine = (value) => {
+        const text = String(value || '').trim()
+        if (!text) return true
+        return text.includes('แบบฟอร์ม') ||
+          text.includes('Checklist') ||
+          text.includes('มหาวิทยาลัย') ||
+          text.includes('ชื่อข้อเสนอโครงการวิจัย') ||
+          text.includes('ชื่อหัวหน้าโครงการวิจัย')
+      }
       lines.forEach((raw) => {
         const line = String(raw || '').trim()
         if (!line) return
@@ -131,6 +140,13 @@ export default {
         // Merge early numeric line-breaks like: "ทุน..."/"69" => "ทุน... 69"
         if (out.length && out.length <= 2 && /^[0-9]{2,4}$/.test(line) && !/\b[0-9]{2,4}\b/.test(out[out.length - 1])) {
           out[out.length - 1] = `${out[out.length - 1]} ${line}`.trim()
+          return
+        }
+        // Merge broken funding type title into a single line before the "แบบฟอร์ม..." line.
+        // Example (industry-extension): "ทุนต" + "่" + "อยอดสู" + "่" + "ภาคอุตสาหกรรม 69"
+        if (out.length && out.length <= 3 && !isHeaderBreakLine(line) && !isHeaderBreakLine(out[0])) {
+          const joinWithSpace = /^[0-9]/.test(line) && !/\s$/.test(out[0])
+          out[0] = `${out[0]}${joinWithSpace ? ' ' : ''}${line}`.trim()
           return
         }
         out.push(line)
@@ -568,7 +584,7 @@ export default {
   display: flex;
   align-items: flex-end;
   gap: 6px;
-  margin-top: 2mm;
+  margin-top: 14mm;
   margin-bottom: 1mm;
   width: 150mm;
   margin-left: auto;

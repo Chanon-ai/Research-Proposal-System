@@ -524,16 +524,43 @@ export default {
       const projectDetails = snapshot.projectDetails || {}
 
       const candidates = [
-        proposal.fundingTypeKey,
-        proposal.fundingType,
-        projectDetails.fundingTypeKey,
-        projectDetails.fundingType,
+        // Prefer the value used by the researcher form (ResearchForm.vue hydrates from snapshot.fundingType first).
+        snapshot.fundingType,
         snapshot.fundingTypeKey,
-        snapshot.fundingType
+        // Some payloads keep the same value under projectDetails.
+        projectDetails.fundingType,
+        projectDetails.fundingTypeKey,
+        // Proposal-level fields can be stale (legacy/default), keep them as fallback only.
+        // Prefer `fundingType` (used by the researcher form) over legacy `fundingTypeKey`.
+        proposal.fundingType,
+        proposal.fundingTypeKey
       ]
 
-      const picked = candidates.find((v) => typeof v === 'string' && v.trim())
-      const raw = picked ? String(picked).trim() : ''
+      const cleaned = candidates
+        .filter((v) => typeof v === 'string' && v.trim())
+        .map((v) => String(v).trim())
+      // de-dup while preserving order
+      const seen = new Set()
+      const unique = cleaned.filter((v) => {
+        const key = v.toLowerCase()
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+
+      // If multiple values exist (often due to legacy fields), pick the first one that matches our known keys.
+      const known = ['new-researcher', 'researcher-development', 'strategic-research', 'industry-extension']
+      const normalizeCandidate = (value) => String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[_\s]+/g, '-')
+        .replace(/-+/g, '-')
+      for (const cand of unique) {
+        const normalized = normalizeCandidate(cand)
+        if (known.includes(normalized)) return normalized
+      }
+
+      const raw = unique[0] || ''
       if (!raw) return ''
 
       const key = raw.trim().toLowerCase()
@@ -541,7 +568,6 @@ export default {
         .replace(/[_\s]+/g, '-')
         .replace(/-+/g, '-')
 
-      const known = ['new-researcher', 'researcher-development', 'strategic-research', 'industry-extension']
       if (known.includes(normalized)) return normalized
 
       // Fallback: map Thai labels / loose strings to the known keys.

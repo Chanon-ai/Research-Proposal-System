@@ -460,15 +460,16 @@ const mergeMissingLocalization = (runtimeConfig, fallbackConfig) => {
   const fallbackTemplates = Array.isArray(fallback.fundingTemplates) ? fallback.fundingTemplates : []
   const runtimeTemplates = Array.isArray(runtime.fundingTemplates) ? runtime.fundingTemplates : []
 
+  const cloneItems = (arr) => (Array.isArray(arr) ? arr.map((x) => ({ ...(x || {}) })) : [])
+  const cloneSections = (arr) => (Array.isArray(arr) ? arr.map((s) => ({ ...(s || {}), items: cloneItems(s && s.items) })) : [])
+  const cloneTemplate = (tpl) => ({ ...(tpl || {}), sections: cloneSections(tpl && tpl.sections) })
+
   const mergedTemplates = runtimeTemplates.map((tpl) => {
     const fundingTypeKey = normalizeKey(tpl && tpl.fundingTypeKey)
     const fbTpl = fallbackTemplates.find((t) => normalizeKey(t && t.fundingTypeKey) === fundingTypeKey)
 
     const tplNext = { ...(tpl || {}) }
     if (fbTpl) {
-      const cloneItems = (arr) => (Array.isArray(arr) ? arr.map((x) => ({ ...(x || {}) })) : [])
-      const cloneSections = (arr) => (Array.isArray(arr) ? arr.map((s) => ({ ...(s || {}), items: cloneItems(s && s.items) })) : [])
-
       if (!tplNext.fundingTypeLabelEn) tplNext.fundingTypeLabelEn = fbTpl.fundingTypeLabelEn || pickLocalizedValue(fbTpl, 'fundingTypeLabel', 'en')
       if (!tplNext.fundingTypeLabelTh) tplNext.fundingTypeLabelTh = fbTpl.fundingTypeLabelTh || pickLocalizedValue(fbTpl, 'fundingTypeLabel', 'th')
 
@@ -549,12 +550,22 @@ const mergeMissingLocalization = (runtimeConfig, fallbackConfig) => {
     return tplNext
   })
 
+  // Runtime config can contain only a subset of templates; keep any missing ones from fallback so
+  // `getChairmanChecklistTemplate()` can resolve the correct funding type instead of falling back to templates[0].
+  const runtimeKeys = new Set(mergedTemplates.map((tpl) => normalizeKey(tpl && tpl.fundingTypeKey)))
+  const missingFallbackTemplates = fallbackTemplates
+    .filter((tpl) => tpl && tpl.fundingTypeKey)
+    .filter((tpl) => !runtimeKeys.has(normalizeKey(tpl.fundingTypeKey)))
+    .map((tpl) => cloneTemplate(tpl))
+
+  const mergedWithFallbacks = mergedTemplates.concat(missingFallbackTemplates)
+
   return {
     ...runtime,
     cardTitle: runtime.cardTitle || fallback.cardTitle || pickLocalizedValue(fallback, 'cardTitle', 'th') || '',
     cardTitleTh: runtime.cardTitleTh || fallback.cardTitleTh || pickLocalizedValue(fallback, 'cardTitle', 'th') || '',
     cardTitleEn: runtime.cardTitleEn || fallback.cardTitleEn || pickLocalizedValue(fallback, 'cardTitle', 'en') || '',
-    fundingTemplates: mergedTemplates
+    fundingTemplates: mergedWithFallbacks
   }
 }
 
