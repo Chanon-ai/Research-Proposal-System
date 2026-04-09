@@ -93,152 +93,152 @@
       </CCol>
     </CRow>
 
-    <CRow class="mb-3">
-      <CCol lg="6" class="mb-2">
-        <CCard>
-          <CCardHeader class="font-weight-bold">{{ $t('chairman.dashboard.decision.title') }}</CCardHeader>
-          <CCardBody>
-            <div class="decision-layout">
-              <div class="decision-left">
-                <div class="decision-grid">
-                  <div class="decision-item decision-item--approve">
-                    <div class="decision-item__label">{{ $t('chairman.dashboard.decision.approve') }}</div>
-                    <div class="decision-item__value">{{ decisionStats.approve }}</div>
-                    <CProgress class="progress-xs" color="success" :value="decisionStats.approvePct" />
-                  </div>
-                  <div class="decision-item decision-item--pending">
-                    <div class="decision-item__label">{{ $t('chairman.dashboard.decision.pending') }}</div>
-                    <div class="decision-item__value">{{ decisionStats.pending }}</div>
-                    <CProgress class="progress-xs" color="warning" :value="decisionStats.pendingPct" />
-                  </div>
-                  <div class="decision-item decision-item--reject">
-                    <div class="decision-item__label">{{ $t('chairman.dashboard.decision.reject') }}</div>
-                    <div class="decision-item__value">{{ decisionStats.reject }}</div>
-                    <CProgress class="progress-xs" color="danger" :value="decisionStats.rejectPct" />
-                  </div>
-                </div>
-                <div class="text-muted small mt-2">{{ $t('chairman.dashboard.decision.total', { count: decisionStats.total }) }}</div>
-              </div>
+    <div class="dashboard-grid mb-3">
 
-              <div class="decision-right">
-                <div class="chart-title chart-title--tight">{{ $t('chairman.dashboard.decision.chartTitle') }}</div>
-                <div v-if="decisionStats.total === 0" class="text-muted small text-center py-3">
-                  {{ $t('chairman.dashboard.decision.empty') }}
+      <!-- Row 1, Col 1: ภาพรวมผลการพิจารณา -->
+      <CCard>
+        <CCardHeader class="font-weight-bold">{{ $t('chairman.dashboard.decision.title') }}</CCardHeader>
+        <CCardBody>
+          <div class="decision-layout">
+            <div class="decision-left">
+              <div class="decision-grid">
+                <div class="decision-item decision-item--approve">
+                  <div class="decision-item__label">{{ $t('chairman.dashboard.decision.approve') }}</div>
+                  <div class="decision-item__value">{{ decisionStats.approve }}</div>
+                  <CProgress class="progress-xs" color="success" :value="decisionStats.approvePct" />
                 </div>
-                <div v-else class="chart-wrap chart-wrap--doughnut">
-                  <CChartDoughnut
-                    :datasets="decisionDoughnut.datasets"
-                    :labels="decisionDoughnut.labels"
-                    :options="doughnutOptions"
-                  />
+                <div class="decision-item decision-item--pending">
+                  <div class="decision-item__label">{{ $t('chairman.dashboard.decision.pending') }}</div>
+                  <div class="decision-item__value">{{ decisionStats.pending }}</div>
+                  <CProgress class="progress-xs" color="warning" :value="decisionStats.pendingPct" />
+                </div>
+                <div class="decision-item decision-item--reject">
+                  <div class="decision-item__label">{{ $t('chairman.dashboard.decision.reject') }}</div>
+                  <div class="decision-item__value">{{ decisionStats.reject }}</div>
+                  <CProgress class="progress-xs" color="danger" :value="decisionStats.rejectPct" />
                 </div>
               </div>
+              <div class="text-muted small mt-2">{{ $t('chairman.dashboard.decision.total', { count: decisionStats.total }) }}</div>
             </div>
-          </CCardBody>
-        </CCard>
-
-        <CCard class="mt-1">
-          <CCardHeader class="font-weight-bold">{{ $t('chairman.dashboard.proposalStatus.title') }}</CCardHeader>
-          <CCardBody>
-            <div v-if="loading" class="text-center py-4">
-              <CSpinner color="primary" size="sm" />
-              <span class="text-muted ml-2">{{ $t('chairman.dashboard.proposalStatus.loading') }}</span>
-            </div>
-            <div v-else-if="fetchError" class="text-center py-4">
-              <div class="text-danger mb-2">{{ $t('chairman.dashboard.proposalStatus.loadErrorTitle') }}</div>
-              <small class="text-muted">{{ fetchError }}</small>
-            </div>
-            <div v-else>
-              <div class="chart-wrap chart-wrap--doughnut">
+            <div class="decision-right">
+              <div class="chart-title chart-title--tight">{{ $t('chairman.dashboard.decision.chartTitle') }}</div>
+              <div v-if="decisionStats.total === 0" class="text-muted small text-center py-3">
+                {{ $t('chairman.dashboard.decision.empty') }}
+              </div>
+              <div v-else class="chart-wrap chart-wrap--doughnut">
                 <CChartDoughnut
-                  :datasets="proposalDoughnut.datasets"
-                  :labels="proposalDoughnut.labels"
+                  :datasets="decisionDoughnut.datasets"
+                  :labels="decisionDoughnut.labels"
                   :options="doughnutOptions"
                 />
               </div>
-              <div class="status-breakdown-list mt-3">
-                <div
-                  v-for="item in chairmanStatusBreakdown.items"
-                  :key="item.key"
-                  class="status-breakdown-item"
-                >
-                  <span class="status-breakdown-dot" :style="{ backgroundColor: item.color }" />
-                  <span class="status-breakdown-label">{{ item.label }}</span>
-                  <span class="status-breakdown-count">{{ item.count }}</span>
+            </div>
+          </div>
+        </CCardBody>
+      </CCard>
+
+      <!-- Row 1, Col 2: ความคืบหน้าการพิจารณา -->
+      <CCard>
+        <CCardHeader class="font-weight-bold">{{ $t('chairman.dashboard.progress.title') }}</CCardHeader>
+        <CCardBody>
+          <div class="score-row">
+            <div class="score-box">
+              <div class="score-box__label">{{ $t('chairman.dashboard.progress.completion') }}</div>
+              <div class="score-box__value">{{ progressStats.completionRateDisplay }}</div>
+              <CProgress class="mt-1" color="warning" :value="progressStats.completionRate" />
+            </div>
+            <div class="stale-box">
+              <div class="stale-box__label">{{ $t('chairman.dashboard.progress.pending') }}</div>
+              <div class="stale-box__value">{{ staleStats.pending }}</div>
+              <div class="stale-box__sub">
+                {{ $t('chairman.dashboard.progress.over7') }} <strong>{{ staleStats.over7Days }}</strong> |
+                {{ $t('chairman.dashboard.progress.over14') }} <strong>{{ staleStats.over14Days }}</strong>
+              </div>
+            </div>
+          </div>
+        </CCardBody>
+      </CCard>
+
+      <!-- Row 2, Col 1: สถานะข้อเสนอที่เกี่ยวข้อง -->
+      <CCard>
+        <CCardHeader class="font-weight-bold">{{ $t('chairman.dashboard.proposalStatus.title') }}</CCardHeader>
+        <CCardBody>
+          <div v-if="loading" class="text-center py-4">
+            <CSpinner color="primary" size="sm" />
+            <span class="text-muted ml-2">{{ $t('chairman.dashboard.proposalStatus.loading') }}</span>
+          </div>
+          <div v-else-if="fetchError" class="text-center py-4">
+            <div class="text-danger mb-2">{{ $t('chairman.dashboard.proposalStatus.loadErrorTitle') }}</div>
+            <small class="text-muted">{{ fetchError }}</small>
+          </div>
+          <div v-else>
+            <div class="chart-wrap chart-wrap--doughnut">
+              <CChartDoughnut
+                :datasets="proposalDoughnut.datasets"
+                :labels="proposalDoughnut.labels"
+                :options="doughnutOptions"
+              />
+            </div>
+            <div class="status-breakdown-list mt-3">
+              <div
+                v-for="item in chairmanStatusBreakdown.items"
+                :key="item.key"
+                class="status-breakdown-item"
+              >
+                <span class="status-breakdown-dot" :style="{ backgroundColor: item.color }" />
+                <span class="status-breakdown-label">{{ item.label }}</span>
+                <span class="status-breakdown-count">{{ item.count }}</span>
+              </div>
+            </div>
+          </div>
+        </CCardBody>
+      </CCard>
+
+      <!-- Row 2, Col 2: สรุปการประชุม -->
+      <CCard>
+        <CCardHeader class="font-weight-bold">{{ $t('chairman.dashboard.meetings.title') }}</CCardHeader>
+        <CCardBody>
+          <div v-if="meetingSummaryLoading" class="text-center py-4">
+            <CSpinner color="primary" size="sm" />
+            <span class="text-muted ml-2">{{ $t('chairman.dashboard.meetings.loading') }}</span>
+          </div>
+          <div v-else>
+            <CRow class="mb-2">
+              <CCol sm="6" class="mb-2 mb-sm-0">
+                <div class="meeting-kpi meeting-kpi--scheduled">
+                  <div class="meeting-kpi__label">{{ $t('chairman.dashboard.meetings.scheduled') }}</div>
+                  <div class="meeting-kpi__value">{{ meetingSummary.scheduled }}</div>
                 </div>
-              </div>
-            </div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-
-      <CCol lg="6" class="mb-2">
-        <CCard>
-          <CCardHeader class="font-weight-bold">{{ $t('chairman.dashboard.progress.title') }}</CCardHeader>
-          <CCardBody>
-            <div class="score-row">
-              <div class="score-box">
-                <div class="score-box__label">{{ $t('chairman.dashboard.progress.completion') }}</div>
-                <div class="score-box__value">{{ progressStats.completionRateDisplay }}</div>
-                <CProgress class="mt-1" color="warning" :value="progressStats.completionRate" />
-              </div>
-              <div class="stale-box">
-                <div class="stale-box__label">{{ $t('chairman.dashboard.progress.pending') }}</div>
-                <div class="stale-box__value">{{ staleStats.pending }}</div>
-                <div class="stale-box__sub">
-                  {{ $t('chairman.dashboard.progress.over7') }} <strong>{{ staleStats.over7Days }}</strong> |
-                  {{ $t('chairman.dashboard.progress.over14') }} <strong>{{ staleStats.over14Days }}</strong>
+              </CCol>
+              <CCol sm="6">
+                <div class="meeting-kpi meeting-kpi--completed">
+                  <div class="meeting-kpi__label">{{ $t('chairman.dashboard.meetings.completed') }}</div>
+                  <div class="meeting-kpi__value">{{ meetingSummary.completed }}</div>
                 </div>
-              </div>
+              </CCol>
+            </CRow>
+            <CRow class="mb-2">
+              <CCol sm="6" class="mb-2 mb-sm-0">
+                <div class="meeting-kpi meeting-kpi--cancelled">
+                  <div class="meeting-kpi__label">{{ $t('chairman.dashboard.meetings.cancelled') }}</div>
+                  <div class="meeting-kpi__value">{{ meetingSummary.cancelled }}</div>
+                </div>
+              </CCol>
+              <CCol sm="6">
+                <div class="meeting-kpi meeting-kpi--total">
+                  <div class="meeting-kpi__label">{{ $t('chairman.dashboard.meetings.total') }}</div>
+                  <div class="meeting-kpi__value">{{ meetingSummary.total }}</div>
+                </div>
+              </CCol>
+            </CRow>
+            <div class="chart-wrap chart-wrap--bar">
+              <CChartBar :datasets="meetingBar.datasets" :labels="meetingBar.labels" :options="meetingBar.options" />
             </div>
-          </CCardBody>
-        </CCard>
+          </div>
+        </CCardBody>
+      </CCard>
 
-        <CCard class="mt-1">
-          <CCardHeader class="font-weight-bold">{{ $t('chairman.dashboard.meetings.title') }}</CCardHeader>
-          <CCardBody>
-            <div v-if="meetingSummaryLoading" class="text-center py-4">
-              <CSpinner color="primary" size="sm" />
-              <span class="text-muted ml-2">{{ $t('chairman.dashboard.meetings.loading') }}</span>
-            </div>
-            <div v-else>
-              <CRow class="mb-2">
-                <CCol sm="6" class="mb-2 mb-sm-0">
-                  <div class="meeting-kpi meeting-kpi--scheduled">
-                    <div class="meeting-kpi__label">{{ $t('chairman.dashboard.meetings.scheduled') }}</div>
-                    <div class="meeting-kpi__value">{{ meetingSummary.scheduled }}</div>
-                  </div>
-                </CCol>
-                <CCol sm="6">
-                  <div class="meeting-kpi meeting-kpi--completed">
-                    <div class="meeting-kpi__label">{{ $t('chairman.dashboard.meetings.completed') }}</div>
-                    <div class="meeting-kpi__value">{{ meetingSummary.completed }}</div>
-                  </div>
-                </CCol>
-              </CRow>
-              <CRow class="mb-2">
-                <CCol sm="6" class="mb-2 mb-sm-0">
-                  <div class="meeting-kpi meeting-kpi--cancelled">
-                    <div class="meeting-kpi__label">{{ $t('chairman.dashboard.meetings.cancelled') }}</div>
-                    <div class="meeting-kpi__value">{{ meetingSummary.cancelled }}</div>
-                  </div>
-                </CCol>
-                <CCol sm="6">
-                  <div class="meeting-kpi meeting-kpi--total">
-                    <div class="meeting-kpi__label">{{ $t('chairman.dashboard.meetings.total') }}</div>
-                    <div class="meeting-kpi__value">{{ meetingSummary.total }}</div>
-                  </div>
-                </CCol>
-              </CRow>
-
-              <div class="chart-wrap chart-wrap--bar">
-                <CChartBar :datasets="meetingBar.datasets" :labels="meetingBar.labels" :options="meetingBar.options" />
-              </div>
-            </div>
-          </CCardBody>
-        </CCard>
-      </CCol>
-    </CRow>
+    </div>
   </div>
 </template>
 
@@ -836,46 +836,66 @@ export default {
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
-  justify-content: flex-end;
 }
 
 .filter-bar__selects {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  align-items: stretch;
+  gap: 8px;
 }
 
 .filter-bar__actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
 }
 
 .filter-select {
-  min-width: 140px;
+  width: 175px;
+  flex-shrink: 0;
 }
 
 .filter-select::v-deep .vs__dropdown-toggle {
-  min-height: 34px;
+  height: 40px;
   border-radius: 12px;
   border: 2px solid rgba(181, 133, 34, 0.55);
   background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
-  padding: 1px 8px;
-  margin-bottom: 15px;
+  padding: 0 8px;
+  margin-bottom: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
-.filter-select::v-deep .vs__selected,
-.filter-select::v-deep .vs__search {
+.filter-select::v-deep .vs__selected-options {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.filter-select::v-deep .vs__selected {
   font-weight: 800;
   color: #1f2937;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
 }
 
-.filter-select::v-deep .vs__search::placeholder {
-  color: rgba(31, 41, 55, 0.62);
-  font-weight: 700;
+.filter-select::v-deep .vs__search {
+  flex: 0 0 0px;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
 }
 
 .filter-select::v-deep .vs__actions {
@@ -892,14 +912,17 @@ export default {
   box-shadow: 0 0 0 3px rgba(181, 133, 34, 0.18), 0 12px 22px rgba(15, 23, 42, 0.09);
 }
 
+
 .filter-select::v-deep .vs__dropdown-menu {
-  margin-top: 6px;
+  margin-top: 4px;
   border-radius: 14px;
   border: 1px solid rgba(181, 133, 34, 0.55) !important;
   background: #fffaf2 !important;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
   padding: 6px;
   max-height: 260px;
+  min-width: 100%;
+  width: max-content;
 }
 
 .filter-select::v-deep .vs__dropdown-option {
@@ -1074,7 +1097,7 @@ export default {
 
 @media (max-width: 900px) {
   .filter-select {
-    min-width: 160px;
+    width: 160px;
   }
 
   .decision-grid {
@@ -1103,7 +1126,15 @@ export default {
 
 @media (max-width: 600px) {
   .filter-bar {
-    justify-content: flex-start;
+    align-items: stretch;
+  }
+
+  .filter-bar__selects {
+    flex-direction: column;
+  }
+
+  .filter-select {
+    width: 100%;
   }
 }
 
@@ -1264,5 +1295,31 @@ export default {
 
 .meeting-kpi--total {
   border-left: 4px solid rgba(107, 114, 128, 0.85);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 991px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+<style>
+/* Non-scoped: fix vue-select's default "position: absolute" on selected text when open
+   Default: .vs--single.vs--open .vs__selected { position: absolute; opacity: .4 }
+   The position:absolute causes text to escape overflow:hidden and become invisible */
+.filter-select.vs--single.vs--open .vs__selected {
+  position: static;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

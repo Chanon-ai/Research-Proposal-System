@@ -1620,11 +1620,11 @@ export default {
 .meeting-card__side-btn:hover { filter: brightness(1.03); transform: translateY(-1px); box-shadow: 0 14px 26px rgba(15,23,42,0.18) !important; }
 .meeting-card__side-btn:focus { outline: none !important; }
 .meeting-card__side-btn:focus-visible { outline: none !important; box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 26px rgba(15,23,42,0.18) !important; }
-.meeting-card__side-btn--edit { background: linear-gradient(135deg, rgba(197,155,58,0.98), rgba(241,165,0,0.98)) !important; color: #ffffff !important; }
-.meeting-card__side-btn--delete { background: linear-gradient(135deg, rgba(239,68,68,0.98), rgba(139,18,18,0.98)) !important; color: #ffffff !important; }
+.meeting-card__side-btn--edit { background: #d97706 !important; color: #ffffff !important; }
+.meeting-card__side-btn--delete { background: #dc2626 !important; color: #ffffff !important; }
 .meeting-card__side-ic { opacity: 0.95; }
 
-.meeting-card__cta { flex: 1 1 auto; min-width: 0; border-radius: 14px !important; padding: 10px 12px !important; font-weight: 900 !important; letter-spacing: 0.01em; background: linear-gradient(135deg, rgba(197,155,58,0.98), rgba(139,18,18,0.98)) !important; border: 1px solid rgba(139,18,18,0.22) !important; color: #ffffff !important; box-shadow: 0 12px 22px rgba(15,23,42,0.14); transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease; }
+.meeting-card__cta { flex: 1 1 auto; min-width: 0; border-radius: 14px !important; padding: 10px 12px !important; font-weight: 900 !important; letter-spacing: 0.01em; background: #b45309 !important; border: 1px solid rgba(139,18,18,0.22) !important; color: #ffffff !important; box-shadow: 0 12px 22px rgba(15,23,42,0.14); transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease; }
 .meeting-card__cta:hover { filter: brightness(1.03); box-shadow: 0 14px 26px rgba(15,23,42,0.18); transform: translateY(-1px); }
 .meeting-card__cta:focus { outline: none !important; }
 .meeting-card__cta:focus-visible { outline: none !important; box-shadow: 0 0 0 3px var(--am-accent-ring), 0 14px 26px rgba(15,23,42,0.18); }
