@@ -761,6 +761,43 @@ function serializeFeedbackReview(review = {}, options = {}) {
   };
 }
 
+function buildFinanceFeedbackReview(latestDecisionLog = null) {
+  if (!latestDecisionLog || latestDecisionLog.actionKey !== 'finance_revision_requested') return null;
+
+  const summaryComment = String(latestDecisionLog.remark || '').trim();
+
+  return {
+    _id: `finance-feedback-${String(latestDecisionLog._id || 'latest')}`,
+    roundNo: latestDecisionLog.roundNo || 1,
+    reviewerUserId: latestDecisionLog.changedBy || null,
+    decision: 'revision',
+    summaryComment,
+    commentItems: [
+      {
+        sectionKey: 'budget',
+        fieldKey: 'finance_budget_revision',
+        commentType: 'required_fix',
+        commentText: summaryComment || 'กรุณาปรับปรุงข้อมูลงบประมาณตามข้อเสนอแนะของฝ่ายการเงิน',
+        visibility: 'researcher_visible',
+        meta: {
+          sectionKey: 'budget',
+          sectionLabel: 'งบประมาณ',
+          rubricLabel: 'ข้อเสนอแนะจากฝ่ายการเงิน',
+          sectionNo: 7,
+          editable: true,
+          source: 'finance_review'
+        }
+      }
+    ],
+    scoreItems: [],
+    totalScore: null,
+    submittedAt: latestDecisionLog.createdAt || null,
+    updatedAt: latestDecisionLog.createdAt || null,
+    reviewStatus: REVIEW_STATUS.CERTIFIED,
+    feedbackSource: 'finance'
+  };
+}
+
 function dedupeCommitteeIds(committeeIds = []) {
   const seen = new Set();
   const result = [];
@@ -2539,8 +2576,13 @@ async function getProposalFeedback(proposalId, user) {
   const serializedReviews = (reviews || []).map((review) => serializeFeedbackReview(review, {
     isChairman: isChairmanReviewRecord(review)
   }));
+  const financeFeedbackReview = buildFinanceFeedbackReview(latestDecisionLog);
+  if (financeFeedbackReview) {
+    serializedReviews.push(financeFeedbackReview);
+  }
   const chairmanReviews = serializedReviews.filter((review) => review.feedbackSource === 'chairman');
-  const committeeReviews = serializedReviews.filter((review) => review.feedbackSource !== 'chairman');
+  const financeReviews = serializedReviews.filter((review) => review.feedbackSource === 'finance');
+  const committeeReviews = serializedReviews.filter((review) => review.feedbackSource === 'committee');
 
   return {
     proposalId: proposal._id,
@@ -2549,13 +2591,15 @@ async function getProposalFeedback(proposalId, user) {
     latestDecision: latestDecisionLog ? {
       toStatus: latestDecisionLog.toStatus,
       remark: latestDecisionLog.remark || '',
+      actionKey: latestDecisionLog.actionKey || '',
       roundNo: latestDecisionLog.roundNo || null,
       changedAt: latestDecisionLog.createdAt,
       changedBy: latestDecisionLog.changedBy || null
     } : null,
     feedbackReviews: serializedReviews,
     committeeReviews,
-    chairmanReviews
+    chairmanReviews,
+    financeReviews
   };
 }
 

@@ -130,6 +130,8 @@
                         :model-value="feedbackSectionDraft(section.sectionKey)"
                         :is-read-only="effectiveReadOnly"
                         :funding-type="feedbackStrategicFundingType('strategic_alignment')"
+                        :funding-budget-config="fundingBudgetConfig"
+                        :budget-multiplier-config="budgetMultiplierConfig"
                         :reset-token="feedbackStrategicFundingType('strategic_alignment')"
                         @update:modelValue="setFeedbackSectionDraft(section.sectionKey, $event)"
                       />
@@ -139,6 +141,8 @@
                         :model-value="feedbackSectionSnapshot(section.sectionKey)"
                         :is-read-only="true"
                         :funding-type="feedbackStrategicFundingType('strategic_alignment')"
+                        :funding-budget-config="fundingBudgetConfig"
+                        :budget-multiplier-config="budgetMultiplierConfig"
                       />
                     </template>
                     <template v-else-if="section.sectionKey === 'integration' && !isFeedbackSectionSubmitted(section.sectionKey)">
@@ -795,6 +799,14 @@ export default {
     setFeedbackExpectedOutcomesSelection: {
       type: Function,
       required: true
+    },
+    fundingBudgetConfig: {
+      type: Array,
+      default: () => []
+    },
+    budgetMultiplierConfig: {
+      type: Array,
+      default: () => []
     },
     transferLevelPreview: {
       type: Function,

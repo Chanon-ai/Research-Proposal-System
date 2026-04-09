@@ -1756,6 +1756,8 @@ export default {
         feedbackExpectedOutcomesFundingType: this.feedbackExpectedOutcomesFundingType,
         feedbackExpectedOutcomesSelection: this.feedbackExpectedOutcomesSelection,
         setFeedbackExpectedOutcomesSelection: this.setFeedbackExpectedOutcomesSelection,
+        fundingBudgetConfig: this.fundingBudgetConfig,
+        budgetMultiplierConfig: this.budgetMultiplierConfig,
         transferLevelPreview: this.transferLevelPreview,
         updateFeedbackSectionDraftField: this.updateFeedbackSectionDraftField,
         isSubmittingFeedbackSection: this.isSubmittingFeedbackSection,
@@ -3667,9 +3669,9 @@ export default {
     feedbackSectionSnapshot (sectionKey) {
       const state = this.feedbackSectionState(sectionKey)
       if (state && state.snapshot !== null && state.snapshot !== undefined) {
-        return state.snapshot
+        return this.cloneSerializable(state.snapshot)
       }
-      const current = this.currentFeedbackSectionValue(sectionKey)
+      const current = this.cloneSerializable(this.currentFeedbackSectionValue(sectionKey))
       if (sectionKey === 'strategic_alignment') {
         return this.normalizeStrategicAlignmentValue(current)
       }
@@ -3976,10 +3978,20 @@ export default {
       const targetSection = (this.feedbackEditableSections || []).find(section => String(section && section.sectionKey ? section.sectionKey : '') === String(sectionKey || ''))
       if (targetSection && targetSection.meta && targetSection.meta.editable === false) return
 
-      this.$set(this.feedbackSectionDrafts, sectionKey, this.cloneSerializable(this.feedbackSectionSnapshot(sectionKey)))
+      const restoredDraft = this.cloneSerializable(this.feedbackSectionSnapshot(sectionKey))
+      this.$set(this.feedbackSectionDrafts, sectionKey, restoredDraft)
       this.setFeedbackSectionCardState(sectionKey, {
         submitted: false,
         collapsed: false
+      })
+
+      // Some section editors emit an initial empty/default payload when remounted.
+      // Re-apply the stored snapshot after the editable component finishes its first render.
+      this.$nextTick(() => {
+        this.$set(this.feedbackSectionDrafts, sectionKey, this.cloneSerializable(restoredDraft))
+        this.$nextTick(() => {
+          this.$set(this.feedbackSectionDrafts, sectionKey, this.cloneSerializable(restoredDraft))
+        })
       })
     },
     reviewActionItems (review) {
