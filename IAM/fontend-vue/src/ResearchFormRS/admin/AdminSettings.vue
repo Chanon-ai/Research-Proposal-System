@@ -177,6 +177,118 @@
             <small class="text-muted d-block mb-3">
               {{ $t('adminSettings.workflow.statusNote') }}
             </small>
+            <div class="workflow-flowchart mb-4">
+              <div class="workflow-flowchart__legend">
+                <span class="workflow-flowchart__legend-item workflow-flowchart__legend-item--readonly">
+                  <span class="workflow-flowchart__legend-dot" />
+                  {{ $t('adminSettings.workflow.readOnlyLegend') }}
+                </span>
+                <span class="workflow-flowchart__legend-item workflow-flowchart__legend-item--editable">
+                  <span class="workflow-flowchart__legend-dot" />
+                  {{ $t('adminSettings.workflow.editableLegend') }}
+                </span>
+              </div>
+
+              <div class="workflow-flowchart__section workflow-flowchart__section--primary">
+                <div class="workflow-flowchart__section-title">{{ workflowPrimaryReadOnlyPath.title }}</div>
+                <div class="workflow-flowchart__timeline">
+                  <template v-for="(step, statusIndex) in workflowPresentationSteps">
+                    <div
+                      :key="step.key"
+                      class="workflow-flowchart__timeline-step"
+                    >
+                      <div class="workflow-flowchart__timeline-marker">
+                        <span class="workflow-flowchart__timeline-number">{{ statusIndex + 1 }}</span>
+                        <component :is="'svg'" v-bind="svgProps" v-html="getStatusIcon(step.status)" />
+                      </div>
+                      <div class="workflow-flowchart__timeline-card">
+                        <div class="workflow-flowchart__timeline-label">{{ step.label }}</div>
+                        <div class="workflow-flowchart__timeline-key">{{ step.description }}</div>
+                      </div>
+                    </div>
+                    <div
+                      v-if="statusIndex < workflowPresentationSteps.length - 1"
+                      :key="`${step.key}-arrow`"
+                      class="workflow-flowchart__timeline-connector"
+                    >
+                      <span class="workflow-flowchart__timeline-connector-line" />
+                      <span class="workflow-flowchart__timeline-connector-arrow">→</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <div
+                v-if="workflowSecondaryReadOnlyPaths.length"
+                class="workflow-flowchart__branch-connector"
+                aria-hidden="true"
+              >
+                <span class="workflow-flowchart__branch-connector-stem" />
+                <span class="workflow-flowchart__branch-connector-hub" />
+                <span class="workflow-flowchart__branch-connector-rail" />
+              </div>
+
+              <div class="workflow-flowchart__branch-grid">
+                <div
+                  v-for="path in workflowSecondaryReadOnlyPaths"
+                  :key="path.key"
+                  class="workflow-flowchart__branch-card"
+                >
+                  <span class="workflow-flowchart__branch-card-link" aria-hidden="true" />
+                  <div class="workflow-flowchart__section-title">{{ path.title }}</div>
+                  <div class="workflow-flowchart__path workflow-flowchart__path--branch">
+                    <template v-for="(status, statusIndex) in path.statuses">
+                      <CBadge
+                        :key="`${path.key}-${status}`"
+                        class="status-chip workflow-flowchart__chip workflow-flowchart__chip--readonly"
+                        :color="getStatusChipColor(status)"
+                      >
+                        <component :is="'svg'" v-bind="svgProps" v-html="getStatusIcon(status)" />
+                        {{ getWorkflowBusinessStatusLabel(status) }}
+                      </CBadge>
+                      <span
+                        v-if="statusIndex < path.statuses.length - 1"
+                        :key="`${path.key}-${status}-arrow`"
+                        class="workflow-flowchart__arrow"
+                      >
+                        →
+                      </span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <div class="workflow-flowchart__section workflow-flowchart__section--editable">
+                <div class="workflow-flowchart__section-title">{{ $t('adminSettings.workflow.revisionLoopTitle') }}</div>
+                <div class="workflow-flowchart__path">
+                  <template v-for="(status, statusIndex) in workflowEditableRevisionLoop">
+                    <CBadge
+                      :key="status.key"
+                      class="status-chip workflow-flowchart__chip workflow-flowchart__chip--editable"
+                      :color="getStatusChipColor(status.status)"
+                    >
+                      <component :is="'svg'" v-bind="svgProps" v-html="getStatusIcon(status.status)" />
+                      {{ status.label }}
+                    </CBadge>
+                    <span
+                      v-if="statusIndex < workflowEditableRevisionLoop.length - 1"
+                      :key="`${status.key}-arrow`"
+                      class="workflow-flowchart__arrow workflow-flowchart__arrow--editable"
+                    >
+                      →
+                    </span>
+                  </template>
+                </div>
+                <small class="text-muted d-block mt-2">
+                  {{ $t('adminSettings.workflow.revisionLoopNote') }}
+                </small>
+              </div>
+            </div>
+
+            <div class="workflow-flowchart__details-label">{{ $t('adminSettings.workflow.transitionMapTitle') }}</div>
+            <small class="text-muted d-block mb-3">
+              {{ $t('adminSettings.workflow.transitionMapNote') }}
+            </small>
             <div class="status-flow-list">
               <div
                 v-for="(toStatuses, fromStatus, index) in allowedTransitions"
@@ -968,6 +1080,100 @@ export default {
     allowedTransitions () {
       return PROPOSAL_ALLOWED_TRANSITIONS
     },
+    workflowReadOnlyPaths () {
+      return [
+        {
+          key: 'main_approval_path',
+          title: this.$t('adminSettings.workflow.readOnlyPaths.main'),
+          statuses: ['pending_confirm', 'submitted', 'faculty_review_pending', 'faculty_approved', 'office_received', 'finance_budget_checking', 'document_checking', 'assigned_to_committee', 'under_review', 'committee_valuated', 'approved', 'announced']
+        },
+        {
+          key: 'meeting_path',
+          title: this.$t('adminSettings.workflow.readOnlyPaths.meeting'),
+          statuses: ['office_received', 'meeting_in_progress', 'meeting_completed', 'document_checking']
+        },
+        {
+          key: 'faculty_rejected_path',
+          title: this.$t('adminSettings.workflow.readOnlyPaths.facultyRejected'),
+          statuses: ['faculty_review_pending', 'faculty_rejected', 'announced']
+        },
+        {
+          key: 'committee_rejected_path',
+          title: this.$t('adminSettings.workflow.readOnlyPaths.committeeRejected'),
+          statuses: ['committee_valuated', 'rejected', 'announced']
+        }
+      ]
+    },
+    workflowPrimaryReadOnlyPath () {
+      return this.workflowReadOnlyPaths[0] || { title: '', statuses: [] }
+    },
+    workflowPresentationSteps () {
+      return [
+        {
+          key: 'intake',
+          status: 'pending_confirm',
+          label: this.$t('adminSettings.workflow.presentationSteps.intake.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.intake.description')
+        },
+        {
+          key: 'faculty',
+          status: 'faculty_review_pending',
+          label: this.$t('adminSettings.workflow.presentationSteps.faculty.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.faculty.description')
+        },
+        {
+          key: 'office',
+          status: 'office_received',
+          label: this.$t('adminSettings.workflow.presentationSteps.office.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.office.description')
+        },
+        {
+          key: 'budget',
+          status: 'finance_budget_checking',
+          label: this.$t('adminSettings.workflow.presentationSteps.budget.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.budget.description')
+        },
+        {
+          key: 'committee',
+          status: 'under_review',
+          label: this.$t('adminSettings.workflow.presentationSteps.committee.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.committee.description')
+        },
+        {
+          key: 'result',
+          status: 'announced',
+          label: this.$t('adminSettings.workflow.presentationSteps.result.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.result.description')
+        }
+      ]
+    },
+    workflowSecondaryReadOnlyPaths () {
+      return this.workflowReadOnlyPaths.slice(1)
+    },
+    workflowEditableRevisionLoop () {
+      return [
+        {
+          key: 'revision_requested',
+          status: 'revision_requested',
+          label: this.$t('adminSettings.workflow.editableSteps.revisionRequested')
+        },
+        {
+          key: 'resubmitted',
+          status: 'resubmitted',
+          label: this.$t('adminSettings.workflow.editableSteps.resubmitted')
+        },
+        {
+          key: 'second_round_review',
+          status: 'second_round_review',
+          label: this.$t('adminSettings.workflow.editableSteps.secondRoundReview')
+        },
+        {
+          key: 'committee_valuated',
+          status: 'committee_valuated',
+          label: this.$t('adminSettings.workflow.editableSteps.reviewCompleted')
+        }
+      ]
+    },
     centerLoadingActive () {
       return Boolean(this.loadingSettings || this.emailLogLoading || this.emailWidgetSending)
     },
@@ -1023,6 +1229,10 @@ export default {
     getStatusLabel (status) {
       const key = 'proposalStatus.' + status
       return this.$te(key) ? this.$t(key) : (STATUS_LABELS[status] || status)
+    },
+    getWorkflowBusinessStatusLabel (status) {
+      const key = `adminSettings.workflow.businessStatusLabels.${status}`
+      return this.$te(key) ? this.$t(key) : this.getStatusLabel(status)
     },
     getStatusIcon (status) {
       return STATUS_ICONS[status] || ''
@@ -2319,10 +2529,372 @@ body.c-dark-theme .settings-tabs::v-deep .nav-underline .nav-link.active::after 
   border-radius: 10px;
 }
 
+.workflow-flowchart {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(140, 21, 21, 0.12);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 248, 238, 0.92));
+}
+
+.workflow-flowchart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.workflow-flowchart__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workflow-flowchart__legend-item--readonly {
+  background: rgba(30, 102, 196, 0.1);
+  color: #1e5eb5;
+}
+
+.workflow-flowchart__legend-item--editable {
+  background: rgba(181, 133, 34, 0.14);
+  color: #8d5f00;
+}
+
+.workflow-flowchart__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.workflow-flowchart__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.workflow-flowchart__section--primary {
+  gap: 12px;
+}
+
+.workflow-flowchart__section--editable {
+  padding-top: 10px;
+  border-top: 1px dashed rgba(181, 133, 34, 0.38);
+}
+
+.workflow-flowchart__section-title,
+.workflow-flowchart__details-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b0f0f;
+}
+
+.workflow-flowchart__path {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.workflow-flowchart__timeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(30, 102, 196, 0.06), rgba(255, 255, 255, 0.7));
+}
+
+.workflow-flowchart__timeline-step {
+  display: flex;
+  align-items: stretch;
+  min-width: 190px;
+  max-width: 240px;
+  flex: 1 1 190px;
+}
+
+.workflow-flowchart__timeline-marker {
+  width: 44px;
+  min-width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 0;
+  color: #1e5eb5;
+}
+
+.workflow-flowchart__timeline-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+  background: #1e5eb5;
+  box-shadow: 0 6px 12px rgba(30, 94, 181, 0.2);
+}
+
+.workflow-flowchart__timeline-card {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(30, 102, 196, 0.16);
+  box-shadow: 0 8px 18px rgba(30, 94, 181, 0.08);
+}
+
+.workflow-flowchart__timeline-label {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: #143a73;
+}
+
+.workflow-flowchart__timeline-key {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #617694;
+}
+
+.workflow-flowchart__timeline-connector {
+  display: flex;
+  align-items: center;
+  min-width: 36px;
+  padding: 0 6px;
+}
+
+.workflow-flowchart__timeline-connector-line {
+  flex: 1 1 auto;
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(30, 94, 181, 0.2), rgba(30, 94, 181, 0.5));
+}
+
+.workflow-flowchart__timeline-connector-arrow {
+  margin-left: 6px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #3566b0;
+}
+
+.workflow-flowchart__path--branch {
+  gap: 6px;
+}
+
+.workflow-flowchart__branch-connector {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin: -2px 0 2px;
+}
+
+.workflow-flowchart__branch-connector-stem {
+  width: 2px;
+  height: 18px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(30, 94, 181, 0.16), rgba(30, 94, 181, 0.5));
+}
+
+.workflow-flowchart__branch-connector-hub {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #3f73c0;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 4px rgba(63, 115, 192, 0.12);
+}
+
+.workflow-flowchart__branch-connector-rail {
+  width: min(78%, 640px);
+  height: 2px;
+  margin-top: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(30, 94, 181, 0.14), rgba(30, 94, 181, 0.42), rgba(30, 94, 181, 0.14));
+}
+
+.workflow-flowchart__branch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.workflow-flowchart__branch-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(140, 21, 21, 0.1);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.workflow-flowchart__branch-card-link {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 2px;
+  height: 14px;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(30, 94, 181, 0.5), rgba(30, 94, 181, 0.14));
+}
+
+.workflow-flowchart__chip {
+  padding-block: 6px;
+}
+
+.workflow-flowchart__chip--readonly {
+  box-shadow: inset 0 0 0 1px rgba(30, 102, 196, 0.18);
+}
+
+.workflow-flowchart__chip--editable {
+  box-shadow: inset 0 0 0 1px rgba(181, 133, 34, 0.28);
+}
+
+.workflow-flowchart__arrow {
+  color: #4b6ea9;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.workflow-flowchart__arrow--editable {
+  color: #8d5f00;
+}
+
 [data-coreui-theme='dark'] .workflow-alert,
 body.c-dark-theme .workflow-alert {
   border-width: 1px;
   border-style: solid;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart,
+body.c-dark-theme .workflow-flowchart {
+  background: linear-gradient(180deg, rgba(28, 40, 56, 0.95), rgba(22, 33, 46, 0.98));
+  border-color: rgba(103, 126, 154, 0.34);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline,
+body.c-dark-theme .workflow-flowchart__timeline {
+  background: linear-gradient(90deg, rgba(88, 143, 214, 0.14), rgba(28, 40, 56, 0.82));
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-marker,
+body.c-dark-theme .workflow-flowchart__timeline-marker {
+  color: #b9d8ff;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-number,
+body.c-dark-theme .workflow-flowchart__timeline-number {
+  background: #5c8fd8;
+  color: #f5f9ff;
+  box-shadow: 0 6px 12px rgba(12, 22, 37, 0.28);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-card,
+body.c-dark-theme .workflow-flowchart__timeline-card {
+  background: rgba(21, 31, 43, 0.92);
+  border-color: rgba(103, 126, 154, 0.3);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-label,
+body.c-dark-theme .workflow-flowchart__timeline-label {
+  color: #e3f0ff;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-key,
+body.c-dark-theme .workflow-flowchart__timeline-key {
+  color: #9eb6d1;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-connector-line,
+body.c-dark-theme .workflow-flowchart__timeline-connector-line {
+  background: linear-gradient(90deg, rgba(126, 164, 207, 0.28), rgba(126, 164, 207, 0.6));
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-connector-arrow,
+body.c-dark-theme .workflow-flowchart__timeline-connector-arrow {
+  color: #9fc4f0;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__branch-connector-stem,
+body.c-dark-theme .workflow-flowchart__branch-connector-stem {
+  background: linear-gradient(180deg, rgba(126, 164, 207, 0.18), rgba(126, 164, 207, 0.56));
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__branch-connector-hub,
+body.c-dark-theme .workflow-flowchart__branch-connector-hub {
+  background: #78a7e0;
+  border-color: rgba(21, 31, 43, 0.92);
+  box-shadow: 0 0 0 4px rgba(120, 167, 224, 0.18);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__branch-connector-rail,
+body.c-dark-theme .workflow-flowchart__branch-connector-rail {
+  background: linear-gradient(90deg, rgba(126, 164, 207, 0.16), rgba(126, 164, 207, 0.52), rgba(126, 164, 207, 0.16));
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__branch-card-link,
+body.c-dark-theme .workflow-flowchart__branch-card-link {
+  background: linear-gradient(180deg, rgba(126, 164, 207, 0.56), rgba(126, 164, 207, 0.18));
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__branch-card,
+body.c-dark-theme .workflow-flowchart__branch-card {
+  background: rgba(21, 31, 43, 0.88);
+  border-color: rgba(103, 126, 154, 0.28);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__legend-item--readonly,
+body.c-dark-theme .workflow-flowchart__legend-item--readonly {
+  background: rgba(88, 143, 214, 0.16);
+  color: #b9d8ff;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__legend-item--editable,
+body.c-dark-theme .workflow-flowchart__legend-item--editable {
+  background: rgba(214, 169, 88, 0.18);
+  color: #f6d48d;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__section--editable,
+body.c-dark-theme .workflow-flowchart__section--editable {
+  border-top-color: rgba(214, 169, 88, 0.34);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__section-title,
+[data-coreui-theme='dark'] .workflow-flowchart__details-label,
+body.c-dark-theme .workflow-flowchart__section-title,
+body.c-dark-theme .workflow-flowchart__details-label {
+  color: #d8e7f8;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__arrow,
+body.c-dark-theme .workflow-flowchart__arrow {
+  color: #9fc4f0;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__arrow--editable,
+body.c-dark-theme .workflow-flowchart__arrow--editable {
+  color: #f6d48d;
 }
 
 [data-coreui-theme='dark'] .workflow-alert.alert-success,
@@ -3074,6 +3646,47 @@ body.c-dark-theme .admin-settings-page::v-deep .admin-users-page .pagination .pa
 }
 
 @media (max-width: 768px) {
+  .workflow-flowchart__timeline {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .workflow-flowchart__timeline-step {
+    min-width: 0;
+    max-width: none;
+  }
+
+  .workflow-flowchart__timeline-connector {
+    min-width: 0;
+    padding: 6px 0 2px 44px;
+  }
+
+  .workflow-flowchart__timeline-connector-line {
+    width: 2px;
+    height: 16px;
+    flex: 0 0 2px;
+    background: linear-gradient(180deg, rgba(30, 94, 181, 0.2), rgba(30, 94, 181, 0.5));
+  }
+
+  .workflow-flowchart__timeline-connector-arrow {
+    margin-top: 4px;
+    margin-left: 0;
+  }
+
+  .workflow-flowchart__branch-connector {
+    align-items: flex-start;
+    padding-left: 20px;
+  }
+
+  .workflow-flowchart__branch-connector-rail {
+    width: calc(100% - 20px);
+  }
+
+  .workflow-flowchart__branch-card-link {
+    left: 20px;
+    transform: none;
+  }
+
   .template-editor {
     grid-template-columns: 1fr;
   }

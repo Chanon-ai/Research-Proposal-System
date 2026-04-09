@@ -1471,8 +1471,73 @@
       "allowRevision": "Allow Revision After Meeting",
       "note": "Note: Current workflow allows continuous review/revision rounds until admin finalizes and announces results.",
       "saveBtn": "Save Workflow Settings",
-      "statusCard": "Allowed Status Transitions (Read-only)",
-      "statusNote": "This diagram reflects current backend behavior. Review rounds can repeat until results are announced.",
+      "statusCard": "Proposal journey overview",
+      "statusNote": "This is a simplified overview of the proposal journey. The main line shows the normal path, while the boxes below show special cases that may happen along the way.",
+      "readOnlyLegend": "Read-only statuses",
+      "editableLegend": "Editable statuses",
+      "revisionLoopTitle": "If revision is requested",
+      "revisionLoopNote": "When changes are needed, the researcher updates the proposal and sends it back for another review.",
+      "transitionMapTitle": "Full status details",
+      "transitionMapNote": "This section keeps the complete system-level status map for reference.",
+      "readOnlyPaths": {
+        "main": "Main path",
+        "meeting": "If a meeting is needed",
+        "facultyRejected": "If the faculty does not approve",
+        "committeeRejected": "If the committee does not approve"
+      },
+      "businessStatusLabels": {
+        "pending_confirm": "Pending completeness check",
+        "submitted": "Proposal submitted",
+        "faculty_review_pending": "Awaiting faculty review",
+        "faculty_approved": "Faculty endorsed",
+        "faculty_rejected": "Faculty not approved",
+        "office_received": "Received by research office",
+        "finance_budget_checking": "Budget under review",
+        "meeting_in_progress": "Meeting in progress",
+        "meeting_completed": "Meeting completed",
+        "document_checking": "Documents under review",
+        "assigned_to_committee": "Assigned to committee",
+        "under_review": "Under committee review",
+        "committee_valuated": "Review outcome recorded",
+        "revision_requested": "Returned for revision",
+        "resubmitted": "Revised version submitted",
+        "second_round_review": "Entered next review round",
+        "approved": "Approved",
+        "rejected": "Not approved",
+        "announced": "Result announced"
+      },
+      "presentationSteps": {
+        "intake": {
+          "label": "Submission received",
+          "description": "The proposal is received and checked for completeness"
+        },
+        "faculty": {
+          "label": "Faculty review",
+          "description": "The faculty gives an initial opinion"
+        },
+        "office": {
+          "label": "Research office process",
+          "description": "The research office takes over the workflow"
+        },
+        "budget": {
+          "label": "Budget review",
+          "description": "The budget is checked for appropriateness"
+        },
+        "committee": {
+          "label": "Committee review",
+          "description": "The committee reviews the proposal and records the outcome"
+        },
+        "result": {
+          "label": "Final result",
+          "description": "The approval result is formally announced"
+        }
+      },
+      "editableSteps": {
+        "revisionRequested": "Returned for revision",
+        "resubmitted": "Submitted again",
+        "secondRoundReview": "Reviewed again",
+        "reviewCompleted": "Reviewed and concluded again"
+      },
       "statusSecondRound": "Next Round Review",
       "step1Title": "1. Submit Proposal",
       "step1Desc": "Received by administration",

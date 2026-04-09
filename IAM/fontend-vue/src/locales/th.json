@@ -1471,8 +1471,73 @@
       "allowRevision": "เปิดให้แก้ไขหลังประชุม",
       "note": "หมายเหตุ: Workflow ปัจจุบันจะวนรอบพิจารณา/ขอแก้ไขได้ต่อเนื่อง จนกว่าแอดมินจะสรุปผลและประกาศผล",
       "saveBtn": "บันทึกการตั้งค่า Workflow",
-      "statusCard": "สถานะที่อนุญาต (Read-only)",
-      "statusNote": "แผนภาพนี้อ้างอิงพฤติกรรม backend ปัจจุบัน โดยสถานะรอบถัดไปสามารถวนซ้ำได้จนกว่าจะมีการประกาศผล",
+      "statusCard": "ภาพรวมเส้นทางพิจารณา",
+      "statusNote": "สรุปภาพรวมการเดินเรื่องของข้อเสนอโครงการแบบอ่านง่าย โดยเส้นหลักแสดงลำดับงานหลัก และกล่องด้านล่างแสดงกรณีพิเศษที่อาจเกิดขึ้น",
+      "readOnlyLegend": "สถานะอ่านอย่างเดียว",
+      "editableLegend": "สถานะแก้ไขได้",
+      "revisionLoopTitle": "กรณีส่งกลับไปแก้ไข",
+      "revisionLoopNote": "ถ้าต้องแก้ไข นักวิจัยจะนำกลับไปแก้ แล้วส่งกลับเข้ามาให้พิจารณาอีกครั้ง",
+      "transitionMapTitle": "รายละเอียดสถานะทั้งหมด",
+      "transitionMapNote": "ส่วนนี้เก็บไว้สำหรับดูรายละเอียดแบบเต็มของระบบ",
+      "readOnlyPaths": {
+        "main": "เส้นทางหลัก",
+        "meeting": "กรณีมีการประชุม",
+        "facultyRejected": "กรณีคณะยังไม่เห็นชอบ",
+        "committeeRejected": "กรณีกรรมการไม่อนุมัติ"
+      },
+      "businessStatusLabels": {
+        "pending_confirm": "รอตรวจสอบความครบถ้วน",
+        "submitted": "ส่งข้อเสนอแล้ว",
+        "faculty_review_pending": "รอพิจารณาระดับคณะ",
+        "faculty_approved": "คณะเห็นชอบ",
+        "faculty_rejected": "คณะไม่เห็นชอบ",
+        "office_received": "ส่วนบริหารรับเรื่องแล้ว",
+        "finance_budget_checking": "อยู่ระหว่างตรวจงบประมาณ",
+        "meeting_in_progress": "อยู่ระหว่างจัดประชุม",
+        "meeting_completed": "ประชุมเสร็จสิ้น",
+        "document_checking": "อยู่ระหว่างตรวจเอกสาร",
+        "assigned_to_committee": "มอบหมายคณะกรรมการแล้ว",
+        "under_review": "อยู่ระหว่างการพิจารณา",
+        "committee_valuated": "สรุปผลการพิจารณาแล้ว",
+        "revision_requested": "ส่งกลับเพื่อแก้ไข",
+        "resubmitted": "ส่งฉบับแก้ไขกลับแล้ว",
+        "second_round_review": "เข้าสู่การพิจารณารอบถัดไป",
+        "approved": "อนุมัติแล้ว",
+        "rejected": "ไม่อนุมัติ",
+        "announced": "ประกาศผลแล้ว"
+      },
+      "presentationSteps": {
+        "intake": {
+          "label": "รับเรื่อง",
+          "description": "รับเอกสารและตรวจว่าข้อมูลครบหรือไม่"
+        },
+        "faculty": {
+          "label": "คณะพิจารณา",
+          "description": "คณะต้นสังกัดช่วยพิจารณาเบื้องต้น"
+        },
+        "office": {
+          "label": "ส่วนบริหารรับเรื่อง",
+          "description": "ส่วนบริหารเริ่มดำเนินการในระบบ"
+        },
+        "budget": {
+          "label": "ตรวจงบประมาณ",
+          "description": "เจ้าหน้าที่ตรวจความเหมาะสมของงบประมาณ"
+        },
+        "committee": {
+          "label": "กรรมการพิจารณา",
+          "description": "กรรมการอ่านเอกสารและสรุปผลการพิจารณา"
+        },
+        "result": {
+          "label": "ประกาศผล",
+          "description": "แจ้งผลอนุมัติหรือไม่อนุมัติอย่างเป็นทางการ"
+        }
+      },
+      "editableSteps": {
+        "revisionRequested": "ส่งกลับเพื่อแก้ไข",
+        "resubmitted": "ส่งกลับมาใหม่",
+        "secondRoundReview": "พิจารณาอีกรอบ",
+        "reviewCompleted": "สรุปผลอีกครั้ง"
+      },
       "statusSecondRound": "พิจารณารอบถัดไป",
       "step1Title": "1. ยื่นโครงการ",
       "step1Desc": "รับโดยส่วนบริหาร",
