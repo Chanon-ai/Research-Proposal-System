@@ -118,6 +118,14 @@ export default [{
       roles: ['committee']
     },
     {
+      _name: 'CSidebarNavItem',
+      name: 'nav.committeeManual',
+      href: '/manuals/committee-manual.pdf',
+      target: '_blank',
+      icon: 'cil-description',
+      roles: ['committee']
+    },
+    {
       _name: 'CSidebarNavTitle',
       roles: ['chairman'],
       _children: ['nav.chairmanMenu']
