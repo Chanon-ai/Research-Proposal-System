@@ -26,6 +26,10 @@ const DEFAULT_RESEARCH_STANDARD_CONFIG = Object.freeze({
       title: 'มีการทำวิจัยในมนุษย์',
       pendingNeedsDate: false,
       exampleDocKey: 'humanEthicsCertificate',
+      docTypeLabels: {
+        approved: 'หนังสือรับรองจริยธรรมการวิจัยในมนุษย์',
+        pending: 'เอกสารการยื่นขอจริยธรรมการวิจัยในมนุษย์'
+      },
       options: [
         { value: 'approved', label: 'มีหนังสือรับรองจริยธรรมการวิจัยในมนุษย์ (แนบสำเนา 1 ชุด)' },
         { value: 'pending', label: 'ไม่มีหนังสือรับรองจริยธรรมการวิจัยในมนุษย์ อยู่ระหว่างเสนอคณะกรรมการวิจัยจริยธรรมการวิจัยในมนุษย์พิจารณา' }
@@ -38,6 +42,10 @@ const DEFAULT_RESEARCH_STANDARD_CONFIG = Object.freeze({
       title: 'มีการใช้สัตว์ทดลอง',
       pendingNeedsDate: false,
       exampleDocKey: 'animalEthicsCertificate',
+      docTypeLabels: {
+        approved: 'หนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์',
+        pending: 'เอกสารการยื่นขอจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์'
+      },
       options: [
         { value: 'approved', label: 'มีหนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์ (แนบสำเนา 1 ชุด)' },
         { value: 'pending', label: 'ไม่มีหนังสือรับรองจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์ อยู่ระหว่างเสนอคณะกรรมการจรรยาบรรณสัตว์เพื่องานทางวิทยาศาสตร์' }
@@ -50,6 +58,10 @@ const DEFAULT_RESEARCH_STANDARD_CONFIG = Object.freeze({
       title: 'มีการเก็บ จัดหา หรือรวบรวมพันธุ์พืชพื้นเมืองทั่วไปและพันธุ์พืชป่าหรือส่วนหนึ่งส่วนใดของพันธุ์พืช เพื่อการศึกษา ทดลอง หรือวิจัย ตามมาตรา 53 แห่งพระราชบัญญัติคุ้มครองพันธุ์พืช พ.ศ. 2542',
       pendingNeedsDate: false,
       exampleDocKey: 'section53Notification',
+      docTypeLabels: {
+        approved: 'หนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ ตามมาตรา 53',
+        pending: 'เอกสารการยื่นขอหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ'
+      },
       options: [
         { value: 'approved', label: 'มีหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ ตามมาตรา 53 แห่งพระราชบัญญัติคุ้มครองพันธุ์พืช พ.ศ. 2542 (แนบสำเนา 1 ชุด)' },
         { value: 'pending', label: 'ไม่มีหนังสือแจ้งการเก็บ จัดหา หรือรวบรวมพันธุ์พืชฯ อยู่ระหว่างดำเนินการ' }
@@ -94,6 +106,10 @@ export const DEFAULT_RESEARCH_STANDARD_CONFIG_EN = Object.freeze({
       title: 'Human research is involved',
       pendingNeedsDate: false,
       exampleDocKey: 'humanEthicsCertificate',
+      docTypeLabels: {
+        approved: 'Human Research Ethics Approval Certificate',
+        pending: 'Human Research Ethics Submission Document'
+      },
       options: [
         { value: 'approved', label: 'Human research ethics approval has been obtained (attach 1 copy).' },
         { value: 'pending', label: 'Human research ethics approval has not been obtained yet and is currently under committee review.' }
@@ -106,6 +122,10 @@ export const DEFAULT_RESEARCH_STANDARD_CONFIG_EN = Object.freeze({
       title: 'Animal research is involved',
       pendingNeedsDate: false,
       exampleDocKey: 'animalEthicsCertificate',
+      docTypeLabels: {
+        approved: 'Animal Ethics Approval Certificate for Scientific Use',
+        pending: 'Animal Ethics Submission Document for Scientific Use'
+      },
       options: [
         { value: 'approved', label: 'Animal ethics approval for scientific use has been obtained (attach 1 copy).' },
         { value: 'pending', label: 'Animal ethics approval for scientific use has not been obtained yet and is currently under committee review.' }
@@ -118,6 +138,10 @@ export const DEFAULT_RESEARCH_STANDARD_CONFIG_EN = Object.freeze({
       title: 'Collection, acquisition, or use of native or wild plant varieties under Section 53 of the Plant Varieties Protection Act B.E. 2542 is involved',
       pendingNeedsDate: false,
       exampleDocKey: 'section53Notification',
+      docTypeLabels: {
+        approved: 'Section 53 Plant Variety Notification Document',
+        pending: 'Section 53 Plant Variety Submission Document'
+      },
       options: [
         { value: 'approved', label: 'The notification document under Section 53 has been obtained (attach 1 copy).' },
         { value: 'pending', label: 'The notification document under Section 53 has not been obtained yet and is currently being processed.' }
@@ -172,12 +196,18 @@ function normalizeGroup(group, fallback) {
   const source = toObject(group, fallback)
   const fallbackOptions = Array.isArray(fallback.options) ? fallback.options : []
   const options = Array.isArray(source.options) ? source.options : fallbackOptions
+  const fallbackDocTypeLabels = toObject(fallback.docTypeLabels, { approved: '', pending: '' })
+  const sourceDocTypeLabels = toObject(source.docTypeLabels, fallbackDocTypeLabels)
 
   return {
     key: String(source.key !== undefined ? source.key : fallback.key).trim() || fallback.key,
     title: String(source.title !== undefined ? source.title : fallback.title).trim() || fallback.title,
     pendingNeedsDate: Boolean(source.pendingNeedsDate),
     exampleDocKey: String(source.exampleDocKey !== undefined ? source.exampleDocKey : fallback.exampleDocKey).trim() || fallback.exampleDocKey,
+    docTypeLabels: {
+      approved: String(sourceDocTypeLabels.approved !== undefined ? sourceDocTypeLabels.approved : fallbackDocTypeLabels.approved).trim() || fallbackDocTypeLabels.approved,
+      pending: String(sourceDocTypeLabels.pending !== undefined ? sourceDocTypeLabels.pending : fallbackDocTypeLabels.pending).trim() || fallbackDocTypeLabels.pending
+    },
     options: options.map((option, index) => {
       const fallbackOption = fallbackOptions[index] || fallbackOptions[0] || { value: '', label: '' }
       return {
@@ -240,6 +270,22 @@ export function getResearchStandardGroupList() {
 export function getResearchStandardExampleDocUrl(docKey) {
   const key = String(docKey || '').trim()
   return RESEARCH_STANDARD_URLS[key] || ''
+}
+
+export function getResearchStandardDocumentTypeLabel(groupKey, status, locale = 'th') {
+  const normalizedGroupKey = String(groupKey || '').trim()
+  const normalizedLocale = String(locale || 'th').trim().toLowerCase()
+  const normalizedStatus = normalizeResearchStandardStatus(status)
+  if (!normalizedGroupKey || !normalizedStatus) return ''
+
+  const groups = normalizedLocale.startsWith('en')
+    ? RESEARCH_STANDARD_GROUPS_EN
+    : RESEARCH_STANDARD_GROUPS
+  const group = groups && groups[normalizedGroupKey] ? groups[normalizedGroupKey] : null
+  const labels = group && group.docTypeLabels && typeof group.docTypeLabels === 'object'
+    ? group.docTypeLabels
+    : {}
+  return String(labels[normalizedStatus] || '').trim()
 }
 
 export function normalizeResearchStandardStatus(status) {

@@ -204,7 +204,7 @@
             <input
               ref="fileInput"
               type="file"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              accept=".pdf,application/pdf"
               class="d-none"
               @change="onFileSelect"
             >
@@ -218,7 +218,7 @@
               @drop.prevent="onDrop"
             >
               <div class="font-weight-bold">คลิกหรือลากไฟล์มาวางที่นี่</div>
-              <small class="text-muted d-block">รองรับ: PDF, Word, JPG, PNG (ขนาดสูงสุด 10MB)</small>
+              <small class="text-muted d-block">รองรับ: PDF (ขนาดสูงสุด 10MB)</small>
               <div class="mt-2" v-if="uploadForm.file">
                 <CBadge color="primary">เลือกไฟล์แล้ว: {{ uploadForm.file.name }}</CBadge>
               </div>
@@ -400,14 +400,10 @@ const DOC_TYPE_BADGE = {
 }
 
 const ALLOWED_MIME_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'image/jpeg',
-  'image/png'
+  'application/pdf'
 ]
 
-const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']
+const ALLOWED_EXTENSIONS = ['pdf']
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 
 export default {
@@ -639,7 +635,7 @@ export default {
       const mimeOk = ALLOWED_MIME_TYPES.includes(file.type)
       const extOk = ALLOWED_EXTENSIONS.includes(ext)
       if (!mimeOk && !extOk) {
-        return { ok: false, message: 'รองรับเฉพาะ PDF, Word, JPG, PNG' }
+        return { ok: false, message: 'รองรับเฉพาะไฟล์ PDF' }
       }
       return { ok: true }
     },

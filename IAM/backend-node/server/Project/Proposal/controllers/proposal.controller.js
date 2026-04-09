@@ -17,6 +17,13 @@ function getUserFromReq(req) {
   return req && req.user ? req.user : null;
 }
 
+function isPdfUpload(file) {
+  if (!file) return false;
+  const originalName = String(file.originalname || '').trim().toLowerCase();
+  const mimeType = String(file.mimetype || '').trim().toLowerCase();
+  return originalName.endsWith('.pdf') || mimeType === 'application/pdf';
+}
+
 function handleKnownProposalError(res, err) {
   if (!err) return false;
   if (err.code === 'BUDGET_LIMIT_EXCEEDED') {
@@ -625,6 +632,9 @@ exports.dashboardSummary = async (req, res, next) => {
 // ResearchForm attachments: store binary in MongoDB (GridFS) and keep metadata in formSnapshotJson.files
 exports.uploadFormFile = async (req, res, next) => {
   try {
+    if (!req.file || !isPdfUpload(req.file)) {
+      return res.status(400).json({ success: false, message: 'Only PDF files are supported' });
+    }
     const user = getUserFromReq(req);
     const row = await formFileService.uploadFormFile({
       proposalId: req.params.id,

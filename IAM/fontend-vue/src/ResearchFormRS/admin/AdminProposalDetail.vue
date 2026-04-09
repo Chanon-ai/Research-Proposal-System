@@ -407,7 +407,6 @@ export default {
         const matched = files.find((file) => (
           file &&
           file.fileId &&
-          file.type === 'research_standard_attachment' &&
           file.note === key
         ))
 
@@ -692,7 +691,6 @@ export default {
         ? (this.files || []).find((item) => (
           item &&
           item.fileId &&
-          item.type === 'research_standard_attachment' &&
           item.note === slotKey
         ))
         : null

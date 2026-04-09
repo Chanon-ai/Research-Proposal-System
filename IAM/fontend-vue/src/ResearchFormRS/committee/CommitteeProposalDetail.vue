@@ -165,7 +165,7 @@
                 <CInputFile
                   :label="$t('committee.proposalDetail.uploadLabel')"
                   custom
-                  accept=".pdf,.doc,.docx,.xlsx"
+                  accept=".pdf,application/pdf"
                   :disabled="isEvaluationLocked"
                   @change="onEvaluationFileChange"
                 />
@@ -613,6 +613,21 @@ export default {
     onEvaluationFileChange(event) {
       if (this.isEvaluationLocked) return
       const file = (event && event.target && event.target.files && event.target.files[0]) ? event.target.files[0] : null
+      const input = event && event.target ? event.target : null
+      if (file) {
+        const ext = String(file.name || '').split('.').pop().toLowerCase()
+        const isPdf = file.type === 'application/pdf' || ext === 'pdf'
+        if (!isPdf) {
+          this.evaluationFileName = ''
+          if (input) input.value = ''
+          this.showAlert({
+            icon: 'warning',
+            title: 'รองรับเฉพาะไฟล์ PDF',
+            text: 'กรุณาเลือกไฟล์ PDF เท่านั้น'
+          })
+          return
+        }
+      }
       this.evaluationFileName = file ? file.name : ''
     },
     formatWeight(value) {

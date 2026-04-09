@@ -1009,7 +1009,7 @@ import {
   PROPOSAL_STATUS_LABELS_TH_RESEARCHER as ADMIN_STATUS_LABELS,
   normalizeProposalStatus
 } from '@/ResearchFormRS/constants/proposalWorkflow'
-import { RESEARCH_STANDARD_TEXT } from '@/ResearchFormRS/constants/researchStandard'
+import { RESEARCH_STANDARD_TEXT, getResearchStandardDocumentTypeLabel } from '@/ResearchFormRS/constants/researchStandard'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 import { cilHistory, cilCheck, cilTrash, cilPaperPlane, cilPeople } from '@coreui/icons'
 
@@ -1020,6 +1020,21 @@ const SUBMIT_SUCCESS_PENDING_STORAGE_PREFIX = 'research_form_submit_success_pend
 const BASE_MEETING_START_TIME = '06:00'
 const CHAIRMAN_CHECKLIST_FIELD_KEY = 'checklist_payload'
 const ADMIN_BLOCKED_MANUAL_STATUSES = Object.freeze(['approved', 'rejected'])
+const BUDGET_ATTACHMENT_DOCUMENT_TYPE_LABELS = Object.freeze({
+  TOR: { th: 'TOR', en: 'TOR' },
+  Quotation: { th: 'ใบเสนอราคา', en: 'Quotation' },
+  Specification: { th: 'Specification', en: 'Specification' },
+  CV: { th: 'CV', en: 'CV' },
+  ServiceRates: { th: 'อัตราค่าบริการ', en: 'Service Rates' }
+})
+const RESEARCH_STANDARD_SLOT_META = Object.freeze({
+  humanApproved: { groupKey: 'human', status: 'approved' },
+  humanPending: { groupKey: 'human', status: 'pending' },
+  animalApproved: { groupKey: 'animal', status: 'approved' },
+  animalPending: { groupKey: 'animal', status: 'pending' },
+  plantApproved: { groupKey: 'plant', status: 'approved' },
+  plantPending: { groupKey: 'plant', status: 'pending' }
+})
 
 export default {
   name: 'ResearchForm',
@@ -4119,6 +4134,24 @@ export default {
       }
       return Swal.fire(options)
     },
+    isPdfFile (file) {
+      if (!file) return false
+      const ext = String(file.name || '').trim().toLowerCase().split('.').pop()
+      const mime = String(file.type || '').trim().toLowerCase()
+      return mime === 'application/pdf' || ext === 'pdf'
+    },
+    async showPdfOnlyAlert (context = '') {
+      const title = this.isEnglishLocale ? 'Only PDF files are allowed' : 'รองรับเฉพาะไฟล์ PDF'
+      const fallbackText = this.isEnglishLocale
+        ? 'Please upload PDF files only.'
+        : 'กรุณาอัปโหลดไฟล์ PDF เท่านั้น'
+      const text = context ? `${context} ${fallbackText}` : fallbackText
+      return this.showAlert({
+        icon: 'warning',
+        title,
+        text
+      })
+    },
     normalizeFileId (value) {
       if (!value) return ''
       if (typeof value === 'string' || typeof value === 'number') return String(value).trim()
@@ -4359,6 +4392,99 @@ export default {
     hasPendingFileQueue () {
       return Array.isArray(this.pendingFormFiles) && this.pendingFormFiles.length > 0
     },
+    getCurrentDocumentLocale () {
+      return this.isEnglishLocale ? 'en' : 'th'
+    },
+    resolveBudgetAttachmentDocumentTypeLabel (docType = '', locale = '') {
+      const key = String(docType || '').trim()
+      if (!key || !BUDGET_ATTACHMENT_DOCUMENT_TYPE_LABELS[key]) return ''
+      const normalizedLocale = String(locale || this.getCurrentDocumentLocale()).trim().toLowerCase()
+      const labels = BUDGET_ATTACHMENT_DOCUMENT_TYPE_LABELS[key]
+      return normalizedLocale.startsWith('en') ? labels.en : labels.th
+    },
+    resolveResearchStandardDocumentTypeLabelBySlotKey (slotKey = '', locale = '') {
+      const meta = RESEARCH_STANDARD_SLOT_META[String(slotKey || '').trim()]
+      if (!meta) return ''
+      return getResearchStandardDocumentTypeLabel(meta.groupKey, meta.status, locale || this.getCurrentDocumentLocale())
+    },
+    shouldUseAttachmentDrivenFileType (type = '') {
+      const normalizedType = String(type || '').trim().toLowerCase()
+      return !normalizedType || normalizedType === 'other' || normalizedType === 'อื่น ๆ' || normalizedType === 'research_standard_attachment'
+    },
+    resolveAttachmentDrivenFileTypeByFileId (fileId = '') {
+      const normalizedFileId = this.normalizeFileId(fileId)
+      if (!normalizedFileId) return ''
+
+      const budget = this.currentBudgetValue()
+      const categories = Array.isArray(budget && budget.categories) ? budget.categories : []
+      for (let catIndex = 0; catIndex < categories.length; catIndex += 1) {
+        const category = categories[catIndex] || {}
+        const items = Array.isArray(category.items) ? category.items : []
+        for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
+          const attachment = items[itemIndex] && items[itemIndex].attachment ? items[itemIndex].attachment : null
+          const attachmentId = this.normalizeFileId(attachment && (attachment.fileId || attachment.id || attachment._id))
+          if (attachmentId && String(attachmentId) === String(normalizedFileId)) {
+            return this.resolveBudgetAttachmentDocumentTypeLabel(attachment && attachment.docType)
+          }
+        }
+      }
+
+      const researchStandard = this.currentResearchStandardValue()
+      const attachments = researchStandard && researchStandard.attachments && typeof researchStandard.attachments === 'object'
+        ? researchStandard.attachments
+        : {}
+      const slotKeys = Object.keys(attachments)
+      for (let index = 0; index < slotKeys.length; index += 1) {
+        const slotKey = slotKeys[index]
+        const attachment = attachments[slotKey]
+        const attachmentId = this.normalizeFileId(attachment && (attachment.fileId || attachment.id || attachment._id))
+        if (attachmentId && String(attachmentId) === String(normalizedFileId)) {
+          return this.resolveResearchStandardDocumentTypeLabelBySlotKey(slotKey)
+        }
+      }
+
+      return ''
+    },
+    enrichFormFileRow (file) {
+      if (!file || typeof file !== 'object') return file
+      const normalizedFileId = this.normalizeFileId(file.fileId || file.id || file._id)
+      const inferredType = this.resolveAttachmentDrivenFileTypeByFileId(normalizedFileId)
+      const nextType = this.shouldUseAttachmentDrivenFileType(file.type) && inferredType
+        ? inferredType
+        : (file.type || '')
+      return {
+        ...file,
+        type: nextType
+      }
+    },
+    enrichFilesWithAttachmentTypes (files = []) {
+      return (Array.isArray(files) ? files : []).map(file => this.enrichFormFileRow(file))
+    },
+    normalizeUploadPayload (uploadPayload) {
+      if (uploadPayload && Array.isArray(uploadPayload.files)) {
+        return {
+          files: uploadPayload.files,
+          type: String(uploadPayload.type || '').trim(),
+          input: uploadPayload.input || null
+        }
+      }
+
+      const input = uploadPayload && uploadPayload.target ? uploadPayload.target : null
+      return {
+        files: input && input.files ? Array.from(input.files) : [],
+        type: '',
+        input
+      }
+    },
+    createPendingFormFilePlaceholder (file, type = '', note = '') {
+      return {
+        name: file && file.name ? file.name : 'file',
+        datetime: new Date().toLocaleString(),
+        type: type || '',
+        note: note || '',
+        _pending: true
+      }
+    },
     hasDraftChangedFromBaseline (payload = null) {
       if (this.hasPendingFileQueue()) return true
       const currentFingerprint = this.buildDraftFingerprint(payload)
@@ -4378,31 +4504,31 @@ export default {
         this.isDraftSaved = false; // ปลดล็อคปุ่มให้กลับมากดได้
       }
     },
-    async handleUpload(event) {
+    async handleUpload(uploadPayload) {
       if (this.mainFormReadOnly) return
-      const input = event && event.target ? event.target : null
-      const selected = input && input.files ? Array.from(input.files) : []
+      const { files: selected, type, input } = this.normalizeUploadPayload(uploadPayload)
       if (!selected.length) return
+
+      if (selected.some(file => !this.isPdfFile(file))) {
+        if (input) input.value = ''
+        await this.showPdfOnlyAlert(this.isEnglishLocale ? 'Supporting documents:' : 'เอกสารประกอบ:')
+        return
+      }
 
       // Reset the input so selecting the same file again will fire change.
       if (input) input.value = ''
+      const pendingUploads = selected.map(file => ({ file, type, note: '' }))
 
       // If proposal is not created yet, queue the binary until after saveDraft creates an id.
       if (!this.viewProposalId) {
-        this.pendingFormFiles = [...this.pendingFormFiles, ...selected]
-        const placeholders = selected.map((file) => ({
-          name: file.name,
-          datetime: new Date().toLocaleString(),
-          type: '',
-          note: '',
-          _pending: true
-        }))
+        this.pendingFormFiles = [...this.pendingFormFiles, ...pendingUploads]
+        const placeholders = selected.map(file => this.createPendingFormFilePlaceholder(file, type, ''))
         this.files = [...(this.files || []), ...placeholders]
         this.markAsEdited()
         return
       }
 
-      await this.uploadFormFiles(selected)
+      await this.uploadFormFiles(pendingUploads)
       this.markAsEdited()
     },
     handleFilesUpdate (updatedFiles) {
@@ -4457,6 +4583,22 @@ export default {
               if (!item || String(item.id) !== String(itemId)) return item
               return updater(item)
             })
+            : []
+        }))
+      }
+
+      this.setBudgetValue(nextBudget)
+    },
+    removeBudgetItemById (itemId) {
+      const current = this.currentBudgetValue()
+      if (!current || !Array.isArray(current.categories)) return
+
+      const nextBudget = {
+        ...current,
+        categories: current.categories.map((category) => ({
+          ...category,
+          items: Array.isArray(category.items)
+            ? category.items.filter(item => item && String(item.id) !== String(itemId))
             : []
         }))
       }
@@ -4528,7 +4670,7 @@ export default {
     upsertFormFileRow (row) {
       if (!row || !row.fileId) return
       const next = Array.isArray(this.files) ? this.files.filter(item => String(item && item.fileId) !== String(row.fileId)) : []
-      this.files = [...next, row]
+      this.files = [...next, this.enrichFormFileRow(row)]
     },
     removeFormFileRow (fileId) {
       const normalizedFileId = this.normalizeFileId(fileId)
@@ -4539,6 +4681,12 @@ export default {
     async handleBudgetAttachmentUpload ({ categoryName, itemId, file }) {
       if (this.mainFormReadOnly || !itemId || !file) return
 
+      if (!this.isPdfFile(file)) {
+        this.removeBudgetItemById(itemId)
+        await this.showPdfOnlyAlert(this.isEnglishLocale ? 'Budget attachment:' : 'เอกสารแนบงบประมาณ:')
+        return
+      }
+
       try {
         const proposalId = await this.ensureProposalDraftExistsForAttachments()
         if (!proposalId) throw new Error('ยังไม่สามารถสร้างแบบร่างเพื่อแนบเอกสารได้')
@@ -4546,7 +4694,6 @@ export default {
         const note = `เอกสารแนบในหมวด ${categoryName || 'งบประมาณ'}`
         const formData = new FormData()
         formData.append('file', file)
-        formData.append('type', 'อื่น ๆ')
         formData.append('note', note)
 
         const res = await Service.proposal.uploadFormFile(proposalId, formData)
@@ -4678,12 +4825,13 @@ export default {
       }))
 
       if (attachment.fileId) {
+        const resolvedType = this.resolveBudgetAttachmentDocumentTypeLabel(attachment.docType)
         this.files = Array.isArray(this.files)
           ? this.files.map((item) => {
             if (String(item && item.fileId) !== String(attachment.fileId)) return item
             return {
               ...item,
-              type: attachment.docType || item.type || '',
+              type: resolvedType || item.type || '',
               note: item.note || 'เอกสารแนบในหมวดงบประมาณ'
             }
           })
@@ -4693,30 +4841,40 @@ export default {
     async handleResearchStandardUpload ({ slotKey, file }) {
       if (this.mainFormReadOnly || !slotKey || !file) return
 
+      if (!this.isPdfFile(file)) {
+        await this.showPdfOnlyAlert(this.isEnglishLocale ? 'Research standard attachment:' : 'เอกสารแนบมาตรฐานการวิจัย:')
+        return
+      }
+
       try {
         const proposalId = await this.ensureProposalDraftExistsForAttachments()
         if (!proposalId) throw new Error('ยังไม่สามารถสร้างแบบร่างเพื่อแนบเอกสารได้')
 
         const previous = this.currentResearchStandardValue()
         const previousFile = previous && previous.attachments ? previous.attachments[slotKey] : null
+        const resolvedType = this.resolveResearchStandardDocumentTypeLabelBySlotKey(slotKey)
 
         const formData = new FormData()
         formData.append('file', file)
-        formData.append('type', 'research_standard_attachment')
+        formData.append('type', resolvedType)
         formData.append('note', slotKey)
         const res = await Service.proposal.uploadFormFile(proposalId, formData)
         const row = res && res.data && res.data.data ? res.data.data : null
         if (!row) throw new Error('อัปโหลดเอกสารไม่สำเร็จ')
+        const normalizedRow = {
+          ...row,
+          type: resolvedType || row.type || ''
+        }
 
         const nextResearchStandard = {
           ...(previous || {}),
           attachments: {
             ...(previous && previous.attachments ? previous.attachments : {}),
-            [slotKey]: row
+            [slotKey]: normalizedRow
           }
         }
         this.setResearchStandardValue(nextResearchStandard)
-        this.upsertFormFileRow(row)
+        this.upsertFormFileRow(normalizedRow)
 
         if (previousFile && previousFile.fileId && String(previousFile.fileId) !== String(row.fileId)) {
           try {
@@ -4771,25 +4929,25 @@ export default {
     async uploadFormFiles(files) {
       if (!this.viewProposalId) return
       const list = Array.isArray(files) ? files : []
-      for (const file of list) {
+      for (const entry of list) {
+        const file = entry && entry.file ? entry.file : entry
+        const type = entry && entry.type ? String(entry.type).trim() : ''
+        const note = entry && entry.note ? String(entry.note).trim() : ''
+        if (!file) continue
         const formData = new FormData()
         formData.append('file', file)
+        if (type) formData.append('type', type)
+        if (note) formData.append('note', note)
         try {
           const res = await Service.proposal.uploadFormFile(this.viewProposalId, formData)
           const ok = res && res.data && res.data.success
           if (ok && res.data.data) {
             this.files = (this.files || []).filter(f => f && !f._pending)
-            this.files = [...this.files, res.data.data]
+            this.files = [...this.files, this.enrichFormFileRow(res.data.data)]
           }
         } catch (e) {
           // Keep a placeholder so the user can retry by re-uploading.
-          this.files = [...(this.files || []), {
-            name: file && file.name ? file.name : 'file',
-            datetime: new Date().toLocaleString(),
-            type: '',
-            note: 'อัปโหลดไม่สำเร็จ กรุณาลองใหม่',
-            _pending: true
-          }]
+          this.files = [...(this.files || []), this.createPendingFormFilePlaceholder(file, type, 'อัปโหลดไม่สำเร็จ กรุณาลองใหม่')]
         }
       }
     },
@@ -5141,7 +5299,7 @@ export default {
           }
         }
 
-        this.files = Array.isArray(snapshot.files) ? snapshot.files : []
+        this.files = this.enrichFilesWithAttachmentTypes(Array.isArray(snapshot.files) ? snapshot.files : [])
 
         // If binary is stored in DB, enrich snapshot metadata without losing editable fields (type/note).
         try {
@@ -5150,10 +5308,10 @@ export default {
           const rows = ok && Array.isArray(fileRes.data.data) ? fileRes.data.data : []
 
           if (!this.files.length && rows.length) {
-            this.files = rows
+            this.files = this.enrichFilesWithAttachmentTypes(rows)
           } else if (this.files.length && rows.length) {
             const map = new Map(rows.map(r => [String(r && r.fileId), r]))
-            this.files = this.files.map((f) => {
+            this.files = this.enrichFilesWithAttachmentTypes(this.files.map((f) => {
               const fid = f && f.fileId ? String(f.fileId) : ''
               if (!fid || !map.has(fid)) return f
               const fresh = map.get(fid)
@@ -5163,7 +5321,7 @@ export default {
                 type: f.type || fresh.type,
                 note: f.note || fresh.note
               }
-            })
+            }))
           }
         } catch (e) {
           // ignore

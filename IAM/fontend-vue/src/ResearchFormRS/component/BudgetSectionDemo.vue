@@ -50,7 +50,7 @@
           </CButton>
           <label class="btn btn-light btn-sm mb-0 text-primary font-weight-bold cursor-pointer">
             <CIcon name="cil-library-add" class="mr-1" /> {{ budgetText.attachDocument }}
-            <input type="file" style="display: none;" @change="attachDocToCategory($event, catIndex)" multiple>
+            <input type="file" accept=".pdf,application/pdf" style="display: none;" @change="attachDocToCategory($event, catIndex)" multiple>
           </label>
         </div>
       </CCardHeader>
