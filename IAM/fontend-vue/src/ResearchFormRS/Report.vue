@@ -381,7 +381,7 @@ export default {
         key: meta.key,
         title: meta.title,
         enabled: Boolean(enabled),
-        status: Boolean(enabled) ? status : '',
+        status: enabled ? status : '',
         submittedDate,
         options: Array.isArray(meta.options) ? meta.options : []
       }

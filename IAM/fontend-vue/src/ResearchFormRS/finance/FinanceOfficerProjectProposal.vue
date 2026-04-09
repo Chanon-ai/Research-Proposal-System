@@ -5,15 +5,22 @@
         v-for="tile in summaryTiles"
         :key="tile.key"
         class="summary-strip__card"
-        :class="{ 'is-active': filterStatus === tile.key }"
+        :class="[`summary-strip__card--${tile.key}`, { 'is-active': filterStatus === tile.key }]"
         role="button"
         tabindex="0"
         @click="filterStatus = tile.key"
         @keydown.enter.prevent="filterStatus = tile.key"
         @keydown.space.prevent="filterStatus = tile.key"
       >
-        <small class="text-muted d-block">{{ tile.label }}</small>
-        <strong class="h4 mb-0">{{ tile.value }}</strong>
+        <div class="strip-left">
+          <span class="strip-icon-wrap">
+            <CIcon :name="tile.icon" class="strip-icon" />
+          </span>
+          <span class="strip-label">{{ tile.label }}</span>
+        </div>
+        <div class="strip-right">
+          <span class="strip-count">{{ tile.value }}</span>
+        </div>
       </div>
     </div>
 
@@ -160,10 +167,10 @@ export default {
       const pendingCount = this.proposals.filter(item => item.assignmentStatusKey !== 'submitted').length
       const overLimitCount = this.proposals.filter(item => item.budgetLimit > 0 && item.budgetTotal > item.budgetLimit).length
       return [
-        { key: 'all', label: this.$t('finance.assigned.tiles.all'), value: this.proposals.length },
-        { key: 'pending', label: this.$t('finance.assigned.tiles.pending'), value: pendingCount },
-        { key: 'submitted', label: this.$t('finance.assigned.tiles.submitted'), value: submittedCount },
-        { key: 'over_limit', label: this.$t('finance.assigned.tiles.overLimit'), value: overLimitCount }
+        { key: 'all',        label: this.$t('finance.assigned.tiles.all'),       value: this.proposals.length, color: 'gray',  icon: 'cil-layers' },
+        { key: 'pending',    label: this.$t('finance.assigned.tiles.pending'),    value: pendingCount,          color: 'amber', icon: 'cil-clock' },
+        { key: 'submitted',  label: this.$t('finance.assigned.tiles.submitted'),  value: submittedCount,        color: 'green', icon: 'cil-check-circle' },
+        { key: 'over_limit', label: this.$t('finance.assigned.tiles.overLimit'),  value: overLimitCount,        color: 'red',   icon: 'cil-warning' }
       ]
     }
   },
@@ -209,22 +216,141 @@ export default {
 
 .summary-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+}
+@media (max-width: 768px) {
+  .summary-strip { grid-template-columns: repeat(2, 1fr); }
 }
 
 .summary-strip__card {
-  border: 1px solid #dbe4f0;
-  border-radius: 14px;
+  flex: 1;
+  min-width: 170px;
+  border-radius: 0.5rem;
+  border: 0;
+  box-shadow: none;
   padding: 14px 16px;
-  background: #fff;
-  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   cursor: pointer;
+  transform: scale(1);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  user-select: none;
+  background: linear-gradient(135deg, var(--summary-start, #6b7280), var(--summary-end, #374151));
 }
 
+/* SVG graphic top-right */
+.summary-strip__card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--summary-graphic);
+  background-repeat: no-repeat;
+  background-size: 122px 122px;
+  background-position: calc(100% + 10px) -12px;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 1;
+}
+/* Gloss overlay */
+.summary-strip__card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 60%);
+  pointer-events: none;
+  z-index: 1;
+}
+.summary-strip__card > * { position: relative; z-index: 2; }
+
+.summary-strip__card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
+}
 .summary-strip__card.is-active {
-  border-color: #8c1515;
-  box-shadow: 0 14px 26px rgba(140, 21, 21, 0.12);
+  transform: scale(1.02);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+}
+
+/* Color + graphic per tile */
+.summary-strip__card--all {
+  --summary-start: #6b7280;
+  --summary-end:   #4b5563;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='22' width='72' height='76' rx='12' fill='white' fill-opacity='0.9'/%3E%3Crect x='38' y='40' width='44' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='54' width='40' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='68' width='33' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3C/svg%3E");
+}
+.summary-strip__card--pending {
+  --summary-start: #f59e0b;
+  --summary-end:   #d97706;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M60 42v18l14 10' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E");
+}
+.summary-strip__card--submitted {
+  --summary-start: #16a34a;
+  --summary-end:   #15803d;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E");
+}
+.summary-strip__card--over_limit {
+  --summary-start: #dc2626;
+  --summary-end:   #b91c1c;
+  --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpolygon points='60%2C22 98%2C90 22%2C90' fill='white' fill-opacity='0.9'/%3E%3Cline x1='60' y1='50' x2='60' y2='70' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-opacity='0.22'/%3E%3Ccircle cx='60' cy='80' r='4' fill='%23000000' fill-opacity='0.22'/%3E%3C/svg%3E");
+}
+
+/* Left: icon circle + label */
+.strip-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.strip-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.32);
+  box-shadow: 0 4px 12px rgba(16,24,40,0.12);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  color: rgba(255,255,255,0.98);
+}
+.strip-card:hover .strip-icon-wrap,
+.summary-strip__card:hover .strip-icon-wrap {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(16,24,40,0.18);
+}
+.strip-icon {
+  font-size: 1.9rem;
+  display: inline-block;
+  line-height: 1;
+}
+.strip-label {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.9);
+  font-weight: 600;
+}
+
+/* Right: count */
+.strip-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+}
+.strip-count {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.98);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  text-align: right;
 }
 
 .finance-search {

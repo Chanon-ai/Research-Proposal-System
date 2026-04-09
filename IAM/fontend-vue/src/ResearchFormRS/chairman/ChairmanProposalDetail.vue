@@ -346,6 +346,10 @@
 
                 <div class="evaluation-actions">
                   <div class="form-actions">
+                    <CButton color="info" variant="outline" class="mr-2" :disabled="isExportingPdf || !proposal" @click="exportChecklistPdf">
+                      <CIcon name="cil-cloud-download" class="mr-1" />
+                      {{ isExportingPdf ? $t('chairman.proposalDetail.exportingPdf') : $t('chairman.proposalDetail.exportPdf') }}
+                    </CButton>
                     <CButton color="secondary" variant="outline" :disabled="isEvaluationLocked || isSubmitting" @click="onSaveDraftClick">
                       <CIcon name="cil-save" class="mr-1" /> {{ $t('chairman.proposalDetail.saveDraft') }}
                     </CButton>
@@ -365,12 +369,21 @@
         </div>
       </CCol>
     </CRow>
+
+    <div class="chairman-report-export-host" aria-hidden="true">
+      <ChairmanChecklistExport
+        v-if="exportForm"
+        ref="exportView"
+        :form="exportForm"
+      />
+    </div>
   </div>
 </template>
 
 <script>
 import Service from '@/service/api'
 import ResearchForm from '../ResearchForm.vue'
+import ChairmanChecklistExport from './ChairmanChecklistExport.vue'
 import Swal from 'sweetalert2'
 import { loadResearchFormRuntimeConfigs } from '@/ResearchFormRS/utils/researchConfigRuntime'
 import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
@@ -386,12 +399,14 @@ export default {
   name: 'ChairmanProposalDetail',
   mixins: [centerLoadingMixin],
   components: {
-    ResearchForm
+    ResearchForm,
+    ChairmanChecklistExport
   },
   data () {
     return {
       loading: false,
       isSubmitting: false,
+      isExportingPdf: false,
       error: null,
       proposal: null,
       formFiles: [],
@@ -410,6 +425,7 @@ export default {
       isSignatureDrawing: false,
       signatureHasStroke: false,
       draftAutoSaveTimer: null,
+      exportForm: null,
       form: {
         checklistValues: {},
         comments: '',
@@ -502,8 +518,75 @@ export default {
         projectLeaderAffiliation: this.proposal.projectLeaderAffiliation || leader.affiliation || ''
       }
     },
+    effectiveFundingTypeKey () {
+      const proposal = this.proposal || {}
+      const snapshot = proposal.formSnapshotJson || {}
+      const projectDetails = snapshot.projectDetails || {}
+
+      const candidates = [
+        // Prefer the value used by the researcher form (ResearchForm.vue hydrates from snapshot.fundingType first).
+        snapshot.fundingType,
+        snapshot.fundingTypeKey,
+        // Some payloads keep the same value under projectDetails.
+        projectDetails.fundingType,
+        projectDetails.fundingTypeKey,
+        // Proposal-level fields can be stale (legacy/default), keep them as fallback only.
+        // Prefer `fundingType` (used by the researcher form) over legacy `fundingTypeKey`.
+        proposal.fundingType,
+        proposal.fundingTypeKey
+      ]
+
+      const cleaned = candidates
+        .filter((v) => typeof v === 'string' && v.trim())
+        .map((v) => String(v).trim())
+      // de-dup while preserving order
+      const seen = new Set()
+      const unique = cleaned.filter((v) => {
+        const key = v.toLowerCase()
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+
+      // If multiple values exist (often due to legacy fields), pick the first one that matches our known keys.
+      const known = ['new-researcher', 'researcher-development', 'strategic-research', 'industry-extension']
+      const normalizeCandidate = (value) => String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[_\s]+/g, '-')
+        .replace(/-+/g, '-')
+      for (const cand of unique) {
+        const normalized = normalizeCandidate(cand)
+        if (known.includes(normalized)) return normalized
+      }
+
+      const raw = unique[0] || ''
+      if (!raw) return ''
+
+      const key = raw.trim().toLowerCase()
+      const normalized = key
+        .replace(/[_\s]+/g, '-')
+        .replace(/-+/g, '-')
+
+      if (known.includes(normalized)) return normalized
+
+      // Fallback: map Thai labels / loose strings to the known keys.
+      // This handles legacy data where fundingType is stored as a Thai label.
+      const thai = raw.replace(/\s+/g, '')
+      if (thai.includes('พัฒนา') || thai.includes('พัฒนานักวิจัย')) return 'researcher-development'
+      if (thai.includes('สอดคล้อง') || thai.includes('ยุทธศาสตร์')) return 'strategic-research'
+      if (thai.includes('ต่อยอด') || thai.includes('อุตสาหกรรม')) return 'industry-extension'
+      if (thai.includes('นักวิจัยใหม่') || thai.includes('รุ่นใหม่') || thai.includes('วิจัยใหม่')) return 'new-researcher'
+
+      if (normalized.includes('develop')) return 'researcher-development'
+      if (normalized.includes('strategic')) return 'strategic-research'
+      if (normalized.includes('industry') || normalized.includes('extension') || normalized.includes('industrial')) return 'industry-extension'
+      if (normalized.includes('new')) return 'new-researcher'
+
+      return normalized
+    },
     selectedFundingTemplate () {
-      return getChairmanChecklistTemplate(this.proposal && this.proposal.fundingType)
+      return getChairmanChecklistTemplate(this.effectiveFundingTypeKey)
     },
     evaluationCardTitle () {
       const config = getChairmanChecklistConfig()
@@ -515,7 +598,7 @@ export default {
       const template = this.selectedFundingTemplate
       const resolved = this.resolveChecklistText(template, 'fundingTypeLabel')
       if (resolved) return resolved
-      return String((this.proposal && this.proposal.fundingType) || '-').trim() || '-'
+      return String(this.effectiveFundingTypeKey || '-').trim() || '-'
     },
     templateSections () {
       const template = this.selectedFundingTemplate
@@ -730,12 +813,13 @@ export default {
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.scale(ratio, ratio)
       ctx.clearRect(0, 0, width, height)
-      ctx.fillStyle = this.isDarkTheme ? '#0b1220' : '#ffffff'
+      // Keep signature background white and ink black for consistent export/print.
+      ctx.fillStyle = '#ffffff'
       ctx.fillRect(0, 0, width, height)
       ctx.lineWidth = 2
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
-      ctx.strokeStyle = this.isDarkTheme ? '#e6edf7' : '#8b1212'
+      ctx.strokeStyle = '#000000'
       this.signatureHasStroke = false
       if (this.signatureData) {
         this.renderSignatureToCanvas()
@@ -765,10 +849,38 @@ export default {
               const dr = Math.abs(data[i] - bgR)
               const dg = Math.abs(data[i + 1] - bgG)
               const db = Math.abs(data[i + 2] - bgB)
-              if (dr + dg + db <= threshold) data[i + 3] = 0
+              if (dr + dg + db <= threshold) {
+                data[i + 3] = 0
+                continue
+              }
+              // Force ink to black for export/print.
+              if (data[i + 3] > 0) {
+                data[i] = 0
+                data[i + 1] = 0
+                data[i + 2] = 0
+              }
             }
             offCtx.putImageData(imgData, 0, 0)
-            return resolve(off.toDataURL('image/png'))
+            // Downscale uploaded signatures to a consistent size so they fit in localStorage reliably.
+            const normalized = document.createElement('canvas')
+            const targetWidth = 560
+            const targetHeight = 180
+            normalized.width = targetWidth
+            normalized.height = targetHeight
+            const nctx = normalized.getContext('2d')
+            if (!nctx) return resolve(off.toDataURL('image/png'))
+
+            nctx.clearRect(0, 0, targetWidth, targetHeight)
+            nctx.fillStyle = '#ffffff'
+            nctx.fillRect(0, 0, targetWidth, targetHeight)
+
+            const scale = Math.min(targetWidth / off.width, targetHeight / off.height, 1)
+            const drawWidth = off.width * scale
+            const drawHeight = off.height * scale
+            const offsetX = (targetWidth - drawWidth) / 2
+            const offsetY = (targetHeight - drawHeight) / 2
+            nctx.drawImage(off, offsetX, offsetY, drawWidth, drawHeight)
+            return resolve(normalized.toDataURL('image/png'))
           } catch (_) {
             return resolve(source)
           }
@@ -802,7 +914,7 @@ export default {
         const width = canvas.clientWidth || 560
         const height = 180
         ctx.clearRect(0, 0, width, height)
-        ctx.fillStyle = this.isDarkTheme ? '#0b1220' : '#ffffff'
+        ctx.fillStyle = '#ffffff'
         ctx.fillRect(0, 0, width, height)
 
         const scale = Math.min(width / image.width, height / image.height, 1)
@@ -828,7 +940,15 @@ export default {
               const dr = Math.abs(data[i] - bgR)
               const dg = Math.abs(data[i + 1] - bgG)
               const db = Math.abs(data[i + 2] - bgB)
-              if (dr + dg + db <= threshold) data[i + 3] = 0
+              if (dr + dg + db <= threshold) {
+                data[i + 3] = 0
+                continue
+              }
+              if (data[i + 3] > 0) {
+                data[i] = 0
+                data[i + 1] = 0
+                data[i + 2] = 0
+              }
             }
             offCtx.putImageData(imgData, 0, 0)
             ctx.drawImage(off, offsetX, offsetY, drawWidth, drawHeight)
@@ -887,6 +1007,8 @@ export default {
         this.signatureData = normalized || raw
         this.signatureTimestamp = new Date().toISOString()
         this.updateStoredSignatureData(this.signatureData)
+        this.saveSignatureToStorage()
+        this.queueDraftAutoSave()
       })
     },
     clearSignature () {
@@ -916,6 +1038,74 @@ export default {
           checked: this.getChecklistAnswer(section, item) === 'yes'
         }))
       }))
+    },
+    checklistExportSnapshot () {
+      return this.templateSections.map((section) => ({
+        sectionKey: section.sectionKey,
+        sectionLabel: this.resolveChecklistText(section, 'sectionLabel'),
+        sectionDescription: this.resolveChecklistText(section, 'description'),
+        items: (Array.isArray(section.items) ? section.items : []).map((item) => ({
+          itemKey: item.itemKey,
+          label: this.resolveChecklistText(item, 'label'),
+          description: this.resolveChecklistText(item, 'description'),
+          answer: this.getChecklistAnswer(section, item)
+        }))
+      }))
+    },
+    buildChecklistExportForm () {
+      const prefill = this.researchPrefill || {}
+      const proposal = this.proposal || {}
+      const proposalCode = String(proposal.proposalCode || proposal.code || proposal._id || proposal.id || '').trim()
+      const selectedTemplateKey = this.selectedFundingTemplate && this.selectedFundingTemplate.fundingTypeKey
+        ? String(this.selectedFundingTemplate.fundingTypeKey).trim()
+        : ''
+      const rawSignature = typeof this.signatureData === 'string' ? this.signatureData.trim() : ''
+      const signatureData = rawSignature.startsWith('data:image/') ? rawSignature : ''
+
+      return {
+        fundingTypeKey: selectedTemplateKey || String(proposal.fundingType || '').trim(),
+        templateTitle: this.evaluationCardTitle,
+        proposalCode,
+        projectTitleTh: String(prefill.projectNameThai || proposal.projectTitleTh || '').trim(),
+        projectTitleEn: String(prefill.projectNameEnglish || proposal.projectTitleEn || '').trim(),
+        projectLeaderName: String(prefill.projectLeaderName || proposal.projectLeaderName || '').trim(),
+        projectLeaderAffiliation: String(prefill.projectLeaderAffiliation || proposal.projectLeaderAffiliation || '').trim(),
+        fundingTypeLabel: this.selectedFundingLabel,
+        roundNo: this.activeRoundNo,
+        sections: this.checklistExportSnapshot(),
+        decisionLabel: this.decisionLabel,
+        comments: String((this.form && this.form.comments) || '').trim(),
+        signedBy: this.currentUserSignatureName,
+        chairmanAffiliation: this.chairmanAffiliationText,
+        submittedAtDisplay: this.chairmanSubmittedAtDisplay,
+        submittedAt: this.submittedAt || '',
+        signatureData
+      }
+    },
+    async exportChecklistPdf () {
+      if (this.isExportingPdf) return
+
+      this.isExportingPdf = true
+      try {
+        this.exportForm = this.buildChecklistExportForm()
+        await this.$nextTick()
+
+        const exportView = this.$refs.exportView
+        if (!exportView || typeof exportView.generatePDF !== 'function') {
+          throw new Error('Export view is not ready')
+        }
+
+        await exportView.generatePDF()
+      } catch (err) {
+        await this.showAlert({
+          icon: 'error',
+          title: this.$t('chairman.proposalDetail.exportErrorTitle'),
+          text: (err && err.message) || this.$t('chairman.proposalDetail.exportErrorText')
+        })
+      } finally {
+        this.isExportingPdf = false
+        this.exportForm = null
+      }
     },
     buildCommentItems () {
       return [
@@ -1178,6 +1368,17 @@ export default {
         const reviewDecision = String(review && review.decision ? review.decision : '').trim().toLowerCase()
         const localDecision = String(this.form && this.form.decision ? this.form.decision : 'approve').trim().toLowerCase() || 'approve'
 
+        const normalizeDecision = (value) => {
+          const key = String(value || '').trim().toLowerCase()
+          if (key === 'reject') return 'reject'
+          if (key === 'revision' || key === 'request_revision' || key === 'revision_requested' || key === 'revise') return 'revision'
+          if (key === 'approve') return 'approve'
+          return ''
+        }
+
+        const normalizedReviewDecision = normalizeDecision(reviewDecision)
+        const normalizedLocalDecision = normalizeDecision(localDecision) || 'approve'
+
         const nextChecklist = isLockedReview
           ? (hasExtractedChecklist ? extractedChecklist : (hasLocalChecklist ? localChecklist : {}))
           : (hasLocalChecklist ? localChecklist : (hasExtractedChecklist ? extractedChecklist : {}))
@@ -1186,19 +1387,27 @@ export default {
           ? reviewComments
           : (localComments.trim() ? localComments : reviewComments)
 
+        const hasLocalInput = hasLocalChecklist || Boolean(localComments.trim())
         const nextDecision = isLockedReview
-          ? (reviewDecision === 'reject' ? 'reject' : 'approve')
-          : (localDecision === 'reject' ? 'reject' : (reviewDecision === 'reject' ? 'reject' : 'approve'))
+          ? (normalizedReviewDecision || 'approve')
+          : (hasLocalInput ? normalizedLocalDecision : (normalizedReviewDecision || normalizedLocalDecision))
+
+        const reviewSignature = review && typeof review.signatureData === 'string' ? review.signatureData : ''
+        const hasLocalSignature = this.hasSignatureData
+        if (!hasLocalSignature && typeof reviewSignature === 'string' && reviewSignature.trim().startsWith('data:image/')) {
+          this.signatureData = reviewSignature.trim()
+          if (!this.signatureTimestamp) this.signatureTimestamp = new Date().toISOString()
+          this.normalizeSignatureBackground(this.signatureData).then((normalized) => {
+            if (normalized) this.signatureData = normalized
+            this.saveSignatureToStorage()
+          })
+        }
 
         this.form = {
           ...this.form,
-          checklistValues: this.extractChecklistValues(review),
-          comments: review.summaryComment || '',
-          decision: review.decision === 'reject'
-            ? 'reject'
-            : (review.decision === 'revision' || review.decision === 'request_revision' || review.decision === 'revision_requested'
-                ? 'revision'
-                : 'approve')
+          checklistValues: nextChecklist,
+          comments: nextComments,
+          decision: nextDecision
         }
         this.submittedAt = review && review.submittedAt ? String(review.submittedAt) : ''
         if (this.signatureData) this.saveSignatureToStorage()
@@ -1274,6 +1483,14 @@ export default {
       const userId = this.currentUserId || 'unknown'
       return proposalId ? `chairmanSignature:${proposalId}:user:${userId}` : ''
     },
+    signatureKeyPrefix () {
+      const proposalId = this.proposal ? (this.proposal._id || this.proposal.id) : ''
+      return proposalId ? `chairmanSignature:${proposalId}:user:` : ''
+    },
+    signatureKeyAnyUserPrefix () {
+      const proposalId = this.proposal ? (this.proposal._id || this.proposal.id) : ''
+      return proposalId ? `chairmanSignature:${proposalId}:` : ''
+    },
     clearLocalSubmissionLock () {
       try {
         localStorage.removeItem(this.submissionKey())
@@ -1284,7 +1501,12 @@ export default {
     },
     loadSavedSignature () {
       try {
-        const raw = localStorage.getItem(this.signatureKey())
+        let raw = localStorage.getItem(this.signatureKey())
+        if (!raw) {
+          const fallback = this.findLocalStorageValueByPrefix(this.signatureKeyPrefix()) ||
+            this.findLocalStorageValueByPrefix(this.signatureKeyAnyUserPrefix())
+          raw = fallback ? JSON.stringify(fallback) : ''
+        }
         if (!raw) return
         const saved = JSON.parse(raw)
         if (!saved || typeof saved !== 'object') return
@@ -1484,10 +1706,22 @@ export default {
       if (!file) return
       const reader = new FileReader()
       reader.onload = () => {
-        this.signatureData = typeof reader.result === 'string' ? reader.result : ''
-        this.signatureTimestamp = this.signatureData ? new Date().toISOString() : ''
-        this.$nextTick(() => this.renderSignatureToCanvas())
-        if (event && event.target) event.target.value = ''
+        const raw = typeof reader.result === 'string' ? reader.result : ''
+        this.normalizeSignatureBackground(raw).then((normalized) => {
+          this.signatureData = normalized || raw
+          this.signatureTimestamp = this.signatureData ? new Date().toISOString() : ''
+          const ok = this.saveSignatureToStorage()
+          if (!ok && this.signatureData) {
+            this.showAlert({
+              icon: 'warning',
+              title: this.$t('chairman.proposalDetail.signature.saveErrorTitle'),
+              text: this.$t('chairman.proposalDetail.alerts.retry')
+            })
+          }
+          this.queueDraftAutoSave()
+          this.$nextTick(() => this.renderSignatureToCanvas())
+          if (event && event.target) event.target.value = ''
+        })
       }
       reader.readAsDataURL(file)
     },
@@ -2714,6 +2948,15 @@ export default {
   background: #f8fafc;
   border: 1px solid #d8e2ef;
   font-weight: 600;
+}
+
+.chairman-report-export-host {
+  position: fixed;
+  left: -99999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
 .evaluation-actions {

@@ -161,10 +161,22 @@
                     class="chairman-review-card__section"
                   >
                     <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
-                      <div class="font-weight-bold">{{ section.sectionLabel }}</div>
+                      <button
+                        type="button"
+                        class="btn btn-link p-0 chairman-review-card__section-toggle"
+                        :aria-expanded="String(isChairmanChecklistSectionOpen(card, section))"
+                        @click="toggleChairmanChecklistSection(card, section)"
+                      >
+                        <CIcon
+                          name="cil-chevron-right"
+                          class="chairman-review-card__section-toggle-icon mr-1"
+                          :class="{ 'is-open': isChairmanChecklistSectionOpen(card, section) }"
+                        />
+                        <span class="font-weight-bold">{{ section.sectionLabel }}</span>
+                      </button>
                       <CBadge color="warning" class="chairman-review-card__badge">{{ section.checkedCount }}/{{ section.totalItems }} ข้อ</CBadge>
                     </div>
-                    <div v-if="section.items.length" class="mt-2">
+                    <div v-if="section.items.length" v-show="isChairmanChecklistSectionOpen(card, section)" class="mt-2">
                       <div class="chairman-review-card__table">
                         <div class="chairman-review-card__table-head">
                           <div class="chairman-review-card__th-no">#</div>
@@ -194,21 +206,6 @@
                 </div>
                 <div v-else class="text-muted small">
                   ไม่พบ payload checklist จากผลประเมินของประธาน
-                </div>
-
-                <div v-if="card.signatureData" class="chairman-review-card__signature">
-                  <div class="chairman-review-card__signature-label">ลงชื่อ</div>
-                  <div class="chairman-review-card__signature-preview">
-                    <img
-                      :src="card.signatureData"
-                      :alt="`ลายเซ็นของ ${reviewerName(card.review)}`"
-                      class="chairman-review-card__signature-image"
-                    >
-                  </div>
-                  <div class="chairman-review-card__signature-line"></div>
-                  <div class="chairman-review-card__signature-name">( {{ reviewerName(card.review) }} )</div>
-                  <div class="chairman-review-card__signature-role">ประธานผู้พิจารณา</div>
-                  <div class="chairman-review-card__signature-date">วันที่ {{ formatReviewDateTime(card.signatureUpdatedAt || card.review.submittedAt || card.review.updatedAt) }}</div>
                 </div>
 
                 <div
@@ -1156,6 +1153,7 @@ export default {
       reviewsError: null,
       proposalReviews: [],
       reviewModerationBusyMap: {},
+      chairmanChecklistSectionOpenMap: {},
       feedbackLoading: false,
       feedbackError: null,
       userFeedback: null,
@@ -3526,6 +3524,28 @@ export default {
           sections: []
         }
       }
+    },
+    chairmanChecklistSectionStateKey (card, section) {
+      const reviewId = String((card && (card.reviewId || (card.review && card.review._id) || (card.review && card.review.id))) || '').trim()
+      const sectionKey = String((section && (section.sectionKey || section.key || section.sectionLabel || section.label)) || '').trim()
+      return `${reviewId}::${sectionKey}`
+    },
+    isChairmanChecklistSectionOpen (card, section) {
+      const key = this.chairmanChecklistSectionStateKey(card, section)
+      if (Object.prototype.hasOwnProperty.call(this.chairmanChecklistSectionOpenMap || {}, key)) {
+        return Boolean(this.chairmanChecklistSectionOpenMap[key])
+      }
+
+      // Default behavior:
+      // - While pending admin acceptance: keep open (admin needs to read it).
+      // - After admin accepts/rejects: collapse by default, but user can expand.
+      if (this.isAdminView && card && card.review && !this.isReviewPendingAdminAcceptance(card.review)) return false
+      return true
+    },
+    toggleChairmanChecklistSection (card, section) {
+      const key = this.chairmanChecklistSectionStateKey(card, section)
+      const next = !this.isChairmanChecklistSectionOpen(card, section)
+      this.$set(this.chairmanChecklistSectionOpenMap, key, next)
     },
     decisionLabel (decision) {
       if (decision === 'approve') return 'อนุมัติ'
@@ -7699,6 +7719,27 @@ export default {
 .chairman-review-card__section + .chairman-review-card__section {
   padding-top: 12px;
   border-top: 1px solid var(--rf-border);
+}
+
+.chairman-review-card__section-toggle {
+  text-decoration: none;
+  color: var(--rf-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chairman-review-card__section-toggle:hover {
+  text-decoration: none;
+  color: var(--rf-text);
+}
+
+.chairman-review-card__section-toggle-icon {
+  transition: transform 0.15s ease;
+}
+
+.chairman-review-card__section-toggle-icon.is-open {
+  transform: rotate(90deg);
 }
 
 .chairman-review-card__table {

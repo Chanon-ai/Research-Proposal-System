@@ -41,6 +41,7 @@
     "settings": "ตั้งค่า",
     "assignedTasks": "งานที่ได้รับมอบหมาย",
     "committeeSummary": "สรุปภาพรวม",
+    "committeeManual": "คู่มือการใช้งาน",
     "researchForm": "แบบฟอร์มวิจัย",
     "financeDashboard": "ภาพรวมงบประมาณ",
     "financeAssigned": "โครงการที่ได้รับมอบหมาย"
@@ -776,9 +777,7 @@
         "submitErrorTitle": "ส่งผลการประเมินไม่สำเร็จ",
         "retry": "กรุณาลองใหม่อีกครั้ง"
       }
-    }
-  },
-  "committee": {
+    },
     "projectProposal": {
       "summary": {
         "all": "ทั้งหมด",
@@ -1149,6 +1148,10 @@
         "submitErrorTitle": "ส่งผลการพิจารณาไม่สำเร็จ",
         "retry": "กรุณาลองใหม่อีกครั้ง"
       },
+      "exportPdf": "ส่งออก PDF",
+      "exportingPdf": "กำลังสร้าง PDF...",
+      "exportErrorTitle": "ส่งออก PDF ไม่สำเร็จ",
+      "exportErrorText": "กรุณาลองใหม่อีกครั้ง",
       "importPlaceholderFallback": "พื้นที่ checklist ยังเว้นไว้สำหรับ import จาก backend ในขั้นถัดไป"
     }
   },
