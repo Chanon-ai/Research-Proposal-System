@@ -1,6 +1,19 @@
-/.idea/
-/node_modules/
-/.runtime-packages/
-package-lock.json
+# Dependency directories
+node_modules/
+
+# Environment variables
 .env
-.md
+.env.local
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Docker data
+mongo_data/
+redis_data/
+
+# OS files
+.DS_Store
+Thumbs.db

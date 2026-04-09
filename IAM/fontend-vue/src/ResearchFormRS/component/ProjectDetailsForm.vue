@@ -813,13 +813,8 @@ export default {
         projectNameEnglishHint: 'กรุณาระบุเป็นภาษาอังกฤษเท่านั้น *'
       }
     },
-    isCommitteeReviewRoute() {
-      const path = String((this.$route && this.$route.path) || '').trim().toLowerCase()
-      return path.indexOf('/committee/') !== -1 || path.indexOf('/chairman/') !== -1 || path.indexOf('/review/proposals') !== -1
-    },
     shouldUseBudgetReport() {
       return (
-        this.isCommitteeReviewRoute &&
         this.isReadOnly &&
         this.normalizedCurrentStatus !== '' &&
         this.normalizedCurrentStatus !== 'draft'

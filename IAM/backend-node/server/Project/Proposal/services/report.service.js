@@ -6,9 +6,105 @@ const STATUS_LABELS = require('../constants/proposal-status-labels');
 const systemSettingService = require('../../settings/service/system-setting');
 
 const EXPORT_PUBLIC_DIR = path.resolve(__dirname, '../../../../public/exports');
+const EXPORT_FILE_PREFIX = 'research-report-';
+const DEFAULT_EXPORT_RETENTION_HOURS = 24;
+const REPORT_EXPORT_TYPES = Object.freeze({
+  pdf: 'pdf',
+  excel: 'excel'
+});
+
+function getExportRetentionMs() {
+  const raw = Number(process.env.REPORT_EXPORT_RETENTION_HOURS || DEFAULT_EXPORT_RETENTION_HOURS);
+  const hours = Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_EXPORT_RETENTION_HOURS;
+  return hours * 60 * 60 * 1000;
+}
+
+function normalizeExportType(value) {
+  const type = String(value || '').trim().toLowerCase();
+  return type === REPORT_EXPORT_TYPES.excel ? REPORT_EXPORT_TYPES.excel : REPORT_EXPORT_TYPES.pdf;
+}
+
+function toBool(value) {
+  if (value === true || value === false) return value;
+  if (value === undefined || value === null) return false;
+  if (typeof value === 'number') return value !== 0;
+  const normalized = String(value).trim().toLowerCase();
+  return ['1', 'true', 'yes', 'y', 'on'].includes(normalized);
+}
+
+function normalizeExportPayload(payload = {}) {
+  return {
+    type: normalizeExportType(payload.type),
+    fiscalYear: payload.fiscalYear ? Number(payload.fiscalYear) : null,
+    status: payload.status ? String(payload.status).trim() : '',
+    includeCharts: toBool(payload.includeCharts),
+    sendEmail: toBool(payload.sendEmail),
+    emailAddress: payload.emailAddress ? String(payload.emailAddress).trim() : ''
+  };
+}
+
+function sanitizeExportFileName(fileName) {
+  return path.basename(String(fileName || '').trim());
+}
+
+function getExportContentType(fileName) {
+  const ext = String(path.extname(fileName || '')).trim().toLowerCase();
+  if (ext === '.pdf') return 'application/pdf';
+  if (ext === '.csv') return 'text/csv; charset=utf-8';
+  return 'application/octet-stream';
+}
 
 function ensureExportDir() {
   fs.mkdirSync(EXPORT_PUBLIC_DIR, { recursive: true });
+}
+
+function isManagedExportFile(fileName) {
+  const normalized = String(fileName || '').trim().toLowerCase();
+  return normalized.startsWith(EXPORT_FILE_PREFIX) && (normalized.endsWith('.pdf') || normalized.endsWith('.csv'));
+}
+
+function cleanupOldExportFiles() {
+  ensureExportDir();
+  const retentionMs = getExportRetentionMs();
+  const expireBefore = Date.now() - retentionMs;
+  let scannedFiles = 0;
+  let removedFiles = 0;
+
+  for (const dirent of fs.readdirSync(EXPORT_PUBLIC_DIR, { withFileTypes: true })) {
+    if (!dirent.isFile() || !isManagedExportFile(dirent.name)) continue;
+    scannedFiles += 1;
+
+    const filePath = path.join(EXPORT_PUBLIC_DIR, dirent.name);
+
+    try {
+      const stats = fs.statSync(filePath);
+      const lastTouchedAt = Math.max(
+        Number(stats.mtimeMs) || 0,
+        Number(stats.birthtimeMs) || 0,
+        Number(stats.ctimeMs) || 0
+      );
+
+      if (lastTouchedAt > 0 && lastTouchedAt < expireBefore) {
+        fs.unlinkSync(filePath);
+        removedFiles += 1;
+      }
+    } catch (err) {
+      console.error('[Report.cleanup] failed to inspect/remove export file:', dirent.name, err && err.message ? err.message : err);
+    }
+  }
+
+  if (removedFiles > 0 || scannedFiles > 0) {
+    console.info(
+      `[Report.cleanup] scanned=${scannedFiles} removed=${removedFiles} retentionHours=${Math.round(retentionMs / (60 * 60 * 1000))}`
+    );
+  }
+}
+
+function getExportFilePath(fileName) {
+  ensureExportDir();
+  const safeFileName = sanitizeExportFileName(fileName);
+  if (!safeFileName || safeFileName.includes('..')) throw new Error('Invalid file name');
+  return path.join(EXPORT_PUBLIC_DIR, safeFileName);
 }
 
 function buildProposalFilter(payload = {}) {
@@ -182,19 +278,22 @@ async function sendExportEmailIfNeeded({ sendEmail, emailAddress, filePath, file
 
 async function exportReport(payload = {}) {
   ensureExportDir();
+  cleanupOldExportFiles();
 
-  const filter = buildProposalFilter(payload);
+  const normalizedPayload = normalizeExportPayload(payload);
+
+  const filter = buildProposalFilter(normalizedPayload);
   const proposals = await Proposal.find(filter)
     .sort({ createdAt: -1, _id: -1 })
     .lean();
 
   const summary = buildSummary(proposals);
-  const type = String(payload.type || 'pdf').toLowerCase() === 'excel' ? 'excel' : 'pdf';
+  const type = normalizedPayload.type;
   const timestamp = Date.now();
   const fileName = type === 'excel'
     ? `research-report-${timestamp}.csv`
     : `research-report-${timestamp}.pdf`;
-  const filePath = path.join(EXPORT_PUBLIC_DIR, fileName);
+  const filePath = getExportFilePath(fileName);
 
   if (type === 'excel') {
     fs.writeFileSync(filePath, makeCsv(proposals), 'utf8');
@@ -202,14 +301,14 @@ async function exportReport(payload = {}) {
     const pdfBuffer = generateSimplePdf(buildPdfLines({
       proposals,
       summary,
-      filters: payload
+      filters: normalizedPayload
     }));
     fs.writeFileSync(filePath, pdfBuffer);
   }
 
   const emailed = await sendExportEmailIfNeeded({
-    sendEmail: Boolean(payload.sendEmail),
-    emailAddress: payload.emailAddress,
+    sendEmail: normalizedPayload.sendEmail,
+    emailAddress: normalizedPayload.emailAddress,
     filePath,
     fileName
   }).catch((err) => {
@@ -218,7 +317,7 @@ async function exportReport(payload = {}) {
   });
 
   return {
-    downloadUrl: `/exports/${fileName}`,
+    downloadUrl: `/api/v1/reports/download/${encodeURIComponent(fileName)}`,
     fileName,
     emailed,
     totalProjects: proposals.length,
@@ -226,8 +325,22 @@ async function exportReport(payload = {}) {
   };
 }
 
+async function getExportDownload(fileName) {
+  const safeFileName = sanitizeExportFileName(fileName);
+  const filePath = getExportFilePath(safeFileName);
+  if (!fs.existsSync(filePath)) throw new Error('File not found');
+
+  return {
+    fileName: safeFileName,
+    filePath,
+    contentType: getExportContentType(safeFileName)
+  };
+}
+
 module.exports = {
   EXPORT_PUBLIC_DIR,
   ensureExportDir,
-  exportReport
+  cleanupOldExportFiles,
+  exportReport,
+  getExportDownload
 };

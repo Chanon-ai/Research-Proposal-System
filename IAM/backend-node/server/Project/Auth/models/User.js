@@ -4,7 +4,9 @@ const bcrypt = require('bcryptjs');
 const USER_ROLES = ['admin', 'chairman', 'committee', 'finance_officer', 'researcher'];
 
 function normalizeUserRole(role) {
-  return String(role || '').trim().toLowerCase();
+  const normalizedRole = String(role || '').trim().toLowerCase().replace(/-/g, '_');
+  if (normalizedRole === 'finance_office') return 'finance_officer';
+  return normalizedRole;
 }
 
 const userSchema = new mongoose.Schema({

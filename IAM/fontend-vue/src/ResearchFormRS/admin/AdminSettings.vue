@@ -4,7 +4,7 @@
       <CCardBody class="settings-hero__body">
         <div class="settings-hero__row">
           <div class="settings-hero__left">
-            <div class="settings-hero__pill">ADMIN SETTINGS</div>
+            <div class="settings-hero__pill">{{ $t('adminSettings.hero.eyebrow') }}</div>
             <h2 class="settings-hero__title">{{ $t('adminSettings.hero.title') }}</h2>
             <p class="settings-hero__subtitle">{{ $t('adminSettings.hero.subtitle') }}</p>
           </div>
@@ -52,7 +52,7 @@
               </CCol>
               <CCol md="3">
                 <CSelect
-                  label="Timezone"
+                  :label="$t('adminSettings.general.timezone')"
                   :value="generalForm.timezone"
                   :options="[
                     { value: 'Asia/Bangkok', label: 'Asia/Bangkok' },
@@ -83,8 +83,8 @@
           <CCardHeader>{{ $t('adminSettings.general.readOnly') }}</CCardHeader>
           <CCardBody>
             <div><strong>{{ $t('adminSettings.general.version') }}:</strong> 1.0.0</div>
-            <div><strong>Backend:</strong> Node.js + Express</div>
-            <div><strong>Database:</strong> MongoDB</div>
+            <div><strong>{{ $t('adminSettings.general.backend') }}:</strong> Node.js + Express</div>
+            <div><strong>{{ $t('adminSettings.general.database') }}:</strong> MongoDB</div>
             <div><strong>{{ $t('adminSettings.general.systemStatus') }}:</strong> <span class="text-success">{{ $t('adminSettings.general.statusNormal') }}</span></div>
             <div><strong>{{ $t('adminSettings.general.dbConnection') }}:</strong> <span :class="settings.length > 0 || apiConnected ? 'text-success' : 'text-warning'">{{ settings.length > 0 || apiConnected ? $t('adminSettings.general.dbConnected') : $t('adminSettings.general.dbUnverified') }}</span></div>
           </CCardBody>
@@ -177,6 +177,118 @@
             <small class="text-muted d-block mb-3">
               {{ $t('adminSettings.workflow.statusNote') }}
             </small>
+            <div class="workflow-flowchart mb-4">
+              <div class="workflow-flowchart__legend">
+                <span class="workflow-flowchart__legend-item workflow-flowchart__legend-item--readonly">
+                  <span class="workflow-flowchart__legend-dot" />
+                  {{ $t('adminSettings.workflow.readOnlyLegend') }}
+                </span>
+                <span class="workflow-flowchart__legend-item workflow-flowchart__legend-item--editable">
+                  <span class="workflow-flowchart__legend-dot" />
+                  {{ $t('adminSettings.workflow.editableLegend') }}
+                </span>
+              </div>
+
+              <div class="workflow-flowchart__section workflow-flowchart__section--primary">
+                <div class="workflow-flowchart__section-title">{{ workflowPrimaryReadOnlyPath.title }}</div>
+                <div class="workflow-flowchart__timeline">
+                  <template v-for="(step, statusIndex) in workflowPresentationSteps">
+                    <div
+                      :key="step.key"
+                      class="workflow-flowchart__timeline-step"
+                    >
+                      <div class="workflow-flowchart__timeline-marker">
+                        <span class="workflow-flowchart__timeline-number">{{ statusIndex + 1 }}</span>
+                        <component :is="'svg'" v-bind="svgProps" v-html="getStatusIcon(step.status)" />
+                      </div>
+                      <div class="workflow-flowchart__timeline-card">
+                        <div class="workflow-flowchart__timeline-label">{{ step.label }}</div>
+                        <div class="workflow-flowchart__timeline-key">{{ step.description }}</div>
+                      </div>
+                    </div>
+                    <div
+                      v-if="statusIndex < workflowPresentationSteps.length - 1"
+                      :key="`${step.key}-arrow`"
+                      class="workflow-flowchart__timeline-connector"
+                    >
+                      <span class="workflow-flowchart__timeline-connector-line" />
+                      <span class="workflow-flowchart__timeline-connector-arrow">→</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <div
+                v-if="workflowSecondaryReadOnlyPaths.length"
+                class="workflow-flowchart__branch-connector"
+                aria-hidden="true"
+              >
+                <span class="workflow-flowchart__branch-connector-stem" />
+                <span class="workflow-flowchart__branch-connector-hub" />
+                <span class="workflow-flowchart__branch-connector-rail" />
+              </div>
+
+              <div class="workflow-flowchart__branch-grid">
+                <div
+                  v-for="path in workflowSecondaryReadOnlyPaths"
+                  :key="path.key"
+                  class="workflow-flowchart__branch-card"
+                >
+                  <span class="workflow-flowchart__branch-card-link" aria-hidden="true" />
+                  <div class="workflow-flowchart__section-title">{{ path.title }}</div>
+                  <div class="workflow-flowchart__path workflow-flowchart__path--branch">
+                    <template v-for="(status, statusIndex) in path.statuses">
+                      <CBadge
+                        :key="`${path.key}-${status}`"
+                        class="status-chip workflow-flowchart__chip workflow-flowchart__chip--readonly"
+                        :color="getStatusChipColor(status)"
+                      >
+                        <component :is="'svg'" v-bind="svgProps" v-html="getStatusIcon(status)" />
+                        {{ getWorkflowBusinessStatusLabel(status) }}
+                      </CBadge>
+                      <span
+                        v-if="statusIndex < path.statuses.length - 1"
+                        :key="`${path.key}-${status}-arrow`"
+                        class="workflow-flowchart__arrow"
+                      >
+                        →
+                      </span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <div class="workflow-flowchart__section workflow-flowchart__section--editable">
+                <div class="workflow-flowchart__section-title">{{ $t('adminSettings.workflow.revisionLoopTitle') }}</div>
+                <div class="workflow-flowchart__path">
+                  <template v-for="(status, statusIndex) in workflowEditableRevisionLoop">
+                    <CBadge
+                      :key="status.key"
+                      class="status-chip workflow-flowchart__chip workflow-flowchart__chip--editable"
+                      :color="getStatusChipColor(status.status)"
+                    >
+                      <component :is="'svg'" v-bind="svgProps" v-html="getStatusIcon(status.status)" />
+                      {{ status.label }}
+                    </CBadge>
+                    <span
+                      v-if="statusIndex < workflowEditableRevisionLoop.length - 1"
+                      :key="`${status.key}-arrow`"
+                      class="workflow-flowchart__arrow workflow-flowchart__arrow--editable"
+                    >
+                      →
+                    </span>
+                  </template>
+                </div>
+                <small class="text-muted d-block mt-2">
+                  {{ $t('adminSettings.workflow.revisionLoopNote') }}
+                </small>
+              </div>
+            </div>
+
+            <div class="workflow-flowchart__details-label">{{ $t('adminSettings.workflow.transitionMapTitle') }}</div>
+            <small class="text-muted d-block mb-3">
+              {{ $t('adminSettings.workflow.transitionMapNote') }}
+            </small>
             <div class="status-flow-list">
               <div
                 v-for="(toStatuses, fromStatus, index) in allowedTransitions"
@@ -238,22 +350,232 @@
         </CCard>
 
         <CCard class="mt-3">
-          <CCardHeader>Email Templates</CCardHeader>
+          <CCardHeader>{{ $t('adminSettings.email.templatesCard') }}</CCardHeader>
           <CCardBody>
             <CCallout color="warning" class="mb-3">
               <strong>{{ $t('adminSettings.email.templateNoteLabel') }}:</strong>
               {{ $t('adminSettings.email.templateNote') }}
             </CCallout>
+            <div class="template-create-card mb-4">
+              <div class="template-create-card__header">
+                <div>
+                  <div class="template-create-card__title">{{ $t('adminSettings.email.templateBuilder.createTitle') }}</div>
+                  <small class="text-muted">{{ $t('adminSettings.email.templateBuilder.createDescription') }}</small>
+                </div>
+                <CButton size="sm" color="primary" @click="addEmailTemplate">
+                  <CIcon name="cil-plus" class="mr-1" /> {{ $t('adminSettings.email.templateBuilder.addButton') }}
+                </CButton>
+              </div>
+              <CRow>
+                <CCol md="4" class="mb-3 mb-md-0">
+                  <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.nameLabel') }}</label>
+                  <input
+                    v-model="newEmailTemplate.displayName"
+                    type="text"
+                    class="form-control"
+                    :placeholder="$t('adminSettings.email.templateBuilder.namePlaceholder')"
+                  />
+                </CCol>
+                <CCol md="4" class="mb-3 mb-md-0">
+                  <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.actionLabel') }}</label>
+                  <multiselect
+                    class="template-multiselect"
+                    :value="getSelectedTemplateOptions(newEmailTemplate.eventKeys, emailTemplateActionOptions)"
+                    :options="emailTemplateActionOptions"
+                    :multiple="true"
+                    :close-on-select="false"
+                    :clear-on-select="false"
+                    :preserve-search="true"
+                    :show-labels="false"
+                    :placeholder="$t('adminSettings.email.templateBuilder.actionPlaceholder')"
+                    label="label"
+                    track-by="value"
+                    @input="setDraftTemplateSelection('eventKeys', $event)"
+                  />
+                  <small class="template-selection-summary d-block mt-2">
+                    {{ getTemplateSelectionSummary(newEmailTemplate.eventKeys, emailTemplateActionOptions, $t('adminSettings.email.templateBuilder.emptyActions')) }}
+                  </small>
+                </CCol>
+                <CCol md="4">
+                  <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.recipientLabel') }}</label>
+                  <multiselect
+                    class="template-multiselect"
+                    :value="getSelectedTemplateOptions(newEmailTemplate.recipientTargets, emailTemplateRecipientOptions)"
+                    :options="emailTemplateRecipientOptions"
+                    :multiple="true"
+                    :close-on-select="false"
+                    :clear-on-select="false"
+                    :preserve-search="true"
+                    :show-labels="false"
+                    :placeholder="$t('adminSettings.email.templateBuilder.recipientPlaceholder')"
+                    label="label"
+                    track-by="value"
+                    @input="setDraftTemplateSelection('recipientTargets', $event)"
+                  />
+                  <small class="template-selection-summary d-block mt-2">
+                    {{ getTemplateSelectionSummary(newEmailTemplate.recipientTargets, emailTemplateRecipientOptions, $t('adminSettings.email.templateBuilder.emptyRecipients')) }}
+                  </small>
+                </CCol>
+              </CRow>
+            </div>
             <details class="mb-3" v-for="(tpl, key) in emailTemplates" :key="key">
               <summary class="font-weight-bold mb-2">{{ getTemplateLabel(key) }}</summary>
-              <div class="mt-2">
-                <CInput :label="$t('adminSettings.email.subjectLabel')" v-model="emailTemplates[key].subject" />
-                <label>{{ $t('adminSettings.email.bodyLabel') }}</label>
-                <textarea class="form-control mb-2" rows="6" v-model="emailTemplates[key].body" />
-                <small v-pre class="text-muted d-block mb-2">ตัวแปรที่ใช้ได้: {{recipientName}} {{proposalCode}} {{projectTitle}} {{remarks}} {{meetingTitle}} {{meetingDate}} {{meetingTime}} {{participantRole}} {{consentViewUrl}} {{consentAcceptUrl}} {{consentRejectUrl}}</small>
-                <div class="d-flex" style="gap: 8px;">
-                  <CButton size="sm" color="primary" @click="saveTemplate(key)"><CIcon name="cil-save" class="mr-1" /> {{ $t('adminSettings.email.saveTplBtn') }}</CButton>
-                  <CButton size="sm" color="secondary" variant="outline" @click="resetTemplate(key)"><CIcon name="cil-reload" class="mr-1" /> {{ $t('adminSettings.email.resetTplBtn') }}</CButton>
+              <div class="mt-2 template-editor">
+                <div class="template-editor__main">
+                  <div class="template-meta mb-3">
+                    <div class="template-meta__header">
+                      <div class="template-meta__title">{{ $t('adminSettings.email.templateBuilder.settingsTitle') }}</div>
+                      <div class="d-flex align-items-center" style="gap: 8px;">
+                        <label class="template-toggle mb-0">
+                          <input v-model="emailTemplates[key].enabled" type="checkbox" />
+                          <span>{{ $t('adminSettings.email.templateBuilder.enabledLabel') }}</span>
+                        </label>
+                        <CButton
+                          v-if="emailTemplates[key].isCustom"
+                          size="sm"
+                          color="danger"
+                          variant="outline"
+                          @click="removeEmailTemplate(key)"
+                        >
+                          <CIcon name="cil-trash" class="mr-1" /> {{ $t('adminSettings.email.templateBuilder.removeButton') }}
+                        </CButton>
+                      </div>
+                    </div>
+                    <CRow>
+                      <CCol md="4" class="mb-3 mb-md-0">
+                        <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.nameLabel') }}</label>
+                        <input v-model="emailTemplates[key].displayName" type="text" class="form-control" :placeholder="$t('adminSettings.email.templateBuilder.displayNamePlaceholder')" />
+                        <small class="text-muted d-block mt-1">{{ $t('adminSettings.email.templateBuilder.keyLabel', { key }) }}</small>
+                      </CCol>
+                      <CCol md="4" class="mb-3 mb-md-0">
+                        <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.actionLabel') }}</label>
+                        <multiselect
+                          class="template-multiselect"
+                          :value="getSelectedTemplateOptions(emailTemplates[key].eventKeys, emailTemplateActionOptions)"
+                          :options="emailTemplateActionOptions"
+                          :multiple="true"
+                          :close-on-select="false"
+                          :clear-on-select="false"
+                          :preserve-search="true"
+                          :show-labels="false"
+                          :placeholder="$t('adminSettings.email.templateBuilder.actionPlaceholder')"
+                          label="label"
+                          track-by="value"
+                          @input="setTemplateSelection(key, 'eventKeys', $event)"
+                        />
+                        <small class="template-selection-summary d-block mt-2">
+                          {{ getTemplateSelectionSummary(emailTemplates[key].eventKeys, emailTemplateActionOptions, $t('adminSettings.email.templateBuilder.emptyActions')) }}
+                        </small>
+                      </CCol>
+                      <CCol md="4">
+                        <label class="template-meta__label">{{ $t('adminSettings.email.templateBuilder.recipientLabel') }}</label>
+                        <multiselect
+                          class="template-multiselect"
+                          :value="getSelectedTemplateOptions(emailTemplates[key].recipientTargets, emailTemplateRecipientOptions)"
+                          :options="emailTemplateRecipientOptions"
+                          :multiple="true"
+                          :close-on-select="false"
+                          :clear-on-select="false"
+                          :preserve-search="true"
+                          :show-labels="false"
+                          :placeholder="$t('adminSettings.email.templateBuilder.recipientPlaceholder')"
+                          label="label"
+                          track-by="value"
+                          @input="setTemplateSelection(key, 'recipientTargets', $event)"
+                        />
+                        <small class="template-selection-summary d-block mt-2">
+                          {{ getTemplateSelectionSummary(emailTemplates[key].recipientTargets, emailTemplateRecipientOptions, $t('adminSettings.email.templateBuilder.emptyRecipients')) }}
+                        </small>
+                      </CCol>
+                    </CRow>
+                  </div>
+                  <div class="template-variable-toolbar mb-3">
+                    <div class="template-variable-toolbar__label">{{ $t('adminSettings.email.templateBuilder.variableSubjectLabel') }}</div>
+                    <div class="template-variable-toolbar__chips">
+                      <button
+                        v-for="variable in templateVariableOptions"
+                        :key="`${key}-subject-${variable.token}`"
+                        type="button"
+                        class="template-variable-toolbar__chip"
+                        @click="insertTemplateVariable(key, 'subject', variable.token)"
+                      >
+                        {{ variable.label }}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-group mb-3">
+                    <label :for="`email-template-subject-${key}`">{{ $t('adminSettings.email.subjectLabel') }}</label>
+                    <input
+                      :id="`email-template-subject-${key}`"
+                      :ref="`email-template-subject-${key}`"
+                      v-model="emailTemplates[key].subject"
+                      type="text"
+                      class="form-control"
+                      @focus="markTemplateFieldFocus(key, 'subject')"
+                      @click="markTemplateFieldFocus(key, 'subject')"
+                    />
+                  </div>
+                  <div class="template-variable-toolbar mb-2">
+                    <div class="template-variable-toolbar__label">{{ $t('adminSettings.email.templateBuilder.variableBodyLabel') }}</div>
+                    <div class="template-variable-toolbar__chips">
+                      <button
+                        v-for="variable in templateVariableOptions"
+                        :key="`${key}-body-${variable.token}`"
+                        type="button"
+                        class="template-variable-toolbar__chip template-variable-toolbar__chip--muted"
+                        @click="insertTemplateVariable(key, 'body', variable.token)"
+                      >
+                        {{ variable.label }}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="template-variable-toolbar mb-2">
+                    <div class="template-variable-toolbar__label">{{ $t('adminSettings.email.templateBuilder.formattingLabel') }}</div>
+                    <div class="template-variable-toolbar__chips">
+                      <button
+                        v-for="formatting in templateFormattingOptions"
+                        :key="`${key}-format-${formatting.label}`"
+                        type="button"
+                        class="template-variable-toolbar__chip template-variable-toolbar__chip--format"
+                        @click="insertTemplateFormatting(key, formatting.text)"
+                      >
+                        {{ formatting.label }}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-group mb-2">
+                    <label :for="`email-template-body-${key}`">{{ $t('adminSettings.email.bodyLabel') }}</label>
+                    <textarea
+                      :id="`email-template-body-${key}`"
+                      :ref="`email-template-body-${key}`"
+                      class="form-control template-editor__textarea"
+                      rows="6"
+                      v-model="emailTemplates[key].body"
+                      @focus="markTemplateFieldFocus(key, 'body')"
+                      @click="markTemplateFieldFocus(key, 'body')"
+                    />
+                  </div>
+                  <small class="text-muted d-block mb-2">{{ $t('adminSettings.email.templateBuilder.insertHint') }} <span class="template-variable-toolbar__token">{{proposalCode}}</span></small>
+                  <div class="d-flex" style="gap: 8px;">
+                    <CButton size="sm" color="primary" @click="saveTemplate(key)"><CIcon name="cil-save" class="mr-1" /> {{ $t('adminSettings.email.saveTplBtn') }}</CButton>
+                    <CButton size="sm" color="secondary" variant="outline" @click="resetTemplate(key)"><CIcon name="cil-reload" class="mr-1" /> {{ $t('adminSettings.email.resetTplBtn') }}</CButton>
+                  </div>
+                </div>
+                <div class="template-editor__preview">
+                  <div class="template-preview">
+                  <div class="template-preview__header">
+                    <span class="template-preview__title">{{ $t('adminSettings.email.templateBuilder.previewTitle') }}</span>
+                    <small class="text-muted">{{ $t('adminSettings.email.templateBuilder.previewDescription') }}</small>
+                  </div>
+                  <div class="template-preview__field">
+                    <div class="template-preview__label">{{ $t('adminSettings.email.templateBuilder.previewSubjectLabel') }}</div>
+                    <div class="template-preview__value">{{ renderTemplatePreview(emailTemplates[key].subject) }}</div>
+                  </div>
+                  <div class="template-preview__field">
+                    <div class="template-preview__label">{{ $t('adminSettings.email.templateBuilder.previewBodyLabel') }}</div>
+                    <div class="template-preview__value template-preview__value--body">{{ renderTemplatePreview(emailTemplates[key].body) }}</div>
+                  </div>
+                </div>
                 </div>
               </div>
             </details>
@@ -292,7 +614,7 @@
                 <thead>
                   <tr>
                     <th style="min-width:140px;">{{ $t('adminSettings.email.logTimeCol') }}</th>
-                    <th>Event</th>
+                    <th>{{ $t('adminSettings.email.logEventCol') }}</th>
                     <th>{{ $t('adminSettings.email.logRecipientCol') }}</th>
                     <th>{{ $t('adminSettings.email.logProjectCol') }}</th>
                     <th style="width:90px;">{{ $t('adminSettings.email.logStatusCol') }}</th>
@@ -332,25 +654,149 @@
       </CTab>
     </CTabs>
 
+    <transition name="fade">
+      <div
+        v-if="isEmailWidgetOpen"
+        class="admin-email-widget__backdrop"
+        @click="closeEmailWidget"
+      />
+    </transition>
+
+    <div
+      v-if="isEmailWidgetOpen"
+      id="admin-email-widget-panel"
+      class="admin-email-widget__panel"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="$t('adminSettings.email.widget.dialogLabel')"
+    >
+      <div class="admin-email-widget__header d-flex align-items-start justify-content-between px-3 py-3">
+        <div>
+          <div class="admin-email-widget__eyebrow">{{ $t('adminSettings.email.widget.eyebrow') }}</div>
+          <h5 class="mb-1">{{ $t('adminSettings.email.widget.title') }}</h5>
+          <small class="text-muted d-block">{{ $t('adminSettings.email.widget.description') }}</small>
+        </div>
+        <button
+          type="button"
+          class="admin-email-widget__close-btn"
+          :aria-label="$t('adminSettings.email.widget.closeLabel')"
+          @click="closeEmailWidget"
+        >
+          <CIcon name="cil-x" />
+        </button>
+      </div>
+
+      <div class="admin-email-widget__body px-3 py-3">
+        <CAlert
+          v-if="emailWidgetFeedback.message"
+          show
+          class="mb-3"
+          :color="emailWidgetFeedback.type === 'success' ? 'success' : 'danger'"
+        >
+          {{ emailWidgetFeedback.message }}
+        </CAlert>
+
+        <div class="form-group mb-3">
+          <label for="admin-email-widget-template">{{ $t('adminSettings.email.widget.templateLabel') }}</label>
+          <select
+            id="admin-email-widget-template"
+            class="form-control"
+            :value="emailWidgetForm.templateKey"
+            @change="onWidgetTemplateChange"
+          >
+            <option value="">{{ $t('adminSettings.email.widget.noTemplateOption') }}</option>
+            <option
+              v-for="(template, key) in emailTemplates"
+              :key="`widget-template-${key}`"
+              :value="key"
+            >
+              {{ getTemplateLabel(key) }}
+            </option>
+          </select>
+        </div>
+
+        <CInput
+          id="admin-email-widget-recipient"
+          class="mb-3"
+          :label="$t('adminSettings.email.widget.recipientLabel')"
+          type="email"
+          v-model="emailWidgetForm.recipientEmail"
+          :placeholder="$t('adminSettings.email.widget.recipientPlaceholder')"
+        />
+
+        <CInput
+          id="admin-email-widget-sender"
+          class="mb-3"
+          :label="$t('adminSettings.email.widget.senderLabel')"
+          v-model="emailWidgetForm.senderName"
+          :placeholder="$t('adminSettings.email.widget.senderPlaceholder')"
+        />
+
+        <CInput
+          id="admin-email-widget-subject"
+          class="mb-3"
+          :label="$t('adminSettings.email.subjectLabel')"
+          v-model="emailWidgetForm.subject"
+          :placeholder="$t('adminSettings.email.widget.subjectPlaceholder')"
+        />
+
+        <div class="form-group mb-0">
+          <label for="admin-email-widget-message">{{ $t('adminSettings.email.bodyLabel') }}</label>
+          <textarea
+            id="admin-email-widget-message"
+            v-model="emailWidgetForm.message"
+            class="form-control admin-email-widget__textarea"
+            rows="7"
+            :placeholder="$t('adminSettings.email.widget.messagePlaceholder')"
+          />
+        </div>
+      </div>
+
+      <div class="admin-email-widget__footer d-flex align-items-center justify-content-between px-3 py-3">
+        <small class="text-muted pr-3">{{ $t('adminSettings.email.widget.closeHint') }}</small>
+        <CButton
+          color="primary"
+          :disabled="emailWidgetSending"
+          @click="sendEmailFromWidget"
+        >
+          <CSpinner v-if="emailWidgetSending" size="sm" class="mr-2" />
+          <CIcon v-else name="cil-paper-plane" class="mr-1" />
+          {{ emailWidgetSending ? $t('adminSettings.email.widget.sendingButton') : $t('adminSettings.email.widget.sendButton') }}
+        </CButton>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="admin-email-widget__fab"
+      :class="{ 'is-open': isEmailWidgetOpen }"
+      :aria-expanded="String(isEmailWidgetOpen)"
+      aria-controls="admin-email-widget-panel"
+      :aria-label="isEmailWidgetOpen ? $t('adminSettings.email.widget.closeFabLabel') : $t('adminSettings.email.widget.openFabLabel')"
+      @click="toggleEmailWidget"
+    >
+      <CIcon :name="isEmailWidgetOpen ? 'cil-x' : 'cil-envelope-closed'" size="lg" />
+    </button>
+
     <CModal class="send-modal" :show.sync="showAddSettingModal" centered :title="$t('adminSettings.modal.addTitle')" :close-on-backdrop="false">
       <template #body-wrapper>
         <div class="send-modal-inner" style="padding-left:36px;padding-right:36px;box-sizing:border-box;">
           <div class="form-group">
-            <label>Key <span class="text-required">*</span></label>
-            <input class="form-control" v-model="newSetting.key" placeholder="use_snake_case" />
+            <label>{{ $t('adminSettings.modal.keyLabel') }} <span class="text-required">*</span></label>
+            <input class="form-control" v-model="newSetting.key" :placeholder="$t('adminSettings.modal.keyPlaceholder')" />
           </div>
           <div class="form-group">
-            <label>Value <span class="text-required">*</span></label>
+            <label>{{ $t('adminSettings.modal.valueLabel') }} <span class="text-required">*</span></label>
             <input class="form-control" v-model="newSetting.value" />
           </div>
           <CSelect
-            label="Group"
+            :label="$t('adminSettings.modal.groupLabel')"
             :value="newSetting.group"
             :options="[
-              { value: 'general', label: 'general' },
-              { value: 'workflow', label: 'workflow' },
-              { value: 'email', label: 'email' },
-              { value: 'system', label: 'system' }
+              { value: 'general', label: $t('adminSettings.modal.groupOptions.general') },
+              { value: 'workflow', label: $t('adminSettings.modal.groupOptions.workflow') },
+              { value: 'email', label: $t('adminSettings.modal.groupOptions.email') },
+              { value: 'system', label: $t('adminSettings.modal.groupOptions.system') }
             ]"
             @change="newSetting.group = getSelectValue($event)"
           />
@@ -373,6 +819,8 @@ import AdminUsersManagement from '@/components/admin/AdminUsersManagement.vue'
 import AdminFundingBudgetSettings from '@/ResearchFormRS/admin/AdminFundingBudgetSettings.vue'
 import AdminReviewTemplateSettings from '@/ResearchFormRS/admin/AdminReviewTemplateSettings.vue'
 import AdminRolePageAccessSettings from '@/ResearchFormRS/admin/AdminRolePageAccessSettings.vue'
+import Multiselect from 'vue-multiselect'
+import 'vue-multiselect/dist/vue-multiselect.min.css'
 import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 import Swal from 'sweetalert2'
 import {
@@ -427,6 +875,70 @@ const DEFAULT_TEMPLATES = {
   }
 }
 
+const TEMPLATE_VARIABLE_OPTIONS = [
+  { labelKey: 'adminSettings.email.templateVariables.recipientName', token: '{{recipientName}}' },
+  { labelKey: 'adminSettings.email.templateVariables.proposalCode', token: '{{proposalCode}}' },
+  { labelKey: 'adminSettings.email.templateVariables.projectTitle', token: '{{projectTitle}}' },
+  { labelKey: 'adminSettings.email.templateVariables.remarks', token: '{{remarks}}' },
+  { labelKey: 'adminSettings.email.templateVariables.meetingTitle', token: '{{meetingTitle}}' },
+  { labelKey: 'adminSettings.email.templateVariables.meetingDate', token: '{{meetingDate}}' },
+  { labelKey: 'adminSettings.email.templateVariables.meetingTime', token: '{{meetingTime}}' },
+  { labelKey: 'adminSettings.email.templateVariables.participantRole', token: '{{participantRole}}' },
+  { labelKey: 'adminSettings.email.templateVariables.consentViewUrl', token: '{{consentViewUrl}}' },
+  { labelKey: 'adminSettings.email.templateVariables.consentAcceptUrl', token: '{{consentAcceptUrl}}' },
+  { labelKey: 'adminSettings.email.templateVariables.consentRejectUrl', token: '{{consentRejectUrl}}' }
+]
+
+const TEMPLATE_FORMATTING_OPTIONS = [
+  { labelKey: 'adminSettings.email.templateFormatting.newLine', text: '\n' },
+  { labelKey: 'adminSettings.email.templateFormatting.greeting', text: 'เรียน {{recipientName}}\n\n' },
+  { labelKey: 'adminSettings.email.templateFormatting.signature', text: '\n\nขอแสดงความนับถือ\nส่วนบริหารงานวิจัย มหาวิทยาลัยแม่ฟ้าหลวง' }
+]
+
+const TEMPLATE_PREVIEW_VALUES = {
+  recipientName: 'ดร.สมชาย ใจดี',
+  proposalCode: 'MFU-RES-2026-014',
+  projectTitle: 'การพัฒนาระบบติดตามข้อเสนอโครงการวิจัย',
+  remarks: 'กรุณาตรวจสอบงบประมาณหมวดค่าครุภัณฑ์และแนบเอกสารเพิ่มเติม',
+  meetingTitle: 'ประชุมคณะกรรมการวิจัย ครั้งที่ 3/2569',
+  meetingDate: '20 เมษายน 2569',
+  meetingTime: '13:30 น.',
+  participantRole: 'ผู้ร่วมวิจัย',
+  consentViewUrl: 'https://research.mfu.ac.th/consent/view/MFU-RES-2026-014',
+  consentAcceptUrl: 'https://research.mfu.ac.th/consent/accept/MFU-RES-2026-014',
+  consentRejectUrl: 'https://research.mfu.ac.th/consent/reject/MFU-RES-2026-014'
+}
+
+const EMAIL_TEMPLATE_ACTION_OPTIONS = [
+  { value: 'proposal_submitted', labelKey: 'adminSettings.email.templateActions.proposal_submitted' },
+  { value: 'proposal_resubmitted', labelKey: 'adminSettings.email.templateActions.proposal_resubmitted' },
+  { value: 'proposal_meeting_in_progress', labelKey: 'adminSettings.email.templateActions.proposal_meeting_in_progress' },
+  { value: 'proposal_status_restored', labelKey: 'adminSettings.email.templateActions.proposal_status_restored' },
+  { value: 'meeting_completed', labelKey: 'adminSettings.email.templateActions.meeting_completed' },
+  { value: 'chairman_assigned', labelKey: 'adminSettings.email.templateActions.chairman_assigned' },
+  { value: 'chairman_approved', labelKey: 'adminSettings.email.templateActions.chairman_approved' },
+  { value: 'chairman_rejected', labelKey: 'adminSettings.email.templateActions.chairman_rejected' },
+  { value: 'finance_officer_assigned', labelKey: 'adminSettings.email.templateActions.finance_officer_assigned' },
+  { value: 'finance_review_submitted', labelKey: 'adminSettings.email.templateActions.finance_review_submitted' },
+  { value: 'review_certified', labelKey: 'adminSettings.email.templateActions.review_certified' },
+  { value: 'review_rejected_by_admin', labelKey: 'adminSettings.email.templateActions.review_rejected_by_admin' },
+  { value: 'revision_requested', labelKey: 'adminSettings.email.templateActions.revision_requested' },
+  { value: 'approved', labelKey: 'adminSettings.email.templateActions.approved' },
+  { value: 'rejected', labelKey: 'adminSettings.email.templateActions.rejected' },
+  { value: 'meeting_scheduled', labelKey: 'adminSettings.email.templateActions.meeting_scheduled' },
+  { value: 'committee_assigned', labelKey: 'adminSettings.email.templateActions.committee_assigned' },
+  { value: 'collaboration_confirmation', labelKey: 'adminSettings.email.templateActions.collaboration_confirmation' }
+]
+
+const EMAIL_TEMPLATE_RECIPIENT_OPTIONS = [
+  { value: 'current_recipients', labelKey: 'adminSettings.email.templateRecipients.current_recipients' },
+  { value: 'applicant', labelKey: 'adminSettings.email.templateRecipients.applicant' },
+  { value: 'committee', labelKey: 'adminSettings.email.templateRecipients.committee' },
+  { value: 'chairman', labelKey: 'adminSettings.email.templateRecipients.chairman' },
+  { value: 'finance_officer', labelKey: 'adminSettings.email.templateRecipients.finance_officer' },
+  { value: 'admin', labelKey: 'adminSettings.email.templateRecipients.admin' }
+]
+
 const STATUS_ICONS = {
   draft:                  '<path d="M11 3l2 2-7 7H4v-2L11 3z"/>',
   pending_confirm:        '<circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/>',
@@ -465,7 +977,7 @@ const SETTINGS_TAB_KEY_BY_INDEX = ['general', 'funding_budget', 'role_access', '
 export default {
   name: 'AdminSettings',
   mixins: [centerLoadingMixin],
-  components: { AdminUsersManagement, AdminFundingBudgetSettings, AdminReviewTemplateSettings, AdminRolePageAccessSettings },
+  components: { AdminUsersManagement, AdminFundingBudgetSettings, AdminReviewTemplateSettings, AdminRolePageAccessSettings, Multiselect },
   data () {
     return {
       activeTab: 0,
@@ -525,7 +1037,17 @@ export default {
       manualAdminNotificationEmailEnabled: true,
       adminNotificationEmailEnabled: true,
       workflowOnlyEmailEnabled: false,
-      emailTemplates: JSON.parse(JSON.stringify(DEFAULT_TEMPLATES)),
+      emailTemplates: Object.keys(DEFAULT_TEMPLATES).reduce((accumulator, key) => {
+        accumulator[key] = {
+          ...JSON.parse(JSON.stringify(DEFAULT_TEMPLATES[key])),
+          displayName: '',
+          eventKeys: [key],
+          recipientTargets: ['current_recipients'],
+          enabled: true,
+          isCustom: false
+        }
+        return accumulator
+      }, {}),
       testRecipientEmail: '',
       testTemplateKey: '',
 
@@ -539,6 +1061,12 @@ export default {
       emailWidgetSending: false,
       emailWidgetFeedback: { type: '', message: '' },
       emailWidgetForm: { senderName: '', subject: '', recipientEmail: '', message: '', templateKey: '' },
+      templateEditorFocus: { key: '', field: 'body' },
+      newEmailTemplate: {
+        displayName: '',
+        eventKeys: [],
+        recipientTargets: ['current_recipients']
+      },
 
       showAddSettingModal: false,
       newSetting: { key: '', value: '', group: 'general', description: '' },
@@ -552,6 +1080,100 @@ export default {
     allowedTransitions () {
       return PROPOSAL_ALLOWED_TRANSITIONS
     },
+    workflowReadOnlyPaths () {
+      return [
+        {
+          key: 'main_approval_path',
+          title: this.$t('adminSettings.workflow.readOnlyPaths.main'),
+          statuses: ['pending_confirm', 'submitted', 'faculty_review_pending', 'faculty_approved', 'office_received', 'finance_budget_checking', 'document_checking', 'assigned_to_committee', 'under_review', 'committee_valuated', 'approved', 'announced']
+        },
+        {
+          key: 'meeting_path',
+          title: this.$t('adminSettings.workflow.readOnlyPaths.meeting'),
+          statuses: ['office_received', 'meeting_in_progress', 'meeting_completed', 'document_checking']
+        },
+        {
+          key: 'faculty_rejected_path',
+          title: this.$t('adminSettings.workflow.readOnlyPaths.facultyRejected'),
+          statuses: ['faculty_review_pending', 'faculty_rejected', 'announced']
+        },
+        {
+          key: 'committee_rejected_path',
+          title: this.$t('adminSettings.workflow.readOnlyPaths.committeeRejected'),
+          statuses: ['committee_valuated', 'rejected', 'announced']
+        }
+      ]
+    },
+    workflowPrimaryReadOnlyPath () {
+      return this.workflowReadOnlyPaths[0] || { title: '', statuses: [] }
+    },
+    workflowPresentationSteps () {
+      return [
+        {
+          key: 'intake',
+          status: 'pending_confirm',
+          label: this.$t('adminSettings.workflow.presentationSteps.intake.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.intake.description')
+        },
+        {
+          key: 'faculty',
+          status: 'faculty_review_pending',
+          label: this.$t('adminSettings.workflow.presentationSteps.faculty.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.faculty.description')
+        },
+        {
+          key: 'office',
+          status: 'office_received',
+          label: this.$t('adminSettings.workflow.presentationSteps.office.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.office.description')
+        },
+        {
+          key: 'budget',
+          status: 'finance_budget_checking',
+          label: this.$t('adminSettings.workflow.presentationSteps.budget.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.budget.description')
+        },
+        {
+          key: 'committee',
+          status: 'under_review',
+          label: this.$t('adminSettings.workflow.presentationSteps.committee.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.committee.description')
+        },
+        {
+          key: 'result',
+          status: 'announced',
+          label: this.$t('adminSettings.workflow.presentationSteps.result.label'),
+          description: this.$t('adminSettings.workflow.presentationSteps.result.description')
+        }
+      ]
+    },
+    workflowSecondaryReadOnlyPaths () {
+      return this.workflowReadOnlyPaths.slice(1)
+    },
+    workflowEditableRevisionLoop () {
+      return [
+        {
+          key: 'revision_requested',
+          status: 'revision_requested',
+          label: this.$t('adminSettings.workflow.editableSteps.revisionRequested')
+        },
+        {
+          key: 'resubmitted',
+          status: 'resubmitted',
+          label: this.$t('adminSettings.workflow.editableSteps.resubmitted')
+        },
+        {
+          key: 'second_round_review',
+          status: 'second_round_review',
+          label: this.$t('adminSettings.workflow.editableSteps.secondRoundReview')
+        },
+        {
+          key: 'committee_valuated',
+          status: 'committee_valuated',
+          label: this.$t('adminSettings.workflow.editableSteps.reviewCompleted')
+        }
+      ]
+    },
     centerLoadingActive () {
       return Boolean(this.loadingSettings || this.emailLogLoading || this.emailWidgetSending)
     },
@@ -563,6 +1185,30 @@ export default {
         { key: 'step4', title: this.$t('adminSettings.workflow.step4Title'), description: this.$t('adminSettings.workflow.step4Desc') },
         { key: 'step5', title: this.$t('adminSettings.workflow.step5Title'), description: this.$t('adminSettings.workflow.step5Desc') }
       ]
+    },
+    templateVariableOptions () {
+      return TEMPLATE_VARIABLE_OPTIONS.map((option) => ({
+        ...option,
+        label: this.$t(option.labelKey)
+      }))
+    },
+    templateFormattingOptions () {
+      return TEMPLATE_FORMATTING_OPTIONS.map((option) => ({
+        ...option,
+        label: this.$t(option.labelKey)
+      }))
+    },
+    emailTemplateActionOptions () {
+      return EMAIL_TEMPLATE_ACTION_OPTIONS.map((option) => ({
+        ...option,
+        label: this.$t(option.labelKey)
+      }))
+    },
+    emailTemplateRecipientOptions () {
+      return EMAIL_TEMPLATE_RECIPIENT_OPTIONS.map((option) => ({
+        ...option,
+        label: this.$t(option.labelKey)
+      }))
     }
   },
   mounted () {
@@ -584,11 +1230,247 @@ export default {
       const key = 'proposalStatus.' + status
       return this.$te(key) ? this.$t(key) : (STATUS_LABELS[status] || status)
     },
+    getWorkflowBusinessStatusLabel (status) {
+      const key = `adminSettings.workflow.businessStatusLabels.${status}`
+      return this.$te(key) ? this.$t(key) : this.getStatusLabel(status)
+    },
     getStatusIcon (status) {
       return STATUS_ICONS[status] || ''
     },
     getStatusChipColor (status) {
       return STATUS_COLORS[status] || 'secondary'
+    },
+    normalizeTemplateKey (value) {
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+    },
+    normalizeTemplateSelectionList (values, allowedOptions = [], fallback = []) {
+      const allowed = new Set((Array.isArray(allowedOptions) ? allowedOptions : []).map((item) => String(item.value || '').trim()).filter(Boolean))
+      const source = Array.isArray(values) ? values : fallback
+      const normalized = Array.from(new Set((Array.isArray(source) ? source : [])
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+        .filter((item) => allowed.has(item))))
+      return normalized.length > 0 ? normalized : fallback.filter((item) => allowed.has(item))
+    },
+    normalizeEmailTemplateDefinition (key, rawTemplate = {}, fallbackTemplate = null) {
+      const fallback = fallbackTemplate || {}
+      const normalizedKey = this.normalizeTemplateKey(key)
+      return {
+        displayName: String((rawTemplate && (rawTemplate.displayName || rawTemplate.name)) || (fallback.displayName || '') || '').trim(),
+        subject: String((rawTemplate && rawTemplate.subject) || fallback.subject || '').trim(),
+        body: String((rawTemplate && rawTemplate.body) || fallback.body || ''),
+        eventKeys: this.normalizeTemplateSelectionList(rawTemplate && (rawTemplate.eventKeys || rawTemplate.actionKeys), this.emailTemplateActionOptions, fallback.eventKeys || [normalizedKey]),
+        recipientTargets: this.normalizeTemplateSelectionList(rawTemplate && (rawTemplate.recipientTargets || rawTemplate.recipients), this.emailTemplateRecipientOptions, fallback.recipientTargets || ['current_recipients']),
+        enabled: rawTemplate && rawTemplate.enabled !== undefined ? this.toBool(rawTemplate.enabled, true) : this.toBool(fallback.enabled, true),
+        isCustom: rawTemplate && rawTemplate.isCustom !== undefined ? this.toBool(rawTemplate.isCustom, false) : this.toBool(fallback.isCustom, false)
+      }
+    },
+    normalizeEmailTemplatesConfig (rawTemplates = {}) {
+      const defaults = Object.keys(DEFAULT_TEMPLATES).reduce((accumulator, key) => {
+        accumulator[key] = this.normalizeEmailTemplateDefinition(key, DEFAULT_TEMPLATES[key], {
+          subject: DEFAULT_TEMPLATES[key].subject,
+          body: DEFAULT_TEMPLATES[key].body,
+          eventKeys: [key],
+          recipientTargets: ['current_recipients'],
+          enabled: true,
+          isCustom: false
+        })
+        return accumulator
+      }, {})
+
+      if (!rawTemplates || typeof rawTemplates !== 'object' || Array.isArray(rawTemplates)) return defaults
+
+      Object.keys(rawTemplates).forEach((key) => {
+        const normalizedKey = this.normalizeTemplateKey(key)
+        if (!normalizedKey) return
+        defaults[normalizedKey] = this.normalizeEmailTemplateDefinition(normalizedKey, rawTemplates[key], {
+          ...(defaults[normalizedKey] || {}),
+          eventKeys: (defaults[normalizedKey] && defaults[normalizedKey].eventKeys) || [normalizedKey],
+          recipientTargets: (defaults[normalizedKey] && defaults[normalizedKey].recipientTargets) || ['current_recipients'],
+          enabled: defaults[normalizedKey] ? defaults[normalizedKey].enabled : true,
+          isCustom: defaults[normalizedKey] ? defaults[normalizedKey].isCustom : true
+        })
+      })
+
+      return defaults
+    },
+    getSelectedTemplateOptions (selectedValues = [], options = []) {
+      const selectedSet = new Set((Array.isArray(selectedValues) ? selectedValues : []).map((item) => String(item || '').trim()).filter(Boolean))
+      return (Array.isArray(options) ? options : []).filter((option) => selectedSet.has(String(option.value || '').trim()))
+    },
+    getTemplateSelectionSummary (selectedValues = [], options = [], emptyLabel = '-') {
+      const labels = this.getSelectedTemplateOptions(selectedValues, options)
+        .map((option) => String(option.label || '').trim())
+        .filter(Boolean)
+      return labels.length > 0 ? labels.join(' | ') : emptyLabel
+    },
+    toTemplateSelectionValues (selectedOptions = [], allowedOptions = [], fallback = []) {
+      const values = (Array.isArray(selectedOptions) ? selectedOptions : [])
+        .map((option) => (option && typeof option === 'object' ? option.value : option))
+      return this.normalizeTemplateSelectionList(values, allowedOptions, fallback)
+    },
+    setDraftTemplateSelection (field, selectedOptions = []) {
+      const allowedOptions = field === 'eventKeys' ? this.emailTemplateActionOptions : this.emailTemplateRecipientOptions
+      const fallback = field === 'recipientTargets' ? ['current_recipients'] : []
+      this.$set(this.newEmailTemplate, field, this.toTemplateSelectionValues(selectedOptions, allowedOptions, fallback))
+    },
+    toggleDraftTemplateSelection (field, value, checked) {
+      const current = Array.isArray(this.newEmailTemplate[field]) ? this.newEmailTemplate[field] : []
+      const next = checked ? [...current, value] : current.filter((item) => item !== value)
+      this.$set(this.newEmailTemplate, field, Array.from(new Set(next)))
+    },
+    setTemplateSelection (templateKey, field, selectedOptions = []) {
+      const template = this.emailTemplates[templateKey]
+      if (!template) return
+      const allowedOptions = field === 'eventKeys' ? this.emailTemplateActionOptions : this.emailTemplateRecipientOptions
+      const fallback = field === 'recipientTargets' ? ['current_recipients'] : []
+      this.$set(this.emailTemplates, templateKey, {
+        ...template,
+        [field]: this.toTemplateSelectionValues(selectedOptions, allowedOptions, fallback)
+      })
+    },
+    toggleTemplateSelection (templateKey, field, value, checked) {
+      const template = this.emailTemplates[templateKey]
+      if (!template) return
+      const current = Array.isArray(template[field]) ? template[field] : []
+      const next = checked ? [...current, value] : current.filter((item) => item !== value)
+      this.$set(this.emailTemplates, templateKey, {
+        ...template,
+        [field]: Array.from(new Set(next))
+      })
+    },
+    async addEmailTemplate () {
+      const displayName = String(this.newEmailTemplate.displayName || '').trim()
+      if (!displayName) {
+        await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.addNameRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.addNameRequiredText') })
+        return
+      }
+
+      const eventKeys = this.normalizeTemplateSelectionList(this.newEmailTemplate.eventKeys, this.emailTemplateActionOptions, [])
+      const recipientTargets = this.normalizeTemplateSelectionList(this.newEmailTemplate.recipientTargets, this.emailTemplateRecipientOptions, ['current_recipients'])
+      if (eventKeys.length === 0) {
+        await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.addActionRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.addActionRequiredText') })
+        return
+      }
+      if (recipientTargets.length === 0) {
+        await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.addRecipientRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.addRecipientRequiredText') })
+        return
+      }
+
+      const baseKey = this.normalizeTemplateKey(displayName)
+      if (!baseKey) {
+        await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.invalidNameTitle'), text: this.$t('adminSettings.email.templateMessages.invalidNameText') })
+        return
+      }
+
+      let templateKey = baseKey
+      let counter = 2
+      while (this.emailTemplates[templateKey]) {
+        templateKey = `${baseKey}_${counter}`
+        counter += 1
+      }
+
+      this.$set(this.emailTemplates, templateKey, this.normalizeEmailTemplateDefinition(templateKey, {
+        displayName,
+        subject: '',
+        body: '',
+        eventKeys,
+        recipientTargets,
+        enabled: true,
+        isCustom: true
+      }, {
+        eventKeys,
+        recipientTargets,
+        enabled: true,
+        isCustom: true
+      }))
+
+      this.newEmailTemplate = {
+        displayName: '',
+        eventKeys: [],
+        recipientTargets: ['current_recipients']
+      }
+    },
+    async removeEmailTemplate (templateKey) {
+      const template = this.emailTemplates[templateKey]
+      if (!template || !template.isCustom) return
+      const result = await Swal.fire({
+        icon: 'warning',
+        title: this.$t('adminSettings.email.templateMessages.removeConfirmTitle', { label: this.getTemplateLabel(templateKey) }),
+        text: this.$t('adminSettings.email.templateMessages.removeConfirmText'),
+        showCancelButton: true,
+        confirmButtonText: this.$t('adminSettings.email.templateBuilder.removeButton'),
+        cancelButtonText: this.$t('adminSettings.modal.cancelBtn'),
+        confirmButtonColor: '#e55353'
+      })
+      if (!result.isConfirmed) return
+      this.$delete(this.emailTemplates, templateKey)
+    },
+    markTemplateFieldFocus (templateKey, field) {
+      this.templateEditorFocus = { key: templateKey, field }
+    },
+    getTemplateEditorElement (templateKey, field) {
+      const refKey = `email-template-${field}-${templateKey}`
+      const ref = this.$refs[refKey]
+      if (Array.isArray(ref)) return ref[0] || null
+      if (ref && ref.$el) return ref.$el.querySelector('input, textarea')
+      return ref || null
+    },
+    insertTemplateText (templateKey, field, text) {
+      const targetField = field === 'subject' ? 'subject' : 'body'
+      const template = this.emailTemplates[templateKey]
+      if (!template) return
+
+      const currentValue = String(template[targetField] || '')
+      const element = this.getTemplateEditorElement(templateKey, targetField)
+      if (!element || typeof element.selectionStart !== 'number' || typeof element.selectionEnd !== 'number') {
+        this.$set(this.emailTemplates, templateKey, {
+          ...template,
+          [targetField]: `${currentValue}${text}`
+        })
+        this.markTemplateFieldFocus(templateKey, targetField)
+        return
+      }
+
+      const start = element.selectionStart
+      const end = element.selectionEnd
+      const nextValue = `${currentValue.slice(0, start)}${text}${currentValue.slice(end)}`
+      this.$set(this.emailTemplates, templateKey, {
+        ...template,
+        [targetField]: nextValue
+      })
+      this.markTemplateFieldFocus(templateKey, targetField)
+
+      this.$nextTick(() => {
+        const nextElement = this.getTemplateEditorElement(templateKey, targetField)
+        if (!nextElement || typeof nextElement.focus !== 'function') return
+        const nextCursor = start + text.length
+        nextElement.focus()
+        if (typeof nextElement.setSelectionRange === 'function') nextElement.setSelectionRange(nextCursor, nextCursor)
+      })
+    },
+    insertTemplateVariable (templateKey, field, token) {
+      this.insertTemplateText(templateKey, field, token)
+    },
+    insertTemplateFormatting (templateKey, text) {
+      this.insertTemplateText(templateKey, 'body', text)
+    },
+    getTemplatePreviewValues () {
+      return TEMPLATE_PREVIEW_VALUES
+    },
+    renderTemplatePreview (text) {
+      const source = String(text || '')
+      if (!source) return '-'
+      const previewValues = this.getTemplatePreviewValues()
+      return source.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, key) => {
+        return Object.prototype.hasOwnProperty.call(previewValues, key)
+          ? String(previewValues[key])
+          : match
+      })
     },
 
     // ─── Tab routing ──────────────────────────────────────────────────────
@@ -680,11 +1562,11 @@ export default {
       const fromEmail = String(this.smtpForm.smtp_from_email || '').trim()
       const username = String(this.smtpForm.smtp_username || '').trim()
       const password = String(this.smtpForm.smtp_password || '').trim()
-      if (!host) return 'กรุณากรอก SMTP Host'
-      if (!Number.isFinite(port) || port < 1 || port > 65535) return 'SMTP Port ไม่ถูกต้อง'
-      if (!fromEmail || !this.isValidEmail(fromEmail)) return 'กรุณากรอก From Email ให้ถูกต้อง'
-      if (username && !requirePassword && !password && !this.smtpPasswordConfigured) return 'กรุณากรอก SMTP Password'
-      if (requirePassword && username && !password && !this.smtpPasswordConfigured) return 'กรุณากรอก SMTP Password สำหรับทดสอบการส่งอีเมล'
+      if (!host) return this.$t('adminSettings.email.smtpValidation.hostRequired')
+      if (!Number.isFinite(port) || port < 1 || port > 65535) return this.$t('adminSettings.email.smtpValidation.portInvalid')
+      if (!fromEmail || !this.isValidEmail(fromEmail)) return this.$t('adminSettings.email.smtpValidation.fromEmailInvalid')
+      if (username && !requirePassword && !password && !this.smtpPasswordConfigured) return this.$t('adminSettings.email.smtpValidation.passwordRequired')
+      if (requirePassword && username && !password && !this.smtpPasswordConfigured) return this.$t('adminSettings.email.smtpValidation.passwordRequiredForTest')
       return ''
     },
     getSmtpDebugSnapshot () {
@@ -783,7 +1665,7 @@ export default {
         if (parsed.generalForm) this.generalForm = { ...this.generalForm, ...parsed.generalForm }
         if (parsed.workflowForm) this.workflowForm = { ...this.workflowForm, ...parsed.workflowForm, stepDeadlines: { ...this.workflowForm.stepDeadlines, ...(parsed.workflowForm.stepDeadlines || {}) } }
         if (parsed.smtpForm) this.smtpForm = this.normalizeSmtpForm(parsed.smtpForm)
-        if (parsed.emailTemplates) this.emailTemplates = { ...this.emailTemplates, ...parsed.emailTemplates }
+        if (parsed.emailTemplates) this.emailTemplates = this.normalizeEmailTemplatesConfig(parsed.emailTemplates)
         if (Array.isArray(parsed.settings)) this.settings = parsed.settings
         const workflowMeta = parsed && parsed.__meta && parsed.__meta.workflow
         if (workflowMeta && workflowMeta.status === 'local_fallback') {
@@ -832,8 +1714,10 @@ export default {
       if (map.email_templates_json) {
         try {
           const parsed = typeof map.email_templates_json === 'string' ? JSON.parse(map.email_templates_json) : map.email_templates_json
-          this.emailTemplates = { ...this.emailTemplates, ...parsed }
+          this.emailTemplates = this.normalizeEmailTemplatesConfig(parsed)
         } catch (e) { console.error('[AdminSettings] parse templates error:', e) }
+      } else {
+        this.emailTemplates = this.normalizeEmailTemplatesConfig()
       }
     },
     async upsertSettingByKey (key, value, description, group) {
@@ -879,7 +1763,7 @@ export default {
           throw new Error('bulk email policy save returned failed keys')
         }
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'บันทึกนโยบายการส่งอีเมลสำเร็จ', timer: 1400, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.email.policyMessages.savedTitle'), timer: 1400, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] saveEmailPolicySettings fallback:', error)
         this.saveFallback({
@@ -889,7 +1773,7 @@ export default {
             reason: (error && error.message) ? error.message : 'unknown_error'
           }
         })
-        await Swal.fire({ icon: 'warning', title: 'บันทึกเฉพาะในเครื่องชั่วคราว', text: 'ไม่สามารถบันทึกนโยบายการส่งอีเมลลงฐานข้อมูลได้' })
+        await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.policyMessages.savedLocalTitle'), text: this.$t('adminSettings.email.policyMessages.savedLocalText') })
       }
     },
     async saveGeneralSettings () {
@@ -906,11 +1790,11 @@ export default {
           this.upsertSettingByKey('items_per_page', this.generalForm.itemsPerPage, 'จำนวนรายการต่อหน้า', 'general')
         ])
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'บันทึกการตั้งค่าทั่วไปสำเร็จ', timer: 1400, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.general.messages.savedTitle'), timer: 1400, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] saveGeneralSettings fallback:', error)
         this.saveFallback()
-        await Swal.fire({ icon: 'info', title: 'บันทึกในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
+        await Swal.fire({ icon: 'info', title: this.$t('adminSettings.general.messages.savedLocalTitle'), text: this.$t('adminSettings.general.messages.savedLocalText') })
       }
     },
     async saveWorkflowSettings () {
@@ -947,19 +1831,61 @@ export default {
       }
     },
     async saveTemplate (type) {
-      const subject = String(this.emailTemplates[type] && this.emailTemplates[type].subject ? this.emailTemplates[type].subject : '').trim()
-      if (!subject) { await Swal.fire({ icon: 'warning', title: 'หัวเรื่องว่าง', text: `กรุณากรอกหัวเรื่องสำหรับ template ${type}` }); return }
+      const template = this.emailTemplates[type]
+      if (!template) return
+      const label = this.getTemplateLabel(type)
+      const subject = String(template.subject || '').trim()
+      const displayName = String(template.displayName || '').trim()
+      const eventKeys = this.normalizeTemplateSelectionList(template.eventKeys, this.emailTemplateActionOptions, [])
+      const recipientTargets = this.normalizeTemplateSelectionList(template.recipientTargets, this.emailTemplateRecipientOptions, ['current_recipients'])
+      if (!displayName) { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.saveNameRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.saveNameRequiredText', { label }) }); return }
+      if (!subject) { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.subjectRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.subjectRequiredText', { label }) }); return }
+      if (eventKeys.length === 0) { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.actionRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.actionRequiredText', { label }) }); return }
+      if (recipientTargets.length === 0) { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.email.templateMessages.recipientRequiredTitle'), text: this.$t('adminSettings.email.templateMessages.recipientRequiredText', { label }) }); return }
+
+      this.$set(this.emailTemplates, type, this.normalizeEmailTemplateDefinition(type, {
+        ...template,
+        displayName,
+        eventKeys,
+        recipientTargets
+      }, template))
+
       try {
         await this.upsertSettingByKey('email_templates_json', JSON.stringify(this.emailTemplates), 'Email templates JSON', 'email')
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: `บันทึก Template ${type} สำเร็จ`, timer: 1200, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.email.templateMessages.savedTitle', { label }), timer: 1200, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] saveTemplate fallback:', error)
         this.saveFallback()
-        await Swal.fire({ icon: 'info', title: 'บันทึก Template ในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงใช้ local fallback' })
+        await Swal.fire({ icon: 'info', title: this.$t('adminSettings.email.templateMessages.savedLocalTitle'), text: this.$t('adminSettings.email.templateMessages.savedLocalText') })
       }
     },
-    resetTemplate (type) { this.$set(this.emailTemplates, type, JSON.parse(JSON.stringify(DEFAULT_TEMPLATES[type]))) },
+    resetTemplate (type) {
+      const current = this.emailTemplates[type]
+      if (!current) return
+      if (current.isCustom) {
+        this.$set(this.emailTemplates, type, this.normalizeEmailTemplateDefinition(type, {
+          ...current,
+          subject: '',
+          body: '',
+          enabled: true
+        }, {
+          eventKeys: current.eventKeys,
+          recipientTargets: current.recipientTargets,
+          isCustom: true,
+          enabled: true
+        }))
+        return
+      }
+      this.$set(this.emailTemplates, type, this.normalizeEmailTemplateDefinition(type, DEFAULT_TEMPLATES[type], {
+        subject: DEFAULT_TEMPLATES[type].subject,
+        body: DEFAULT_TEMPLATES[type].body,
+        eventKeys: [type],
+        recipientTargets: ['current_recipients'],
+        enabled: true,
+        isCustom: false
+      }))
+    },
     getCurrentUserEmail () {
       const fromStore = this.$store && this.$store.getters ? this.$store.getters['Authentication/currentUser'] : null
       if (fromStore && fromStore.email) return String(fromStore.email).trim()
@@ -975,21 +1901,21 @@ export default {
     async addSetting () {
       const key = (this.newSetting.key || '').trim()
       const value = this.newSetting.value
-      if (!key || value === undefined || value === null || value === '') { await Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ', text: 'ต้องกรอก key และ value' }); return }
-      if (/\s/.test(key)) { await Swal.fire({ icon: 'warning', title: 'Key ไม่ถูกต้อง', text: 'Key ต้องไม่มีช่องว่าง และควรเป็น snake_case' }); return }
+      if (!key || value === undefined || value === null || value === '') { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.settingMessages.missingRequiredTitle'), text: this.$t('adminSettings.settingMessages.missingRequiredText') }); return }
+      if (/\s/.test(key)) { await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.settingMessages.invalidKeyTitle'), text: this.$t('adminSettings.settingMessages.invalidKeyText') }); return }
       try {
         await axios.post('/api/v1/setting', { key, value, description: this.newSetting.description, group: this.newSetting.group })
         this.showAddSettingModal = false
         this.newSetting = { key: '', value: '', group: 'general', description: '' }
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'เพิ่ม Setting สำเร็จ', timer: 1200, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.settingMessages.addedTitle'), timer: 1200, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] addSetting fallback:', error)
         this.settings.push({ _id: `local-${Date.now()}`, key, value: this.newSetting.value, description: this.newSetting.description, group: this.newSetting.group })
         this.saveFallback()
         this.showAddSettingModal = false
         this.newSetting = { key: '', value: '', group: 'general', description: '' }
-        await Swal.fire({ icon: 'info', title: 'เพิ่มในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
+        await Swal.fire({ icon: 'info', title: this.$t('adminSettings.settingMessages.addedLocalTitle'), text: this.$t('adminSettings.settingMessages.addedLocalText') })
       }
     },
     startEditSetting (s) {
@@ -1007,7 +1933,7 @@ export default {
         await axios.put(`/api/v1/setting/${s._id}`, payload)
         this.cancelEditSetting()
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'แก้ไขสำเร็จ', timer: 1200, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.settingMessages.editedTitle'), timer: 1200, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] editSetting fallback:', error)
         const idx = this.settings.findIndex(x => (x._id || x.key) === (s._id || s.key))
@@ -1017,28 +1943,28 @@ export default {
           this.saveFallback()
         }
         this.cancelEditSetting()
-        await Swal.fire({ icon: 'info', title: 'แก้ไขในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
+        await Swal.fire({ icon: 'info', title: this.$t('adminSettings.settingMessages.editedLocalTitle'), text: this.$t('adminSettings.settingMessages.editedLocalText') })
       }
     },
     async deleteSetting (s) {
-      const result = await Swal.fire({ icon: 'warning', title: `ยืนยันการลบ setting ${s.key}?`, showCancelButton: true, confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#e55353' })
+      const result = await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.settingMessages.deleteConfirmTitle', { key: s.key }), showCancelButton: true, confirmButtonText: this.$t('adminSettings.settingMessages.deleteConfirmButton'), cancelButtonText: this.$t('adminSettings.modal.cancelBtn'), confirmButtonColor: '#e55353' })
       if (!result.isConfirmed) return
       try {
         if (s._id && String(s._id).startsWith('local-')) throw new Error('local fallback row')
         await axios.delete(`/api/v1/setting/${s._id}`)
         await this.fetchSettings()
-        await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1200, showConfirmButton: false })
+        await Swal.fire({ icon: 'success', title: this.$t('adminSettings.settingMessages.deletedTitle'), timer: 1200, showConfirmButton: false })
       } catch (error) {
         console.error('[AdminSettings] deleteSetting fallback:', error)
         this.settings = this.settings.filter(x => (x._id || x.key) !== (s._id || s.key))
         this.saveFallback()
-        await Swal.fire({ icon: 'info', title: 'ลบในเครื่องแล้ว', text: 'API ยังไม่พร้อม จึงบันทึกแบบ local fallback' })
+        await Swal.fire({ icon: 'info', title: this.$t('adminSettings.settingMessages.deletedLocalTitle'), text: this.$t('adminSettings.settingMessages.deletedLocalText') })
       }
     },
     async clearCache () {
-      const result = await Swal.fire({ icon: 'warning', title: 'ยืนยันการล้างข้อมูล Cache?', showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก' })
+      const result = await Swal.fire({ icon: 'warning', title: this.$t('adminSettings.cacheMessages.confirmTitle'), showCancelButton: true, confirmButtonText: this.$t('adminSettings.cacheMessages.confirmButton'), cancelButtonText: this.$t('adminSettings.modal.cancelBtn') })
       if (!result.isConfirmed) return
-      try { await axios.post('/api/v1/setting/clear-cache', {}); await Swal.fire({ icon: 'success', title: 'ล้าง Cache สำเร็จ' }) } catch (error) { await Swal.fire({ icon: 'info', title: 'กำลังพัฒนา', text: 'ฟีเจอร์ล้าง Cache อยู่ระหว่างพัฒนา' }) }
+      try { await axios.post('/api/v1/setting/clear-cache', {}); await Swal.fire({ icon: 'success', title: this.$t('adminSettings.cacheMessages.clearedTitle') }) } catch (error) { await Swal.fire({ icon: 'info', title: this.$t('adminSettings.cacheMessages.developingTitle'), text: this.$t('adminSettings.cacheMessages.developingText') }) }
     },
     exportSettings () {
       const blob = new Blob([JSON.stringify(this.settings, null, 2)], { type: 'application/json' })
@@ -1078,6 +2004,9 @@ export default {
       } catch (e) { console.error('[AdminSettings] loadMoreEmailLogs error:', e); this.emailLogPage -= 1 } finally { this.emailLogLoading = false }
     },
     getTemplateLabel (key) {
+      const template = this.emailTemplates[key]
+      const displayName = template && String(template.displayName || '').trim()
+      if (displayName) return displayName
       const i18nKey = EMAIL_TEMPLATE_LABEL_KEYS[key]
       return i18nKey ? this.$t(i18nKey) : key
     },
@@ -1085,7 +2014,7 @@ export default {
     toggleEmailWidget () {
       if (this.isEmailWidgetOpen) { this.closeEmailWidget(); return }
       this.emailWidgetFeedback = { type: '', message: '' }
-      this.emailWidgetForm = { ...this.emailWidgetForm, senderName: this.emailWidgetForm.senderName || 'ผู้ดูแลระบบ', recipientEmail: this.emailWidgetForm.recipientEmail || this.getPreferredTestRecipientEmail(), templateKey: this.emailWidgetForm.templateKey || this.testTemplateKey || '' }
+      this.emailWidgetForm = { ...this.emailWidgetForm, senderName: this.emailWidgetForm.senderName || this.$t('adminSettings.email.widget.defaultSenderName'), recipientEmail: this.emailWidgetForm.recipientEmail || this.getPreferredTestRecipientEmail(), templateKey: this.emailWidgetForm.templateKey || this.testTemplateKey || '' }
       this.isEmailWidgetOpen = true
     },
     closeEmailWidget () { this.isEmailWidgetOpen = false },
@@ -1098,13 +2027,13 @@ export default {
       if (!String(this.emailWidgetForm.message || '').trim()) this.emailWidgetForm.message = String(template.body || '').trim()
     },
     validateWidgetEmailForm () {
-      if (!String(this.emailWidgetForm.senderName || '').trim()) return 'กรุณากรอกชื่อผู้ส่ง'
-      if (!String(this.emailWidgetForm.subject || '').trim()) return 'กรุณากรอกหัวข้ออีเมล'
-      if (!String(this.emailWidgetForm.message || '').trim()) return 'กรุณากรอกข้อความอีเมล'
+      if (!String(this.emailWidgetForm.senderName || '').trim()) return this.$t('adminSettings.email.widget.validation.senderRequired')
+      if (!String(this.emailWidgetForm.subject || '').trim()) return this.$t('adminSettings.email.widget.validation.subjectRequired')
+      if (!String(this.emailWidgetForm.message || '').trim()) return this.$t('adminSettings.email.widget.validation.messageRequired')
       const recipientEmail = String(this.emailWidgetForm.recipientEmail || '').trim()
-      if (!recipientEmail) return 'กรุณากรอกอีเมลผู้รับ'
-      if (!this.isValidEmail(recipientEmail)) return 'รูปแบบอีเมลผู้รับไม่ถูกต้อง'
-      if (this.isPlaceholderEmail(recipientEmail)) return 'อีเมลผู้รับดูเหมือนเป็นข้อมูลทดสอบ กรุณาใช้อีเมลผู้ใช้จริงในระบบ'
+      if (!recipientEmail) return this.$t('adminSettings.email.widget.validation.recipientRequired')
+      if (!this.isValidEmail(recipientEmail)) return this.$t('adminSettings.email.widget.validation.recipientInvalid')
+      if (this.isPlaceholderEmail(recipientEmail)) return this.$t('adminSettings.email.widget.validation.recipientPlaceholderDetected')
       return this.validateSMTPConfig({ requirePassword: true })
     },
     async sendEmailFromWidget () {
@@ -1114,9 +2043,9 @@ export default {
       this.emailWidgetSending = true
       try {
         await axios.post('/api/v1/setting/test-email', { recipientEmail: this.normalizeEmail(this.emailWidgetForm.recipientEmail), smtp: this.buildSmtpPayloadForApi({ includePasswordIfProvided: true }), templateKey: this.emailWidgetForm.templateKey || '', senderName: String(this.emailWidgetForm.senderName || '').trim(), subject: String(this.emailWidgetForm.subject || '').trim(), message: String(this.emailWidgetForm.message || '').trim() })
-        this.emailWidgetFeedback = { type: 'success', message: `ส่งอีเมลเรียบร้อยไปยัง ${this.normalizeEmail(this.emailWidgetForm.recipientEmail)}` }
+        this.emailWidgetFeedback = { type: 'success', message: this.$t('adminSettings.email.widget.sendSuccess', { email: this.normalizeEmail(this.emailWidgetForm.recipientEmail) }) }
       } catch (error) {
-        this.emailWidgetFeedback = { type: 'error', message: (error && error.response && error.response.data && error.response.data.message) || 'ส่งอีเมลไม่สำเร็จ กรุณาตรวจสอบ SMTP แล้วลองใหม่' }
+        this.emailWidgetFeedback = { type: 'error', message: (error && error.response && error.response.data && error.response.data.message) || this.$t('adminSettings.email.widget.sendFailed') }
       } finally { this.emailWidgetSending = false }
     }
   }
@@ -1600,10 +2529,372 @@ body.c-dark-theme .settings-tabs::v-deep .nav-underline .nav-link.active::after 
   border-radius: 10px;
 }
 
+.workflow-flowchart {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(140, 21, 21, 0.12);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 248, 238, 0.92));
+}
+
+.workflow-flowchart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.workflow-flowchart__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workflow-flowchart__legend-item--readonly {
+  background: rgba(30, 102, 196, 0.1);
+  color: #1e5eb5;
+}
+
+.workflow-flowchart__legend-item--editable {
+  background: rgba(181, 133, 34, 0.14);
+  color: #8d5f00;
+}
+
+.workflow-flowchart__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.workflow-flowchart__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.workflow-flowchart__section--primary {
+  gap: 12px;
+}
+
+.workflow-flowchart__section--editable {
+  padding-top: 10px;
+  border-top: 1px dashed rgba(181, 133, 34, 0.38);
+}
+
+.workflow-flowchart__section-title,
+.workflow-flowchart__details-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b0f0f;
+}
+
+.workflow-flowchart__path {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.workflow-flowchart__timeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(30, 102, 196, 0.06), rgba(255, 255, 255, 0.7));
+}
+
+.workflow-flowchart__timeline-step {
+  display: flex;
+  align-items: stretch;
+  min-width: 190px;
+  max-width: 240px;
+  flex: 1 1 190px;
+}
+
+.workflow-flowchart__timeline-marker {
+  width: 44px;
+  min-width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 0;
+  color: #1e5eb5;
+}
+
+.workflow-flowchart__timeline-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+  background: #1e5eb5;
+  box-shadow: 0 6px 12px rgba(30, 94, 181, 0.2);
+}
+
+.workflow-flowchart__timeline-card {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(30, 102, 196, 0.16);
+  box-shadow: 0 8px 18px rgba(30, 94, 181, 0.08);
+}
+
+.workflow-flowchart__timeline-label {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: #143a73;
+}
+
+.workflow-flowchart__timeline-key {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #617694;
+}
+
+.workflow-flowchart__timeline-connector {
+  display: flex;
+  align-items: center;
+  min-width: 36px;
+  padding: 0 6px;
+}
+
+.workflow-flowchart__timeline-connector-line {
+  flex: 1 1 auto;
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(30, 94, 181, 0.2), rgba(30, 94, 181, 0.5));
+}
+
+.workflow-flowchart__timeline-connector-arrow {
+  margin-left: 6px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #3566b0;
+}
+
+.workflow-flowchart__path--branch {
+  gap: 6px;
+}
+
+.workflow-flowchart__branch-connector {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin: -2px 0 2px;
+}
+
+.workflow-flowchart__branch-connector-stem {
+  width: 2px;
+  height: 18px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(30, 94, 181, 0.16), rgba(30, 94, 181, 0.5));
+}
+
+.workflow-flowchart__branch-connector-hub {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #3f73c0;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 4px rgba(63, 115, 192, 0.12);
+}
+
+.workflow-flowchart__branch-connector-rail {
+  width: min(78%, 640px);
+  height: 2px;
+  margin-top: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(30, 94, 181, 0.14), rgba(30, 94, 181, 0.42), rgba(30, 94, 181, 0.14));
+}
+
+.workflow-flowchart__branch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.workflow-flowchart__branch-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(140, 21, 21, 0.1);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.workflow-flowchart__branch-card-link {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 2px;
+  height: 14px;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(30, 94, 181, 0.5), rgba(30, 94, 181, 0.14));
+}
+
+.workflow-flowchart__chip {
+  padding-block: 6px;
+}
+
+.workflow-flowchart__chip--readonly {
+  box-shadow: inset 0 0 0 1px rgba(30, 102, 196, 0.18);
+}
+
+.workflow-flowchart__chip--editable {
+  box-shadow: inset 0 0 0 1px rgba(181, 133, 34, 0.28);
+}
+
+.workflow-flowchart__arrow {
+  color: #4b6ea9;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.workflow-flowchart__arrow--editable {
+  color: #8d5f00;
+}
+
 [data-coreui-theme='dark'] .workflow-alert,
 body.c-dark-theme .workflow-alert {
   border-width: 1px;
   border-style: solid;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart,
+body.c-dark-theme .workflow-flowchart {
+  background: linear-gradient(180deg, rgba(28, 40, 56, 0.95), rgba(22, 33, 46, 0.98));
+  border-color: rgba(103, 126, 154, 0.34);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline,
+body.c-dark-theme .workflow-flowchart__timeline {
+  background: linear-gradient(90deg, rgba(88, 143, 214, 0.14), rgba(28, 40, 56, 0.82));
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-marker,
+body.c-dark-theme .workflow-flowchart__timeline-marker {
+  color: #b9d8ff;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-number,
+body.c-dark-theme .workflow-flowchart__timeline-number {
+  background: #5c8fd8;
+  color: #f5f9ff;
+  box-shadow: 0 6px 12px rgba(12, 22, 37, 0.28);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-card,
+body.c-dark-theme .workflow-flowchart__timeline-card {
+  background: rgba(21, 31, 43, 0.92);
+  border-color: rgba(103, 126, 154, 0.3);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-label,
+body.c-dark-theme .workflow-flowchart__timeline-label {
+  color: #e3f0ff;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-key,
+body.c-dark-theme .workflow-flowchart__timeline-key {
+  color: #9eb6d1;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-connector-line,
+body.c-dark-theme .workflow-flowchart__timeline-connector-line {
+  background: linear-gradient(90deg, rgba(126, 164, 207, 0.28), rgba(126, 164, 207, 0.6));
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__timeline-connector-arrow,
+body.c-dark-theme .workflow-flowchart__timeline-connector-arrow {
+  color: #9fc4f0;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__branch-connector-stem,
+body.c-dark-theme .workflow-flowchart__branch-connector-stem {
+  background: linear-gradient(180deg, rgba(126, 164, 207, 0.18), rgba(126, 164, 207, 0.56));
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__branch-connector-hub,
+body.c-dark-theme .workflow-flowchart__branch-connector-hub {
+  background: #78a7e0;
+  border-color: rgba(21, 31, 43, 0.92);
+  box-shadow: 0 0 0 4px rgba(120, 167, 224, 0.18);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__branch-connector-rail,
+body.c-dark-theme .workflow-flowchart__branch-connector-rail {
+  background: linear-gradient(90deg, rgba(126, 164, 207, 0.16), rgba(126, 164, 207, 0.52), rgba(126, 164, 207, 0.16));
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__branch-card-link,
+body.c-dark-theme .workflow-flowchart__branch-card-link {
+  background: linear-gradient(180deg, rgba(126, 164, 207, 0.56), rgba(126, 164, 207, 0.18));
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__branch-card,
+body.c-dark-theme .workflow-flowchart__branch-card {
+  background: rgba(21, 31, 43, 0.88);
+  border-color: rgba(103, 126, 154, 0.28);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__legend-item--readonly,
+body.c-dark-theme .workflow-flowchart__legend-item--readonly {
+  background: rgba(88, 143, 214, 0.16);
+  color: #b9d8ff;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__legend-item--editable,
+body.c-dark-theme .workflow-flowchart__legend-item--editable {
+  background: rgba(214, 169, 88, 0.18);
+  color: #f6d48d;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__section--editable,
+body.c-dark-theme .workflow-flowchart__section--editable {
+  border-top-color: rgba(214, 169, 88, 0.34);
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__section-title,
+[data-coreui-theme='dark'] .workflow-flowchart__details-label,
+body.c-dark-theme .workflow-flowchart__section-title,
+body.c-dark-theme .workflow-flowchart__details-label {
+  color: #d8e7f8;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__arrow,
+body.c-dark-theme .workflow-flowchart__arrow {
+  color: #9fc4f0;
+}
+
+[data-coreui-theme='dark'] .workflow-flowchart__arrow--editable,
+body.c-dark-theme .workflow-flowchart__arrow--editable {
+  color: #f6d48d;
 }
 
 [data-coreui-theme='dark'] .workflow-alert.alert-success,
@@ -1680,11 +2971,31 @@ body.c-dark-theme .workflow-alert strong {
   overflow: hidden;
   box-shadow: 0 20px 46px rgba(0, 0, 0, 0.24);
   border: 1px solid rgba(44, 62, 100, 0.12);
+  z-index: 1105;
 }
 
 .admin-email-widget__header {
   background: #f4f7ff;
   border-bottom: 1px solid #d9e2f6;
+}
+
+.admin-email-widget__close-btn {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #35507f;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.admin-email-widget__close-btn:hover {
+  color: #173a78;
+  background: rgba(58, 95, 167, 0.1);
 }
 
 .admin-email-widget__eyebrow {
@@ -1712,6 +3023,279 @@ body.c-dark-theme .workflow-alert strong {
 .admin-email-widget__textarea {
   resize: vertical;
   min-height: 124px;
+}
+
+.template-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.95fr);
+  gap: 16px;
+  align-items: stretch;
+  border: 1px solid rgba(140, 21, 21, 0.12);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.template-create-card,
+.template-meta {
+  border: 1px solid rgba(140, 21, 21, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 250, 245, 0.72);
+  padding: 14px;
+}
+
+.template-create-card__header,
+.template-meta__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.template-create-card__title,
+.template-meta__title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #7f1616;
+}
+
+.template-meta__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b0f0f;
+}
+
+.template-multiselect {
+  min-width: 0;
+}
+
+.template-multiselect ::v-deep .multiselect {
+  min-height: 44px;
+}
+
+.template-multiselect ::v-deep .multiselect__tags {
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(140, 21, 21, 0.16);
+  background: rgba(255, 255, 255, 0.94);
+  padding: 8px 40px 8px 10px;
+  box-shadow: none;
+}
+
+.template-multiselect ::v-deep .multiselect__tag {
+  margin-bottom: 4px;
+  background: #7f1616;
+}
+
+.template-multiselect ::v-deep .multiselect__placeholder,
+.template-multiselect ::v-deep .multiselect__single,
+.template-multiselect ::v-deep .multiselect__input {
+  margin-bottom: 0;
+  color: #24314e;
+  background: transparent;
+}
+
+.template-multiselect ::v-deep .multiselect__content-wrapper {
+  border: 1px solid rgba(140, 21, 21, 0.16);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+}
+
+.template-multiselect ::v-deep .multiselect__option--highlight {
+  background: rgba(140, 21, 21, 0.1);
+  color: #24314e;
+}
+
+.template-multiselect ::v-deep .multiselect__option--selected {
+  background: rgba(140, 21, 21, 0.08);
+  color: #7f1616;
+  font-weight: 700;
+}
+
+.template-selection-summary {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #5a657a;
+}
+
+.template-checkbox-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.template-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(140, 21, 21, 0.08);
+  font-size: 13px;
+  color: #24314e;
+  cursor: pointer;
+}
+
+.template-checkbox input {
+  margin-top: 3px;
+}
+
+.template-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #24314e;
+}
+
+.template-editor__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.template-editor__preview {
+  min-width: 0;
+  display: flex;
+}
+
+.template-editor__textarea {
+  min-height: 160px;
+}
+
+.template-variable-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.template-variable-toolbar__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b0f0f;
+}
+
+.template-variable-toolbar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.template-variable-toolbar__chip {
+  border: 1px solid rgba(140, 21, 21, 0.18);
+  border-radius: 9999px;
+  padding: 6px 10px;
+  background: #fff7ee;
+  color: #7f1616;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.template-variable-toolbar__chip:hover {
+  background: #fff0d8;
+  border-color: rgba(181, 133, 34, 0.45);
+  transform: translateY(-1px);
+}
+
+.template-variable-toolbar__chip--muted {
+  background: #f8f4ff;
+  color: #4b4778;
+  border-color: rgba(75, 71, 120, 0.16);
+}
+
+.template-variable-toolbar__chip--muted:hover {
+  background: #efe7ff;
+  border-color: rgba(75, 71, 120, 0.28);
+}
+
+.template-variable-toolbar__chip--format {
+  background: #eef9f1;
+  color: #1f6b3c;
+  border-color: rgba(31, 107, 60, 0.18);
+}
+
+.template-variable-toolbar__chip--format:hover {
+  background: #def4e4;
+  border-color: rgba(31, 107, 60, 0.3);
+}
+
+.template-variable-toolbar__token {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.template-preview {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(140, 21, 21, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  overflow: hidden;
+}
+
+.template-preview__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(140, 21, 21, 0.06);
+  border-bottom: 1px solid rgba(140, 21, 21, 0.1);
+}
+
+.template-preview__title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7f1616;
+}
+
+.template-preview__field {
+  min-height: 0;
+  padding: 12px;
+}
+
+.template-preview__field + .template-preview__field {
+  border-top: 1px solid rgba(140, 21, 21, 0.08);
+}
+
+.template-preview__field:last-child {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.template-preview__label {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b0f0f;
+}
+
+.template-preview__value {
+  color: #24314e;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.55;
+}
+
+.template-preview__value--body {
+  flex: 1 1 auto;
+  min-height: 96px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 [data-coreui-theme='dark'] .admin-email-widget__backdrop,
@@ -1767,6 +3351,150 @@ body.c-dark-theme .admin-email-widget__close-btn {
 body.c-dark-theme .admin-email-widget__close-btn:hover {
   color: #f5f9ff;
   background: rgba(143, 173, 206, 0.16);
+}
+
+[data-coreui-theme='dark'] .template-editor,
+body.c-dark-theme .template-editor {
+  background: rgba(24, 34, 48, 0.76);
+  border-color: rgba(103, 126, 154, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-create-card,
+[data-coreui-theme='dark'] .template-meta,
+body.c-dark-theme .template-create-card,
+body.c-dark-theme .template-meta {
+  background: rgba(24, 34, 48, 0.82);
+  border-color: rgba(103, 126, 154, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-create-card__title,
+[data-coreui-theme='dark'] .template-meta__title,
+[data-coreui-theme='dark'] .template-meta__label,
+[data-coreui-theme='dark'] .template-toggle,
+body.c-dark-theme .template-create-card__title,
+body.c-dark-theme .template-meta__title,
+body.c-dark-theme .template-meta__label,
+body.c-dark-theme .template-toggle {
+  color: #d8e7f8;
+}
+
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__tags,
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__content-wrapper,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__tags,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__content-wrapper {
+  background: rgba(18, 28, 42, 0.96);
+  border-color: rgba(103, 126, 154, 0.36);
+}
+
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__placeholder,
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__single,
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__input,
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__option,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__placeholder,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__single,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__input,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__option {
+  color: #edf3fb;
+}
+
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__option--highlight,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__option--highlight {
+  background: rgba(126, 164, 207, 0.18);
+  color: #edf3fb;
+}
+
+[data-coreui-theme='dark'] .template-multiselect ::v-deep .multiselect__option--selected,
+body.c-dark-theme .template-multiselect ::v-deep .multiselect__option--selected {
+  background: rgba(126, 164, 207, 0.12);
+  color: #d8e7f8;
+}
+
+[data-coreui-theme='dark'] .template-selection-summary,
+body.c-dark-theme .template-selection-summary {
+  color: #b7c9dc;
+}
+
+[data-coreui-theme='dark'] .template-checkbox,
+body.c-dark-theme .template-checkbox {
+  background: rgba(36, 50, 68, 0.9);
+  border-color: rgba(103, 126, 154, 0.24);
+  color: #edf3fb;
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__label,
+body.c-dark-theme .template-variable-toolbar__label {
+  color: #c7d9ec;
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip,
+body.c-dark-theme .template-variable-toolbar__chip {
+  background: #253547;
+  color: #f2d7a3;
+  border-color: rgba(242, 215, 163, 0.2);
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip:hover,
+body.c-dark-theme .template-variable-toolbar__chip:hover {
+  background: #30465d;
+  border-color: rgba(242, 215, 163, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip--muted,
+body.c-dark-theme .template-variable-toolbar__chip--muted {
+  background: #213041;
+  color: #c3d7ff;
+  border-color: rgba(195, 215, 255, 0.2);
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip--muted:hover,
+body.c-dark-theme .template-variable-toolbar__chip--muted:hover {
+  background: #2b3e54;
+  border-color: rgba(195, 215, 255, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip--format,
+body.c-dark-theme .template-variable-toolbar__chip--format {
+  background: #1f3a2d;
+  color: #b8efc8;
+  border-color: rgba(184, 239, 200, 0.2);
+}
+
+[data-coreui-theme='dark'] .template-variable-toolbar__chip--format:hover,
+body.c-dark-theme .template-variable-toolbar__chip--format:hover {
+  background: #284936;
+  border-color: rgba(184, 239, 200, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-preview,
+body.c-dark-theme .template-preview {
+  background: rgba(21, 31, 43, 0.92);
+  border-color: rgba(103, 126, 154, 0.34);
+}
+
+[data-coreui-theme='dark'] .template-preview__header,
+body.c-dark-theme .template-preview__header {
+  background: rgba(41, 60, 82, 0.72);
+  border-bottom-color: rgba(103, 126, 154, 0.28);
+}
+
+[data-coreui-theme='dark'] .template-preview__title,
+body.c-dark-theme .template-preview__title {
+  color: #d8e7f8;
+}
+
+[data-coreui-theme='dark'] .template-preview__field + .template-preview__field,
+body.c-dark-theme .template-preview__field + .template-preview__field {
+  border-top-color: rgba(103, 126, 154, 0.22);
+}
+
+[data-coreui-theme='dark'] .template-preview__label,
+body.c-dark-theme .template-preview__label {
+  color: #c7d9ec;
+}
+
+[data-coreui-theme='dark'] .template-preview__value,
+body.c-dark-theme .template-preview__value {
+  color: #edf3fb;
 }
 
 [data-coreui-theme='dark'] .admin-settings-page /deep/ .send-modal .modal-content,
@@ -1918,6 +3646,60 @@ body.c-dark-theme .admin-settings-page::v-deep .admin-users-page .pagination .pa
 }
 
 @media (max-width: 768px) {
+  .workflow-flowchart__timeline {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .workflow-flowchart__timeline-step {
+    min-width: 0;
+    max-width: none;
+  }
+
+  .workflow-flowchart__timeline-connector {
+    min-width: 0;
+    padding: 6px 0 2px 44px;
+  }
+
+  .workflow-flowchart__timeline-connector-line {
+    width: 2px;
+    height: 16px;
+    flex: 0 0 2px;
+    background: linear-gradient(180deg, rgba(30, 94, 181, 0.2), rgba(30, 94, 181, 0.5));
+  }
+
+  .workflow-flowchart__timeline-connector-arrow {
+    margin-top: 4px;
+    margin-left: 0;
+  }
+
+  .workflow-flowchart__branch-connector {
+    align-items: flex-start;
+    padding-left: 20px;
+  }
+
+  .workflow-flowchart__branch-connector-rail {
+    width: calc(100% - 20px);
+  }
+
+  .workflow-flowchart__branch-card-link {
+    left: 20px;
+    transform: none;
+  }
+
+  .template-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .template-create-card__header,
+  .template-meta__header {
+    flex-direction: column;
+  }
+
+  .template-editor__preview {
+    position: static;
+  }
+
   .admin-email-widget__fab { right: 16px; bottom: 16px; }
   .admin-email-widget__panel { right: 12px; left: 12px; bottom: 84px; width: auto; max-height: 76vh; }
 }

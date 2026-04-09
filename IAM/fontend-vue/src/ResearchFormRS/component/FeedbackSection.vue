@@ -70,7 +70,12 @@
                   </div>
 
                   <div v-if="!isFeedbackSectionCollapsed(section.sectionKey)" class="feedback-workspace-editor">
-                    <template v-if="section.sectionKey === 'problem_significance' && !isFeedbackSectionSubmitted(section.sectionKey)">
+                    <template v-if="section.meta && section.meta.editable === false">
+                      <div class="alert alert-info mb-0">
+                        หัวข้อนี้เป็นข้อเสนอแนะเพื่อใช้ตรวจทานก่อนส่งกลับ ระบบไม่ต้องส่งแก้ไขรายหัวข้อในส่วนนี้
+                      </div>
+                    </template>
+                    <template v-else-if="section.sectionKey === 'problem_significance' && !isFeedbackSectionSubmitted(section.sectionKey)">
                       <TextEditor
                         :model-value="feedbackSectionDraft(section.sectionKey)"
                         :is-read-only="effectiveReadOnly"
@@ -125,15 +130,17 @@
                         :model-value="feedbackSectionDraft(section.sectionKey)"
                         :is-read-only="effectiveReadOnly"
                         :funding-type="feedbackStrategicFundingType('strategic_alignment')"
+                        :funding-budget-config="fundingBudgetConfig"
+                        :budget-multiplier-config="budgetMultiplierConfig"
                         :reset-token="feedbackStrategicFundingType('strategic_alignment')"
                         @update:modelValue="setFeedbackSectionDraft(section.sectionKey, $event)"
                       />
                     </template>
                     <template v-else-if="section.sectionKey === 'budget'">
-                      <BudgetSectionDemo
+                      <BudgetReport
                         :model-value="feedbackSectionSnapshot(section.sectionKey)"
                         :is-read-only="true"
-                        :funding-type="feedbackStrategicFundingType('strategic_alignment')"
+                        :current-status="(userFeedback && userFeedback.currentStatus) || latestDecisionStatus"
                       />
                     </template>
                     <template v-else-if="section.sectionKey === 'integration' && !isFeedbackSectionSubmitted(section.sectionKey)">
@@ -626,7 +633,7 @@
                       </div>
                     </template>
 
-                    <div v-if="!effectiveReadOnly" class="feedback-workspace-editor__actions">
+                    <div v-if="!effectiveReadOnly && (!section.meta || section.meta.editable !== false)" class="feedback-workspace-editor__actions">
                       <CButton
                         v-if="!isFeedbackSectionSubmitted(section.sectionKey)"
                         color="primary"
@@ -655,7 +662,7 @@
 
             <div v-else>
               <div v-for="group in feedbackReviewGroups" :key="`feedback-round-${group.roundNo}`" class="mb-3">
-                <h6 class="mb-2">ความเห็นคณะกรรมการ รอบที่ {{ group.roundNo }}</h6>
+                <h6 class="mb-2">ความเห็นผู้ประเมิน รอบที่ {{ group.roundNo }}</h6>
                 <div v-for="review in group.reviews" :key="review._id" class="card mb-2">
                   <div class="card-body">
                     <div class="row">
@@ -678,13 +685,15 @@
 import TextEditor from '@/ResearchFormRS/component/TextEditor.vue'
 import Section12 from '@/ResearchFormRS/component/TestComponent/Section12.vue'
 import BudgetSectionDemo from '@/ResearchFormRS/component/BudgetSectionDemo.vue'
+import BudgetReport from '@/ResearchFormRS/component/BudgetReport.vue'
 
 export default {
   name: 'FeedbackSection',
   components: {
     TextEditor,
     Section12,
-    BudgetSectionDemo
+    BudgetSectionDemo,
+    BudgetReport
   },
   props: {
     feedbackLoading: {
@@ -790,6 +799,14 @@ export default {
     setFeedbackExpectedOutcomesSelection: {
       type: Function,
       required: true
+    },
+    fundingBudgetConfig: {
+      type: Array,
+      default: () => []
+    },
+    budgetMultiplierConfig: {
+      type: Array,
+      default: () => []
     },
     transferLevelPreview: {
       type: Function,

@@ -2,6 +2,12 @@ const jwt = require('jsonwebtoken');
 const User = require('../server/Project/Auth/models/User');
 const { getJwtSecret } = require('../helpers/jwtSecret');
 
+function normalizeRole(role) {
+  const normalizedRole = String(role || '').trim().toLowerCase().replace(/-/g, '_');
+  if (normalizedRole === 'finance_office') return 'finance_officer';
+  return normalizedRole;
+}
+
 exports.authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -18,6 +24,7 @@ exports.authenticate = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Token ไม่ถูกต้องหรือบัญชีถูกปิด' });
     }
 
+    user.role = normalizeRole(user.role);
     req.user = user;
     next();
   } catch (err) {
@@ -30,10 +37,13 @@ exports.requireRole = (...roles) => (req, res, next) => {
     return res.status(401).json({ success: false, message: 'ไม่ได้รับอนุญาต' });
   }
 
-  if (!roles.includes(req.user.role)) {
+  const currentRole = normalizeRole(req.user.role);
+  const allowedRoles = roles.map(normalizeRole);
+
+  if (!allowedRoles.includes(currentRole)) {
     return res.status(403).json({
       success: false,
-      message: `ต้องการสิทธิ์: ${roles.join('/')} แต่บัญชีของคุณเป็น: ${req.user.role}`
+      message: `ต้องการสิทธิ์: ${allowedRoles.join('/')} แต่บัญชีของคุณเป็น: ${currentRole}`
     });
   }
 

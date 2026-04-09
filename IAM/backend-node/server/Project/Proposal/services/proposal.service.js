@@ -18,11 +18,11 @@ const ALLOWED_TRANSITIONS = {
   [STATUS.DRAFT]: [STATUS.PENDING_CONFIRM],
   [STATUS.PENDING_CONFIRM]: [STATUS.SUBMITTED],
   [STATUS.SUBMITTED]: [STATUS.FACULTY_REVIEW_PENDING],
-  [STATUS.FACULTY_REVIEW_PENDING]: [STATUS.FACULTY_APPROVED, STATUS.REJECTED],
+  [STATUS.FACULTY_REVIEW_PENDING]: [STATUS.FACULTY_APPROVED, STATUS.REVISION_REQUESTED, STATUS.REJECTED],
   [STATUS.FACULTY_APPROVED]: [STATUS.OFFICE_RECEIVED],
   [STATUS.FACULTY_REJECTED]: [STATUS.REJECTED],
   [STATUS.OFFICE_RECEIVED]: [STATUS.FINANCE_BUDGET_CHECKING, STATUS.DOCUMENT_CHECKING],
-  [STATUS.FINANCE_BUDGET_CHECKING]: [STATUS.DOCUMENT_CHECKING],
+  [STATUS.FINANCE_BUDGET_CHECKING]: [STATUS.DOCUMENT_CHECKING, STATUS.REVISION_REQUESTED],
   [STATUS.DOCUMENT_CHECKING]: [STATUS.ASSIGNED_TO_COMMITTEE],
   [STATUS.ASSIGNED_TO_COMMITTEE]: [STATUS.UNDER_REVIEW],
   [STATUS.UNDER_REVIEW]: [STATUS.COMMITTEE_VALUATED],
@@ -64,14 +64,19 @@ const CHAIRMAN_REVIEW_STATUS = Object.freeze({
   IDLE: 'idle',
   PENDING: 'pending',
   APPROVED: 'approved',
-  REJECTED: 'rejected'
+  REJECTED: 'rejected',
+  REVISION_REQUESTED: 'revision_requested'
 });
 
 const FINANCE_REVIEW_STATUS = Object.freeze({
   IDLE: 'idle',
   PENDING: 'pending',
-  SUBMITTED: 'submitted'
+  SUBMITTED: 'submitted',
+  REVISION_REQUESTED: 'revision_requested'
 });
+
+const CHAIRMAN_CHECKLIST_FIELD_KEY = 'checklist_payload';
+const CHAIRMAN_CHECKLIST_SECTION_KEY = 'chairman_checklist';
 
 function isReviewerRole(role) {
   return REVIEWER_ROLE_SET.has(String(role || '').trim().toLowerCase());
@@ -323,6 +328,31 @@ async function createNotification({ userId, proposalId, channel, eventKey, title
   }
 }
 
+async function getLatestRevisionRequestLog(proposalId) {
+  if (!proposalId) return null;
+  return ProposalStatusLog.findOne({
+    proposalId,
+    toStatus: STATUS.REVISION_REQUESTED
+  })
+    .sort({ createdAt: -1, updatedAt: -1 })
+    .select('fromStatus toStatus actionKey remark createdAt updatedAt');
+}
+
+async function resolveRevisionResubmissionTarget(proposalId) {
+  const latestRevisionLog = await getLatestRevisionRequestLog(proposalId);
+  const fromStatus = STATUS.normalizeStatus(latestRevisionLog && latestRevisionLog.fromStatus);
+
+  if (fromStatus === STATUS.FACULTY_REVIEW_PENDING) {
+    return STATUS.FACULTY_REVIEW_PENDING;
+  }
+
+  if (fromStatus === STATUS.FINANCE_BUDGET_CHECKING) {
+    return STATUS.FINANCE_BUDGET_CHECKING;
+  }
+
+  return STATUS.RESUBMITTED;
+}
+
 async function getActiveAdminIds() {
   const rows = await User.find({
     role: 'admin',
@@ -572,6 +602,200 @@ function normalizeRoundNo(value, fallback = 1) {
   const n = Number(value);
   if (!Number.isFinite(n) || n < 1) return fallback;
   return Math.floor(n);
+}
+
+function normalizeFeedbackDecision(decision) {
+  const normalized = String(decision || '').trim().toLowerCase();
+  if (!normalized) return null;
+  if (['revision', 'request_revision', 'revision_requested'].includes(normalized)) return 'revision';
+  return normalized;
+}
+
+function isChairmanReviewRecord(review = {}) {
+  const role = String(review && review.reviewerUserId && review.reviewerUserId.role ? review.reviewerUserId.role : '').trim().toLowerCase();
+  return role === 'chairman';
+}
+
+function parseChairmanChecklistPayload(commentItems = []) {
+  const items = Array.isArray(commentItems) ? commentItems : [];
+  const payloadItem = items.find((item) => item && item.fieldKey === CHAIRMAN_CHECKLIST_FIELD_KEY && item.commentText)
+    || items.find((item) => item && item.sectionKey === CHAIRMAN_CHECKLIST_SECTION_KEY && item.commentText)
+    || items.find((item) => item && typeof item.commentText === 'string' && item.commentText.trim().startsWith('{'));
+
+  if (!payloadItem || !payloadItem.commentText) return null;
+
+  const parseJson = (value) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'object') return value;
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    try {
+      const first = JSON.parse(trimmed);
+      if (typeof first === 'string') {
+        const nested = first.trim();
+        if (nested && (nested.startsWith('{') || nested.startsWith('['))) {
+          try {
+            return JSON.parse(nested);
+          } catch (_) {
+            return null;
+          }
+        }
+      }
+      return first;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const parsed = parseJson(payloadItem.commentText);
+  if (!parsed || typeof parsed !== 'object') return null;
+  if (parsed.payload && typeof parsed.payload === 'object') return parsed.payload;
+  if (parsed.data && typeof parsed.data === 'object') return parsed.data;
+  return parsed;
+}
+
+function normalizeChairmanChecklistAnswer(value, fallbackChecked = null) {
+  if (value === true || fallbackChecked === true) return 'yes';
+  if (value === false || fallbackChecked === false) return 'no';
+
+  const normalized = String(value === undefined || value === null ? '' : value).trim().toLowerCase();
+  if (!normalized) return '';
+
+  if (['yes', 'y', 'true', '1', 'pass', 'ผ่าน', 'มี'].includes(normalized)) return 'yes';
+  if (['no', 'n', 'false', '0', 'fail', 'ไม่ผ่าน', 'ไม่มี'].includes(normalized)) return 'no';
+  return '';
+}
+
+function buildChairmanFeedbackItems(review = {}) {
+  const parsed = parseChairmanChecklistPayload(review.commentItems);
+  const sections = Array.isArray(parsed && parsed.sections) ? parsed.sections : [];
+  const feedbackItems = [];
+
+  sections.forEach((section, sectionIndex) => {
+    const rawSectionKey = String(section && section.sectionKey ? section.sectionKey : `section_${sectionIndex + 1}`).trim();
+    const sectionKey = rawSectionKey || `section_${sectionIndex + 1}`;
+    const sectionLabel = String(section && section.sectionLabel ? section.sectionLabel : 'ข้อเสนอแนะจากประธาน').trim() || 'ข้อเสนอแนะจากประธาน';
+    const rows = Array.isArray(section && section.items) ? section.items : [];
+
+    rows.forEach((row, rowIndex) => {
+      const answer = normalizeChairmanChecklistAnswer(row && row.answer, row && Object.prototype.hasOwnProperty.call(row, 'checked') ? row.checked : null);
+      if (answer !== 'no') return;
+
+      const itemKey = String(row && row.itemKey ? row.itemKey : `item_${rowIndex + 1}`).trim() || `item_${rowIndex + 1}`;
+      const label = String(row && (row.label || row.description) ? (row.label || row.description) : `รายการตรวจสอบ ${rowIndex + 1}`).trim();
+      const syntheticSectionKey = `chairman_checklist:${sectionKey}`;
+
+      feedbackItems.push({
+        sectionKey: syntheticSectionKey,
+        fieldKey: `chairman_checklist:${sectionKey}:${itemKey}`,
+        commentType: 'required_fix',
+        commentText: label || `รายการตรวจสอบ ${rowIndex + 1}`,
+        visibility: 'researcher_visible',
+        meta: {
+          sectionKey: syntheticSectionKey,
+          sectionLabel,
+          rubricLabel: 'รายการที่ประธานขอให้ตรวจทาน',
+          sectionNo: 1000 + sectionIndex,
+          editable: false,
+          source: 'chairman_checklist'
+        }
+      });
+    });
+  });
+
+  if (feedbackItems.length === 0) {
+    const summaryComment = String(review && review.summaryComment ? review.summaryComment : '').trim();
+    if (summaryComment) {
+      feedbackItems.push({
+        sectionKey: 'chairman_summary',
+        fieldKey: 'chairman_summary',
+        commentType: 'suggestion',
+        commentText: summaryComment,
+        visibility: 'researcher_visible',
+        meta: {
+          sectionKey: 'chairman_summary',
+          sectionLabel: 'ข้อเสนอแนะจากประธาน',
+          rubricLabel: 'สรุปความเห็น',
+          sectionNo: 1999,
+          editable: false,
+          source: 'chairman_checklist'
+        }
+      });
+    }
+  }
+
+  return feedbackItems;
+}
+
+function serializeFeedbackReview(review = {}, options = {}) {
+  const isChairman = Boolean(options.isChairman);
+  const normalizedDecision = normalizeFeedbackDecision(review.decision);
+  const base = {
+    _id: review._id,
+    roundNo: review.roundNo || 1,
+    reviewerUserId: review.reviewerUserId || null,
+    decision: normalizedDecision,
+    summaryComment: review.summaryComment || '',
+    totalScore: review.totalScore,
+    submittedAt: review.submittedAt || review.updatedAt || null,
+    updatedAt: review.updatedAt || null,
+    reviewStatus: review.reviewStatus || '',
+    feedbackSource: isChairman ? 'chairman' : 'committee'
+  };
+
+  if (isChairman) {
+    return {
+      ...base,
+      commentItems: buildChairmanFeedbackItems(review),
+      rawCommentItems: Array.isArray(review.commentItems) ? review.commentItems : [],
+      scoreItems: Array.isArray(review.scoreItems) ? review.scoreItems : []
+    };
+  }
+
+  return {
+    ...base,
+    commentItems: Array.isArray(review.commentItems) ? review.commentItems : [],
+    scoreItems: Array.isArray(review.scoreItems) ? review.scoreItems : []
+  };
+}
+
+function buildFinanceFeedbackReview(latestDecisionLog = null) {
+  if (!latestDecisionLog || latestDecisionLog.actionKey !== 'finance_revision_requested') return null;
+
+  const summaryComment = String(latestDecisionLog.remark || '').trim();
+
+  return {
+    _id: `finance-feedback-${String(latestDecisionLog._id || 'latest')}`,
+    roundNo: latestDecisionLog.roundNo || 1,
+    reviewerUserId: latestDecisionLog.changedBy || null,
+    decision: 'revision',
+    summaryComment,
+    commentItems: [
+      {
+        sectionKey: 'budget',
+        fieldKey: 'finance_budget_revision',
+        commentType: 'required_fix',
+        commentText: summaryComment || 'กรุณาปรับปรุงข้อมูลงบประมาณตามข้อเสนอแนะของฝ่ายการเงิน',
+        visibility: 'researcher_visible',
+        meta: {
+          sectionKey: 'budget',
+          sectionLabel: 'งบประมาณ',
+          rubricLabel: 'ข้อเสนอแนะจากฝ่ายการเงิน',
+          sectionNo: 7,
+          editable: true,
+          source: 'finance_review'
+        }
+      }
+    ],
+    scoreItems: [],
+    totalScore: null,
+    submittedAt: latestDecisionLog.createdAt || null,
+    updatedAt: latestDecisionLog.createdAt || null,
+    reviewStatus: REVIEW_STATUS.CERTIFIED,
+    feedbackSource: 'finance'
+  };
 }
 
 function dedupeCommitteeIds(committeeIds = []) {
@@ -1101,15 +1325,47 @@ async function resubmitProposal(id, user) {
   assertFundingBudgetLimit(proposal, proposal);
 
   const fromStatus = proposal.currentStatus;
-  proposal.currentStatus = STATUS.RESUBMITTED;
+  const resubmissionTarget = await resolveRevisionResubmissionTarget(proposal._id);
+  proposal.currentStatus = resubmissionTarget;
   proposal.requiresRevision = false;
   proposal.updatedBy = user._id;
+
+  if (resubmissionTarget === STATUS.FACULTY_REVIEW_PENDING) {
+    const chairmanAssignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+      ? proposal.chairmanAssignment
+      : {};
+    proposal.set(buildChairmanAssignmentUpdate({
+      assignedChairmanIds: getAssignedChairmanIdsFromProposal(chairmanAssignment),
+      status: CHAIRMAN_REVIEW_STATUS.PENDING,
+      assignedAt: chairmanAssignment.assignedAt || null,
+      assignedBy: chairmanAssignment.assignedBy || null,
+      reviewedAt: null,
+      reviewedBy: null,
+      summaryComment: chairmanAssignment.summaryComment || ''
+    }));
+  }
+
+  if (resubmissionTarget === STATUS.FINANCE_BUDGET_CHECKING) {
+    const financeAssignment = proposal && proposal.financeAssignment && typeof proposal.financeAssignment === 'object'
+      ? proposal.financeAssignment
+      : {};
+    proposal.set(buildFinanceAssignmentUpdate({
+      assignedFinanceOfficerIds: getAssignedFinanceOfficerIdsFromProposal(financeAssignment),
+      status: FINANCE_REVIEW_STATUS.PENDING,
+      assignedAt: financeAssignment.assignedAt || null,
+      assignedBy: financeAssignment.assignedBy || null,
+      submittedAt: null,
+      submittedBy: null,
+      summaryComment: financeAssignment.summaryComment || ''
+    }));
+  }
+
   await proposal.save();
 
   const resubmitStatusLog = await createStatusLog({
     proposalId: proposal._id,
     fromStatus,
-    toStatus: STATUS.RESUBMITTED,
+    toStatus: resubmissionTarget,
     actionKey: 'resubmit',
     remark: null,
     roundNo: proposal.currentRound || 1,
@@ -1124,10 +1380,52 @@ async function resubmitProposal(id, user) {
     title: 'ส่งโครงการฉบับแก้ไขแล้ว',
     message: `โครงการ ${proposal.proposalCode || proposal._id} ถูกส่งฉบับแก้ไขกลับเข้าระบบแล้ว`,
     payload: {
-      toStatus: STATUS.RESUBMITTED,
+      toStatus: resubmissionTarget,
       fromStatus
     }
   });
+
+  if (resubmissionTarget === STATUS.FACULTY_REVIEW_PENDING || resubmissionTarget === STATUS.FINANCE_BUDGET_CHECKING) {
+    const recipientIds = new Set();
+    if (resubmissionTarget === STATUS.FACULTY_REVIEW_PENDING) {
+      const chairmanAssignment = proposal && proposal.chairmanAssignment && typeof proposal.chairmanAssignment === 'object'
+        ? proposal.chairmanAssignment
+        : {};
+      getAssignedChairmanIdsFromProposal(chairmanAssignment).forEach((chairmanId) => recipientIds.add(String(chairmanId)));
+      if (chairmanAssignment.assignedBy) recipientIds.add(String(chairmanAssignment.assignedBy));
+    }
+
+    if (resubmissionTarget === STATUS.FINANCE_BUDGET_CHECKING) {
+      const financeAssignment = proposal && proposal.financeAssignment && typeof proposal.financeAssignment === 'object'
+        ? proposal.financeAssignment
+        : {};
+      getAssignedFinanceOfficerIdsFromProposal(financeAssignment).forEach((financeOfficerId) => recipientIds.add(String(financeOfficerId)));
+      if (financeAssignment.assignedBy) recipientIds.add(String(financeAssignment.assignedBy));
+    }
+
+    if (recipientIds.size > 0) {
+      await notifyUsersWithWorkflowEmail({
+        recipientIds: Array.from(recipientIds),
+        proposalId: proposal._id,
+        eventKey: 'proposal_resubmitted',
+        title: resubmissionTarget === STATUS.FACULTY_REVIEW_PENDING
+          ? 'มีโครงการฉบับแก้ไขส่งกลับให้ประธานพิจารณาอีกครั้ง'
+          : 'มีโครงการฉบับแก้ไขส่งกลับให้ฝ่ายการเงินตรวจสอบอีกครั้ง',
+        message: resubmissionTarget === STATUS.FACULTY_REVIEW_PENDING
+          ? `โครงการ ${proposal.proposalCode || proposal._id} ถูกส่งฉบับแก้ไขกลับมาและอยู่ในสถานะรอประธานพิจารณาอีกครั้ง`
+          : `โครงการ ${proposal.proposalCode || proposal._id} ถูกส่งฉบับแก้ไขกลับมาและอยู่ในสถานะรอฝ่ายการเงินตรวจสอบอีกครั้ง`,
+        payload: {
+          fromStatus,
+          toStatus: resubmissionTarget
+        },
+        proposal,
+        context: {
+          remarks: ''
+        },
+        proposalStatusLogId: resubmitStatusLog && resubmitStatusLog._id ? resubmitStatusLog._id : null
+      });
+    }
+  }
 
   await notifyAdminsOfProposalSubmission(proposal, {
     eventKey: 'proposal_resubmitted',
@@ -1691,21 +1989,31 @@ async function applyChairmanReviewOutcome(proposalId, review, payload = {}, user
   let facultyApprovedAt = proposal.facultyApprovedAt || null;
   let officeReceivedAt = proposal.officeReceivedAt || null;
   let rejectedAt = proposal.rejectedAt || null;
+  let requiresRevision = proposal.requiresRevision === true;
 
   if (decision === 'approve') {
     nextStatus = STATUS.FACULTY_APPROVED;
     assignmentStatus = CHAIRMAN_REVIEW_STATUS.APPROVED;
     facultyApprovedAt = now;
+    requiresRevision = false;
   } else if (decision === 'reject') {
     nextStatus = STATUS.REJECTED;
     assignmentStatus = CHAIRMAN_REVIEW_STATUS.REJECTED;
     officeReceivedAt = null;
     rejectedAt = now;
+    requiresRevision = false;
+  } else if (decision === 'revision' || decision === 'request_revision' || decision === 'revision_requested') {
+    nextStatus = STATUS.REVISION_REQUESTED;
+    assignmentStatus = CHAIRMAN_REVIEW_STATUS.REVISION_REQUESTED;
+    facultyApprovedAt = null;
+    rejectedAt = null;
+    requiresRevision = true;
   } else {
     return review;
   }
 
   proposal.currentStatus = nextStatus;
+  proposal.requiresRevision = requiresRevision;
   proposal.updatedBy = user._id;
   proposal.facultyApprovedAt = facultyApprovedAt;
   proposal.officeReceivedAt = officeReceivedAt;
@@ -1725,7 +2033,9 @@ async function applyChairmanReviewOutcome(proposalId, review, payload = {}, user
     proposalId: proposal._id,
     fromStatus: currentStatus,
     toStatus: nextStatus,
-    actionKey: decision === 'approve' ? 'chairman_approved' : 'chairman_rejected',
+    actionKey: decision === 'approve'
+      ? 'chairman_approved'
+      : (decision === 'reject' ? 'chairman_rejected' : 'chairman_revision_requested'),
     remark: payload && payload.summaryComment ? payload.summaryComment : null,
     roundNo: null,
     changedBy: user._id
@@ -1736,11 +2046,17 @@ async function applyChairmanReviewOutcome(proposalId, review, payload = {}, user
   if (chairmanAssignment && chairmanAssignment.assignedBy) recipientIds.add(String(chairmanAssignment.assignedBy));
 
   if (recipientIds.size > 0) {
-    const eventKey = decision === 'approve' ? 'chairman_approved' : 'chairman_rejected';
-    const title = decision === 'approve' ? 'ประธานอนุมัติข้อเสนอโครงการ' : 'ประธานไม่อนุมัติข้อเสนอโครงการ';
+    const eventKey = decision === 'approve'
+      ? 'chairman_approved'
+      : (decision === 'reject' ? 'chairman_rejected' : 'revision_requested');
+    const title = decision === 'approve'
+      ? 'ประธานอนุมัติข้อเสนอโครงการ'
+      : (decision === 'reject' ? 'ประธานไม่อนุมัติข้อเสนอโครงการ' : 'ประธานขอให้แก้ไขข้อเสนอโครงการ');
     const message = decision === 'approve'
       ? `โครงการ ${proposal.proposalCode || proposal._id} ผ่านการพิจารณาจากประธานแล้ว และอยู่ในสถานะประธานอนุมัติ`
-      : `โครงการ ${proposal.proposalCode || proposal._id} ไม่ผ่านการพิจารณาจากประธาน และอยู่ในสถานะปฏิเสธ`;
+      : (decision === 'reject'
+        ? `โครงการ ${proposal.proposalCode || proposal._id} ไม่ผ่านการพิจารณาจากประธาน และอยู่ในสถานะปฏิเสธ`
+        : `โครงการ ${proposal.proposalCode || proposal._id} ถูกส่งกลับเพื่อแก้ไขเพิ่มเติมตามข้อเสนอแนะของประธาน`);
 
     await notifyProposalStakeholders(proposal, {
       eventKey,
@@ -1775,21 +2091,22 @@ async function saveReview(proposalId, payload, user) {
 
   const round = parseInt(roundNo, 10) || 1;
   const filter = { proposalId, reviewerUserId: user._id, roundNo: round };
+  let reviewAccessProposal = null;
 
   // Access control: committee can only review proposals they are assigned to.
   const reviewerRole = String(user && user.role ? user.role : '').trim().toLowerCase();
   if (isReviewerRole(reviewerRole)) {
-    const proposal = await Proposal.findById(proposalId).select('_id committeeIds chairmanAssignment currentStatus').lean();
-    if (!proposal) throw new Error('Proposal not found');
+    reviewAccessProposal = await Proposal.findById(proposalId).select('_id committeeIds chairmanAssignment currentStatus').lean();
+    if (!reviewAccessProposal) throw new Error('Proposal not found');
     if (reviewerRole === 'chairman') {
-      if (!hasChairmanProposalAccess(proposal, user._id)) {
+      if (!hasChairmanProposalAccess(reviewAccessProposal, user._id)) {
         throw new Error('Forbidden');
       }
-      if (STATUS.normalizeStatus(proposal.currentStatus) !== STATUS.FACULTY_REVIEW_PENDING) {
+      if (STATUS.normalizeStatus(reviewAccessProposal.currentStatus) !== STATUS.FACULTY_REVIEW_PENDING) {
         throw new Error('Forbidden');
       }
     } else {
-      const committeeIds = Array.isArray(proposal.committeeIds) ? proposal.committeeIds.map(String) : [];
+      const committeeIds = Array.isArray(reviewAccessProposal.committeeIds) ? reviewAccessProposal.committeeIds.map(String) : [];
       if (!committeeIds.includes(String(user._id))) {
         throw new Error('Forbidden');
       }
@@ -1797,7 +2114,9 @@ async function saveReview(proposalId, payload, user) {
   }
 
   const existing = await ProposalReview.findOne(filter).select('_id reviewStatus submittedAt').lean();
-  if (existing && isReviewLockedStatus(existing.reviewStatus)) {
+  const allowChairmanResubmission = isChairmanRole(reviewerRole)
+    && STATUS.normalizeStatus(reviewAccessProposal && reviewAccessProposal.currentStatus) === STATUS.FACULTY_REVIEW_PENDING;
+  if (existing && isReviewLockedStatus(existing.reviewStatus) && !allowChairmanResubmission) {
     // One submission per reviewer per proposal/round (no resubmission).
     throw new Error('REVIEW_ALREADY_SUBMITTED');
   }
@@ -1872,12 +2191,16 @@ async function saveFinanceReview(proposalId, payload = {}, user) {
   const assignedFinanceOfficerIds = getAssignedFinanceOfficerIdsFromProposal(financeAssignment);
   const summaryComment = String(payload && payload.summaryComment ? payload.summaryComment : '').trim();
   const isSubmit = payload && payload.isSubmit === true;
+  const decision = String(payload && payload.decision ? payload.decision : '').trim().toLowerCase();
+  const isRevisionRequest = isSubmit && ['revision', 'request_revision', 'revision_requested'].includes(decision);
   const now = new Date();
 
   proposal.updatedBy = user._id;
   proposal.set(buildFinanceAssignmentUpdate({
     assignedFinanceOfficerIds,
-    status: isSubmit ? FINANCE_REVIEW_STATUS.SUBMITTED : FINANCE_REVIEW_STATUS.PENDING,
+    status: isSubmit
+      ? (isRevisionRequest ? FINANCE_REVIEW_STATUS.REVISION_REQUESTED : FINANCE_REVIEW_STATUS.SUBMITTED)
+      : FINANCE_REVIEW_STATUS.PENDING,
     assignedAt: financeAssignment.assignedAt || null,
     assignedBy: financeAssignment.assignedBy || null,
     submittedAt: isSubmit ? now : (financeAssignment.submittedAt || null),
@@ -1887,7 +2210,8 @@ async function saveFinanceReview(proposalId, payload = {}, user) {
 
   let financeSubmissionLog = null;
   if (isSubmit) {
-    proposal.currentStatus = STATUS.DOCUMENT_CHECKING;
+    proposal.currentStatus = isRevisionRequest ? STATUS.REVISION_REQUESTED : STATUS.DOCUMENT_CHECKING;
+    proposal.requiresRevision = isRevisionRequest;
   }
 
   await proposal.save();
@@ -1896,8 +2220,8 @@ async function saveFinanceReview(proposalId, payload = {}, user) {
     financeSubmissionLog = await createStatusLog({
       proposalId: proposal._id,
       fromStatus: currentStatus,
-      toStatus: STATUS.DOCUMENT_CHECKING,
-      actionKey: 'finance_review_submitted',
+      toStatus: isRevisionRequest ? STATUS.REVISION_REQUESTED : STATUS.DOCUMENT_CHECKING,
+      actionKey: isRevisionRequest ? 'finance_revision_requested' : 'finance_review_submitted',
       remark: summaryComment || null,
       roundNo: null,
       changedBy: user._id
@@ -1906,16 +2230,21 @@ async function saveFinanceReview(proposalId, payload = {}, user) {
 
   if (isSubmit) {
     const adminIds = await getActiveAdminIds();
-    const recipientIds = Array.from(new Set(adminIds.concat(financeAssignment.assignedBy ? [String(financeAssignment.assignedBy)] : [])));
+    const baseRecipientIds = isRevisionRequest && proposal.applicantUserId
+      ? [String(proposal.applicantUserId)]
+      : [];
+    const recipientIds = Array.from(new Set(baseRecipientIds.concat(adminIds).concat(financeAssignment.assignedBy ? [String(financeAssignment.assignedBy)] : [])));
     if (recipientIds.length > 0) {
       await notifyUsersWithWorkflowEmail({
         recipientIds,
         proposalId: proposal._id,
-        eventKey: 'finance_review_submitted',
-        title: 'ได้รับผลการตรวจสอบงบประมาณแล้ว',
-        message: `เจ้าหน้าที่การเงินส่งผลการตรวจสอบงบประมาณของโครงการ ${proposal.proposalCode || proposal._id} แล้ว`,
+        eventKey: isRevisionRequest ? 'revision_requested' : 'finance_review_submitted',
+        title: isRevisionRequest ? 'ฝ่ายการเงินขอให้แก้ไขข้อเสนอโครงการ' : 'ได้รับผลการตรวจสอบงบประมาณแล้ว',
+        message: isRevisionRequest
+          ? `เจ้าหน้าที่การเงินส่งโครงการ ${proposal.proposalCode || proposal._id} กลับเพื่อแก้ไขเพิ่มเติม`
+          : `เจ้าหน้าที่การเงินส่งผลการตรวจสอบงบประมาณของโครงการ ${proposal.proposalCode || proposal._id} แล้ว`,
         payload: {
-          toStatus: STATUS.DOCUMENT_CHECKING,
+          toStatus: isRevisionRequest ? STATUS.REVISION_REQUESTED : STATUS.DOCUMENT_CHECKING,
           summaryComment
         },
         proposal,
@@ -2244,6 +2573,17 @@ async function getProposalFeedback(proposalId, user) {
       .sort({ submittedAt: -1, updatedAt: -1 })
   ]);
 
+  const serializedReviews = (reviews || []).map((review) => serializeFeedbackReview(review, {
+    isChairman: isChairmanReviewRecord(review)
+  }));
+  const financeFeedbackReview = buildFinanceFeedbackReview(latestDecisionLog);
+  if (financeFeedbackReview) {
+    serializedReviews.push(financeFeedbackReview);
+  }
+  const chairmanReviews = serializedReviews.filter((review) => review.feedbackSource === 'chairman');
+  const financeReviews = serializedReviews.filter((review) => review.feedbackSource === 'finance');
+  const committeeReviews = serializedReviews.filter((review) => review.feedbackSource === 'committee');
+
   return {
     proposalId: proposal._id,
     currentStatus: proposal.currentStatus,
@@ -2251,23 +2591,15 @@ async function getProposalFeedback(proposalId, user) {
     latestDecision: latestDecisionLog ? {
       toStatus: latestDecisionLog.toStatus,
       remark: latestDecisionLog.remark || '',
+      actionKey: latestDecisionLog.actionKey || '',
       roundNo: latestDecisionLog.roundNo || null,
       changedAt: latestDecisionLog.createdAt,
       changedBy: latestDecisionLog.changedBy || null
     } : null,
-    committeeReviews: (reviews || []).map(r => ({
-      _id: r._id,
-      roundNo: r.roundNo || 1,
-      reviewerUserId: r.reviewerUserId || null,
-      decision: r.decision || null,
-      summaryComment: r.summaryComment || '',
-      commentItems: Array.isArray(r.commentItems) ? r.commentItems : [],
-      scoreItems: Array.isArray(r.scoreItems) ? r.scoreItems : [],
-      totalScore: r.totalScore,
-      submittedAt: r.submittedAt || r.updatedAt || null,
-      updatedAt: r.updatedAt || null,
-      reviewStatus: r.reviewStatus || ''
-    }))
+    feedbackReviews: serializedReviews,
+    committeeReviews,
+    chairmanReviews,
+    financeReviews
   };
 }
 

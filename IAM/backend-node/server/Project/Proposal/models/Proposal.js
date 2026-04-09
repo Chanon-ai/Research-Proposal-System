@@ -92,7 +92,7 @@ const proposalSchema = new mongoose.Schema(
       },
       status: {
         type: String,
-        enum: ['idle', 'pending', 'approved', 'rejected'],
+        enum: ['idle', 'pending', 'approved', 'rejected', 'revision_requested'],
         default: 'idle'
       },
       assignedAt: {
@@ -126,7 +126,7 @@ const proposalSchema = new mongoose.Schema(
       },
       status: {
         type: String,
-        enum: ['idle', 'pending', 'submitted'],
+        enum: ['idle', 'pending', 'submitted', 'revision_requested'],
         default: 'idle'
       },
       assignedAt: {

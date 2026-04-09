@@ -142,6 +142,7 @@ export function getFinanceAssignmentStatusKey(item) {
   const assignment = getFinanceAssignment(item)
   const status = String(assignment.status || '').trim().toLowerCase()
   if (status === 'submitted') return 'submitted'
+  if (status === 'revision_requested') return 'revision_requested'
   if (status === 'pending') return 'pending'
   return 'idle'
 }
@@ -155,6 +156,7 @@ export function getFinanceAssignmentStatusLabel(item, translate = null) {
   const fallbackMap = {
     idle: 'Not started',
     pending: 'Pending review note',
+    revision_requested: 'Revision requested',
     submitted: 'Review submitted'
   }
   return fallbackMap[statusKey] || fallbackMap.idle

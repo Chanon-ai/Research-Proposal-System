@@ -119,22 +119,11 @@
         </div>
       </div>
 
-      <div v-if="showReadonlyChairmanChecklistCard" class="card mt-3 mb-3 review-summary-card" style="background: #fffaf0; border-color: #f3d19a;">
+      <div v-if="showReadonlyChairmanChecklistCard" class="card mt-3 mb-3 review-summary-card chairman-checklist-readonly">
         <div class="card-header">
           <strong>สรุป Checklist จากประธาน (Read Only)</strong>
         </div>
         <div class="card-body">
-          <div class="d-flex flex-wrap align-items-center mb-3 text-muted small" style="gap: 16px;">
-            <div class="d-inline-flex align-items-center">
-              <CIcon name="cil-check-circle" class="text-success mr-1" />
-              <span>เขียว = ผ่าน</span>
-            </div>
-            <div class="d-inline-flex align-items-center">
-              <CIcon name="cil-x-circle" class="text-danger mr-1" />
-              <span>แดง = ไม่ผ่าน</span>
-            </div>
-          </div>
-
           <div v-if="readonlyChairmanChecklistLoading" class="text-center py-3">
             <CSpinner size="sm" color="primary" />
             <span class="text-muted ml-2">กำลังโหลดผลการประเมินจากประธาน...</span>
@@ -164,9 +153,66 @@
                   <div class="col-12 mb-2"><strong>สรุปข้อเสนอแนะ:</strong> {{ card.review.summaryComment || '-' }}</div>
                 </div>
 
+                <div v-if="card.sections.length" class="chairman-review-card__sections">
+                  <div
+                    v-for="section in card.sections"
+                    :key="'readonly-chairman-' + card.reviewId + '-' + section.sectionKey"
+                    class="chairman-review-card__section"
+                  >
+                    <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
+                      <div class="font-weight-bold">{{ section.sectionLabel }}</div>
+                      <CBadge color="warning" class="chairman-review-card__badge">{{ section.checkedCount }}/{{ section.totalItems }} ข้อ</CBadge>
+                    </div>
+                    <div v-if="section.items.length" class="mt-2">
+                      <div class="chairman-review-card__table">
+                        <div class="chairman-review-card__table-head">
+                          <div class="chairman-review-card__th-no">#</div>
+                          <div class="chairman-review-card__th-label">{{ $t('chairman.proposalDetail.checklistItemLabel') }}</div>
+                          <div class="chairman-review-card__th-result">{{ $t('chairman.proposalDetail.checklistAnswer') }}</div>
+                        </div>
+                        <div
+                          v-for="(item, itemIndex) in section.items"
+                          :key="'readonly-chairman-' + card.reviewId + '-' + section.sectionKey + '-' + item.itemKey"
+                          class="chairman-review-card__row"
+                        >
+                          <div class="chairman-review-card__cell-no">{{ itemIndex + 1 }}</div>
+                          <div class="chairman-review-card__cell-label">{{ item.label }}</div>
+                          <div class="chairman-review-card__cell-result">
+                            <span class="chairman-review-card__result" :class="item.checked ? 'is-pass' : 'is-fail'">
+                              <CIcon :name="item.checked ? 'cil-check-circle' : 'cil-x-circle'" class="chairman-review-card__result-icon" />
+                              <span class="chairman-review-card__result-text">{{ item.checked ? $t('chairman.proposalDetail.checklistPass') : $t('chairman.proposalDetail.checklistFail') }}</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div v-else class="text-muted small mt-2">
+                      ไม่มีรายการ checklist ในหัวข้อนี้
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-muted small">
+                  ไม่พบ payload checklist จากผลประเมินของประธาน
+                </div>
+
+                <div v-if="card.signatureData" class="chairman-review-card__signature">
+                  <div class="chairman-review-card__signature-label">ลงชื่อ</div>
+                  <div class="chairman-review-card__signature-preview">
+                    <img
+                      :src="card.signatureData"
+                      :alt="`ลายเซ็นของ ${reviewerName(card.review)}`"
+                      class="chairman-review-card__signature-image"
+                    >
+                  </div>
+                  <div class="chairman-review-card__signature-line"></div>
+                  <div class="chairman-review-card__signature-name">( {{ reviewerName(card.review) }} )</div>
+                  <div class="chairman-review-card__signature-role">ประธานผู้พิจารณา</div>
+                  <div class="chairman-review-card__signature-date">วันที่ {{ formatReviewDateTime(card.signatureUpdatedAt || card.review.submittedAt || card.review.updatedAt) }}</div>
+                </div>
+
                 <div
                   v-if="isAdminView && isReviewPendingAdminAcceptance(card.review)"
-                  class="d-flex justify-content-end flex-wrap mb-3"
+                  class="d-flex justify-content-end flex-wrap mt-3"
                   style="gap: 8px;"
                 >
                   <CButton
@@ -186,40 +232,6 @@
                   >
                     <CIcon name="cil-x-circle" class="mr-1" /> ไม่รับผลประเมิน
                   </CButton>
-                </div>
-
-                <div v-if="card.sections.length" class="chairman-review-card__sections">
-                  <div
-                    v-for="section in card.sections"
-                    :key="'readonly-chairman-' + card.reviewId + '-' + section.sectionKey"
-                    class="chairman-review-card__section"
-                  >
-                    <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap: 8px;">
-                      <div class="font-weight-bold">{{ section.sectionLabel }}</div>
-                      <CBadge color="warning" class="chairman-review-card__badge">{{ section.checkedCount }}/{{ section.totalItems }} ข้อ</CBadge>
-                    </div>
-                    <div v-if="section.items.length" class="mt-2">
-                      <ul class="mb-0 pl-3 chairman-review-card__list">
-                        <li
-                          v-for="item in section.items"
-                          :key="'readonly-chairman-' + card.reviewId + '-' + section.sectionKey + '-' + item.itemKey"
-                          class="chairman-review-card__list-item"
-                        >
-                          <CIcon
-                            :name="item.checked ? 'cil-check-circle' : 'cil-x-circle'"
-                            :class="item.checked ? 'text-success mr-2' : 'text-danger mr-2'"
-                          />
-                          {{ item.label }}
-                        </li>
-                      </ul>
-                    </div>
-                    <div v-else class="text-muted small mt-2">
-                      ไม่มีรายการ checklist ในหัวข้อนี้
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="text-muted small">
-                  ไม่พบ payload checklist จากผลประเมินของประธาน
                 </div>
               </div>
             </div>
@@ -1515,6 +1527,7 @@ export default {
       return this.chairmanSubmittedReviews.map((review) => {
         const parsed = this.parseChairmanChecklistReview(review)
         const sections = Array.isArray(parsed.sections) ? parsed.sections : []
+
         const normalizedSections = sections.map((section) => {
           const items = Array.isArray(section && section.items) ? section.items : []
           const normalizedItems = items.map((item) => ({
@@ -1535,6 +1548,8 @@ export default {
           reviewId: String(review && review._id ? review._id : `${review && review.roundNo ? review.roundNo : 1}`),
           review,
           fundingTypeLabel: String(parsed.fundingTypeLabel || '-'),
+          signatureData: this.normalizeReviewSignatureData(review && review.signatureData),
+          signatureUpdatedAt: review && review.signatureUpdatedAt ? review.signatureUpdatedAt : null,
           checkedCount: normalizedSections.reduce((sum, section) => sum + section.checkedCount, 0),
           totalItems: normalizedSections.reduce((sum, section) => sum + section.totalItems, 0),
           sections: normalizedSections
@@ -1583,7 +1598,7 @@ export default {
       return this.submittedReviews.filter(r => r && r.decision === 'approve').length
     },
     reviseCount () {
-      return this.submittedReviews.filter(r => r && r.decision === 'revise').length
+      return this.submittedReviews.filter(r => r && ['revise', 'revision'].includes(String(r && r.decision ? r.decision : '').toLowerCase())).length
     },
     rejectCount () {
       return this.submittedReviews.filter(r => r && r.decision === 'reject').length
@@ -1593,8 +1608,10 @@ export default {
       return nonZeroBuckets.length > 1
     },
     feedbackReviews () {
-      const rows = this.userFeedback && Array.isArray(this.userFeedback.committeeReviews)
-        ? this.userFeedback.committeeReviews
+      const rows = this.userFeedback && Array.isArray(this.userFeedback.feedbackReviews)
+        ? this.userFeedback.feedbackReviews
+        : this.userFeedback && Array.isArray(this.userFeedback.committeeReviews)
+          ? this.userFeedback.committeeReviews
         : []
       return rows.filter(r => this.isReviewAccepted(r))
     },
@@ -1739,6 +1756,8 @@ export default {
         feedbackExpectedOutcomesFundingType: this.feedbackExpectedOutcomesFundingType,
         feedbackExpectedOutcomesSelection: this.feedbackExpectedOutcomesSelection,
         setFeedbackExpectedOutcomesSelection: this.setFeedbackExpectedOutcomesSelection,
+        fundingBudgetConfig: this.fundingBudgetConfig,
+        budgetMultiplierConfig: this.budgetMultiplierConfig,
         transferLevelPreview: this.transferLevelPreview,
         updateFeedbackSectionDraftField: this.updateFeedbackSectionDraftField,
         isSubmittingFeedbackSection: this.isSubmittingFeedbackSection,
@@ -1751,7 +1770,7 @@ export default {
     pendingFeedbackSectionsForResubmit () {
       if (!this.isRevisionRequested) return []
       return (this.feedbackEditableSections || [])
-        .filter(section => section && section.sectionKey && !this.isFeedbackSectionSubmitted(section.sectionKey))
+        .filter(section => section && section.sectionKey && section.meta && section.meta.editable !== false && !this.isFeedbackSectionSubmitted(section.sectionKey))
     },
     canResubmitRevision () {
       if (!this.isRevisionRequested) return false
@@ -3360,6 +3379,9 @@ export default {
     reviewModerationBusyKey (review) {
       return String(review && review._id ? review._id : '')
     },
+    normalizeReviewSignatureData (value) {
+      return typeof value === 'string' && value.startsWith('data:image/') ? value : ''
+    },
     isReviewModerationBusy (review) {
       const key = this.reviewModerationBusyKey(review)
       return Boolean(key && this.reviewModerationBusyMap[key])
@@ -3467,7 +3489,7 @@ export default {
     },
     decisionLabel (decision) {
       if (decision === 'approve') return 'อนุมัติ'
-      if (decision === 'revise') return 'ขอแก้ไข'
+      if (decision === 'revise' || decision === 'revision' || decision === 'request_revision' || decision === 'revision_requested') return 'ขอแก้ไข'
       if (decision === 'reject') return 'ไม่อนุมัติ'
       return 'ยังไม่ระบุ'
     },
@@ -3647,9 +3669,9 @@ export default {
     feedbackSectionSnapshot (sectionKey) {
       const state = this.feedbackSectionState(sectionKey)
       if (state && state.snapshot !== null && state.snapshot !== undefined) {
-        return state.snapshot
+        return this.cloneSerializable(state.snapshot)
       }
-      const current = this.currentFeedbackSectionValue(sectionKey)
+      const current = this.cloneSerializable(this.currentFeedbackSectionValue(sectionKey))
       if (sectionKey === 'strategic_alignment') {
         return this.normalizeStrategicAlignmentValue(current)
       }
@@ -3911,6 +3933,7 @@ export default {
     async submitFeedbackSection (section) {
       const sectionKey = section && section.sectionKey ? section.sectionKey : ''
       if (!sectionKey || this.effectiveReadOnly) return
+      if (section && section.meta && section.meta.editable === false) return
 
       const preservedScrollTop = this.currentWindowScrollTop()
       this.setFeedbackSectionCardState(sectionKey, { saving: true })
@@ -3952,10 +3975,23 @@ export default {
       }
     },
     reopenFeedbackSection (sectionKey) {
-      this.$set(this.feedbackSectionDrafts, sectionKey, this.cloneSerializable(this.feedbackSectionSnapshot(sectionKey)))
+      const targetSection = (this.feedbackEditableSections || []).find(section => String(section && section.sectionKey ? section.sectionKey : '') === String(sectionKey || ''))
+      if (targetSection && targetSection.meta && targetSection.meta.editable === false) return
+
+      const restoredDraft = this.cloneSerializable(this.feedbackSectionSnapshot(sectionKey))
+      this.$set(this.feedbackSectionDrafts, sectionKey, restoredDraft)
       this.setFeedbackSectionCardState(sectionKey, {
         submitted: false,
         collapsed: false
+      })
+
+      // Some section editors emit an initial empty/default payload when remounted.
+      // Re-apply the stored snapshot after the editable component finishes its first render.
+      this.$nextTick(() => {
+        this.$set(this.feedbackSectionDrafts, sectionKey, this.cloneSerializable(restoredDraft))
+        this.$nextTick(() => {
+          this.$set(this.feedbackSectionDrafts, sectionKey, this.cloneSerializable(restoredDraft))
+        })
       })
     },
     reviewActionItems (review) {
@@ -3985,6 +4021,10 @@ export default {
         .sort((left, right) => this.feedbackItemSortOrder(left) - this.feedbackItemSortOrder(right))
     },
     feedbackMetaForItem (item) {
+      if (item && item.meta && typeof item.meta === 'object' && item.meta.sectionKey) {
+        return item.meta
+      }
+
       const fieldKey = String(item && item.fieldKey ? item.fieldKey : '')
       const matched = fieldKey.match(/^criteria_(\d+)$/)
       if (matched) {
@@ -7407,6 +7447,179 @@ export default {
   border-left-color: var(--rf-accent) !important;
 }
 
+.chairman-checklist-readonly {
+  border-color: rgba(197, 155, 58, 0.35) !important;
+}
+
+.chairman-review-card__badge {
+  border-radius: 999px !important;
+  padding: 4px 8px !important;
+  font-weight: 600 !important;
+  background: rgba(197, 155, 58, 0.14) !important;
+  color: #7a4f00 !important;
+  border: 1px solid rgba(197, 155, 58, 0.35) !important;
+  font-size: 0.74rem !important;
+}
+
+.chairman-review-card__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.chairman-review-card__signature {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed rgba(197, 155, 58, 0.45);
+  text-align: center;
+}
+
+.chairman-review-card__signature-label {
+  font-weight: 700;
+  color: var(--rf-text);
+  margin-bottom: 10px;
+}
+
+.chairman-review-card__signature-preview {
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.chairman-review-card__signature-image {
+  max-width: min(260px, 100%);
+  max-height: 92px;
+  object-fit: contain;
+  display: block;
+}
+
+.chairman-review-card__signature-line {
+  width: min(320px, 82%);
+  margin: 0 auto 10px;
+  border-top: 1px solid rgba(15, 23, 42, 0.18);
+}
+
+.chairman-review-card__signature-name {
+  font-weight: 700;
+  color: var(--rf-text);
+}
+
+.chairman-review-card__signature-role,
+.chairman-review-card__signature-date {
+  color: var(--rf-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.chairman-review-card__section + .chairman-review-card__section {
+  padding-top: 12px;
+  border-top: 1px solid var(--rf-border);
+}
+
+.chairman-review-card__table {
+  border: 1px solid var(--rf-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.chairman-review-card__table-head {
+  display: grid;
+  grid-template-columns: 40px 1fr 96px;
+  gap: 12px;
+  align-items: center;
+  padding: 7px 9px;
+  background: rgba(197, 155, 58, 0.10);
+  border-bottom: 1px solid var(--rf-border);
+  color: var(--rf-muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.01em;
+}
+
+.chairman-review-card__th-no,
+.chairman-review-card__th-result {
+  text-align: center;
+  font-weight: 600;
+}
+
+.chairman-review-card__row {
+  display: grid;
+  grid-template-columns: 40px 1fr 96px;
+  gap: 12px;
+  align-items: start;
+  padding: 8px 9px;
+  border-bottom: 1px solid var(--rf-border);
+}
+
+.chairman-review-card__row:last-child {
+  border-bottom: 0;
+}
+
+.chairman-review-card__cell-no {
+  text-align: center;
+  font-weight: 700;
+  color: rgba(31, 41, 55, 0.64);
+}
+
+.chairman-review-card__cell-label {
+  line-height: 1.55;
+  color: var(--rf-text);
+  font-size: 0.88rem;
+}
+
+.chairman-review-card__cell-result {
+  display: flex;
+  justify-content: center;
+  padding-top: 2px;
+  align-items: center;
+}
+
+.chairman-review-card__result {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  min-width: 76px;
+  height: 28px;
+}
+
+.chairman-review-card__result-icon {
+  font-size: 0.95rem;
+}
+
+.chairman-review-card__result.is-pass {
+  background: rgba(25, 135, 84, 0.10);
+  border-color: rgba(25, 135, 84, 0.25);
+  color: #0f5132;
+}
+
+.chairman-review-card__result.is-fail {
+  background: rgba(220, 53, 69, 0.10);
+  border-color: rgba(220, 53, 69, 0.25);
+  color: #842029;
+}
+
+@media (max-width: 720px) {
+  .chairman-review-card__table-head,
+  .chairman-review-card__row {
+    grid-template-columns: 34px 1fr 84px;
+    gap: 10px;
+  }
+
+  .chairman-review-card__cell-label {
+    font-size: 0.86rem;
+  }
+}
+
 /* Ensure child scoped styles cannot re-introduce blue focus rings */
 .research-form ::v-deep .form-control:focus,
 .research-form ::v-deep textarea.form-control:focus,
@@ -7450,6 +7663,63 @@ export default {
 .research-form--dark ::v-deep .review-summary-card {
   background: #202c3a !important;
   border-color: #334458 !important;
+}
+
+.research-form--dark .chairman-checklist-readonly {
+  border-color: rgba(197, 155, 58, 0.22) !important;
+}
+
+.research-form--dark .chairman-review-card__badge {
+  background: rgba(197, 155, 58, 0.16) !important;
+  color: #f7d488 !important;
+  border-color: rgba(197, 155, 58, 0.28) !important;
+}
+
+.research-form--dark .chairman-review-card__table {
+  background: rgba(15, 23, 36, 0.35);
+  border-color: #2f3f52;
+}
+
+.research-form--dark .chairman-review-card__table-head {
+  background: rgba(197, 155, 58, 0.10);
+  border-bottom-color: #2f3f52;
+  color: #aab9ca;
+}
+
+.research-form--dark .chairman-review-card__row {
+  border-bottom-color: #2f3f52;
+}
+
+.research-form--dark .chairman-review-card__section + .chairman-review-card__section {
+  border-top-color: #2f3f52;
+}
+
+.research-form--dark .chairman-review-card__signature {
+  border-top-color: rgba(197, 155, 58, 0.28);
+}
+
+.research-form--dark .chairman-review-card__signature-line {
+  border-top-color: rgba(226, 232, 240, 0.22);
+}
+
+.research-form--dark .chairman-review-card__cell-no {
+  color: rgba(226, 232, 240, 0.62);
+}
+
+.research-form--dark .chairman-review-card__cell-label {
+  color: #e8eef7;
+}
+
+.research-form--dark .chairman-review-card__result.is-pass {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.28);
+  color: #a4f2c3;
+}
+
+.research-form--dark .chairman-review-card__result.is-fail {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.28);
+  color: #fecaca;
 }
 
 .research-form--dark .footer-fixed {
