@@ -271,6 +271,7 @@ export default {
     list: (params) => instance.get('/api/v1/notifications', { params }),
     markRead: (id) => instance.patch(`/api/v1/notifications/${id}/read`),
     markAllRead: () => instance.patch('/api/v1/notifications/mark-all-read'),
+    requestEvaluationEdit: (proposalId) => instance.post('/api/v1/notifications/request-evaluation-edit', { proposalId }),
   },
 
   meeting: {

@@ -188,6 +188,11 @@
                       <CIcon name="cil-paper-plane" class="mr-1" /> {{ $t('committee.proposalDetail.submit') }}
                     </CButton>
                   </div>
+                  <div v-if="canRequestEvaluationEdit" class="mt-3">
+                    <CButton color="warning" variant="outline" :disabled="isEditRequestSubmitting || editRequestSent" @click="requestEvaluationEdit">
+                      <CIcon name="cil-bell" class="mr-1" /> {{ editRequestSent ? $t('committee.proposalDetail.requestEditSent') : $t('committee.proposalDetail.requestEdit') }}
+                    </CButton>
+                  </div>
                 </div>
               </CForm>
             </CCardBody>
@@ -226,6 +231,9 @@ export default {
       draftSaved: false,
       submittedBannerVisible: false,
       isEvaluationLocked: false,
+      hasSubmittedEvaluation: false,
+      isEditRequestSubmitting: false,
+      editRequestSent: false,
       evaluationFileName: '',
       showRubric: true,
       selectedFundType: 'new',
@@ -303,6 +311,9 @@ export default {
     },
     canSubmit() {
       return !!this.proposal && !this.isEvaluationLocked
+    },
+    canRequestEvaluationEdit() {
+      return !!this.proposal && this.hasSubmittedEvaluation
     },
     selectedFundTypeLabel() {
       const match = (this.fundTypeOptions || []).find(o => o && o.value === this.selectedFundType)
@@ -392,6 +403,9 @@ export default {
       this.draftSaved = false
       this.submittedBannerVisible = false
       this.isEvaluationLocked = false
+      this.hasSubmittedEvaluation = false
+      this.isEditRequestSubmitting = false
+      this.editRequestSent = false
       this.evaluationFileName = ''
 
       if (!id) return
@@ -428,6 +442,7 @@ export default {
         if (!review) {
           this.clearLocalSubmissionLock()
           this.isEvaluationLocked = false
+          this.hasSubmittedEvaluation = false
           this.submittedBannerVisible = false
           return
         }
@@ -450,10 +465,12 @@ export default {
 
         if (isLockedReview) {
           this.isEvaluationLocked = true
+          this.hasSubmittedEvaluation = true
           this.submittedBannerVisible = true
         } else {
           this.clearLocalSubmissionLock()
           this.isEvaluationLocked = false
+          this.hasSubmittedEvaluation = false
           this.submittedBannerVisible = false
         }
       } catch (e) {
@@ -461,6 +478,7 @@ export default {
         if (status === 404) {
           this.clearLocalSubmissionLock()
           this.isEvaluationLocked = false
+          this.hasSubmittedEvaluation = false
           this.submittedBannerVisible = false
           return
         }
@@ -476,6 +494,7 @@ export default {
           if (!parsed || typeof parsed !== 'object') return
           if (String(parsed.userId || '') !== String(this.currentUserId || '')) return
           this.isEvaluationLocked = true
+          this.hasSubmittedEvaluation = true
           this.submittedBannerVisible = true
         }
       } catch (e) { void e }
@@ -579,6 +598,7 @@ export default {
         localStorage.removeItem(this.draftKey())
 
         this.isEvaluationLocked = true
+        this.hasSubmittedEvaluation = true
         this.submittedBannerVisible = true
         await this.loadSavedReview()
 
@@ -593,6 +613,7 @@ export default {
         const status = e && e.response ? e.response.status : null
         if (status === 409) {
           this.isEvaluationLocked = true
+          this.hasSubmittedEvaluation = true
           this.submittedBannerVisible = true
           await this.showAlert({
             icon: 'info',
@@ -608,6 +629,38 @@ export default {
         })
       } finally {
         this.isSubmitting = false
+      }
+    },
+    async requestEvaluationEdit() {
+      if (!this.canRequestEvaluationEdit || this.isEditRequestSubmitting || this.editRequestSent) return
+
+      const confirmed = await this.showAlert({
+        icon: 'question',
+        title: this.$t('committee.proposalDetail.alerts.requestEditConfirmTitle'),
+        text: this.$t('committee.proposalDetail.alerts.requestEditConfirmText'),
+        showCancelButton: true,
+        confirmButtonText: this.$t('committee.proposalDetail.requestEdit'),
+        cancelButtonText: this.$t('common.cancel')
+      })
+      if (!confirmed || !confirmed.isConfirmed) return
+
+      this.isEditRequestSubmitting = true
+      try {
+        await Service.notification.requestEvaluationEdit(encodeURIComponent(this.proposalId))
+        this.editRequestSent = true
+        await this.showAlert({
+          icon: 'success',
+          title: this.$t('committee.proposalDetail.alerts.requestEditSuccessTitle'),
+          text: this.$t('committee.proposalDetail.alerts.requestEditSuccessText')
+        })
+      } catch (e) {
+        await this.showAlert({
+          icon: 'error',
+          title: this.$t('committee.proposalDetail.alerts.requestEditErrorTitle'),
+          text: (e && e.response && e.response.data && e.response.data.message) || this.$t('committee.proposalDetail.alerts.retry')
+        })
+      } finally {
+        this.isEditRequestSubmitting = false
       }
     },
     onEvaluationFileChange(event) {

@@ -312,6 +312,7 @@ import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 const NOTIFICATION_TYPES = {
   status_changed: 'สถานะโครงการเปลี่ยนแปลง',
   revision_requested: 'ขอแก้ไขเอกสาร',
+  evaluation_edit_request: 'คำขอแก้ไขผลประเมิน',
   approved: 'โครงการได้รับการอนุมัติ',
   rejected: 'โครงการถูกปฏิเสธ',
   committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
@@ -326,6 +327,7 @@ const NOTIFICATION_TYPES = {
 const TYPE_BADGE_COLOR = {
   status_changed: 'info',
   revision_requested: 'warning',
+  evaluation_edit_request: 'warning',
   approved: 'success',
   rejected: 'danger',
   committee_valuated: 'danger',
@@ -473,6 +475,7 @@ export default {
       const key = raw.includes('.') ? raw.split('.').pop() : raw
       if (key.includes('approved')) return 'cil-check-circle'
       if (key.includes('rejected')) return 'cil-x-circle'
+      if (key.includes('evaluation_edit_request') || key.includes('edit_request')) return 'cil-pencil'
       if (key.includes('revision') || key.includes('document_required')) return 'cil-warning'
       if (key.includes('committee_assigned')) return 'cil-user-follow'
       if (key.includes('committee_valuated')) return 'cil-task'

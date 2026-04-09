@@ -83,6 +83,7 @@ const STATUS_LABELS = {
   assigned_to_committee: 'มอบหมายกรรมการแล้ว',
   under_review: 'พิจารณารอบ 1',
   committee_valuated: 'กรรมการได้ให้ความเห็นแล้ว',
+  evaluation_edit_request: 'มีคำขอแก้ไขผลประเมิน',
   meeting_completed: 'ส่วนบริหารกำลังจัดเตรียมผล',
   revision_requested: 'ขอแก้ไข',
   resubmitted: 'ส่งแก้ไขแล้ว',
@@ -277,6 +278,7 @@ export default {
 
     typeByEvent (eventKey) {
       if (eventKey.includes('approved') || eventKey.includes('announce')) return 'success'
+      if (eventKey.includes('edit_request')) return 'warning'
       if (eventKey.includes('revision') || eventKey.includes('reject')) return 'warning'
       if (eventKey.includes('assign') || eventKey.includes('committee')) return 'primary'
       return 'info'

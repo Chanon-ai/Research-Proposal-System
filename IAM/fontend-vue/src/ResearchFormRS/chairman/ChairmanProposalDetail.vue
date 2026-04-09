@@ -353,6 +353,11 @@
                       <CIcon name="cil-paper-plane" class="mr-1" /> {{ $t('chairman.proposalDetail.submit') }}
                     </CButton>
                   </div>
+                  <div v-if="canRequestEvaluationEdit" class="mt-3">
+                    <CButton color="warning" variant="outline" :disabled="isEditRequestSubmitting || editRequestSent" @click="requestEvaluationEdit">
+                      <CIcon name="cil-bell" class="mr-1" /> {{ editRequestSent ? $t('chairman.proposalDetail.requestEditSent') : $t('chairman.proposalDetail.requestEdit') }}
+                    </CButton>
+                  </div>
                 </div>
               </CForm>
             </CCardBody>
@@ -393,6 +398,9 @@ export default {
       draftSaved: false,
       submittedBannerVisible: false,
       isEvaluationLocked: false,
+      hasSubmittedEvaluation: false,
+      isEditRequestSubmitting: false,
+      editRequestSent: false,
       evaluationFileName: '',
       evaluationFileUploading: false,
       signatureData: '',
@@ -545,6 +553,9 @@ export default {
     },
     canSubmit () {
       return !!this.proposal && !this.isEvaluationLocked && this.isPendingChairmanReview && this.hasSignatureData && this.allChecklistAnswered
+    },
+    canRequestEvaluationEdit () {
+      return !!this.proposal && this.hasSubmittedEvaluation
     },
     centerLoadingActive () {
       return Boolean(this.loading || this.isSubmitting)
@@ -1055,6 +1066,9 @@ export default {
       this.draftSaved = false
       this.submittedBannerVisible = false
       this.isEvaluationLocked = false
+      this.hasSubmittedEvaluation = false
+      this.isEditRequestSubmitting = false
+      this.editRequestSent = false
       this.evaluationFileName = ''
       this.signatureData = ''
       this.signatureTimestamp = ''
@@ -1125,6 +1139,7 @@ export default {
         if (!review) {
           this.clearLocalSubmissionLock()
           this.isEvaluationLocked = false
+          this.hasSubmittedEvaluation = false
           this.submittedBannerVisible = false
           this.submittedAt = ''
           return
@@ -1190,10 +1205,12 @@ export default {
 
         if (isLockedReview && !this.isPendingChairmanReview) {
           this.isEvaluationLocked = true
+          this.hasSubmittedEvaluation = true
           this.submittedBannerVisible = true
         } else {
           this.clearLocalSubmissionLock()
           this.isEvaluationLocked = false
+          this.hasSubmittedEvaluation = false
           this.submittedBannerVisible = false
           this.submittedAt = ''
         }
@@ -1202,6 +1219,7 @@ export default {
         if (status === 404) {
           this.clearLocalSubmissionLock()
           this.isEvaluationLocked = false
+          this.hasSubmittedEvaluation = false
           this.submittedBannerVisible = false
           this.submittedAt = ''
           return
@@ -1217,6 +1235,7 @@ export default {
         if (!parsed || typeof parsed !== 'object') return
         if (String(parsed.userId || '') !== String(this.currentUserId || '')) return
         this.isEvaluationLocked = true
+        this.hasSubmittedEvaluation = true
         this.submittedBannerVisible = true
         this.submittedAt = String(parsed.submittedAt || this.submittedAt || '')
       } catch (_) {
@@ -1543,6 +1562,7 @@ export default {
         this.submittedAt = submittedAt
 
         this.isEvaluationLocked = true
+        this.hasSubmittedEvaluation = true
         this.submittedBannerVisible = true
         await this.loadSavedReview()
 
@@ -1557,6 +1577,7 @@ export default {
         const status = error && error.response ? error.response.status : null
         if (status === 409) {
           this.isEvaluationLocked = true
+          this.hasSubmittedEvaluation = true
           this.submittedBannerVisible = true
           await this.showAlert({
             icon: 'info',
@@ -1572,6 +1593,38 @@ export default {
         })
       } finally {
         this.isSubmitting = false
+      }
+    },
+    async requestEvaluationEdit () {
+      if (!this.canRequestEvaluationEdit || this.isEditRequestSubmitting || this.editRequestSent) return
+
+      const confirmed = await this.showAlert({
+        icon: 'question',
+        title: this.$t('chairman.proposalDetail.alerts.requestEditConfirmTitle'),
+        text: this.$t('chairman.proposalDetail.alerts.requestEditConfirmText'),
+        showCancelButton: true,
+        confirmButtonText: this.$t('chairman.proposalDetail.requestEdit'),
+        cancelButtonText: this.$t('common.cancel')
+      })
+      if (!confirmed || !confirmed.isConfirmed) return
+
+      this.isEditRequestSubmitting = true
+      try {
+        await Service.notification.requestEvaluationEdit(encodeURIComponent(this.proposalId))
+        this.editRequestSent = true
+        await this.showAlert({
+          icon: 'success',
+          title: this.$t('chairman.proposalDetail.alerts.requestEditSuccessTitle'),
+          text: this.$t('chairman.proposalDetail.alerts.requestEditSuccessText')
+        })
+      } catch (error) {
+        await this.showAlert({
+          icon: 'error',
+          title: this.$t('chairman.proposalDetail.alerts.requestEditErrorTitle'),
+          text: (error && error.response && error.response.data && error.response.data.message) || this.$t('chairman.proposalDetail.alerts.retry')
+        })
+      } finally {
+        this.isEditRequestSubmitting = false
       }
     },
     async onEvaluationFileChange (files, event) {

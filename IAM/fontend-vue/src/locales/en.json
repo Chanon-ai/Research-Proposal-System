@@ -755,6 +755,8 @@
       "decision": "Decision",
       "saveDraft": "Save draft",
       "submit": "Submit evaluation",
+      "requestEdit": "Request evaluation edit",
+      "requestEditSent": "Edit request sent",
       "decisionOptions": {
         "approve": "Approve",
         "reject": "Reject",
@@ -766,6 +768,11 @@
         "submitSuccessTitle": "Evaluation submitted successfully",
         "submitSuccessText": "The system has saved the evaluation result.",
         "duplicateSubmitText": "The system does not allow resubmission because the evaluation has already been submitted.",
+        "requestEditConfirmTitle": "Confirm evaluation edit request",
+        "requestEditConfirmText": "The system will notify the admin team that you want to edit the evaluation result that has already been submitted.",
+        "requestEditSuccessTitle": "Request sent",
+        "requestEditSuccessText": "The admin team has been notified about the evaluation edit request.",
+        "requestEditErrorTitle": "Unable to send request",
         "submitErrorTitle": "Unable to submit evaluation",
         "retry": "Please try again."
       }
@@ -1109,6 +1116,8 @@
       "decision": "Decision",
       "saveDraft": "Save draft",
       "submit": "Submit decision",
+      "requestEdit": "Request decision edit",
+      "requestEditSent": "Edit request sent",
       "decisionOptions": {
         "approve": "Approve",
         "revision": "Request revision",
@@ -1132,6 +1141,11 @@
         "submitSuccessTitle": "Decision submitted successfully",
         "submitSuccessText": "The system has saved the decision result.",
         "duplicateSubmitText": "The system does not allow resubmission because the decision has already been submitted.",
+        "requestEditConfirmTitle": "Confirm decision edit request",
+        "requestEditConfirmText": "The system will notify the admin team that you want to edit the submitted decision result.",
+        "requestEditSuccessTitle": "Request sent",
+        "requestEditSuccessText": "The admin team has been notified about the decision edit request.",
+        "requestEditErrorTitle": "Unable to send request",
         "submitErrorTitle": "Unable to submit decision",
         "retry": "Please try again."
       },
@@ -1210,7 +1224,9 @@
       "back": "Back",
       "saveDraft": "Save Draft",
       "requestRevision": "Request Revision",
-      "submitToAdmin": "Submit to Admin"
+      "submitToAdmin": "Submit to Admin",
+      "requestEdit": "Request review edit",
+      "requestEditSent": "Edit request sent"
     },
     "status": {
       "idle": "Not Started",
@@ -1285,6 +1301,11 @@
       "revisionError": "Unable to send the revision request",
       "submitSuccess": "Finance review submitted to admin",
       "submitError": "Unable to submit finance review",
+      "requestEditConfirmTitle": "Confirm finance review edit request",
+      "requestEditConfirmText": "The system will notify the admin team that you want to edit the finance review that has already been submitted.",
+      "requestEditSuccessTitle": "Request sent",
+      "requestEditSuccessText": "The admin team has been notified about the finance review edit request.",
+      "requestEditErrorTitle": "Unable to send request",
       "retry": "Please try again."
     }
   },

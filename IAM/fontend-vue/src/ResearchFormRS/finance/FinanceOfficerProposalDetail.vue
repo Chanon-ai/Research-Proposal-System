@@ -69,11 +69,12 @@
                   {{ $t('finance.detail.submittedAt', { date: submittedAtText }) }}
                 </CAlert>
 
-                <div class="d-flex justify-content-end mt-4">
+                <div class="d-flex justify-content-end flex-wrap mt-4" style="gap: 8px;">
                   <CButton color="secondary" variant="outline" class="mr-2" @click="goBack">{{ $t('finance.actions.back') }}</CButton>
                   <CButton color="info" class="mr-2" :disabled="isLocked || isSubmitting" @click="saveDraft">{{ $t('finance.actions.saveDraft') }}</CButton>
                   <CButton color="warning" class="mr-2" :disabled="isLocked || isSubmitting" @click="submitReview('revision')">{{ $t('finance.actions.requestRevision') }}</CButton>
                   <CButton color="primary" :disabled="isLocked || isSubmitting" @click="submitReview('submit')">{{ $t('finance.actions.submitToAdmin') }}</CButton>
+                  <CButton v-if="canRequestEvaluationEdit" color="warning" variant="outline" :disabled="isEditRequestSubmitting || editRequestSent" @click="requestEvaluationEdit">{{ editRequestSent ? $t('finance.actions.requestEditSent') : $t('finance.actions.requestEdit') }}</CButton>
                 </div>
               </div>
             </CCardBody>
@@ -115,6 +116,8 @@ export default {
     return {
       loading: false,
       isSubmitting: false,
+      isEditRequestSubmitting: false,
+      editRequestSent: false,
       error: '',
       proposal: null,
       fundingBudgetConfig: createDefaultFundingBudgetConfig(),
@@ -175,6 +178,9 @@ export default {
       if (!submittedAt) return ''
       const date = new Date(submittedAt)
       return Number.isNaN(date.getTime()) ? '' : date.toLocaleString(this.$i18n.locale === 'en' ? 'en-US' : 'th-TH')
+    },
+    canRequestEvaluationEdit () {
+      return !!this.proposal && !!this.submittedAtText
     }
   },
   watch: {
@@ -201,6 +207,7 @@ export default {
     async fetchProposal () {
       this.loading = true
       this.error = ''
+      this.editRequestSent = false
       try {
         const response = await Service.proposal.getById(encodeURIComponent(this.proposalId))
         const payload = response && response.data ? response.data : {}
@@ -274,6 +281,38 @@ export default {
         })
       } finally {
         this.isSubmitting = false
+      }
+    },
+    async requestEvaluationEdit () {
+      if (!this.canRequestEvaluationEdit || this.isEditRequestSubmitting || this.editRequestSent) return
+
+      const confirmed = await Swal.fire({
+        icon: 'question',
+        title: this.$t('finance.alerts.requestEditConfirmTitle'),
+        text: this.$t('finance.alerts.requestEditConfirmText'),
+        showCancelButton: true,
+        confirmButtonText: this.$t('finance.actions.requestEdit'),
+        cancelButtonText: this.$t('finance.alerts.cancel')
+      })
+      if (!confirmed.isConfirmed) return
+
+      this.isEditRequestSubmitting = true
+      try {
+        await Service.notification.requestEvaluationEdit(encodeURIComponent(this.proposalId))
+        this.editRequestSent = true
+        await Swal.fire({
+          icon: 'success',
+          title: this.$t('finance.alerts.requestEditSuccessTitle'),
+          text: this.$t('finance.alerts.requestEditSuccessText')
+        })
+      } catch (error) {
+        await Swal.fire({
+          icon: 'error',
+          title: this.$t('finance.alerts.requestEditErrorTitle'),
+          text: (error && error.response && error.response.data && error.response.data.message) || this.$t('finance.alerts.retry')
+        })
+      } finally {
+        this.isEditRequestSubmitting = false
       }
     },
     goBack () {

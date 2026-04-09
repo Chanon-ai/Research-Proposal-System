@@ -755,6 +755,8 @@
       "decision": "ผลการพิจารณา",
       "saveDraft": "บันทึกฉบับร่าง",
       "submit": "ส่งผลการประเมิน",
+      "requestEdit": "แจ้งขอแก้ไขผลประเมิน",
+      "requestEditSent": "ส่งคำขอแก้ไขแล้ว",
       "decisionOptions": {
         "approve": "อนุมัติ",
         "reject": "ไม่อนุมัติ",
@@ -766,6 +768,11 @@
         "submitSuccessTitle": "ส่งผลการประเมินสำเร็จ",
         "submitSuccessText": "ระบบได้บันทึกผลการประเมินเรียบร้อยแล้ว",
         "duplicateSubmitText": "ระบบไม่อนุญาตให้ส่งซ้ำ เนื่องจากมีการส่งผลการประเมินไปแล้ว",
+        "requestEditConfirmTitle": "ยืนยันการแจ้งขอแก้ไขผลประเมิน",
+        "requestEditConfirmText": "ระบบจะส่งการแจ้งเตือนไปยังแอดมินเพื่อรับทราบว่าคุณต้องการแก้ไขผลประเมินที่ส่งไปแล้ว",
+        "requestEditSuccessTitle": "ส่งคำขอแล้ว",
+        "requestEditSuccessText": "ระบบได้แจ้งแอดมินว่ามีการร้องขอแก้ไขผลประเมินแล้ว",
+        "requestEditErrorTitle": "ส่งคำขอไม่สำเร็จ",
         "submitErrorTitle": "ส่งผลการประเมินไม่สำเร็จ",
         "retry": "กรุณาลองใหม่อีกครั้ง"
       }
@@ -1109,6 +1116,8 @@
       "decision": "ผลการพิจารณา",
       "saveDraft": "บันทึกฉบับร่าง",
       "submit": "ส่งผลการพิจารณา",
+      "requestEdit": "แจ้งขอแก้ไขผลการพิจารณา",
+      "requestEditSent": "ส่งคำขอแก้ไขแล้ว",
       "decisionOptions": {
         "approve": "อนุมัติ",
         "revision": "ขอแก้ไขเพิ่มเติม",
@@ -1132,6 +1141,11 @@
         "submitSuccessTitle": "ส่งผลการพิจารณาสำเร็จ",
         "submitSuccessText": "ระบบได้บันทึกผลการพิจารณาเรียบร้อยแล้ว",
         "duplicateSubmitText": "ระบบไม่อนุญาตให้ส่งซ้ำ เนื่องจากมีการส่งผลการพิจารณาไปแล้ว",
+        "requestEditConfirmTitle": "ยืนยันการแจ้งขอแก้ไขผลการพิจารณา",
+        "requestEditConfirmText": "ระบบจะส่งการแจ้งเตือนไปยังแอดมินเพื่อรับทราบว่าคุณต้องการแก้ไขผลการพิจารณาที่ส่งไปแล้ว",
+        "requestEditSuccessTitle": "ส่งคำขอแล้ว",
+        "requestEditSuccessText": "ระบบได้แจ้งแอดมินว่ามีการร้องขอแก้ไขผลการพิจารณาแล้ว",
+        "requestEditErrorTitle": "ส่งคำขอไม่สำเร็จ",
         "submitErrorTitle": "ส่งผลการพิจารณาไม่สำเร็จ",
         "retry": "กรุณาลองใหม่อีกครั้ง"
       },
@@ -1210,7 +1224,9 @@
       "back": "กลับ",
       "saveDraft": "บันทึกฉบับร่าง",
       "requestRevision": "ส่งขอแก้ไข",
-      "submitToAdmin": "ส่งผลให้แอดมิน"
+      "submitToAdmin": "ส่งผลให้แอดมิน",
+      "requestEdit": "แจ้งขอแก้ไขผลตรวจสอบ",
+      "requestEditSent": "ส่งคำขอแก้ไขแล้ว"
     },
     "status": {
       "idle": "ยังไม่เริ่มต้น",
@@ -1285,6 +1301,11 @@
       "revisionError": "ส่งคำขอแก้ไขไม่สำเร็จ",
       "submitSuccess": "ส่งผลการตรวจสอบให้แอดมินแล้ว",
       "submitError": "ส่งผลการตรวจสอบไม่สำเร็จ",
+      "requestEditConfirmTitle": "ยืนยันการแจ้งขอแก้ไขผลตรวจสอบ",
+      "requestEditConfirmText": "ระบบจะส่งการแจ้งเตือนไปยังแอดมินเพื่อรับทราบว่าคุณต้องการแก้ไขผลการตรวจสอบที่ส่งไปแล้ว",
+      "requestEditSuccessTitle": "ส่งคำขอแล้ว",
+      "requestEditSuccessText": "ระบบได้แจ้งแอดมินว่ามีการร้องขอแก้ไขผลตรวจสอบแล้ว",
+      "requestEditErrorTitle": "ส่งคำขอไม่สำเร็จ",
       "retry": "กรุณาลองใหม่อีกครั้ง"
     }
   },
