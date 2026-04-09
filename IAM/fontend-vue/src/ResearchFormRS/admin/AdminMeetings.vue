@@ -258,7 +258,7 @@
     <CModal v-if="canCreate" :show.sync="showMeetingModal" :close-on-backdrop="false" centered size="lg" class="meeting-modal">
       <template #header-wrapper>
         <div class="modal-header">
-          <h5 class="modal-title">{{ isEditMode ? 'แก้ไขการประชุม' : 'สร้างการประชุมใหม่' }}</h5>
+          <h5 class="modal-title">{{ isEditMode ? 'Edit Meeting' : 'Create New Meeting' }}</h5>
           <div class="meeting-modal__header-actions">
             <CButton
               v-if="isEditMode && selectedMeeting && meetingForm && meetingForm.status === 'scheduled'"
@@ -269,7 +269,7 @@
               @click="cancelMeeting"
             >
               <CIcon name="cil-ban" width="16" class="mr-1 icon-bold" aria-hidden="true" />
-              ยกเลิกการประชุม
+              Cancel Meeting
             </CButton>
             <button type="button" class="close" aria-label="Close" @click="closeMeetingModal">
               <CIcon name="cil-x" />
@@ -280,11 +280,11 @@
       <template #body-wrapper>
         <div class="meeting-form">
           <div class="field full-field">
-            <label class="form-label mt-3">โครงการที่เกี่ยวข้อง <span class="required">*</span></label>
+            <label class="form-label mt-3">Related Proposal <span class="required">*</span></label>
             <multiselect v-model="selectedProposalOption" :options="proposalOptions" :searchable="true"
               :clear-on-select="false" :close-on-select="true" :preserve-search="true" :allow-empty="true"
               :loading="proposalOptionsLoading" label="searchText" track-by="_id"
-              placeholder="พิมพ์เพื่อค้นหาโครงการ..." :custom-label="formatProposalTitle" @input="onProposalSelected">
+              placeholder="Type to search proposals..." :custom-label="formatProposalTitle" @input="onProposalSelected">
               <template slot="singleLabel" slot-scope="{ option }">
                 <span>{{ formatProposalTitle(option) }}</span>
               </template>
@@ -292,21 +292,21 @@
                 <div>
                   <div class="font-weight-bold">{{ option.projectTitleTh || option.projectTitleEn || '-' }}</div>
                   <div v-if="getProposalLeaderName(option)" class="text-muted small">
-                    หัวหน้าโครงการ: {{ getProposalLeaderName(option) }}
+                    Project Leader: {{ getProposalLeaderName(option) }}
                   </div>
                 </div>
               </template>
             </multiselect>
-            <small class="text-muted d-block mt-1">เลือกได้เฉพาะโครงการสถานะ ส่วนบริหารรับแล้ว หรือ ส่วนบริหารกำลังจัดเตรียมผล</small>
-            <small v-if="proposalOptionsError" class="text-warning d-block mt-1">โหลดรายชื่อโครงการไม่สำเร็จ: {{
+            <small class="text-muted d-block mt-1">Only proposals with status: Office Received or Office Preparing Result</small>
+            <small v-if="proposalOptionsError" class="text-warning d-block mt-1">Failed to load proposal list: {{
               proposalOptionsError }}</small>
           </div>
           <div class="field full-field">
-            <label class="form-label">ผู้เข้าร่วมเพิ่มเติม (ไม่บังคับ)</label>
+            <label class="form-label">Additional Participants (Optional)</label>
             <multiselect v-model="selectedParticipantOptions" :options="participantOptions" :searchable="true"
               :multiple="true" :close-on-select="false" :clear-on-select="false" :preserve-search="true"
               :allow-empty="true" :loading="participantOptionsLoading" label="searchText" track-by="_id"
-              placeholder="พิมพ์เพื่อค้นหาผู้ใช้..." :custom-label="formatParticipantLabel">
+              placeholder="Type to search users..." :custom-label="formatParticipantLabel">
               <template slot="option" slot-scope="{ option }">
                 <div>
                   <div class="font-weight-bold">{{ option.fullName || '-' }}</div>
@@ -314,24 +314,24 @@
                 </div>
               </template>
             </multiselect>
-            <small v-if="participantOptionsError" class="text-warning d-block mt-1">โหลดรายชื่อผู้ใช้ไม่สำเร็จ: {{
+            <small v-if="participantOptionsError" class="text-warning d-block mt-1">Failed to load user list: {{
               participantOptionsError }}</small>
           </div>
           <div class="field full-field">
-            <label class="form-label">ชื่อการประชุม <span class="required">*</span></label>
-            <CInput class="full" placeholder="กรอกชื่อการประชุม" v-model="meetingForm.title" />
+            <label class="form-label">Meeting Title <span class="required">*</span></label>
+            <CInput class="full" placeholder="Enter meeting title" v-model="meetingForm.title" />
           </div>
 
           <div class="small-row">
             <div class="field small-field">
-              <label class="form-label">วันที่ประชุม <span class="required">*</span></label>
+              <label class="form-label">Meeting Date <span class="required">*</span></label>
               <v-date-picker v-model="meetingDatePickerValue" :min-date="enforceMinDateTime ? minMeetingDateObj : null"
                 :popover="{ visibility: 'focus', placement: 'bottom-start' }">
                 <template #default="{ inputValue, inputEvents }">
                   <div class="input-icon__wrap" data-tone="primary">
                     <input ref="meetingDateInput" class="form-control input-icon__control"
                       :value="meetingDatePickerValue ? formatThaiDateExampleShort(meetingDatePickerValue) : ''"
-                      v-on="inputEvents" readonly placeholder="เลือกวันที่">
+                      v-on="inputEvents" readonly placeholder="Select date">
                     <button type="button" class="input-icon__suffix" @mousedown.prevent
                       @click="focusPicker('meetingDateInput')">
                       <CIcon name="cil-calendar" width="16" class="input-icon__ic" aria-hidden="true" />
@@ -344,11 +344,11 @@
               }}</small>
             </div>
             <div class="field small-field">
-              <label class="form-label">เวลาเริ่ม <span class="required">*</span></label>
+              <label class="form-label">Start Time <span class="required">*</span></label>
               <div class="input-icon__wrap" data-tone="info">
                 <input ref="startTimeTrigger" class="form-control input-icon__control time-trigger" type="text"
                   :value="meetingForm.startTime ? formatTimeMeridiemDisplay(meetingForm.startTime) : ''"
-                  placeholder="เลือกเวลาเริ่ม" readonly @click="toggleTimeDropdown('start')" />
+                  placeholder="Select start time" readonly @click="toggleTimeDropdown('start')" />
                 <button type="button" class="input-icon__suffix" @mousedown.prevent
                   @click="toggleTimeDropdown('start')">
                   <CIcon name="cil-clock" width="16" class="input-icon__ic" aria-hidden="true" />
@@ -356,11 +356,11 @@
               </div>
             </div>
             <div class="field small-field">
-              <label class="form-label">เวลาสิ้นสุด</label>
+              <label class="form-label">End Time</label>
               <div class="input-icon__wrap" data-tone="info">
                 <input ref="endTimeTrigger" class="form-control input-icon__control time-trigger" type="text"
                   :value="meetingForm.endTime ? formatTimeMeridiemDisplay(meetingForm.endTime) : ''"
-                  :placeholder="meetingForm.startTime ? '-' : 'เลือกเวลาสิ้นสุด'" readonly
+                  :placeholder="meetingForm.startTime ? '-' : 'Select end time'" readonly
                   :disabled="!meetingForm.startTime" @click="toggleTimeDropdown('end')" />
                 <button type="button" class="input-icon__suffix" @mousedown.prevent :disabled="!meetingForm.startTime"
                   @click="toggleTimeDropdown('end')">
@@ -371,35 +371,35 @@
           </div>
 
           <div class="field full-field">
-            <label class="form-label">ประเภทการประชุม</label>
-            <div class="meeting-type-toggle" role="radiogroup" aria-label="ประเภทการประชุม">
+            <label class="form-label">Meeting Type</label>
+            <div class="meeting-type-toggle" role="radiogroup" aria-label="Meeting Type">
               <input id="meeting-type-online" class="meeting-type-toggle__input" type="radio" value="online"
                 v-model="meetingForm.meetingType">
-              <label class="meeting-type-toggle__label" for="meeting-type-online">ออนไลน์</label>
+              <label class="meeting-type-toggle__label" for="meeting-type-online">Online</label>
               <input id="meeting-type-onsite" class="meeting-type-toggle__input" type="radio" value="onsite"
                 v-model="meetingForm.meetingType">
-              <label class="meeting-type-toggle__label" for="meeting-type-onsite">ออนไซต์</label>
+              <label class="meeting-type-toggle__label" for="meeting-type-onsite">Onsite</label>
             </div>
           </div>
 
           <div class="field full-field">
-            <label class="form-label">สถานที่ <span v-if="meetingForm.meetingType === 'onsite'"
+            <label class="form-label">Location <span v-if="meetingForm.meetingType === 'onsite'"
                 class="required">*</span></label>
             <input type="text" class="form-control full" v-model="meetingForm.location"
               :disabled="meetingForm.meetingType === 'online'"
-              :placeholder="meetingForm.meetingType === 'online' ? 'ออนไลน์: ไม่ต้องกรอกสถานที่' : 'เช่น C1 101'" />
+              :placeholder="meetingForm.meetingType === 'online' ? 'Online: no location needed' : 'e.g. C1 101'" />
           </div>
 
           <div class="field full-field">
-            <label class="form-label">ลิงก์วิดีโอประชุม <span v-if="meetingForm.meetingType === 'online'"
+            <label class="form-label">Video Meeting Link <span v-if="meetingForm.meetingType === 'online'"
                 class="required">*</span></label>
-            <CInput class="full" type="url" placeholder="เช่น https://meet.google.com/..."
+            <CInput class="full" type="url" placeholder="e.g. https://meet.google.com/..."
               v-model="meetingForm.videoLink" />
           </div>
 
           <div class="field full-field">
-            <label class="form-label">วาระการประชุม</label>
-            <CTextarea class="full" rows="4" placeholder="ใส่หัวข้อย่อยหรือประเด็นหลักที่ต้องหารือ (ถ้ามี)"
+            <label class="form-label">Agenda</label>
+            <CTextarea class="full" rows="4" placeholder="Enter agenda topics or key discussion points (if any)"
               v-model="meetingForm.agenda" />
           </div>
         </div>
@@ -407,9 +407,9 @@
 
       <template #footer-wrapper>
         <div class="d-flex justify-content-end w-100 modal-actions-wrapper">
-          <CButton color="secondary" class="mr-3 floating-action btn-cancel" @click="closeMeetingModal"><CIcon name="cil-x" class="mr-1" /> ยกเลิก</CButton>
+          <CButton color="secondary" class="mr-3 floating-action btn-cancel" @click="closeMeetingModal"><CIcon name="cil-x" class="mr-1" /> Cancel</CButton>
           <CButton color="primary" class="floating-action btn-save" :disabled="savingMeeting" @click="saveMeeting">
-            <CIcon name="cil-save" class="mr-1" /> {{ savingMeeting ? 'กำลังบันทึก...' : 'บันทึก' }}
+            <CIcon name="cil-save" class="mr-1" /> {{ savingMeeting ? 'Saving...' : 'Save' }}
           </CButton>
         </div>
       </template>
@@ -417,14 +417,14 @@
 
     <div v-if="canCreate && timeDropdown.openFor" class="time-picker__backdrop" @mousedown="closeTimeDropdown"></div>
     <div v-if="canCreate && timeDropdown.openFor" class="time-picker" ref="timeDropdownPanel" role="dialog" aria-modal="true"
-      :aria-label="timeDropdown.openFor === 'start' ? 'เลือกเวลาเริ่มประชุม' : 'เลือกเวลาสิ้นสุดประชุม'" :style="{
+      :aria-label="timeDropdown.openFor === 'start' ? 'Select meeting start time' : 'Select meeting end time'" :style="{
         top: timeDropdown.top + 'px',
         left: timeDropdown.left + 'px',
         width: timeDropdown.width + 'px'
       }" @mousedown.stop>
       <div class="time-picker__wheels">
         <div class="time-picker__wheel">
-          <button type="button" class="time-picker__arrow" aria-label="เพิ่มชั่วโมง" @click="stepTimePicker('hour', 1)">
+          <button type="button" class="time-picker__arrow" aria-label="Increase hour" @click="stepTimePicker('hour', 1)">
             <CIcon name="cil-chevron-top" width="18" />
           </button>
           <div class="time-picker__digit-window">
@@ -432,13 +432,13 @@
               <span :key="`hour-${timeDropdown.hour}`" class="time-picker__digit">{{ displayTimePickerHour }}</span>
             </transition>
           </div>
-          <button type="button" class="time-picker__arrow" aria-label="ลดชั่วโมง" @click="stepTimePicker('hour', -1)">
+          <button type="button" class="time-picker__arrow" aria-label="Decrease hour" @click="stepTimePicker('hour', -1)">
             <CIcon name="cil-chevron-bottom" width="18" />
           </button>
         </div>
         <div class="time-picker__separator" aria-hidden="true">:</div>
         <div class="time-picker__wheel">
-          <button type="button" class="time-picker__arrow" aria-label="เพิ่มนาที" @click="stepTimePicker('minute', 1)">
+          <button type="button" class="time-picker__arrow" aria-label="Increase minute" @click="stepTimePicker('minute', 1)">
             <CIcon name="cil-chevron-top" width="18" />
           </button>
           <div class="time-picker__digit-window">
@@ -446,7 +446,7 @@
               <span :key="`minute-${timeDropdown.minute}`" class="time-picker__digit">{{ displayTimePickerMinute }}</span>
             </transition>
           </div>
-          <button type="button" class="time-picker__arrow" aria-label="ลดนาที" @click="stepTimePicker('minute', -1)">
+          <button type="button" class="time-picker__arrow" aria-label="Decrease minute" @click="stepTimePicker('minute', -1)">
             <CIcon name="cil-chevron-bottom" width="18" />
           </button>
         </div>
@@ -460,7 +460,7 @@
     </div>
 
     <CModal :show.sync="showMinutesModal" :close-on-backdrop="false" centered size="xl" class="minutes-modal"
-      :title="`${readOnly ? 'รายละเอียดการประชุม' : 'บันทึกผลการประชุม'} — ${minutesMeeting ? (minutesMeeting.title || '-') : '-'}`">
+      :title="`${readOnly ? 'Meeting Details' : 'Save Meeting Minutes'} — ${minutesMeeting ? (minutesMeeting.title || '-') : '-'}`">
       <template #body-wrapper>
         <div class="minutes-form">
           <div v-if="minutesMeeting" class="minutes-meta full">
@@ -476,14 +476,14 @@
           </div>
 
           <div class="minutes-panel">
-            <div class="minutes-panel__title">บันทึกการประชุม</div>
-            <CTextarea rows="6" placeholder="บันทึกสิ่งที่เกิดขึ้นในการประชุม..." v-model="minutesForm.minutes"
+            <div class="minutes-panel__title">Meeting Minutes</div>
+            <CTextarea rows="6" placeholder="Record what happened in the meeting..." v-model="minutesForm.minutes"
               :disabled="isReadOnly(minutesMeeting)" />
           </div>
 
           <div class="minutes-panel">
-            <div class="minutes-panel__title">มติที่ประชุม</div>
-            <CTextarea rows="6" placeholder="มติหรือข้อสรุปสำคัญจากที่ประชุม..." v-model="minutesForm.decisions"
+            <div class="minutes-panel__title">Meeting Resolutions</div>
+            <CTextarea rows="6" placeholder="Key resolutions or conclusions from the meeting..." v-model="minutesForm.decisions"
               :disabled="isReadOnly(minutesMeeting)" />
           </div>
 
@@ -495,9 +495,9 @@
               <table class="table table-bordered table-sm mb-0">
                 <thead>
                   <tr>
-                    <th>งานที่ต้องทำ</th>
-                    <th>ผู้รับผิดชอบ</th>
-                    <th>กำหนดเสร็จ</th>
+                    <th>Task</th>
+                    <th>Assignee</th>
+                    <th>Due Date</th>
                     <th style="width: 60px;">#</th>
                   </tr>
                 </thead>
@@ -508,19 +508,19 @@
                     <td><CInput type="date" v-model="item.deadline" :disabled="isReadOnly(minutesMeeting)" /></td>
                     <td>
                       <CButton size="sm" color="danger" :disabled="isReadOnly(minutesMeeting)" class="minutes-action__remove"
-                        @click="removeActionItem(index)" aria-label="ลบ Action Item">
+                        @click="removeActionItem(index)" aria-label="Remove Action Item">
                         <CIcon name="cil-trash" width="14" aria-hidden="true" />
                       </CButton>
                     </td>
                   </tr>
                   <tr v-if="minutesForm.actionItems.length === 0">
-                    <td colspan="4" class="text-center text-muted">ยังไม่มี Action Items</td>
+                    <td colspan="4" class="text-center text-muted">No Action Items yet</td>
                   </tr>
                   <tr v-if="!isReadOnly(minutesMeeting)" class="minutes-action__add-row">
                     <td colspan="4">
                       <button type="button" class="minutes-action__add-btn" @click="addActionItem">
                         <CIcon name="cil-plus" width="16" class="minutes-action__add-ic" aria-hidden="true" />
-                        เพิ่ม Action Item
+                        Add Action Item
                       </button>
                     </td>
                   </tr>

@@ -38,7 +38,7 @@
                 class="expected-outcome-card__marker"
                 :class="{ 'is-active': selectedOutcome === option.value }"
                 aria-hidden="true"
-              >?</span>
+              >✓</span>
             </div>
 
             <p class="expected-outcome-card__description mb-0">{{ option.description }}</p>
@@ -51,7 +51,7 @@
           role="status"
           aria-live="polite"
         >
-          <span class="expected-outcome-summary__icon" aria-hidden="true">{{ isOutcomeSelected ? '?' : 'i' }}</span>
+          <span class="expected-outcome-summary__icon" aria-hidden="true">{{ isOutcomeSelected ? '✓' : 'i' }}</span>
           <span v-if="isOutcomeSelected">{{ selectedOutcomeText }}</span>
           <span v-else>{{ promptText }}</span>
         </div>
@@ -199,7 +199,7 @@ export default {
     selectedOutcomeText() {
       return this.isEnglishLocale
         ? `Selected: ${this.selectedOutcomeLabel}`
-        : `?????????: ${this.selectedOutcomeLabel}`
+        : `เลือกแล้ว: ${this.selectedOutcomeLabel}`
     },
     isOutcomeSelected() {
       return Boolean(this.selectedOutcomeOption)

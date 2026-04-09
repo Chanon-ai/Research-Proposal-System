@@ -1528,11 +1528,19 @@ body.c-dark-theme .admin-notification-detail__proposal-code {
 
   .send-modal-inner {
     padding: 1rem;
-    max-height: calc(100vh - 230px);
+    padding-bottom: 140px;           /* เพิ่ม — ให้เนื้อหาไม่ถูกปุ่มบังด้านล่าง */
+    max-height: calc(100vh - 160px); /* ขยายจาก 230px → 160px เพื่อให้สูงขึ้น */
   }
 
   .send-modal-footer {
-    padding: 0.75rem 1rem 0.9rem;
+    position: fixed;          /* เปลี่ยนจาก sticky → fixed */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem 1rem max(1.2rem, env(safe-area-inset-bottom));
+    z-index: 1050;
+    background: #f8f9fa;
+    border-top: 1px solid #e4e7ea;
   }
 
   .recipient-list {
@@ -1541,7 +1549,7 @@ body.c-dark-theme .admin-notification-detail__proposal-code {
 
   .admin-email-widget__fab {
     right: 16px;
-    bottom: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px)); /* รองรับ home bar iOS */
   }
 }
 </style>

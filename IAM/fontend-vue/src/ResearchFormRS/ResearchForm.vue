@@ -726,7 +726,7 @@
 
         <template #footer-wrapper>
           <div class="committee-modal-footer d-flex justify-content-end w-100" style="padding: 12px 24px 20px;">
-            <CButton color="secondary" class="mr-2" @click="closeAdminCommitteeModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('researchFormAdminFooter.common.cancel') }}</CButton>
+            <CButton color="danger" class="mr-2" @click="closeAdminCommitteeModal"><CIcon name="cil-x" class="mr-1" /> {{ $t('researchFormAdminFooter.common.cancel') }}</CButton>
             <CButton color="success" :disabled="adminSubmittingCommittee || adminSelectedCommitteeIds.length < adminRequiredCommitteeCount" @click="confirmAdminAssignCommittee">
               <CIcon name="cil-save" class="mr-1" /> {{ adminSubmittingCommittee ? $t('researchFormAdminFooter.common.saving') : $t('researchFormAdminFooter.common.confirm') }}
             </CButton>
