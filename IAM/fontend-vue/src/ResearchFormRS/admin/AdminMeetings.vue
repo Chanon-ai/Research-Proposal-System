@@ -21,9 +21,14 @@
           :aria-pressed="isSummaryFilterActive('') ? 'true' : 'false'"
           @click="setAllFilter" @keydown.enter.prevent="setAllFilter"
           @keydown.space.prevent="setAllFilter">
-          <div class="summary-label">{{ $t('userMeetings.summary.all.label') }}</div>
-          <div class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('total') }}</div>
-          <div class="summary-caption">{{ $t('userMeetings.summary.all.caption') }}</div>
+          <div class="summary-left">
+            <span class="summary-icon-wrap"><CIcon name="cil-layers" class="summary-icon" /></span>
+            <span class="summary-label">{{ $t('userMeetings.summary.all.label') }}</span>
+          </div>
+          <div class="summary-right">
+            <span class="summary-number">{{ summaryCountsLoading ? '...' : getSummaryCount('total') }}</span>
+            <span class="summary-caption">{{ $t('userMeetings.summary.all.caption') }}</span>
+          </div>
         </div>
       </CCol>
       <CCol sm="6" lg="3">
@@ -684,16 +689,13 @@ export default {
     applyMyOnlyFilter() {
       return Boolean(this.myOnly && this.currentUserRole === 'committee' && (this.currentUserId || this.currentUserName || this.currentUserEmail))
     },
-<<<<<<< HEAD
     hasActiveFilters() {
       return !!(this.searchKeyword || this.filterStatus || this.filterMeetingType || this.filterDateFrom || this.filterDateTo || this.filterSortOrder !== 'status')
     },
-=======
     isEnglish() { return String((this.$i18n && this.$i18n.locale) || '').trim().toLowerCase() === 'en' },
     resolvedHeroEyebrow() { return (this.heroEyebrow && String(this.heroEyebrow).trim()) ? this.heroEyebrow : this.$t('adminMeetings.hero.eyebrow') },
     resolvedHeroTitle() { return (this.heroTitle && String(this.heroTitle).trim()) ? this.heroTitle : this.$t('adminMeetings.hero.title') },
     resolvedHeroSubtitle() { return (this.heroSubtitle && String(this.heroSubtitle).trim()) ? this.heroSubtitle : this.$t('adminMeetings.hero.subtitle') },
->>>>>>> 9d3bce9b5aefc222a7c9315a0bd9bd97155d9e78
     canCreate() { return !this.readOnly },
     canEditDelete() { return !this.readOnly },
     meetingDatePickerValue: {
@@ -1666,19 +1668,12 @@ export default {
 ::v-deep .multiselect__option--selected { background: rgba(139,18,18,0.08); color: var(--am-text); font-weight: 600; }
 ::v-deep .multiselect__option--selected::after { content: ''; display: none; }
 
-<<<<<<< HEAD
 .summary-card { height: 100%; padding: 14px 16px; border: 0; border-radius: 0.5rem; background: linear-gradient(135deg, var(--summary-start, #8c1515), var(--summary-end, #6b0f0f)); box-shadow: 0 16px 40px rgba(15,23,42,0.12); position: relative; overflow: hidden; isolation: isolate; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
+.summary-card--neutral { --summary-start: #64748b; --summary-end: #475569; --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect x='24' y='22' width='72' height='76' rx='12' fill='white' fill-opacity='0.9'/%3E%3Crect x='38' y='40' width='44' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='54' width='40' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3Crect x='38' y='68' width='33' height='6' rx='3' fill='%23000000' fill-opacity='0.16'/%3E%3C/svg%3E"); }
 .summary-card--info    { --summary-start: #f59e0b; --summary-end: #d97706; --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M60 42v18l14 10' stroke='%23000000' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.22' fill='none'/%3E%3C/svg%3E"); }
 .summary-card--success { --summary-start: #16a34a; --summary-end: #15803d; --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M46 61l9 9 20-20' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='0.24' fill='none'/%3E%3Ccircle cx='60' cy='60' r='44' stroke='white' stroke-opacity='0.42' stroke-width='5' fill='none'/%3E%3C/svg%3E"); }
 .summary-card--danger  { --summary-start: #ef4444; --summary-end: #dc2626; --summary-graphic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='34' fill='white' fill-opacity='0.9'/%3E%3Cpath d='M48 48l24 24M72 48L48 72' stroke='%23000000' stroke-width='8' stroke-linecap='round' stroke-opacity='0.24' fill='none'/%3E%3C/svg%3E"); }
 .summary-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background-image: var(--summary-graphic); background-repeat: no-repeat; background-size: 122px 122px; background-position: calc(100% + 10px) -12px; opacity: 0.22; pointer-events: none; z-index: 1; }
-=======
-.summary-card { height: 100%; padding: 20px; border: 0; border-radius: 0.5rem; background: linear-gradient(135deg, var(--summary-start, #8c1515), var(--summary-end, #6b0f0f)); box-shadow: 0 16px 40px rgba(15,23,42,0.12); position: relative; overflow: hidden; isolation: isolate; }
-.summary-card--info { --summary-start: #f59e0b; --summary-end: #d97706; }
-.summary-card--neutral { --summary-start: #64748b; --summary-end: #475569; }
-.summary-card--success { --summary-start: #16a34a; --summary-end: #15803d; }
-.summary-card--danger { --summary-start: #ef4444; --summary-end: #dc2626; }
->>>>>>> 9d3bce9b5aefc222a7c9315a0bd9bd97155d9e78
 .summary-card::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 60%); pointer-events: none; z-index: 1; }
 .summary-card > * { position: relative; z-index: 2; }
 .summary-left { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
