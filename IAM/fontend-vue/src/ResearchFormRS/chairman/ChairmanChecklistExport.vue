@@ -159,7 +159,21 @@ export default {
 
       const projectIdx = lines.findIndex((l) => String(l || '').includes('ชื่อข้อเสนอโครงการวิจัย'))
       const end = projectIdx > 0 ? projectIdx : lines.length
-      return lines.slice(0, end)
+      const header = lines.slice(0, end)
+
+      // Remove the first funding-type title line (e.g., "ทุน... 69") in chairman export (requested).
+      if (header.length) {
+        const first = String(header[0] || '').trim()
+        const isMetaLine = first.includes('แบบฟอร์ม') ||
+          first.includes('Checklist') ||
+          first.includes('มหาวิทยาลัย') ||
+          first.includes('ชื่อข้อเสนอโครงการวิจัย') ||
+          first.includes('ชื่อหัวหน้าโครงการวิจัย')
+        const looksLikeFundingTitle = first.startsWith('ทุน') || first.includes('ประเภททุน') || /(?:\s|^)69(?:\s|$)/.test(first)
+        if (!isMetaLine && looksLikeFundingTitle) header.shift()
+      }
+
+      return header
     },
     footerLines () {
       const lines = Array.isArray(this.pdfTemplate && this.pdfTemplate.footerLines) ? this.pdfTemplate.footerLines : []
