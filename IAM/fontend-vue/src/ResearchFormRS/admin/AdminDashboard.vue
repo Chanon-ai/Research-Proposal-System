@@ -1442,7 +1442,7 @@ export default {
 
 .mfu-card-body-tight {
   padding: 1rem;
-  background: #f7f1ea;
+  background: #ffffff;
 }
 
 .mfu-dashboard-card-header {

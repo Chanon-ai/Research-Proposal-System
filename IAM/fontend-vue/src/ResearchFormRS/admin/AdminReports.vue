@@ -978,7 +978,7 @@ export default {
 /* ── Theme (match committee) ───────────────────────────────────────────── */
 .card-body-tight {
   padding: 1rem;
-  background: #f7f1ea;
+  background: #ffffff;
 }
 
 .reviewer-dashboard-card {
