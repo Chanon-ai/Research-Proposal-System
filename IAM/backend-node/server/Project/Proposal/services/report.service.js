@@ -6,10 +6,18 @@ const STATUS_LABELS = require('../constants/proposal-status-labels');
 const systemSettingService = require('../../settings/service/system-setting');
 
 const EXPORT_PUBLIC_DIR = path.resolve(__dirname, '../../../../public/exports');
+const EXPORT_FILE_PREFIX = 'research-report-';
+const DEFAULT_EXPORT_RETENTION_HOURS = 24;
 const REPORT_EXPORT_TYPES = Object.freeze({
   pdf: 'pdf',
   excel: 'excel'
 });
+
+function getExportRetentionMs() {
+  const raw = Number(process.env.REPORT_EXPORT_RETENTION_HOURS || DEFAULT_EXPORT_RETENTION_HOURS);
+  const hours = Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_EXPORT_RETENTION_HOURS;
+  return hours * 60 * 60 * 1000;
+}
 
 function normalizeExportType(value) {
   const type = String(value || '').trim().toLowerCase();
@@ -48,6 +56,48 @@ function getExportContentType(fileName) {
 
 function ensureExportDir() {
   fs.mkdirSync(EXPORT_PUBLIC_DIR, { recursive: true });
+}
+
+function isManagedExportFile(fileName) {
+  const normalized = String(fileName || '').trim().toLowerCase();
+  return normalized.startsWith(EXPORT_FILE_PREFIX) && (normalized.endsWith('.pdf') || normalized.endsWith('.csv'));
+}
+
+function cleanupOldExportFiles() {
+  ensureExportDir();
+  const retentionMs = getExportRetentionMs();
+  const expireBefore = Date.now() - retentionMs;
+  let scannedFiles = 0;
+  let removedFiles = 0;
+
+  for (const dirent of fs.readdirSync(EXPORT_PUBLIC_DIR, { withFileTypes: true })) {
+    if (!dirent.isFile() || !isManagedExportFile(dirent.name)) continue;
+    scannedFiles += 1;
+
+    const filePath = path.join(EXPORT_PUBLIC_DIR, dirent.name);
+
+    try {
+      const stats = fs.statSync(filePath);
+      const lastTouchedAt = Math.max(
+        Number(stats.mtimeMs) || 0,
+        Number(stats.birthtimeMs) || 0,
+        Number(stats.ctimeMs) || 0
+      );
+
+      if (lastTouchedAt > 0 && lastTouchedAt < expireBefore) {
+        fs.unlinkSync(filePath);
+        removedFiles += 1;
+      }
+    } catch (err) {
+      console.error('[Report.cleanup] failed to inspect/remove export file:', dirent.name, err && err.message ? err.message : err);
+    }
+  }
+
+  if (removedFiles > 0 || scannedFiles > 0) {
+    console.info(
+      `[Report.cleanup] scanned=${scannedFiles} removed=${removedFiles} retentionHours=${Math.round(retentionMs / (60 * 60 * 1000))}`
+    );
+  }
 }
 
 function getExportFilePath(fileName) {
@@ -228,6 +278,7 @@ async function sendExportEmailIfNeeded({ sendEmail, emailAddress, filePath, file
 
 async function exportReport(payload = {}) {
   ensureExportDir();
+  cleanupOldExportFiles();
 
   const normalizedPayload = normalizeExportPayload(payload);
 
@@ -289,6 +340,7 @@ async function getExportDownload(fileName) {
 module.exports = {
   EXPORT_PUBLIC_DIR,
   ensureExportDir,
+  cleanupOldExportFiles,
   exportReport,
   getExportDownload
 };
