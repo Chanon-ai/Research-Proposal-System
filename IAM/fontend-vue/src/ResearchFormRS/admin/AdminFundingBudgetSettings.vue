@@ -423,6 +423,127 @@
         </template>
       </CCardBody>
     </CCard>
+
+    <CCard class="mt-3">
+      <CCardHeader>
+        <div class="funding-budget-toolbar">
+          <div>
+            <div class="font-weight-bold">เอกสารตัวอย่างแนบงบประมาณ</div>
+            <small class="text-muted">
+              กำหนดไฟล์ตัวอย่างสำหรับปุ่มเอกสารตัวอย่างใน TOR, Quotation, Specification, CV และ Service Rates
+            </small>
+          </div>
+          <div class="funding-budget-summary">
+            <CBadge color="info">ประเภทเอกสาร {{ budgetAttachmentExampleConfig.length }}</CBadge>
+            <CBadge color="secondary">ไฟล์ตัวอย่าง {{ totalBudgetAttachmentExampleFileCount }}</CBadge>
+          </div>
+        </div>
+      </CCardHeader>
+
+      <CCardBody>
+        <div v-if="loading" class="text-center py-4">
+          <CSpinner color="primary" />
+          <div class="mt-2 text-muted">กำลังโหลดการตั้งค่าเอกสารตัวอย่าง...</div>
+        </div>
+
+        <template v-else>
+          <CCard
+            v-for="(docType, docTypeIndex) in budgetAttachmentExampleConfig"
+            :key="`budget-attachment-example-${docType.key}-${docTypeIndex}`"
+            class="funding-type-card mb-3"
+          >
+            <CCardHeader class="funding-type-card__header">
+              <div class="font-weight-bold">
+                {{ docType.label || docType.key }}
+                <small class="text-muted ml-1">({{ docType.key }})</small>
+              </div>
+              <CButton color="secondary" variant="outline" size="sm" @click="addBudgetAttachmentExampleFile(docTypeIndex)">
+                <CIcon name="cil-plus" class="mr-1" /> เพิ่มไฟล์ตัวอย่าง
+              </CButton>
+            </CCardHeader>
+
+            <CCardBody>
+              <div class="table-responsive funding-suboptions-table">
+                <table class="table table-bordered table-striped mb-0">
+                  <thead>
+                    <tr>
+                      <th style="width: 38%;">ชื่อที่แสดง</th>
+                      <th>ไฟล์ตัวอย่างจาก backend</th>
+                      <th style="width: 160px;">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="(file, fileIndex) in docType.files"
+                      :key="`${docType.key}-file-${fileIndex}`"
+                    >
+                      <td>
+                        <input
+                          class="form-control"
+                          :value="file.label"
+                          placeholder="เช่น TOR กรณีการจ้างทั่วไป"
+                          @input="updateBudgetAttachmentExampleFileLabel(docTypeIndex, fileIndex, $event.target.value)"
+                        />
+                      </td>
+                      <td>
+                        <div class="small font-weight-bold text-truncate">
+                          {{ budgetAttachmentExampleDisplayName(file) || 'ยังไม่ได้เลือกไฟล์' }}
+                        </div>
+                        <div class="small text-muted mt-1">
+                          <span v-if="file.uploading">กำลังอัปโหลดไฟล์...</span>
+                          <span v-else-if="file.fileId">เก็บใน backend แล้ว</span>
+                          <span v-else-if="file.fileName">รายการเดิมที่ยังอ้างชื่อไฟล์แบบเดิม</span>
+                          <span v-else>ยังไม่ได้อัปโหลดไฟล์</span>
+                        </div>
+                        <div class="small text-muted" v-if="file.size">
+                          {{ formatBudgetAttachmentExampleFileSize(file.size) }}
+                        </div>
+                        <input
+                          :ref="budgetAttachmentExampleUploadRef(docTypeIndex, fileIndex)"
+                          type="file"
+                          class="d-none"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                          @change="onBudgetAttachmentExampleFileSelected(docTypeIndex, fileIndex, $event)"
+                        />
+                      </td>
+                      <td class="text-center">
+                        <div class="d-flex flex-column align-items-center" style="gap: 6px;">
+                          <CButton color="secondary" variant="outline" size="sm" :disabled="file.uploading" @click="triggerBudgetAttachmentExampleUpload(docTypeIndex, fileIndex)">
+                            <CIcon name="cil-cloud-upload" class="mr-1" /> {{ file.fileId || file.fileName ? 'เปลี่ยนไฟล์' : 'อัปโหลดไฟล์' }}
+                          </CButton>
+                          <CButton v-if="resolveBudgetAttachmentExampleFileUrl(file)" color="info" variant="outline" size="sm" @click="openBudgetAttachmentExampleFile(file)">
+                            <CIcon name="cil-external-link" class="mr-1" /> เปิด
+                          </CButton>
+                          <CButton color="danger" variant="outline" size="sm" :disabled="file.uploading" @click="removeBudgetAttachmentExampleFile(docTypeIndex, fileIndex)">
+                            <CIcon name="cil-x" class="mr-1" /> ลบ
+                          </CButton>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr v-if="!docType.files || docType.files.length === 0">
+                      <td colspan="3" class="text-center text-muted">ยังไม่มีไฟล์ตัวอย่างสำหรับประเภทนี้</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CCardBody>
+          </CCard>
+
+          <div class="text-muted small mb-3">
+            หมายเหตุ: ไฟล์ใหม่จะถูกอัปโหลดเก็บใน backend และบันทึกด้วย fileId ส่วนรายการเดิมที่ยังเป็นชื่อไฟล์อย่างเดียวจะยังเปิดแบบ legacy ได้จนกว่าจะอัปโหลดแทนใหม่
+          </div>
+
+          <div class="funding-budget-actions">
+            <CButton color="warning" variant="outline" @click="resetBudgetAttachmentExampleConfigToDefault">
+              <CIcon name="cil-reload" class="mr-1" /> รีเซ็ตค่าเริ่มต้น
+            </CButton>
+            <CButton color="primary" :disabled="savingExampleDocs" @click="saveBudgetAttachmentExampleConfig">
+              <CIcon name="cil-save" class="mr-1" /> {{ savingExampleDocs ? 'กำลังบันทึก...' : 'บันทึกเอกสารตัวอย่าง' }}
+            </CButton>
+          </div>
+        </template>
+      </CCardBody>
+    </CCard>
   </div>
 </template>
 
@@ -451,6 +572,15 @@ import {
   toMultiplierMaxNumber as toMultiplierMaxNumberUtil,
   resolveMultiplierMaxNumber as resolveMultiplierMaxNumberUtil
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
+import {
+  BUDGET_ATTACHMENT_EXAMPLE_SETTING_KEY,
+  BUDGET_ATTACHMENT_EXAMPLE_LOCAL_FALLBACK_KEY,
+  createDefaultBudgetAttachmentExampleConfig,
+  parseBudgetAttachmentExampleSettingValue,
+  normalizeBudgetAttachmentExampleConfig as normalizeBudgetAttachmentExampleConfigUtil,
+  sanitizeBudgetAttachmentExampleConfigForSave as sanitizeBudgetAttachmentExampleConfigForSaveUtil,
+  resolveBudgetAttachmentExampleFileUrl as resolveBudgetAttachmentExampleFileUrlUtil
+} from '@/ResearchFormRS/utils/budgetAttachmentExampleConfig'
 import centerLoadingMixin from '@/ResearchFormRS/utils/centerLoadingMixin'
 
 const createFundingTypeTemplate = () => ({ key: '', label: '', budgetLimit: 0, subOptions: [] })
@@ -462,6 +592,16 @@ const createBudgetItemOverrideTemplate = () => ({
   fundingTypeKeys: [],
   multipliers: [createBudgetMultiplierTemplate()]
 })
+const createBudgetAttachmentExampleFileTemplate = () => ({
+  label: '',
+  fileId: '',
+  fileName: '',
+  originalName: '',
+  mimeType: '',
+  size: 0,
+  uploadedAt: null,
+  uploading: false
+})
 
 export default {
   name: 'AdminFundingBudgetSettings',
@@ -471,9 +611,11 @@ export default {
       loading: false,
       saving: false,
       savingMultiplier: false,
+      savingExampleDocs: false,
       settingsCache: [],
       fundingBudgetConfig: createDefaultFundingBudgetConfig(),
-      budgetMultiplierConfig: createDefaultBudgetMultiplierConfig()
+      budgetMultiplierConfig: createDefaultBudgetMultiplierConfig(),
+      budgetAttachmentExampleConfig: createDefaultBudgetAttachmentExampleConfig()
     }
   },
   computed: {
@@ -487,8 +629,13 @@ export default {
         sum + ((category && Array.isArray(category.multipliers)) ? category.multipliers.length : 0)
       ), 0)
     },
+    totalBudgetAttachmentExampleFileCount () {
+      return this.budgetAttachmentExampleConfig.reduce((sum, docType) => (
+        sum + ((docType && Array.isArray(docType.files)) ? docType.files.length : 0)
+      ), 0)
+    },
     centerLoadingActive () {
-      return Boolean(this.loading || this.saving || this.savingMultiplier)
+      return Boolean(this.loading || this.saving || this.savingMultiplier || this.savingExampleDocs)
     },
     fundingTypeSelectionOptions () {
       return this.fundingBudgetConfig.reduce((result, type, index) => {
@@ -510,7 +657,8 @@ export default {
     try {
       await Promise.all([
         this.fetchFundingBudgetConfig(),
-        this.fetchBudgetMultiplierConfig()
+        this.fetchBudgetMultiplierConfig(),
+        this.fetchBudgetAttachmentExampleConfig()
       ])
     } finally {
       this.loading = false
@@ -550,6 +698,15 @@ export default {
     },
     sanitizeBudgetMultiplierConfigForSave (config = this.budgetMultiplierConfig) {
       return sanitizeBudgetMultiplierConfigForSaveUtil(config)
+    },
+    normalizeBudgetAttachmentExampleConfig (rawConfig) {
+      return normalizeBudgetAttachmentExampleConfigUtil(rawConfig, { fallbackToDefault: true })
+    },
+    sanitizeBudgetAttachmentExampleConfigForSave (config = this.budgetAttachmentExampleConfig) {
+      return sanitizeBudgetAttachmentExampleConfigForSaveUtil(config)
+    },
+    resolveBudgetAttachmentExampleFileUrl (file) {
+      return resolveBudgetAttachmentExampleFileUrlUtil(file)
     },
     isMultiplierMaxValueValid (value) {
       if (value === '' || value === undefined || value === null) return true
@@ -737,6 +894,13 @@ export default {
       }
       localStorage.setItem(BUDGET_MULTIPLIER_LOCAL_FALLBACK_KEY, JSON.stringify(payload))
     },
+    saveBudgetAttachmentExampleFallback () {
+      const payload = {
+        budgetAttachmentExampleConfig: this.sanitizeBudgetAttachmentExampleConfigForSave(),
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem(BUDGET_ATTACHMENT_EXAMPLE_LOCAL_FALLBACK_KEY, JSON.stringify(payload))
+    },
     loadBudgetMultiplierFallback () {
       try {
         const raw = localStorage.getItem(BUDGET_MULTIPLIER_LOCAL_FALLBACK_KEY)
@@ -747,6 +911,19 @@ export default {
         return true
       } catch (error) {
         console.error('[AdminFundingBudgetSettings] load multiplier fallback error:', error)
+        return false
+      }
+    },
+    loadBudgetAttachmentExampleFallback () {
+      try {
+        const raw = localStorage.getItem(BUDGET_ATTACHMENT_EXAMPLE_LOCAL_FALLBACK_KEY)
+        if (!raw) return false
+        const parsed = JSON.parse(raw)
+        if (!parsed || !Array.isArray(parsed.budgetAttachmentExampleConfig)) return false
+        this.budgetAttachmentExampleConfig = this.normalizeBudgetAttachmentExampleConfig(parsed.budgetAttachmentExampleConfig)
+        return true
+      } catch (error) {
+        console.error('[AdminFundingBudgetSettings] load example-doc fallback error:', error)
         return false
       }
     },
@@ -801,6 +978,175 @@ export default {
         console.error('[AdminFundingBudgetSettings] fetch multiplier config error:', error)
         if (!this.loadBudgetMultiplierFallback()) this.budgetMultiplierConfig = createDefaultBudgetMultiplierConfig()
       }
+    },
+    async fetchBudgetAttachmentExampleConfig () {
+      try {
+        const settings = await this.fetchSettingCache()
+        const setting = settings.find(item => item && item.key === BUDGET_ATTACHMENT_EXAMPLE_SETTING_KEY)
+        const rawValue = setting ? setting.value : null
+        this.budgetAttachmentExampleConfig = parseBudgetAttachmentExampleSettingValue(rawValue, { fallbackToDefault: true })
+        this.saveBudgetAttachmentExampleFallback()
+      } catch (error) {
+        console.error('[AdminFundingBudgetSettings] fetch example-doc config error:', error)
+        if (!this.loadBudgetAttachmentExampleFallback()) this.budgetAttachmentExampleConfig = createDefaultBudgetAttachmentExampleConfig()
+      }
+    },
+    addBudgetAttachmentExampleFile (docTypeIndex) {
+      const docType = this.budgetAttachmentExampleConfig[docTypeIndex]
+      if (!docType) return
+      if (!Array.isArray(docType.files)) {
+        this.$set(docType, 'files', [])
+      }
+      docType.files.push(createBudgetAttachmentExampleFileTemplate())
+    },
+    budgetAttachmentExampleUploadRef (docTypeIndex, fileIndex) {
+      return `budgetAttachmentExampleUpload_${docTypeIndex}_${fileIndex}`
+    },
+    budgetAttachmentExampleDisplayName (file) {
+      return String(file && (file.originalName || file.fileName || file.label) ? (file.originalName || file.fileName || file.label) : '').trim()
+    },
+    formatBudgetAttachmentExampleFileSize (size) {
+      const numeric = Number(size)
+      if (!Number.isFinite(numeric) || numeric <= 0) return ''
+      if (numeric >= 1024 * 1024) return `${(numeric / (1024 * 1024)).toFixed(2)} MB`
+      if (numeric >= 1024) return `${(numeric / 1024).toFixed(1)} KB`
+      return `${numeric} B`
+    },
+    triggerBudgetAttachmentExampleUpload (docTypeIndex, fileIndex) {
+      const refName = this.budgetAttachmentExampleUploadRef(docTypeIndex, fileIndex)
+      const input = this.$refs[refName]
+      const target = Array.isArray(input) ? input[0] : input
+      if (target && typeof target.click === 'function') target.click()
+    },
+    extractBudgetAttachmentExampleErrorMessage (error, fallback = 'อัปโหลดไฟล์ไม่สำเร็จ') {
+      return (error && error.response && error.response.data && error.response.data.message) || fallback
+    },
+    async onBudgetAttachmentExampleFileSelected (docTypeIndex, fileIndex, event) {
+      const input = event && event.target ? event.target : null
+      const uploadFile = input && input.files ? input.files[0] : null
+      if (!uploadFile) return
+
+      const docType = this.budgetAttachmentExampleConfig[docTypeIndex]
+      const file = docType && Array.isArray(docType.files) ? docType.files[fileIndex] : null
+      if (!file) return
+
+      this.$set(file, 'uploading', true)
+
+      try {
+        const formData = new FormData()
+        formData.append('file', uploadFile)
+
+        const response = await axios.post('/api/v1/setting/files/budget-attachment-example', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        const uploaded = response && response.data && response.data.data ? response.data.data : {}
+        const resolvedName = String(uploaded.originalName || uploaded.fileName || uploadFile.name || '').trim()
+
+        this.$set(file, 'fileId', String(uploaded.fileId || '').trim())
+        this.$set(file, 'fileName', resolvedName)
+        this.$set(file, 'originalName', resolvedName)
+        this.$set(file, 'mimeType', String(uploaded.mimeType || uploadFile.type || '').trim())
+        this.$set(file, 'size', Number(uploaded.size || uploadFile.size || 0))
+        this.$set(file, 'uploadedAt', uploaded.uploadedAt || new Date().toISOString())
+        if (!String(file.label || '').trim()) {
+          this.$set(file, 'label', resolvedName)
+        }
+      } catch (error) {
+        console.error('[AdminFundingBudgetSettings] upload example file error:', error)
+        await Swal.fire({
+          icon: 'error',
+          title: 'อัปโหลดไฟล์ไม่สำเร็จ',
+          text: this.extractBudgetAttachmentExampleErrorMessage(error)
+        })
+      } finally {
+        this.$set(file, 'uploading', false)
+        if (input) input.value = ''
+      }
+    },
+    openBudgetAttachmentExampleFile (file) {
+      const normalizedFileId = String(file && (file.fileId || file.id || file._id) ? (file.fileId || file.id || file._id) : '').trim()
+      const url = this.resolveBudgetAttachmentExampleFileUrl(file)
+      if (!url || typeof window === 'undefined') return
+
+      if (!normalizedFileId) {
+        const popup = window.open(url, '_blank')
+        if (popup && typeof popup.focus === 'function') popup.focus()
+        return
+      }
+
+      axios.get(`/api/v1/setting/files/${encodeURIComponent(normalizedFileId)}`, {
+        responseType: 'blob'
+      }).then((response) => {
+        const responseBlob = response && response.data ? response.data : null
+        const blob = responseBlob instanceof Blob
+          ? responseBlob
+          : new Blob([responseBlob], { type: (response && response.headers && response.headers['content-type']) || 'application/octet-stream' })
+        const objectUrl = window.URL.createObjectURL(blob)
+        const popup = window.open(objectUrl, '_blank')
+        if (!popup) {
+          const link = document.createElement('a')
+          link.href = objectUrl
+          link.download = this.budgetAttachmentExampleDisplayName(file) || 'attachment'
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+        } else if (typeof popup.focus === 'function') {
+          popup.focus()
+        }
+        window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000)
+      }).catch(async (error) => {
+        console.error('[AdminFundingBudgetSettings] open example file error:', error)
+        await Swal.fire({
+          icon: 'error',
+          title: 'เปิดไฟล์ไม่สำเร็จ',
+          text: this.extractBudgetAttachmentExampleErrorMessage(error, 'ไม่สามารถเปิดไฟล์ตัวอย่างจาก backend ได้')
+        })
+      })
+    },
+    async removeBudgetAttachmentExampleFile (docTypeIndex, fileIndex) {
+      const docType = this.budgetAttachmentExampleConfig[docTypeIndex]
+      if (!docType || !Array.isArray(docType.files)) return
+      docType.files.splice(fileIndex, 1)
+    },
+    updateBudgetAttachmentExampleFileLabel (docTypeIndex, fileIndex, value) {
+      const file = this.budgetAttachmentExampleConfig[docTypeIndex] && Array.isArray(this.budgetAttachmentExampleConfig[docTypeIndex].files)
+        ? this.budgetAttachmentExampleConfig[docTypeIndex].files[fileIndex]
+        : null
+      if (!file) return
+      this.$set(file, 'label', value)
+    },
+    validateBudgetAttachmentExamplePayload (payload) {
+      if (!Array.isArray(payload) || payload.length === 0) {
+        return 'ไม่พบข้อมูลเอกสารตัวอย่าง'
+      }
+
+      for (let docTypeIndex = 0; docTypeIndex < payload.length; docTypeIndex += 1) {
+        const docType = payload[docTypeIndex]
+        const files = Array.isArray(docType && docType.files) ? docType.files : []
+        for (let fileIndex = 0; fileIndex < files.length; fileIndex += 1) {
+          const file = files[fileIndex]
+          if (!String(file && file.label || '').trim()) {
+            return `${docType.label || docType.key}: ไฟล์ลำดับที่ ${fileIndex + 1} ต้องระบุชื่อที่แสดง`
+          }
+          if (!String(file && (file.fileId || file.fileName || file.originalName) || '').trim()) {
+            return `${docType.label || docType.key}: ไฟล์ลำดับที่ ${fileIndex + 1} ต้องอัปโหลดไฟล์`
+          }
+        }
+      }
+
+      return ''
+    },
+    async resetBudgetAttachmentExampleConfigToDefault () {
+      const result = await Swal.fire({
+        icon: 'warning',
+        title: 'รีเซ็ตเอกสารตัวอย่างเป็นค่าเริ่มต้น?',
+        text: 'รายการไฟล์ตัวอย่างที่แก้ไขในหน้าจอจะถูกแทนที่ด้วยค่าเริ่มต้น',
+        showCancelButton: true,
+        confirmButtonText: 'รีเซ็ต',
+        cancelButtonText: 'ยกเลิก'
+      })
+      if (!result.isConfirmed) return
+      this.budgetAttachmentExampleConfig = createDefaultBudgetAttachmentExampleConfig()
     },
     addFundingType () {
       this.fundingBudgetConfig.push(createFundingTypeTemplate())
@@ -1091,6 +1437,43 @@ export default {
         this.savingMultiplier = false
       }
     },
+    async saveBudgetAttachmentExampleConfig () {
+      const payload = this.sanitizeBudgetAttachmentExampleConfigForSave()
+      const validationError = this.validateBudgetAttachmentExamplePayload(payload)
+      if (validationError) {
+        await Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบถ้วน', text: validationError })
+        return
+      }
+
+      this.savingExampleDocs = true
+      try {
+        await this.upsertSettingByKey(
+          BUDGET_ATTACHMENT_EXAMPLE_SETTING_KEY,
+          JSON.stringify(payload),
+          'รายการไฟล์เอกสารตัวอย่างสำหรับแนบงบประมาณ',
+          'general'
+        )
+        this.budgetAttachmentExampleConfig = this.normalizeBudgetAttachmentExampleConfig(payload)
+        this.saveBudgetAttachmentExampleFallback()
+        await this.fetchBudgetAttachmentExampleConfig()
+        await Swal.fire({
+          icon: 'success',
+          title: 'บันทึกเอกสารตัวอย่างสำเร็จ',
+          timer: 1300,
+          showConfirmButton: false
+        })
+      } catch (error) {
+        console.error('[AdminFundingBudgetSettings] save example-doc fallback:', error)
+        this.saveBudgetAttachmentExampleFallback()
+        await Swal.fire({
+          icon: 'info',
+          title: 'บันทึกในเครื่องแล้ว',
+          text: 'API ยังไม่พร้อม จึงบันทึกการตั้งค่าเอกสารตัวอย่างแบบ local fallback'
+        })
+      } finally {
+        this.savingExampleDocs = false
+      }
+    },
     async saveFundingBudgetConfig () {
       const payload = this.sanitizeFundingBudgetConfigForSave()
       const validationError = this.validateFundingBudgetPayload(payload)
@@ -1214,6 +1597,10 @@ body.c-dark-theme .funding-suboptions-title {
 body.c-dark-theme .budget-item-override-card {
   background: #1b2735;
   border-color: rgba(126, 164, 207, 0.35);
+}
+
+.table td .form-control {
+  min-width: 160px;
 }
 
 @media (max-width: 768px) {

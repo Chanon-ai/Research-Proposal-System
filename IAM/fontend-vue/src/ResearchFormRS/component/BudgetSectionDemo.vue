@@ -469,6 +469,7 @@
 </template>
 
 <script>
+import { instance as axios } from '@/service/api'
 import {
   normalizeFundingBudgetConfig,
   normalizeFundingBudgetKey,
@@ -482,12 +483,27 @@ import {
   toMultiplierMaxNumber,
   resolveMultiplierMaxNumber
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
+import {
+  buildBudgetAttachmentExampleConfigMap,
+  normalizeBudgetAttachmentExampleConfig,
+  resolveBudgetAttachmentExampleFileUrl
+} from '@/ResearchFormRS/utils/budgetAttachmentExampleConfig'
 
 const BUDGET_ATTACHMENT_EXAMPLE_WINDOW_NAME = 'budget-attachment-example-doc'
 
 const BUDGET_ATTACHMENT_EXAMPLES = Object.freeze({
   TOR: {
     title: 'ตัวอย่างเอกสาร TOR (Term of References)',
+    files: [
+      {
+        name: 'แบบ-คุณลักษณะเฉพาะ-และร่างขอบเขตงาน-TOR.docx',
+        label: 'แบบคุณลักษณะเฉพาะและร่างขอบเขตงาน (TOR)'
+      },
+      {
+        name: 'TOR- กรณีการจ้างทั่วไป.docx',
+        label: 'TOR กรณีการจ้างทั่วไป'
+      }
+    ],
     items: [
       'วัตถุประสงค์/ความเป็นมาของงาน',
       'ขอบเขตงาน (Scope of Work)',
@@ -508,6 +524,20 @@ const BUDGET_ATTACHMENT_EXAMPLES = Object.freeze({
   },
   Specification: {
     title: 'ตัวอย่างเอกสาร Specification',
+    files: [
+      {
+        name: 'Spec-กรณีการจัดซื้อครุภัณฑ์.docx',
+        label: 'Specification กรณีการจัดซื้อครุภัณฑ์'
+      },
+      {
+        name: 'Spec-กรณีการจัดซื้อวัสดุ (กรณีเกิน 1 แสนบาท).docx',
+        label: 'Specification กรณีการจัดซื้อวัสดุ (เกิน 1 แสนบาท)'
+      },
+      {
+        name: 'Spec-กรณีการซื้อขายและอนุญาตให้ใช้สิทธิในโปรแกรมคอมพิวเตอร์.docx',
+        label: 'Specification กรณีการซื้อขายและอนุญาตให้ใช้สิทธิในโปรแกรมคอมพิวเตอร์'
+      }
+    ],
     items: [
       'คุณลักษณะทางเทคนิคขั้นต่ำที่ต้องการ',
       'มาตรฐานอ้างอิงหรือรุ่นที่เทียบเท่า',
@@ -1044,6 +1074,10 @@ export default {
       type: Array,
       default: () => []
     },
+    budgetAttachmentExampleConfig: {
+      type: Array,
+      default: () => []
+    },
     resetToken: {
       type: [Number, String],
       default: 0
@@ -1283,6 +1317,10 @@ export default {
     },
     normalizedFundingBudgetConfig() {
       return normalizeFundingBudgetConfig(this.fundingBudgetConfig, { fallbackToDefault: true })
+    },
+    budgetAttachmentExampleMap() {
+      const normalized = normalizeBudgetAttachmentExampleConfig(this.budgetAttachmentExampleConfig, { fallbackToDefault: true })
+      return buildBudgetAttachmentExampleConfigMap(normalized)
     },
     budgetLimit() {
       return getFundingTypeBudgetLimit(this.normalizedFundingBudgetConfig, this.fundingType)
@@ -2643,9 +2681,63 @@ export default {
         }
       })
     },
-    openAttachmentExample(docType = '') {
+    async openBudgetAttachmentExampleFile(file, windowTarget = '_blank') {
+      const normalizedFileId = String(file && (file.fileId || file.id || file._id) ? (file.fileId || file.id || file._id) : '').trim()
+      const url = resolveBudgetAttachmentExampleFileUrl(file)
+      if (!url || typeof window === 'undefined') return false
+
+      if (!normalizedFileId) {
+        const popup = window.open(url, windowTarget)
+        if (popup && typeof popup.focus === 'function') popup.focus()
+        return true
+      }
+
+      try {
+        const response = await axios.get(`/api/v1/setting/files/${encodeURIComponent(normalizedFileId)}`, {
+          responseType: 'blob'
+        })
+        const responseBlob = response && response.data ? response.data : null
+        const blob = responseBlob instanceof Blob
+          ? responseBlob
+          : new Blob([responseBlob], { type: (response && response.headers && response.headers['content-type']) || 'application/octet-stream' })
+        const objectUrl = window.URL.createObjectURL(blob)
+        const popup = window.open(objectUrl, windowTarget)
+        if (!popup) {
+          const link = document.createElement('a')
+          link.href = objectUrl
+          link.download = String(file && (file.originalName || file.fileName || file.label) ? (file.originalName || file.fileName || file.label) : 'attachment')
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+        } else if (typeof popup.focus === 'function') {
+          popup.focus()
+        }
+        window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000)
+        return true
+      } catch (error) {
+        console.error('[BudgetSectionDemo] open example file error:', error)
+        return false
+      }
+    },
+    async openAttachmentExample(docType = '') {
       const sample = BUDGET_ATTACHMENT_EXAMPLES[docType]
       if (!sample || typeof window === 'undefined') return
+
+      const runtimeConfig = this.budgetAttachmentExampleMap.get(docType)
+      const resolvedFiles = runtimeConfig && Array.isArray(runtimeConfig.files) && runtimeConfig.files.length > 0
+        ? runtimeConfig.files
+        : []
+      const fileUrls = resolvedFiles
+        .map(file => resolveBudgetAttachmentExampleFileUrl(file))
+        .filter(Boolean)
+
+      if (fileUrls.length) {
+        for (let index = 0; index < resolvedFiles.length; index += 1) {
+          const file = resolvedFiles[index]
+          await this.openBudgetAttachmentExampleFile(file, index === 0 ? BUDGET_ATTACHMENT_EXAMPLE_WINDOW_NAME : '_blank')
+        }
+        return
+      }
 
       const title = sample.title || 'ตัวอย่างเอกสาร'
       const listItems = (sample.items || []).map(text => `<li>${text}</li>`).join('')

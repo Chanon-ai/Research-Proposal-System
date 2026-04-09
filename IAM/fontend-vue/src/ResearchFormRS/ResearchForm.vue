@@ -38,6 +38,7 @@
         :revision-highlight-sections="adminRevisionProjectSectionKeys"
         :funding-budget-config="fundingBudgetConfig"
         :budget-multiplier-config="budgetMultiplierConfig"
+        :budget-attachment-example-config="budgetAttachmentExampleConfig"
         @form-changed="syncProjectDetailsData"
         @budget-changed="handleBudgetAutoSave"
         @budget-sticky-summary-update="handleBudgetStickySummaryUpdate"
@@ -1001,6 +1002,13 @@ import {
   readBudgetMultiplierConfigFromFallbackStorage,
   writeBudgetMultiplierConfigToFallbackStorage
 } from '@/ResearchFormRS/utils/budgetMultiplierConfig'
+import {
+  BUDGET_ATTACHMENT_EXAMPLE_SETTING_KEY,
+  createDefaultBudgetAttachmentExampleConfig,
+  parseBudgetAttachmentExampleSettingValue,
+  readBudgetAttachmentExampleConfigFromFallbackStorage,
+  writeBudgetAttachmentExampleConfigToFallbackStorage
+} from '@/ResearchFormRS/utils/budgetAttachmentExampleConfig'
 import Swal from 'sweetalert2'
 import Service, { instance as axios } from '@/service/api'
 import {
@@ -1114,6 +1122,7 @@ export default {
       },
       fundingBudgetConfig: createDefaultFundingBudgetConfig(),
       budgetMultiplierConfig: createDefaultBudgetMultiplierConfig(),
+      budgetAttachmentExampleConfig: createDefaultBudgetAttachmentExampleConfig(),
 
       adminShowMeetingPopup: false,
       adminMeetingSubmitting: false,
@@ -1236,7 +1245,8 @@ export default {
     await Promise.all([
       loadResearchFormRuntimeConfigs(),
       this.fetchFundingBudgetConfig(),
-      this.fetchBudgetMultiplierConfig()
+      this.fetchBudgetMultiplierConfig(),
+      this.fetchBudgetAttachmentExampleConfig()
     ])
     this.$forceUpdate()
 
@@ -2101,6 +2111,21 @@ export default {
         this.budgetMultiplierConfig = (Array.isArray(fallbackConfig) && fallbackConfig.length > 0)
           ? fallbackConfig
           : createDefaultBudgetMultiplierConfig()
+      }
+    },
+    async fetchBudgetAttachmentExampleConfig () {
+      try {
+        const response = await axios.get('/api/v1/setting')
+        const settings = this.parseSettingsPayload(response)
+        const setting = settings.find(item => item && item.key === BUDGET_ATTACHMENT_EXAMPLE_SETTING_KEY)
+        const rawValue = setting ? setting.value : null
+        this.budgetAttachmentExampleConfig = parseBudgetAttachmentExampleSettingValue(rawValue, { fallbackToDefault: true })
+        writeBudgetAttachmentExampleConfigToFallbackStorage(this.budgetAttachmentExampleConfig)
+      } catch (error) {
+        const fallbackConfig = readBudgetAttachmentExampleConfigFromFallbackStorage()
+        this.budgetAttachmentExampleConfig = (Array.isArray(fallbackConfig) && fallbackConfig.length > 0)
+          ? fallbackConfig
+          : createDefaultBudgetAttachmentExampleConfig()
       }
     },
     requiresFundingSubType (fundingType) {
