@@ -202,7 +202,7 @@ function extractParticipants(snapshot = {}) {
       participantIndex: index,
       participantName: asString(person.name),
       participantEmail: normalizeEmail(person.email),
-      sourceUserId: null
+      sourceUserId: normalizeObjectId(person.sourceUserId)
     });
   });
 
